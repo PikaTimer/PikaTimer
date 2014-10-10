@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.cell.*?>
+<?import javafx.collections.*?>
+<?import com.pikatimer.*?>
+
+<GridPane alignment="CENTER" hgap="10.0" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLParticipantController">
+    <padding>
+        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+    </padding>
+   <children>
+       <Label style="-fx-font: NORMAL 20 Tahoma;" text="Address Book" GridPane.columnIndex="0" GridPane.rowIndex="0">
+    </Label>
+       <TableView fx:id="tableView" GridPane.columnIndex="0" GridPane.rowIndex="1">
+           <columns>
+             <TableColumn fx:id="firstNameColumn" prefWidth="100" text="First Name">
+                 <cellValueFactory>
+                     <PropertyValueFactory property="firstName" />
+                 </cellValueFactory>
+             </TableColumn>
+             <TableColumn prefWidth="100" text="Last Name">
+                 <cellValueFactory>
+                     <PropertyValueFactory property="lastName" />
+                 </cellValueFactory>
+             </TableColumn>
+             <TableColumn prefWidth="200" text="Email Address">
+                 <cellValueFactory>
+                     <PropertyValueFactory property="email" />
+                 </cellValueFactory>
+             </TableColumn>
+        </columns>  
+        <sortOrder>
+             <fx:reference source="firstNameColumn" />
+        </sortOrder>
+       </TableView>
+       
+       <HBox alignment="bottom_right" spacing="10" GridPane.columnIndex="0" GridPane.rowIndex="2">
+          <children>
+                  <TextField fx:id="firstNameField" prefWidth="90" promptText="First Name" />
+                  <TextField fx:id="lastNameField" prefWidth="90" promptText="Last Name" />
+                  <TextField fx:id="emailField" onAction="#addPerson" prefWidth="150" promptText="Email" />
+                  <Button defaultButton="true" onAction="#addPerson" text="Add" />
+          </children>
+         </HBox>
+   </children>
+   
+      
+</GridPane>
