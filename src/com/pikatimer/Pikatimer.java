@@ -18,11 +18,44 @@ import javafx.stage.Stage;
  */
 public class Pikatimer extends Application {
     
+    //private final Event event = Event.getInstance(); 
+    private static Stage mainStage;
+    private static String jdbcURL; // Holds the jdbcURL for the open db
+    
+    /**
+    * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
+    * or the first access to SingletonHolder.INSTANCE, not before.
+    */
+    private static class SingletonHolder { 
+            private static final Pikatimer INSTANCE = new Pikatimer();
+    }
+
+    public static Pikatimer getInstance() {
+            return SingletonHolder.INSTANCE;
+    }
+    
+    public static void setJdbcUrl (String url) {
+        jdbcURL=url; 
+    }
+    
+    public static String getJDBCUrl () {
+        return jdbcURL;         
+    }
+    
+      
+    public static Stage getPrimaryStage() {
+        return mainStage;
+    }    
+    
     @Override
     public void start(Stage primaryStage) throws Exception {
+        
+        //stash the primaryStage in the event object
+        mainStage=primaryStage;
+        
         primaryStage.setTitle("PikaTimer");
         
-        Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLmain.fxml"));
+        Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLopenEvent.fxml"));
         Scene myScene = new Scene(myPane);
         
         primaryStage.setScene(myScene);

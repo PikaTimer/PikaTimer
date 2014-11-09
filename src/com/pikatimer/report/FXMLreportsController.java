@@ -2,8 +2,7 @@
  *  Copyright 2014 John Garner. All rights reserved. 
 
  */
-
-package com.pikatimer;
+package com.pikatimer.report;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -14,7 +13,7 @@ import javafx.fxml.Initializable;
  *
  * @author jcgarner
  */
-public class FXMLmainController implements Initializable {
+public class FXMLreportsController implements Initializable {
 
     /**
      * Initializes the controller class.

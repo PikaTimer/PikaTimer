@@ -5,12 +5,8 @@
  */
 
 package com.pikatimer.participant;
-
-
-import com.pikatimer.participant.Participant;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -27,7 +23,7 @@ public class FXMLParticipantController  {
     @FXML private TextField emailField;
     
     @FXML
-    protected void addPerson(ActionEvent event) {
+    protected void addPerson(ActionEvent fxevent) {
         ObservableList<Participant> data = tableView.getItems();
         data.add(new Participant(firstNameField.getText(),
             lastNameField.getText(),

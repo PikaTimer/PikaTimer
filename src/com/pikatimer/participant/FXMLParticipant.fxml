@@ -11,12 +11,12 @@
 <?import javafx.collections.*?>
 <?import com.pikatimer.*?>
 
-<GridPane alignment="CENTER" hgap="10.0" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLParticipantController">
+<GridPane alignment="CENTER" hgap="10.0" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.participant.FXMLParticipantController">
     <padding>
         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
     </padding>
    <children>
-       <Label style="-fx-font: NORMAL 20 Tahoma;" text="Address Book" GridPane.columnIndex="0" GridPane.rowIndex="0">
+       <Label style="-fx-font: NORMAL 20 Tahoma;" text="Registrations" GridPane.columnIndex="0" GridPane.rowIndex="0">
     </Label>
        <TableView fx:id="tableView" GridPane.columnIndex="0" GridPane.rowIndex="1">
            <columns>
@@ -50,6 +50,14 @@
           </children>
          </HBox>
    </children>
+   <columnConstraints>
+      <ColumnConstraints />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+   </rowConstraints>
    
       
 </GridPane>
