@@ -8,8 +8,10 @@ package com.pikatimer;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
@@ -58,6 +60,13 @@ public class Pikatimer extends Application {
         Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLopenEvent.fxml"));
         Scene myScene = new Scene(myPane);
         
+        Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();  
+  
+        //set Stage boundaries so that the main screen is centered. 
+        // FIX THIS to remove the 1000/600 hard coded values
+        primaryStage.setX((primaryScreenBounds.getWidth() - 1000)/2);  
+        primaryStage.setY((primaryScreenBounds.getHeight() - 600)/2);  
+ 
         primaryStage.setScene(myScene);
         primaryStage.show();
     }

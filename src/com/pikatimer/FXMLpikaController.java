@@ -5,10 +5,7 @@
 package com.pikatimer;
 
 import com.pikatimer.event.Event;
-import java.net.URL;
-import java.util.ResourceBundle;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 
 
@@ -29,8 +26,8 @@ public class FXMLpikaController   {
     protected void initialize() {
         // TODO
         //System.out.println("FXMLpikaController initialized!");
-        eventName.textProperty().bind(event.getEventName());
-        eventDate.textProperty().bind(event.getEventDateString());
+        eventName.textProperty().bind(event.getObservableEventName());
+        eventDate.textProperty().bind(event.getObservableEventDateString());
     }
     
     

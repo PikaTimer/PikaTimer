@@ -30,10 +30,16 @@
             </Button>
          </children>
       </HBox>
-      <VBox>
+      <VBox GridPane.rowIndex="0">
          <children>
             <Label alignment="CENTER" prefHeight="43.0" prefWidth="193.0" text="PikaTimer" GridPane.columnIndex="1" />
-            <Label fx:id="eventName" alignment="CENTER" prefHeight="43.0" prefWidth="193.0" text="Race File Name" />
+            <Label fx:id="eventFileName" alignment="CENTER" prefHeight="43.0" prefWidth="193.0" text="" />
+         </children>
+      </VBox>
+      <VBox GridPane.rowIndex="2">
+         <children>
+            <Label fx:id="LoadingLabel" alignment="CENTER" prefHeight="43.0" prefWidth="205.0" text="Loading" textAlignment="CENTER" />
+            <ProgressBar fx:id="LoadingProgressBar" prefHeight="18.0" prefWidth="207.0" progress="0.0" />
          </children>
       </VBox>
    </children>
@@ -43,6 +49,7 @@
    </columnConstraints>
    <rowConstraints>
       <RowConstraints maxHeight="95.0" minHeight="17.0" prefHeight="43.0" />
+      <RowConstraints maxHeight="112.0" minHeight="34.0" prefHeight="86.0" />
       <RowConstraints maxHeight="112.0" minHeight="34.0" prefHeight="86.0" />
    </rowConstraints>
 </GridPane>

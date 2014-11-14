@@ -27,8 +27,8 @@
             </VBox>
             <VBox alignment="CENTER_LEFT" prefHeight="400.0" prefWidth="535.0" spacing="5.0">
                <children>
-                  <TextField fx:id="eventTitle" onAction="#setEventTitle" onInputMethodTextChanged="#setEventTitle" promptText="Event Title" VBox.vgrow="NEVER" />
-                  <DatePicker fx:id="eventDate" onAction="#setEventDate" onInputMethodTextChanged="#setEventDate" promptText="MM/DD/YYYY" VBox.vgrow="NEVER" />
+                  <TextField fx:id="eventTitle" onAction="#setEventTitle"  promptText="Event Title" VBox.vgrow="NEVER" />
+                  <DatePicker fx:id="eventDate" promptText="MM/DD/YYYY" VBox.vgrow="NEVER" />
                </children>
             </VBox>
          </children>

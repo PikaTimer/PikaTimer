@@ -4,21 +4,27 @@
  */
 package com.pikatimer.event;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import javafx.beans.property.SimpleStringProperty;
 
 
+
 /**
- *
+ * TODO: Rip all of the annotations out of this class as they are not needed. 
+ * 
  * @author jcgarner
  */
 public class Event {
     
     private final SimpleStringProperty eventName = new SimpleStringProperty("");
     private final SimpleStringProperty eventDateString = new SimpleStringProperty("");
-    private  LocalDate eventDate = LocalDate.now(); 
-    
+    private LocalDate eventDate = LocalDate.now(); 
+    private final long eventID = 1;
     
  
 	/**
@@ -33,11 +39,23 @@ public class Event {
 		return SingletonHolder.INSTANCE;
 	}
         
+        
+        public Long getEventID(){
+            return eventID;
+        }
+        
+        
+        
         public void setEventName(String a) {
             eventName.set(a);
         } 
-                               
-        public SimpleStringProperty getEventName() {
+        
+        
+        public String getEventName() {
+            return eventName.getValue();
+        }
+        
+        public SimpleStringProperty getObservableEventName() {
             return eventName;
          }
         
@@ -46,7 +64,22 @@ public class Event {
             eventDateString.set(eventDate.format(DateTimeFormatter.ofPattern("MM/dd/yyyy")));
         }
         
-        public SimpleStringProperty getEventDateString() {
+        
+        public Date getEventDate() {
+            return Date.from(eventDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+        }
+        
+        public void setEventDate(Date d) {
+            Instant instant = Instant.ofEpochMilli(d.getTime());
+            setEventDate(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
+
+        }
+        
+        public LocalDate getLocalEventDate() {
+            return eventDate;
+        }
+        
+        public SimpleStringProperty getObservableEventDateString() {
             return eventDateString;
         }
 }
