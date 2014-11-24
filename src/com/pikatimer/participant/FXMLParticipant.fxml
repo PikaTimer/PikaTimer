@@ -16,8 +16,13 @@
         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
     </padding>
    <children>
-       <Label style="-fx-font: NORMAL 20 Tahoma;" text="Registrations" GridPane.columnIndex="0" GridPane.rowIndex="0">
+      <HBox>
+         <children>
+             <Label style="-fx-font: NORMAL 20 Tahoma;" text="Filter" GridPane.columnIndex="0" GridPane.rowIndex="0">
     </Label>
+            <TextField fx:id="filterField" />
+         </children>
+      </HBox>
        <TableView fx:id="tableView" GridPane.columnIndex="0" GridPane.rowIndex="1">
            <columns>
              <TableColumn fx:id="firstNameColumn" prefWidth="100" text="First Name">

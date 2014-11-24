@@ -6,7 +6,9 @@ package com.pikatimer.event;
 
 
 import com.pikatimer.HibernateUtil;
+import java.time.LocalDate;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -41,6 +43,24 @@ public class EventDAO {
             
         }
         
+        public void createEvent() {
+            event.setEventName("New Event");
+            event.setEventDate(LocalDate.now());
+            
+            Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+            s.beginTransaction();
+            // sql to set the name and date
+            Query query = s.createSQLQuery("INSERT into EVENT (ID, EVENT_NAME, EVENT_DATE) values (:id, :name, :date)");
+            query.setParameter("id", 1);
+            query.setParameter("name", event.getEventName());
+            query.setParameter("date", event.getEventDate());
+            query.executeUpdate();
+            s.getTransaction().commit();
+            
+            // Thread.dumpStack(); // who called this?
+            
+        }
+        
         public void getEvent() {
             Session s=HibernateUtil.getSessionFactory().getCurrentSession();
             
@@ -56,7 +76,7 @@ public class EventDAO {
             if (results.isEmpty()) {
                 // nothing in the db, lets create an entry
                 System.out.println("No event in DB, creating one...");
-                updateEvent();
+                createEvent();
             } else {
                 // woot, we have data. :-) 
                 for(Object[] row : results){

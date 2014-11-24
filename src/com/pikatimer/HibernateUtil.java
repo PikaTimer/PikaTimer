@@ -4,6 +4,7 @@
  */
 package com.pikatimer;
 
+import com.pikatimer.participant.Participant;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
@@ -50,6 +51,7 @@ public class HibernateUtil {
     private static Configuration getConfiguration() {
         Configuration cfg = new Configuration();
         //cfg.addAnnotatedClass(Event.class );
+        cfg.addAnnotatedClass(Participant.class);
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");
