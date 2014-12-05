@@ -12,9 +12,9 @@
 <?import javafx.collections.*?>
 <?import com.pikatimer.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLpikaController">
+<AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLpikaController">
    <children>
-      <GridPane id="pikaMainGridPane" alignment="CENTER" hgap="10.0" prefHeight="600.0" prefWidth="1000.0" styleClass="mainFxmlClass" vgap="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <GridPane id="pikaMainGridPane" alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="1000.0" styleClass="mainFxmlClass" vgap="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
           <stylesheets>
               <URL value="@fxmlpika.css" />
           </stylesheets>
@@ -29,7 +29,7 @@
             <RowConstraints />
          </rowConstraints>
          <children>
-            <HBox alignment="CENTER"  AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <HBox alignment="CENTER" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                <children>
                   <Label text="Event Name: " textAlignment="RIGHT">
                      <padding>
@@ -47,9 +47,9 @@
                      </padding></Label>  
                </children>
             </HBox>
-            <AnchorPane GridPane.rowIndex="1">
+            <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="1">
                <children>
-                  <TabPane layoutX="-276.0" minHeight="300.0" minWidth="400.0" prefHeight="519.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="-276.0" AnchorPane.rightAnchor="-279.0" AnchorPane.topAnchor="0.0" GridPane.rowIndex="1">
+                  <TabPane layoutX="-276.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="300.0" minWidth="400.0" prefHeight="519.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="-276.0" AnchorPane.rightAnchor="-279.0" AnchorPane.topAnchor="0.0" GridPane.rowIndex="1">
                     <tabs>
                         <Tab text="Event Details">
                           <content>

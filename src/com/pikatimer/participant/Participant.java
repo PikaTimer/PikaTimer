@@ -5,12 +5,27 @@
 
 package com.pikatimer.participant;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+import org.hibernate.annotations.DynamicUpdate;
 
 /**
  *
@@ -18,58 +33,168 @@ import javax.persistence.Table;
  */
 
 @Entity
+@DynamicUpdate
 @Table(name="PARTICIPANT")
 public class Participant {
     
-   @Id
-   @GeneratedValue
-   @Column(name="PARTICIPANT_ID")
-   private Integer ID; 
-   
-   @Column(name="FIRST_NAME")
-   private String firstName;
-   
-   @Column(name="LAST_NAME")
-   private String lastName;
-   
-   @Column(name="EMAIL")
-   private String email;
 
-
+   
+   private final StringProperty firstNameProperty;
+   private final StringProperty lastNameProperty;
+   private final StringProperty emailProperty; 
+   private final IntegerProperty IDProperty;
+   private final StringProperty bibProperty;
+   private final IntegerProperty ageProperty;
+   private final StringProperty sexProperty; 
+   private final StringProperty cityProperty;
+   private final StringProperty stateProperty;
+   private final StringProperty countryProperty;
+   private LocalDate birthdayProperty; 
+           
     public Participant() {
-        this("", "", "");
+        this("","");
     }
  
-    public Participant(String firstName, String lastName, String email) {
+    public Participant(String firstName, String lastName) {
+        this.firstNameProperty = new SimpleStringProperty();
+        this.lastNameProperty = new SimpleStringProperty();
+        this.emailProperty = new SimpleStringProperty();
+        this.IDProperty = new SimpleIntegerProperty();
+        this.bibProperty = new SimpleStringProperty();
+        this.ageProperty = new SimpleIntegerProperty();
+        this.sexProperty = new SimpleStringProperty();
+        this.cityProperty = new SimpleStringProperty();
+        this.stateProperty = new SimpleStringProperty();
+        this.countryProperty = new SimpleStringProperty();
+        
         setFirstName(firstName);
         setLastName(lastName);
-        setEmail(email);
     }
 
-    public int getID() {
-        return ID; 
+    @Id
+    @GeneratedValue
+    @Column(name="PARTICIPANT_ID")
+    public Integer getID() {
+        return IDProperty.getValue(); 
     }
+    public void setID(Integer id) {
+        IDProperty.setValue(id);
+    }
+    public IntegerProperty idProperty() {
+        return IDProperty; 
+    }
+    
+    @Column(name="FIRST_NAME")
     public String getFirstName() {
-        return firstName;
+        return firstNameProperty.getValueSafe();
+    }
+    public void setFirstName(String fName) {
+        firstNameProperty.setValue(fName);
+    }
+    public StringProperty firstNameProperty() {
+        return firstNameProperty; 
     }
  
-    public void setFirstName(String fName) {
-        firstName=fName;
-    }
-        
+    
+    @Column(name="LAST_NAME")
     public String getLastName() {
-        return lastName;
+        return lastNameProperty.getValueSafe();
     }
-    
     public void setLastName(String fName) {
-        lastName=fName;
+        lastNameProperty.setValue(fName);
+    }
+    public StringProperty lastNameProperty() {
+        return lastNameProperty;
     }
     
+    @Column(name="EMAIL")
     public String getEmail() {
-        return email;
+        return emailProperty.getValueSafe();
+    }
+    public void setEmail(String fName) {
+        emailProperty.setValue(fName);
+    }
+    public StringProperty emailProperty() {
+        return emailProperty; 
     }
     
-    public void setEmail(String fName) {
-        email=fName;
+    @Column(name="BIB_Number")
+    public String getBib() {
+        return bibProperty.getValueSafe();
     }
+    public void setBib(String b) {
+        bibProperty.setValue(b);
+    }
+    public StringProperty bibProperty() {
+        return bibProperty;
+    }
+    
+    @Column(name="AGE")
+    public Integer getAge () {
+        return ageProperty.getValue();
+    }
+    public void setAge (Integer a) {
+        ageProperty.setValue(a);
+    }
+    public IntegerProperty ageProperty() {
+        return ageProperty; 
+    }
+    
+    @Column(name="SEX")
+    public String getSex() {
+        return sexProperty.getValueSafe();
+    }
+    public void setSex(String s) {
+        sexProperty.setValue(s);
+    }
+    public StringProperty sexProperty() {
+        return sexProperty;
+    }
+    
+    @Column(name="CITY")
+    public String getCity() {
+        return cityProperty.getValueSafe();
+    }
+    public void setCity(String c) {
+        cityProperty.setValue(c);
+    }
+    public StringProperty cityProperty() {
+        return cityProperty; 
+    }
+    
+   @Column(name="STATE")
+    public String getState() {
+        return stateProperty.getValueSafe();
+    }
+    public void setState(String s) {
+        stateProperty.setValue(s);
+    }
+    public StringProperty stateProperty(){
+        return stateProperty;
+    }
+    
+    @Column(name="BIRTHDAY",nullable=true)
+    @Temporal(TemporalType.DATE)
+    public Date getBirthday() {
+        if (birthdayProperty != null) {
+            return Date.from(birthdayProperty.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+        } else {
+            return null; 
+        }
+    }
+    public void setBirthday(LocalDate d) {
+        if (d != null) {
+            birthdayProperty = d;
+        }
+    }    
+    public void setBirthday(Date d) {
+        if (d != null) {
+            Instant instant = Instant.ofEpochMilli(d.getTime());
+            setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
+        }
+    }
+    public LocalDate birthdayProperty() {
+        return birthdayProperty;
+    }
+    
 }

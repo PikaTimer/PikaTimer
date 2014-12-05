@@ -1,0 +1,61 @@
+Overall:
+Fix FXML layout resizing
+Add License Key enforcement
+Add 'About' page w/ links to the following items:
+--gliphicons
+--h2 db
+--hibernate
+--AlphanumericComparator 
+--flyaway
+
+Races:
+Add Races
+Specify Distance for race
+Setup AG's
+Setup split locations
+Map segments to split locations (distance, min/max times, display rate: m/s, m/h, k/h, s/100y, s/100m) 
+Setup wave starts (by bib, AG, etc)
+Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
+
+Participants:
+DONE -- Delete a row/rows via a context menu
+DONE -- Select which columns to show (bib, first, last, age, city, race, etc)
+DONE -- Alphanumeric sort of the bib numbers 
+DONE -- Edit an existing entry
+DONE -- Migrate to SimpleStringProperties for better TableView updates
+DONE -- Set focus to the first field after adding/modifying an entry
+DONE -- double click to edit a row
+DONE -- swap bibs menu option if two and only two rows are selected
+import from csv
+export to csv
+Move the participantsList management into the ParticipantDAO
+Error check the fields (age, city, state, bib, etc). 
+Custom fields / attributes
+Update/Add on enter from any valid field
+Link to Teams
+Link to Relay Teams
+Inline Edit of the cells?
+Mass bib assignment 
+sync from active.com / other
+
+Relay Teams? Figure this one out!
+? Relay team attribute set to the team name or team id?
+? Same as regular teams? 
+
+
+Timing:
+Setup bib -> chip map
+import times from file with min/max times
+Continually import times from file (tail in a separate task) to a timing point
+Continually import times from box (via tcp in a separate task) to a timing point
+
+Results:
+Show results
+Publish to static website
+Publish to responsive 5 based website
+Publish to XXXXX.com? 
+
+Awards: 
+Set depth per race
+Set depth based on # registrants / finishers
+

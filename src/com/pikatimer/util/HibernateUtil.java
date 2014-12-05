@@ -2,8 +2,9 @@
  *  Copyright 2014 John Garner. All rights reserved. 
 
  */
-package com.pikatimer;
+package com.pikatimer.util;
 
+import com.pikatimer.Pikatimer;
 import com.pikatimer.participant.Participant;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -56,12 +57,12 @@ public class HibernateUtil {
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");
         cfg.setProperty("hibernate.connection.password", "");
-        cfg.setProperty("hibernate.show_sql", "true");
+        //cfg.setProperty("hibernate.show_sql", "true");
         cfg.setProperty("hibernate.dialect","org.hibernate.dialect.H2Dialect");
         cfg.setProperty("hibernate.cache.provider_class","org.hibernate.cache.NoCacheProvider");
         cfg.setProperty("hibernate.current_session_context_class", "thread");
         cfg.setProperty("hibernate.c3p0.max_size", "4");
-        cfg.setProperty("hibernate.c3p0.min_size", "0");
+        cfg.setProperty("hibernate.c3p0.min_size", "1");
         cfg.setProperty("hibernate.c3p0.timeout", "5000");
         cfg.setProperty("hibernate.c3p0.max_statements", "100");
         cfg.setProperty("hibernate.c3p0.idle_test_period", "300");

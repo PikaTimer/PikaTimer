@@ -15,7 +15,6 @@ import javafx.beans.property.SimpleStringProperty;
 
 
 /**
- * TODO: Rip all of the annotations out of this class as they are not needed. 
  * 
  * @author jcgarner
  */

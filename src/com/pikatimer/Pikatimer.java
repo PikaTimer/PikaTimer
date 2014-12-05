@@ -69,6 +69,8 @@ public class Pikatimer extends Application {
  
         primaryStage.setScene(myScene);
         primaryStage.show();
+        
+        System.out.println("Exiting Pikatimer.start()");
     }
 
     /**
