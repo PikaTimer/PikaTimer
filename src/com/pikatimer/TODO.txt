@@ -7,6 +7,7 @@ Add 'About' page w/ links to the following items:
 --hibernate
 --AlphanumericComparator 
 --flyaway
+--DataFX
 
 Races:
 Add Races
@@ -26,17 +27,19 @@ DONE -- Migrate to SimpleStringProperties for better TableView updates
 DONE -- Set focus to the first field after adding/modifying an entry
 DONE -- double click to edit a row
 DONE -- swap bibs menu option if two and only two rows are selected
+DONE -- Move the participantsList management into the ParticipantDAO
 import from csv
 export to csv
-Move the participantsList management into the ParticipantDAO
 Error check the fields (age, city, state, bib, etc). 
-Custom fields / attributes
+Race Assignment
+Automatic Race Assignment based on bib #
 Update/Add on enter from any valid field
+Custom fields / attributes w/ data types (string, limited select, date, time)
 Link to Teams
 Link to Relay Teams
 Inline Edit of the cells?
 Mass bib assignment 
-sync from active.com / other
+sync from active.com / runsignup / other
 
 Relay Teams? Figure this one out!
 ? Relay team attribute set to the team name or team id?
@@ -46,16 +49,25 @@ Relay Teams? Figure this one out!
 Timing:
 Setup bib -> chip map
 import times from file with min/max times
+Auto detect gun times based on triggers in input files and assign to the race/wave
 Continually import times from file (tail in a separate task) to a timing point
 Continually import times from box (via tcp in a separate task) to a timing point
 
 Results:
 Show results
-Publish to static website
-Publish to responsive 5 based website
-Publish to XXXXX.com? 
+Relay Results
+Publish to static web site
+Publish to responsive 5 based web site
+Publish to 3rd party results web site / XXXXX.com? 
 
 Awards: 
 Set depth per race
 Set depth based on # registrants / finishers
+Team based on top X scorers (specified per team category)
+
+
+
+Series Manager (seperate App)
+select events
+Individual vs Team
 

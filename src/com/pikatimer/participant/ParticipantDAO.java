@@ -42,7 +42,10 @@ public class ParticipantDAO {
         s.beginTransaction();
         s.save(p);
         s.getTransaction().commit();
-        participantsList.add(p);
+        Platform.runLater(() -> {
+            participantsList.add(p);
+        });
+        
     }
     
     public void refreshParticipantsList() { 
@@ -89,7 +92,9 @@ public class ParticipantDAO {
     public void importFromCSV(File csv, Map c2attrib) {
         
     }
-    
+    public void clearAll() {
+        removeParticipants(participantsList);
+    }
     public void removeParticipants(ObservableList<Participant> removeList) {
         
         Task task;

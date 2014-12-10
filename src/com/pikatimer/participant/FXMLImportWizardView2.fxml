@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.text.Font?>
+
+
+<GridPane fx:id="mapGridPane" gridLinesVisible="true" prefHeight="35.0" prefWidth="434.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" maxWidth="228.0" minWidth="10.0" prefWidth="176.0" />
+      <ColumnConstraints hgrow="SOMETIMES" maxWidth="267.0" minWidth="10.0" prefWidth="258.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <Label focusTraversable="false" prefHeight="35.0" prefWidth="138.0" text="CSV Column" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.vgrow="NEVER">
+          <font>
+              <Font size="24.0" />
+          </font>
+      </Label>
+      <Label prefHeight="35.0" prefWidth="223.0" text="Participant Attribute" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.vgrow="NEVER">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+   </children>
+</GridPane>

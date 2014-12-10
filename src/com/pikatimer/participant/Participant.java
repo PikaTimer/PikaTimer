@@ -12,11 +12,15 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -70,7 +74,42 @@ public class Participant {
         setFirstName(firstName);
         setLastName(lastName);
     }
-
+    public static ObservableMap getAvailableAttributes() {
+        ObservableMap<String,String> attribMap = FXCollections.observableHashMap();
+        attribMap.put("bib", "Bib");
+        attribMap.put("firstName", "First Name");
+        attribMap.put("lastName", "Last Name");
+        attribMap.put("age", "Age");
+        attribMap.put("sex", "Sex");
+        attribMap.put("city", "City");
+        attribMap.put("state", "State");
+        attribMap.put("country", "Country");
+        attribMap.put("email", "EMail");
+        // routine to add custom attributes based on db lookup
+        return attribMap; 
+    }
+    
+    public Participant(Map<String, String> attribMap) {
+        // bulk set routine. Everything is a string so convert as needed
+        this("","");
+        attribMap.entrySet().stream().forEach((Map.Entry<String, String> entry) -> {
+            if (entry.getKey() != null) {
+                //System.out.println("processing " + entry.getKey() );
+             switch(entry.getKey()) {
+                 case "bib": this.setBib(entry.getValue()); break; 
+                 case "firstName": this.setFirstName(entry.getValue()); break;
+                 case "lastName": this.setLastName(entry.getValue()); break;
+                     // TODO: catch bad integers 
+                 case "age": this.setAge(Integer.parseUnsignedInt(entry.getValue())); break; 
+                 case "sex": this.setSex(entry.getValue()); break; 
+                 case "city": this.setCity(entry.getValue()); break; 
+                 case "state": this.setState(entry.getValue()); break; 
+                 case "email": this.setEmail(entry.getValue()); break; 
+             }
+            }
+        });
+    }
+    
     @Id
     @GeneratedValue
     @Column(name="PARTICIPANT_ID")

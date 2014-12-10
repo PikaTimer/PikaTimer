@@ -6,19 +6,25 @@
 
 package com.pikatimer.participant;
 import com.pikatimer.util.AlphanumericComparator;
-import java.util.Iterator;
+import io.datafx.controller.flow.Flow;
+import io.datafx.controller.flow.FlowException;
+import io.datafx.controller.flow.FlowHandler;
+import io.datafx.controller.flow.container.DefaultFlowContainer;
+import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.collections.ObservableList;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -28,8 +34,10 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.util.Callback;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 /**
  *
@@ -315,22 +323,28 @@ public class FXMLParticipantController  {
         resetForm();
     }
     
-    public void importParticipants(ActionEvent fxevent){
-        long starttime = System.currentTimeMillis();
-        
-        for ( int i=1; i<=10000; i++ ) {
-            Participant p = new Participant("Test" + Integer.toString(i), "Last");
-            p.setBib(Integer.toString(i));
-            participantDAO.addParticipant(p);
-        }
-        long endtime = System.currentTimeMillis();
-        System.out.println("Import Time: " + (endtime-starttime));
-        
-        
-
+    public void importParticipants(ActionEvent fxevent) throws FlowException{
+//        long starttime = System.currentTimeMillis();
+//        
+//        for ( int i=1; i<=10000; i++ ) {
+//            Participant p = new Participant("Test" + Integer.toString(i), "Last");
+//            p.setBib(Integer.toString(i));
+//            participantDAO.addParticipant(p);
+//        }
+//        long endtime = System.currentTimeMillis();
+//        System.out.println("Import Time: " + (endtime-starttime));
+      
         // todo
-         
+        Stage importStage = new Stage();
+                
+        Flow flow  = new Flow(ImportWizardController.class);
         
+        FlowHandler flowHandler = flow.createHandler();
+
+        StackPane pane = flowHandler.start(new DefaultFlowContainer());
+        importStage.setScene(new Scene(pane));
+        importStage.initModality(Modality.APPLICATION_MODAL);
+        importStage.show(); 
        // Open a dialog to get the file name
        // radio button for clearing the existing data or merging the data
         
@@ -339,7 +353,7 @@ public class FXMLParticipantController  {
        // map the headers to fields
         
        // import the csv file by calling 
-       //participantDAO.importFromCSV(null, null);
+       //participantDAO.importFromCSV(file, property2columMap );
        
     }
     
@@ -351,8 +365,18 @@ public class FXMLParticipantController  {
     }
     
     public void clearParticipants(ActionEvent fxevent){
-        // todo
-        // warning dialog. if yes, call ParticipantDAO.clearAll(); 
-        // and then //participantsList.clear();
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Confirm Participant Removal");
+        alert.setHeaderText("This will remove all Participants from the event.");
+        alert.setContentText("This action cannot be undone. Are you sure you want to do this?");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == ButtonType.OK){
+            participantDAO.clearAll();
+            resetForm(); 
+        } else {
+            // ... user chose CANCEL or closed the dialog
+        }
+        
     }
 }
