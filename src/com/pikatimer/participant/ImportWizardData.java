@@ -19,7 +19,14 @@ class ImportWizardData {
     private final SimpleStringProperty filename = new SimpleStringProperty();
     private final Map<String, String> attributeMap = new HashMap<>();
     private ResultSet rs = null;
-
+    private int numToAdd = 0; 
+    
+    public int getNumToAdd() {
+        return numToAdd;
+    }
+    public void setNumToAdd(int i) {
+        numToAdd = i; 
+    }
     public String getFileName() {
         return filename.getValueSafe();
     }

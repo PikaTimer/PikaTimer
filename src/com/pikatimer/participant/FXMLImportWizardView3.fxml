@@ -9,11 +9,10 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.text.Font?>
 
-
-<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" />
-      <Label fx:id="label" text="Done! :)">
+      <ProgressBar fx:id="progressBar" prefWidth="350.0" progress="0.0" />
+      <Label fx:id="label" alignment="CENTER" contentDisplay="CENTER" prefWidth="350.0" text="Processing...">
           <font>
               <Font size="24.0" />
           </font>

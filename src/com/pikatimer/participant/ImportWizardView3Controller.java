@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -40,6 +41,7 @@ public class ImportWizardView3Controller {
         ImportWizardData model = context.getRegisteredObject(ImportWizardData.class);
         // Take the csv file name and attribute map and start the import
         
+        label.setText("Adding Participants...");
         Map<String,String> mapping = model.getAttributeMap(); 
         
         // add in a progress bar
@@ -57,16 +59,21 @@ public class ImportWizardView3Controller {
                 //To change body of generated methods, choose Tools | Templates.
                 // get the ParticipantDAO object
                 ParticipantDAO participantDAO = ParticipantDAO.getInstance(); 
+               int numAdded = 0; 
+               int numToAdd = model.getNumToAdd(); 
+               
+               participantDAO.clearAll(); // add check to see if we should clear first
                
                 try {
                     ResultSet rs = new Csv().read(model.getFileName(),null,null);
                     ResultSetMetaData meta = rs.getMetaData();
                     while (rs.next()) {
+                        numAdded++; 
                         Map<String,String> p = new HashMap<>();
                         
                         for (int i = 0; i < meta.getColumnCount(); i++) {
                             if (mapping.get(meta.getColumnLabel(i+1)) != null) {
-                                System.out.println(rs.getString(i+1) + " -> " + mapping.get(meta.getColumnLabel(i+1)));
+                                //System.out.println(rs.getString(i+1) + " -> " + mapping.get(meta.getColumnLabel(i+1)));
                                 p.put(mapping.get(meta.getColumnLabel(i+1)),rs.getString(i+1)); 
                             }
                         }
@@ -79,20 +86,26 @@ public class ImportWizardView3Controller {
                         
                         //System.out.println("Adding " + newPerson.getFirstName() + " " + newPerson.getLastName() );
                         participantDAO.addParticipant(newPerson);
+                        
+                        updateProgress(numAdded,numToAdd);
+                        updateMessage("Adding " + newPerson.getFirstName() + " " + newPerson.getLastName() );
+                        
                     }
                 } catch (SQLException ex) {
                     System.out.println("Something bad happened... ");
                     Logger.getLogger(ImportWizardView2Controller.class.getName()).log(Level.SEVERE, null, ex);
                 }
+                updateMessage("Done! Added " + numAdded + "participants.");
+                
                 return null; 
             }
         };
         
         //TODO: Update the progress bar
         //TODO: hide the 'done' button until the task is, well, done. 
-        //progressBar.progressProperty().bind(importTask.progressProperty());
+        progressBar.progressProperty().bind(importTask.progressProperty());
+        label.textProperty().bind(importTask.messageProperty());
         new Thread(importTask).start();
-        
-        
+                
     }
 }

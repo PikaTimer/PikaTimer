@@ -12,75 +12,71 @@
 <?import javafx.collections.*?>
 <?import com.pikatimer.*?>
 
-<AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLpikaController">
+
+<GridPane id="pikaMainGridPane" alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="1000.0" styleClass="mainFxmlClass" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLpikaController">
+    <stylesheets>
+        <URL value="@fxmlpika.css" />
+    </stylesheets>
+    <padding>
+        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+    </padding>
+   <columnConstraints>
+      <ColumnConstraints />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints />
+      <RowConstraints />
+   </rowConstraints>
    <children>
-      <GridPane id="pikaMainGridPane" alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="1000.0" styleClass="mainFxmlClass" vgap="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-          <stylesheets>
-              <URL value="@fxmlpika.css" />
-          </stylesheets>
-          <padding>
-              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-          </padding>
-         <columnConstraints>
-            <ColumnConstraints />
-         </columnConstraints>
-         <rowConstraints>
-            <RowConstraints />
-            <RowConstraints />
-         </rowConstraints>
+      <HBox alignment="CENTER" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.hgrow="ALWAYS" GridPane.vgrow="NEVER">
          <children>
-            <HBox alignment="CENTER" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-               <children>
-                  <Label text="Event Name: " textAlignment="RIGHT">
-                     <padding>
-                        <Insets right="5.0" />
-                     </padding></Label>
-                  <Label fx:id="eventName" text="" textAlignment="RIGHT" />
-                  
+            <Label text="Event Name: " textAlignment="RIGHT">
+               <padding>
+                  <Insets right="5.0" />
+               </padding>
+            </Label>
+            <Label fx:id="eventName" text="" textAlignment="RIGHT" />
+            
                   <Label text="Event Date">
-                     <padding>
-                        <Insets left="20.0" />
-                     </padding></Label>
-                  <Label fx:id="eventDate" text="" textAlignment="RIGHT">
-                     <padding>
-                        <Insets left="5.0" />
-                     </padding></Label>  
-               </children>
-            </HBox>
-            <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="1">
-               <children>
-                  <TabPane layoutX="-276.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="300.0" minWidth="400.0" prefHeight="519.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="-276.0" AnchorPane.rightAnchor="-279.0" AnchorPane.topAnchor="0.0" GridPane.rowIndex="1">
-                    <tabs>
-                        <Tab text="Event Details">
-                          <content>
-                            <fx:include fx:id="eventTabPage" source="event/FXMLevent.fxml" />
-                          </content>
-                        </Tab>
-                      <Tab text="Participants">
-                        <content>
-                            <fx:include fx:id="participantTabPage" source="participant/FXMLParticipant.fxml" />
-                        </content>
-                      </Tab>
-                      <Tab text="Races">
-                        <content>
-                          <AnchorPane minHeight="0.0" minWidth="0.0" />
-                        </content>
-                      </Tab>
-                        <Tab text="Timing">
-                          <content>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" />
-                          </content>
-                        </Tab>
-                        <Tab text="Results">
-                          <content>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" />
-                          </content>
-                        </Tab>
-                    </tabs>
-                  </TabPane>
-               </children>
-            </AnchorPane>
+               <padding>
+                  <Insets left="20.0" />
+               </padding>
+            </Label>
+            <Label fx:id="eventDate" text="" textAlignment="RIGHT">
+               <padding>
+                  <Insets left="5.0" />
+               </padding>
+            </Label>  
          </children>
-      </GridPane>
+      </HBox>
+      <TabPane layoutX="-276.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="300.0" minWidth="400.0" prefHeight="519.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="-276.0" AnchorPane.rightAnchor="-279.0" AnchorPane.topAnchor="0.0" GridPane.rowIndex="1">
+        <tabs>
+            <Tab closable="false" text="Event Details">
+              <content>
+                <fx:include fx:id="eventTabPage" source="event/FXMLevent.fxml" />
+              </content>
+            </Tab>
+          <Tab closable="false" text="Participants">
+            <content>
+                <fx:include fx:id="participantTabPage" source="participant/FXMLParticipant.fxml" />
+            </content>
+          </Tab>
+          <Tab text="Races">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" />
+            </content>
+          </Tab>
+            <Tab text="Timing">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" />
+              </content>
+            </Tab>
+            <Tab text="Results">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" />
+              </content>
+            </Tab>
+        </tabs>
+      </TabPane>
    </children>
-</AnchorPane>
+</GridPane>

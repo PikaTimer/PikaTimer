@@ -68,6 +68,10 @@ public class ImportWizardView2Controller {
                 csvColumns.add(meta.getColumnLabel(i+1));
                 System.out.println(meta.getColumnLabel(i+1));
             }
+            int numAdded = 0;
+            while (rs.next()) { numAdded++; }
+            model.setNumToAdd(numAdded);
+            
         } catch (SQLException ex) {
             Logger.getLogger(ImportWizardView2Controller.class.getName()).log(Level.SEVERE, null, ex);
         }
