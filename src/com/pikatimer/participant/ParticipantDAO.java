@@ -6,15 +6,12 @@ package com.pikatimer.participant;
 
 import java.util.List; 
 import com.pikatimer.util.HibernateUtil;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import org.hibernate.HibernateException;
 import org.hibernate.Session;
 
 
@@ -26,16 +23,16 @@ public class ParticipantDAO {
     private static final ObservableList<Participant> participantsList =FXCollections.observableArrayList();;
     
     /**
-	* SingletonHolder is loaded on the first execution of Singleton.getInstance() 
-	* or the first access to SingletonHolder.INSTANCE, not before.
-	*/
-	private static class SingletonHolder { 
-		private static final ParticipantDAO INSTANCE = new ParticipantDAO();
-	}
- 
-	public static ParticipantDAO getInstance() {
-		return SingletonHolder.INSTANCE;
-	}
+    * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
+    * or the first access to SingletonHolder.INSTANCE, not before.
+    */
+    private static class SingletonHolder { 
+            private static final ParticipantDAO INSTANCE = new ParticipantDAO();
+    }
+
+    public static ParticipantDAO getInstance() {
+            return SingletonHolder.INSTANCE;
+    }
     
     public void addParticipant(Participant p) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
@@ -68,9 +65,7 @@ public class ParticipantDAO {
         if(!participantsList.isEmpty())
             participantsList.clear();
         participantsList.addAll(list);
-        //return participantsList;
-        //return list;
-    }  
+    }     
     
     public ObservableList<Participant> listParticipants() { 
 
@@ -87,11 +82,6 @@ public class ParticipantDAO {
         participantsList.remove(p);
     }      
     
-    //Import from a csv file. Take a map that is the colum to attribute mapping
-    // for that csv
-    public void importFromCSV(File csv, Map c2attrib) {
-        
-    }
     public void clearAll() {
         removeParticipants(participantsList);
     }

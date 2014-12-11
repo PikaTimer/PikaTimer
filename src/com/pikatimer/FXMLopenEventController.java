@@ -100,6 +100,7 @@ public class FXMLopenEventController {
                 primaryStage.show();
             } catch (IOException ex) {
                 System.out.println("OOPS! " + getClass().getResource("FXMLpika.fxml"));
+                ex.printStackTrace();
             }
     }
        

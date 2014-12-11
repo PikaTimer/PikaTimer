@@ -63,7 +63,7 @@
           </Tab>
           <Tab text="Races">
             <content>
-              <AnchorPane minHeight="0.0" minWidth="0.0" />
+              <fx:include fx:id="raceTabPage" source="race/FXMLRace.fxml" />
             </content>
           </Tab>
             <Tab text="Timing">
