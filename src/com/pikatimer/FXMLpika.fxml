@@ -53,7 +53,7 @@
         <tabs>
             <Tab closable="false" text="Event Details">
               <content>
-                <fx:include fx:id="eventTabPage" source="event/FXMLevent.fxml" />
+                <fx:include fx:id="eventTabPage" source="event/FXMLEvent.fxml" />
               </content>
             </Tab>
           <Tab closable="false" text="Participants">
@@ -63,7 +63,7 @@
           </Tab>
           <Tab text="Races">
             <content>
-              <fx:include fx:id="raceTabPage" source="race/FXMLrace.fxml" />
+              <fx:include fx:id="raceTabPage" source="race/FXMLRace.fxml" />
             </content>
           </Tab>
             <Tab text="Timing">
