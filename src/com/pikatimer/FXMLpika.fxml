@@ -63,7 +63,7 @@
           </Tab>
           <Tab text="Races">
             <content>
-              <fx:include fx:id="raceTabPage" source="race/FXMLRace.fxml" />
+              <fx:include fx:id="raceTabPage" source="race/FXMLrace.fxml" />
             </content>
           </Tab>
             <Tab text="Timing">
