@@ -8,12 +8,16 @@ import java.util.List;
 import com.pikatimer.util.HibernateUtil;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.Semaphore;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import org.hibernate.Session;
 
+/**
+ * TODO: Figure out the locking so that mass updates/deletes/etc do not screw things up
+ */
 
 /**
  *
@@ -21,6 +25,7 @@ import org.hibernate.Session;
  */
 public class ParticipantDAO {
     private static final ObservableList<Participant> participantsList =FXCollections.observableArrayList();;
+    Semaphore semaphore = new Semaphore(1);
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -116,9 +121,35 @@ public class ParticipantDAO {
             }
         };
         new Thread(task).start();
-        
-                
     }   
+    public void blockingClearAll() {
+        blockingRemoveParticipants(participantsList);
+    }
+    public void blockingRemoveParticipants(ObservableList<Participant> removeList) {
+        int max = removeList.size();
+        int i=1;
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        int count = 0;
+        Iterator<Participant> deleteMeIterator = removeList.iterator();
+        while (deleteMeIterator.hasNext()) {
+            Participant p = deleteMeIterator.next();
+            s.delete(p); 
+            if ( ++count % 20 == 0 ) {
+                //flush a batch of updates and release memory:
+                s.flush();
+                s.clear();
+            }
+
+        }
+        s.getTransaction().commit(); 
+
+        Platform.runLater(() -> {
+                refreshParticipantsList();
+            });
+                
+
+    }  
     
     public void updateParticipant(Participant p) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();

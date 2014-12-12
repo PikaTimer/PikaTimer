@@ -18,7 +18,7 @@ import javafx.scene.control.TextField;
  *
  * @author jcgarner
  */
-public class FXMLeventController  {
+public class FXMLEventController  {
     
     private final Event event = Event.getInstance();
     private EventDAO eDAO; 

@@ -28,7 +28,9 @@ DONE -- Set focus to the first field after adding/modifying an entry
 DONE -- double click to edit a row
 DONE -- swap bibs menu option if two and only two rows are selected
 DONE -- Move the participantsList management into the ParticipantDAO
-import from csv
+DONE -- import from csv
+Clean up import from csv 
+Block concurrent threads locking up the table on mass write/delete
 export to csv
 Error check the fields (age, city, state, bib, etc). 
 Race Assignment
