@@ -70,7 +70,7 @@ public class FXMLopenEventController {
             LoadingProgressBar.setProgress(0.10F);
             System.out.println("Progress: " + LoadingProgressBar.getProgress());
             jdbcURL = "jdbc:h2:file:" + dbFile.getAbsolutePath().replace(".mv.db", "");
-            jdbcURL += ";TRACE_LEVEL_FILE=0;TRACE_LEVEL_SYSTEM_OUT=0;CACHE_SIZE=131072;MVCC=FALSE"; // disable trace options
+            jdbcURL += ";TRACE_LEVEL_FILE=0;TRACE_LEVEL_SYSTEM_OUT=0;CACHE_SIZE=131072"; // disable trace options
             Pikatimer.setJdbcUrl(jdbcURL);
             LoadingProgressBar.setProgress(0.15F);
             flyway.setDataSource(jdbcURL , "sa", null);

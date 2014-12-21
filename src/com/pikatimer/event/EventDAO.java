@@ -8,7 +8,6 @@ package com.pikatimer.event;
 import com.pikatimer.util.HibernateUtil;
 import java.time.LocalDate;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import org.hibernate.Query;
 import org.hibernate.Session;

@@ -10,7 +10,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.control.TabPane;
 
 
 
@@ -24,7 +27,7 @@ public class Event {
     private final SimpleStringProperty eventDateString = new SimpleStringProperty("");
     private LocalDate eventDate = LocalDate.now(); 
     private final long eventID = 1;
-    
+    private  TabPane mainTabPane;  
  
 	/**
 	* SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -43,7 +46,12 @@ public class Event {
             return eventID;
         }
         
-        
+        public void setMainTabPane(TabPane m) {
+            mainTabPane=m; 
+        }
+        public TabPane getMainTabPane() {
+            return mainTabPane; 
+        }
         
         public void setEventName(String a) {
             eventName.set(a);

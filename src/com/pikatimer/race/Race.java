@@ -4,25 +4,23 @@
  */
 package com.pikatimer.race;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.Map;
+import com.pikatimer.util.Unit;
+import java.math.BigDecimal;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
@@ -32,76 +30,50 @@ public class Race {
     
 
    
-   private final StringProperty firstNameProperty;
-   private final StringProperty lastNameProperty;
-   private final StringProperty emailProperty; 
+
    private final IntegerProperty IDProperty;
-   private final StringProperty bibProperty;
-   private final IntegerProperty ageProperty;
-   private final StringProperty sexProperty; 
-   private final StringProperty cityProperty;
-   private final StringProperty stateProperty;
-   private final StringProperty countryProperty;
-   private LocalDate birthdayProperty; 
+
+   private BigDecimal raceDistance; //
+   private Unit raceUnits; 
+   private final StringProperty raceUnitsProperty; 
+   private final StringProperty raceName;
+   private  LocalTime raceStart;
+   private  LocalTime raceCutoff; 
+   private final StringProperty raceBibStart;
+   private final StringProperty raceBibEnd;
+   private final BooleanProperty relayRace; 
+   
+   //private final ObservableList<split> raceSplits;
+   //private final ObservableList<wave> raceWaves; 
            
-    public Race() {
-        this("","");
-    }
- 
-    public Race(String firstName, String lastName) {
-        this.firstNameProperty = new SimpleStringProperty();
-        this.lastNameProperty = new SimpleStringProperty();
-        this.emailProperty = new SimpleStringProperty();
+        public Race() {
+
         this.IDProperty = new SimpleIntegerProperty();
-        this.bibProperty = new SimpleStringProperty();
-        this.ageProperty = new SimpleIntegerProperty();
-        this.sexProperty = new SimpleStringProperty();
-        this.cityProperty = new SimpleStringProperty();
-        this.stateProperty = new SimpleStringProperty();
-        this.countryProperty = new SimpleStringProperty();
+        this.raceUnitsProperty = new SimpleStringProperty();
+        this.raceName = new SimpleStringProperty();
+        this.raceBibStart = new SimpleStringProperty();
+        this.raceBibEnd = new SimpleStringProperty();
+        this.relayRace = new SimpleBooleanProperty();
         
-        setFirstName(firstName);
-        setLastName(lastName);
+        //this.raceCutoff = LocalTime.parse("10:30");
+        
+        //raceSplits = FXCollections.observableArrayList();
+        //raceWaves = FXCollections.observableArrayList();
     }
-    public static ObservableMap getAvailableAttributes() {
-        ObservableMap<String,String> attribMap = FXCollections.observableHashMap();
-        attribMap.put("bib", "Bib");
-        attribMap.put("firstName", "First Name");
-        attribMap.put("lastName", "Last Name");
-        attribMap.put("age", "Age");
-        attribMap.put("sex", "Sex");
-        attribMap.put("city", "City");
-        attribMap.put("state", "State");
-        attribMap.put("country", "Country");
-        attribMap.put("email", "EMail");
-        // routine to add custom attributes based on db lookup
-        return attribMap; 
-    }
+        
+//    public static ObservableList getRaceSplits() {
+//        return raceSplits; 
+//    }
     
-    public Race(Map<String, String> attribMap) {
-        // bulk set routine. Everything is a string so convert as needed
-        this("","");
-        attribMap.entrySet().stream().forEach((Map.Entry<String, String> entry) -> {
-            if (entry.getKey() != null) {
-                //System.out.println("processing " + entry.getKey() );
-             switch(entry.getKey()) {
-                 case "bib": this.setBib(entry.getValue()); break; 
-                 case "firstName": this.setFirstName(entry.getValue()); break;
-                 case "lastName": this.setLastName(entry.getValue()); break;
-                     // TODO: catch bad integers 
-                 case "age": this.setAge(Integer.parseUnsignedInt(entry.getValue())); break; 
-                 case "sex": this.setSex(entry.getValue()); break; 
-                 case "city": this.setCity(entry.getValue()); break; 
-                 case "state": this.setState(entry.getValue()); break; 
-                 case "email": this.setEmail(entry.getValue()); break; 
-             }
-            }
-        });
-    }
+//    public static ObservableList getRaceWaves() {
+//        return raceWaves; 
+//    }     
+        
+
     
     @Id
     @GeneratedValue
-    @Column(name="PARTICIPANT_ID")
+    @Column(name="RACE_ID")
     public Integer getID() {
         return IDProperty.getValue(); 
     }
@@ -112,117 +84,86 @@ public class Race {
         return IDProperty; 
     }
     
-    @Column(name="FIRST_NAME")
-    public String getFirstName() {
-        return firstNameProperty.getValueSafe();
+    @Column(name="RACE_NAME")
+    public String getRaceName() {
+        return raceName.getValueSafe();
     }
-    public void setFirstName(String fName) {
-        firstNameProperty.setValue(fName);
+    public void setRaceName(String n) {
+        raceName.setValue(n);
     }
-    public StringProperty firstNameProperty() {
-        return firstNameProperty; 
-    }
- 
-    
-    @Column(name="LAST_NAME")
-    public String getLastName() {
-        return lastNameProperty.getValueSafe();
-    }
-    public void setLastName(String fName) {
-        lastNameProperty.setValue(fName);
-    }
-    public StringProperty lastNameProperty() {
-        return lastNameProperty;
+    public StringProperty raceNameProperty() {
+        return raceName;
     }
     
-    @Column(name="EMAIL")
-    public String getEmail() {
-        return emailProperty.getValueSafe();
+    @Column(name="RACE_DISTANCE", precision = 9, scale = 3)
+    public BigDecimal getRaceDistance() {
+        return raceDistance;
     }
-    public void setEmail(String fName) {
-        emailProperty.setValue(fName);
+    public void setRaceDistance(Float d) {
+        raceDistance = new BigDecimal(d).setScale(3, BigDecimal.ROUND_HALF_UP);
     }
-    public StringProperty emailProperty() {
-        return emailProperty; 
+    public void raceDistanceProperty(BigDecimal d) {
+        raceDistance = d;
     }
-    
-    @Column(name="BIB_Number")
-    public String getBib() {
-        return bibProperty.getValueSafe();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="RACE_UNITS")
+    public Unit getRaceDistanceUnits() {
+        return raceUnits;
     }
-    public void setBib(String b) {
-        bibProperty.setValue(b);
+    public void setRaceDistanceUnits(Unit d) {
+        raceUnits=d;
+        raceUnitsProperty.setValue(d.toString());
     }
-    public StringProperty bibProperty() {
-        return bibProperty;
-    }
-    
-    @Column(name="AGE")
-    public Integer getAge () {
-        return ageProperty.getValue();
-    }
-    public void setAge (Integer a) {
-        ageProperty.setValue(a);
-    }
-    public IntegerProperty ageProperty() {
-        return ageProperty; 
+    public StringProperty raceDistanceUnitsProperty() {
+        return raceUnitsProperty;
     }
     
-    @Column(name="SEX")
-    public String getSex() {
-        return sexProperty.getValueSafe();
+    @Column(name="BIB_START")
+    public String getBibStart() {
+        return raceBibStart.getValueSafe();
     }
-    public void setSex(String s) {
-        sexProperty.setValue(s);
+    public void setBibStart(String b) {
+        raceBibStart.setValue(b);
     }
-    public StringProperty sexProperty() {
-        return sexProperty;
-    }
-    
-    @Column(name="CITY")
-    public String getCity() {
-        return cityProperty.getValueSafe();
-    }
-    public void setCity(String c) {
-        cityProperty.setValue(c);
-    }
-    public StringProperty cityProperty() {
-        return cityProperty; 
+    public StringProperty bibStartProperty() {
+        return raceBibStart;
     }
     
-   @Column(name="STATE")
-    public String getState() {
-        return stateProperty.getValueSafe();
+    @Column(name="BIB_END")
+    public String getBibEnd() {
+        return raceBibEnd.getValueSafe();
     }
-    public void setState(String s) {
-        stateProperty.setValue(s);
+    public void setBibEnd(String b) {
+        raceBibEnd.setValue(b);
     }
-    public StringProperty stateProperty(){
-        return stateProperty;
+    public StringProperty bibEndProperty() {
+        return raceBibEnd;
     }
     
-    @Column(name="BIRTHDAY",nullable=true)
-    @Temporal(TemporalType.DATE)
-    public Date getBirthday() {
-        if (birthdayProperty != null) {
-            return Date.from(birthdayProperty.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-        } else {
-            return null; 
-        }
+    
+    @Column(name="START_TIME",nullable=true)
+    public String getRaceStart() {
+        return raceStart.format(DateTimeFormatter.ISO_LOCAL_TIME);
+        //return raceCutoff.toString();
     }
-    public void setBirthday(LocalDate d) {
-        if (d != null) {
-            birthdayProperty = d;
-        }
-    }    
-    public void setBirthday(Date d) {
-        if (d != null) {
-            Instant instant = Instant.ofEpochMilli(d.getTime());
-            setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
-        }
+    public void setRaceStart(String c) {
+        raceStart = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
     }
-    public LocalDate birthdayProperty() {
-        return birthdayProperty;
+    public LocalTime raceStartProperty(){
+        return raceStart; 
+    }
+    
+    @Column(name="CUTOFF_TIME", nullable=true)
+    public String getRaceCutoff() {
+        return raceCutoff.format(DateTimeFormatter.ISO_LOCAL_TIME);
+        //return raceCutoff.toString();
+    }
+    public void setRaceCutoff(String c) {
+        raceCutoff = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
+    }
+    public LocalTime raceCutoffProperty(){
+        return raceCutoff; 
     }
     
 }

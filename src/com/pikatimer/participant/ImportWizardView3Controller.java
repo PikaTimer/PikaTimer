@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -61,12 +63,17 @@ public class ImportWizardView3Controller {
                 ParticipantDAO participantDAO = ParticipantDAO.getInstance(); 
                int numAdded = 0; 
                int numToAdd = model.getNumToAdd(); 
+               updateProgress(numAdded,numToAdd);
                
-               participantDAO.clearAll(); // add check to see if we should clear first
+               // add check to see if we should clear first
+               updateMessage("Clearing the existing participants...");
+               participantDAO.blockingClearAll(); 
                
+               ObservableList<Participant> participantsList =FXCollections.observableArrayList();
                 try {
                     ResultSet rs = new Csv().read(model.getFileName(),null,null);
                     ResultSetMetaData meta = rs.getMetaData();
+                    
                     while (rs.next()) {
                         numAdded++; 
                         Map<String,String> p = new HashMap<>();
@@ -85,8 +92,8 @@ public class ImportWizardView3Controller {
                         //TODO: Cleanup City/State (if zip specified)
                         
                         //System.out.println("Adding " + newPerson.getFirstName() + " " + newPerson.getLastName() );
-                        participantDAO.addParticipant(newPerson);
-                        
+                        //participantDAO.addParticipant(newPerson);
+                        participantsList.add(newPerson);
                         updateProgress(numAdded,numToAdd);
                         updateMessage("Adding " + newPerson.getFirstName() + " " + newPerson.getLastName() );
                         
@@ -95,7 +102,9 @@ public class ImportWizardView3Controller {
                     System.out.println("Something bad happened... ");
                     Logger.getLogger(ImportWizardView2Controller.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                updateMessage("Done! Added " + numAdded + "participants.");
+                updateMessage("Saving...");
+                participantDAO.addParticipant(participantsList);
+                updateMessage("Done! Added " + numAdded + " participants.");
                 
                 return null; 
             }

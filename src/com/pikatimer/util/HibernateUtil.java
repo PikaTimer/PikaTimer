@@ -6,6 +6,7 @@ package com.pikatimer.util;
 
 import com.pikatimer.Pikatimer;
 import com.pikatimer.participant.Participant;
+import com.pikatimer.race.Race;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
@@ -53,11 +54,12 @@ public class HibernateUtil {
         Configuration cfg = new Configuration();
         //cfg.addAnnotatedClass(Event.class );
         cfg.addAnnotatedClass(Participant.class);
+        cfg.addAnnotatedClass(Race.class);
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");
         cfg.setProperty("hibernate.connection.password", "");
-        //cfg.setProperty("hibernate.show_sql", "true");
+        cfg.setProperty("hibernate.show_sql", "true");
         cfg.setProperty("hibernate.dialect","org.hibernate.dialect.H2Dialect");
         cfg.setProperty("hibernate.cache.provider_class","org.hibernate.cache.NoCacheProvider");
         cfg.setProperty("hibernate.current_session_context_class", "thread");

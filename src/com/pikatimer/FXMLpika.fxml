@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
 <?import java.lang.*?>
 <?import java.net.*?>
@@ -12,44 +13,39 @@
 <?import javafx.collections.*?>
 <?import com.pikatimer.*?>
 
-
-<GridPane id="pikaMainGridPane" alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="1000.0" styleClass="mainFxmlClass" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLpikaController">
+<GridPane id="pikaMainGridPane" alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="1000.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLpikaController">
     <stylesheets>
         <URL value="@fxmlpika.css" />
     </stylesheets>
-    <padding>
-        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-    </padding>
    <columnConstraints>
-      <ColumnConstraints />
+      <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" />
    </columnConstraints>
    <rowConstraints>
-      <RowConstraints />
-      <RowConstraints />
+      <RowConstraints fillHeight="false" maxHeight="-Infinity" minHeight="37.0" prefHeight="37.0" valignment="CENTER" vgrow="NEVER" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="500.0" valignment="CENTER" vgrow="ALWAYS" />
    </rowConstraints>
    <children>
-      <HBox alignment="CENTER" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.hgrow="ALWAYS" GridPane.vgrow="NEVER">
+      <HBox alignment="CENTER" fillHeight="false" spacing="5.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER" GridPane.vgrow="NEVER">
          <children>
-            <Label text="Event Name: " textAlignment="RIGHT">
-               <padding>
-                  <Insets right="5.0" />
-               </padding>
-            </Label>
-            <Label fx:id="eventName" text="" textAlignment="RIGHT" />
-            
-                  <Label text="Event Date">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-            </Label>
-            <Label fx:id="eventDate" text="" textAlignment="RIGHT">
+            <Label fx:id="eventName" text="Event name" HBox.hgrow="SOMETIMES">
+               <font>
+                  <Font size="24.0" />
+               </font></Label>
+            <Pane prefWidth="50.0" HBox.hgrow="SOMETIMES" />
+            <Label fx:id="eventDate" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minHeight="-Infinity" minWidth="-Infinity" prefWidth="161.0" text="MM/DD/YYYY" textAlignment="RIGHT" HBox.hgrow="SOMETIMES">
                <padding>
                   <Insets left="5.0" />
                </padding>
+               <font>
+                  <Font size="24.0" />
+               </font>
             </Label>  
          </children>
+         <padding>
+            <Insets left="5.0" top="5.0" />
+         </padding>
       </HBox>
-      <TabPane layoutX="-276.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="300.0" minWidth="400.0" prefHeight="519.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="-276.0" AnchorPane.rightAnchor="-279.0" AnchorPane.topAnchor="0.0" GridPane.rowIndex="1">
+      <TabPane fx:id="mainTabPane" layoutX="-276.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="300.0" minWidth="400.0" prefHeight="500.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="-276.0" AnchorPane.rightAnchor="-279.0" AnchorPane.topAnchor="0.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
         <tabs>
             <Tab closable="false" text="Event Details">
               <content>
@@ -61,11 +57,7 @@
                 <fx:include fx:id="participantTabPage" source="participant/FXMLParticipant.fxml" />
             </content>
           </Tab>
-          <Tab text="Races">
-            <content>
-              <fx:include fx:id="raceTabPage" source="race/FXMLRace.fxml" />
-            </content>
-          </Tab>
+
             <Tab text="Timing">
               <content>
                 <AnchorPane minHeight="0.0" minWidth="0.0" />

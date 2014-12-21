@@ -12,6 +12,7 @@ Add 'About' page w/ links to the following items:
 Races:
 Add Races
 Specify Distance for race
+Specify an optional cutoff time for the race
 Setup AG's
 Setup split locations
 Map segments to split locations (distance, min/max times, display rate: m/s, m/h, k/h, s/100y, s/100m) 
@@ -30,10 +31,10 @@ DONE -- swap bibs menu option if two and only two rows are selected
 DONE -- Move the participantsList management into the ParticipantDAO
 DONE -- import from csv
 Clean up import from csv 
-Block concurrent threads locking up the table on mass write/delete
+DONE -- (I hope) Fix deadlock with mass write/delete
 export to csv
 Error check the fields (age, city, state, bib, etc). 
-Race Assignment
+Race Assignment 
 Automatic Race Assignment based on bib #
 Update/Add on enter from any valid field
 Custom fields / attributes w/ data types (string, limited select, date, time)
