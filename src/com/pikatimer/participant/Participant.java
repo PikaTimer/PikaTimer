@@ -20,6 +20,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.GenericGenerator;
 
 /**
  *
@@ -101,7 +102,8 @@ public class Participant {
     }
     
     @Id
-    @GeneratedValue
+    @GenericGenerator(name="participant_id" , strategy="increment")
+    @GeneratedValue(generator="participant_id")
     @Column(name="PARTICIPANT_ID")
     public Integer getID() {
         return IDProperty.getValue(); 
