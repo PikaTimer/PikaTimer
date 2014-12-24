@@ -11,13 +11,18 @@ Add 'About' page w/ links to the following items:
 
 Races:
 Add Races
+If only one race, race name = event name (hide the race name)
 Specify Distance for race
 Specify an optional cutoff time for the race
+Setup wave starts (by bib, AG, etc) with a minimum of 1 per race
+Setup wave <-> participant map
 Setup AG's
 Setup split locations
+Split -> timing location map
 Map segments to split locations (distance, min/max times, display rate: m/s, m/h, k/h, s/100y, s/100m) 
-Setup wave starts (by bib, AG, etc)
+Setup wave
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
+Optional alternate date for the race, otherwise inherit the event date. 
 
 Participants:
 DONE -- Delete a row/rows via a context menu
@@ -33,13 +38,14 @@ DONE -- import from csv
 Clean up import from csv 
 DONE -- (I hope) Fix deadlock with mass write/delete
 export to csv
+Validate csv file before continuing. 
 Error check the fields (age, city, state, bib, etc). 
-Race Assignment 
-Automatic Race Assignment based on bib #
+(Wave(Race) Assignment 
+Automatic Wave (Race) Assignment based on bib #
 Update/Add on enter from any valid field
 Custom fields / attributes w/ data types (string, limited select, date, time)
-Link to Teams
-Link to Relay Teams
+Link to Team
+Link to Relay Team
 Inline Edit of the cells?
 Mass bib assignment 
 sync from active.com / runsignup / other
@@ -53,6 +59,7 @@ Timing:
 Setup bib -> chip map
 import times from file with min/max times
 Auto detect gun times based on triggers in input files and assign to the race/wave
+Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 Continually import times from file (tail in a separate task) to a timing point
 Continually import times from box (via tcp in a separate task) to a timing point
 

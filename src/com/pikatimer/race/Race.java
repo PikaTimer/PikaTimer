@@ -22,14 +22,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @DynamicUpdate
-@Table(name="Race")
+@Table(name="race")
 public class Race {
     
-
-   
 
    private final IntegerProperty IDProperty;
 
@@ -42,6 +41,7 @@ public class Race {
    private final StringProperty raceBibStart;
    private final StringProperty raceBibEnd;
    private final BooleanProperty relayRace; 
+   private final StringProperty raceDistanceProperty; 
    
    //private final ObservableList<split> raceSplits;
    //private final ObservableList<wave> raceWaves; 
@@ -54,6 +54,7 @@ public class Race {
         this.raceBibStart = new SimpleStringProperty();
         this.raceBibEnd = new SimpleStringProperty();
         this.relayRace = new SimpleBooleanProperty();
+        this.raceDistanceProperty = new SimpleStringProperty();
         
         //this.raceCutoff = LocalTime.parse("10:30");
         
@@ -72,7 +73,8 @@ public class Race {
 
     
     @Id
-    @GeneratedValue
+    @GenericGenerator(name="race_id" , strategy="increment")
+    @GeneratedValue(generator="race_id")
     @Column(name="RACE_ID")
     public Integer getID() {
         return IDProperty.getValue(); 
@@ -95,31 +97,36 @@ public class Race {
         return raceName;
     }
     
-    @Column(name="RACE_DISTANCE", precision = 9, scale = 3)
+    @Column(name="RACE_DISTANCE")
     public BigDecimal getRaceDistance() {
         return raceDistance;
     }
-    public void setRaceDistance(Float d) {
-        raceDistance = new BigDecimal(d).setScale(3, BigDecimal.ROUND_HALF_UP);
+    public void setRaceDistance(BigDecimal d) {
+        raceDistance = d; 
+        if(raceDistance != null && raceUnits != null)
+            raceDistanceProperty.setValue(raceDistance.toPlainString()+raceUnits.toShortString()); 
+        //raceDistance = new BigDecimal(d).setScale(3, BigDecimal.ROUND_HALF_UP);
     }
-    public void raceDistanceProperty(BigDecimal d) {
-        raceDistance = d;
+    public StringProperty raceDistanceProperty() {
+        return raceDistanceProperty; 
     }
 
     @Enumerated(EnumType.STRING)
-    @Column(name="RACE_UNITS")
+    @Column(name="RACE_DIST_UNIT")
     public Unit getRaceDistanceUnits() {
         return raceUnits;
     }
     public void setRaceDistanceUnits(Unit d) {
         raceUnits=d;
-        raceUnitsProperty.setValue(d.toString());
+        if (raceUnits != null) raceUnitsProperty.setValue(d.toString());
+        if(raceDistance != null && raceUnits != null)
+            raceDistanceProperty.setValue(raceDistance.toPlainString() + " " +raceUnits.toShortString()); 
     }
     public StringProperty raceDistanceUnitsProperty() {
         return raceUnitsProperty;
     }
     
-    @Column(name="BIB_START")
+    @Column(name="RACE_BIB_START")
     public String getBibStart() {
         return raceBibStart.getValueSafe();
     }
@@ -130,7 +137,7 @@ public class Race {
         return raceBibStart;
     }
     
-    @Column(name="BIB_END")
+    @Column(name="RACE_BIB_END")
     public String getBibEnd() {
         return raceBibEnd.getValueSafe();
     }
@@ -142,25 +149,39 @@ public class Race {
     }
     
     
-    @Column(name="START_TIME",nullable=true)
+    @Column(name="RACE_START_TIME",nullable=true)
     public String getRaceStart() {
-        return raceStart.format(DateTimeFormatter.ISO_LOCAL_TIME);
+        if( raceStart != null) {
+            return raceStart.format(DateTimeFormatter.ISO_LOCAL_TIME);
+        } else {
+            return "";
+        }
         //return raceCutoff.toString();
     }
     public void setRaceStart(String c) {
-        raceStart = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
+        if(! c.isEmpty()) {
+            //Fix this to watch for parse exceptions
+            raceStart = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
+        }
     }
     public LocalTime raceStartProperty(){
         return raceStart; 
     }
     
-    @Column(name="CUTOFF_TIME", nullable=true)
+    @Column(name="RACE_CUTOFF", nullable=true)
     public String getRaceCutoff() {
-        return raceCutoff.format(DateTimeFormatter.ISO_LOCAL_TIME);
+        if (raceCutoff != null) {
+            // fix this towatch for parse exceptions
+            return raceCutoff.format(DateTimeFormatter.ISO_LOCAL_TIME);
+        } else {
+            return ""; 
+        }
         //return raceCutoff.toString();
     }
     public void setRaceCutoff(String c) {
-        raceCutoff = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
+        if(! c.isEmpty()) {
+            raceCutoff = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
+        }
     }
     public LocalTime raceCutoffProperty(){
         return raceCutoff; 

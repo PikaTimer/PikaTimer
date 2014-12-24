@@ -15,33 +15,42 @@ import java.util.Map;
  * @author jcgarner
  */
 public enum Unit {
-    KILOMETERS,
-    MILES,
-    YARDS,
-    METERS,
-    FEET;
+    KILOMETERS("Kilometers", "km"),
+    MILES("Miles", "mi"),
+    YARDS("Yards", "yd"),
+    METERS("Meters", "M"),
+    FEET("Feet", "ft");
     
-    private static final Map<Unit, String> DISTANCE_MAP = createMap();
-
-    private static Map<Unit, String> createMap() {
-        Map<Unit, String> result = new HashMap<>();
-        result.put(KILOMETERS, "Kilometers");
-        result.put(MILES, "Miles");
-        result.put(YARDS, "Yards");
-        result.put(METERS, "Meters");
-        result.put(FEET, "Feet");
-        return Collections.unmodifiableMap(result);
-    }
+    private  String longUnit;
+    private  String shortUnit; 
+    
+    
+//    private static final Map<Unit, String> DISTANCE_MAP = createMap();
+//
+//    private static Map<Unit, String> createMap() {
+//        Map<Unit, String> result = new HashMap<>();
+//        result.put(KILOMETERS, "Kilometers");
+//        result.put(MILES, "Miles");
+//        result.put(YARDS, "Yards");
+//        result.put(METERS, "Meters");
+//        result.put(FEET, "Feet");
+//        return Collections.unmodifiableMap(result);
+//    }
     
 //    private String unit;
     
-//    private Unit(String s){
-//        unit=s;
-//    }
+    private Unit(String l, String s){
+        longUnit = l;
+        shortUnit = s;
+    }
     
     @Override 
     public String toString(){
-        return DISTANCE_MAP.get(this);
+        return this.longUnit;
+    }
+    
+    public String toShortString(){
+        return this.shortUnit; 
     }
 //    
 //    public String getValue() {

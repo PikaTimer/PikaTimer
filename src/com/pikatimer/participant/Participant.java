@@ -5,30 +5,20 @@
 
 package com.pikatimer.participant;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 
 /**
@@ -213,10 +203,10 @@ public class Participant {
     }
     
     @Column(name="BIRTHDAY",nullable=true)
-    @Temporal(TemporalType.DATE)
-    public Date getBirthday() {
+    public String getBirthday() {
         if (birthdayProperty != null) {
-            return Date.from(birthdayProperty.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+            //return Date.from(birthdayProperty.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+            return birthdayProperty.toString();
         } else {
             return null; 
         }
@@ -226,10 +216,11 @@ public class Participant {
             birthdayProperty = d;
         }
     }    
-    public void setBirthday(Date d) {
+    public void setBirthday(String d) {
         if (d != null) {
-            Instant instant = Instant.ofEpochMilli(d.getTime());
-            setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
+            birthdayProperty = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
+            //Instant instant = Instant.ofEpochMilli(d.getTime());
+            //setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
         }
     }
     public LocalDate birthdayProperty() {

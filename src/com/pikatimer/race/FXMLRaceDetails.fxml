@@ -84,7 +84,7 @@
             <Button mnemonicParsing="false" text="Award Setup" />
          </children>
       </HBox>
-      <VBox spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER" GridPane.vgrow="NEVER">
+      <VBox spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
          <children>
             <HBox fx:id="raceNameHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
@@ -93,7 +93,7 @@
                         <Font size="14.0" />
                      </font>
                   </Label>
-                  <TextField HBox.hgrow="ALWAYS" />
+                  <TextField fx:id="raceNameTextField" onAction="#updateRaceName" HBox.hgrow="ALWAYS" />
                </children>
                <padding>
                   <Insets right="5.0" />
@@ -106,7 +106,7 @@
                         <Font size="14.0" />
                      </font>
                   </Label>
-                  <TextField prefHeight="25.0" prefWidth="96.0" promptText="HH:MM:SS.sss" />
+                  <TextField fx:id="raceStartTimeTextField" prefHeight="25.0" prefWidth="96.0" promptText="HH:MM:SS.sss" />
                   <CheckBox fx:id="waveStartsCheckBox" mnemonicParsing="false" text="Wave Starts">
                      <font>
                         <Font size="14.0" />
@@ -120,7 +120,7 @@
                         <Font size="14.0" />
                      </font>
                   </Label>
-                  <TextField prefWidth="75.0" />
+                  <TextField fx:id="raceDistanceTextField" onAction="#updateRaceDistance" prefWidth="75.0" />
                   <ChoiceBox fx:id="distanceUnitChoiceBox" />
                </children>
             </HBox>
@@ -131,8 +131,8 @@
                         <Font size="14.0" />
                      </font>
                   </Label>
-                  <TextField prefWidth="75.0" promptText="HH:MM" />
-                  <Label fx:id="cutoffTimePaceLabel" prefHeight="20.0" prefWidth="90.0">
+                  <TextField fx:id="raceCutoffTimeTextField" prefWidth="75.0" promptText="HH:MM" />
+                  <Label fx:id="raceCutoffTimePaceLabel" prefHeight="20.0" prefWidth="90.0">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -155,7 +155,7 @@
             </HBox>
          </children>
          <GridPane.margin>
-            <Insets top="5.0" />
+            <Insets />
          </GridPane.margin>
       </VBox>
    </children>

@@ -34,7 +34,8 @@ public class EventDAO {
             Query query = s.createSQLQuery("UPDATE EVENT set EVENT_NAME = :name, EVENT_DATE = :date WHERE ID = :id");
             query.setParameter("id", 1);
             query.setParameter("name", event.getEventName());
-            query.setParameter("date", event.getEventDate());
+            //query.setParameter("date", event.getEventDate());
+            query.setParameter("date", event.getLocalEventDate().toString());
             query.executeUpdate();
             s.getTransaction().commit();
             
@@ -52,7 +53,8 @@ public class EventDAO {
             Query query = s.createSQLQuery("INSERT into EVENT (ID, EVENT_NAME, EVENT_DATE) values (:id, :name, :date)");
             query.setParameter("id", 1);
             query.setParameter("name", event.getEventName());
-            query.setParameter("date", event.getEventDate());
+            //query.setParameter("date", event.getEventDate());
+            query.setParameter("date", event.getLocalEventDate().toString());
             query.executeUpdate();
             s.getTransaction().commit();
             
@@ -67,7 +69,8 @@ public class EventDAO {
             Query query  = s.createSQLQuery("SELECT * FROM EVENT")
                 .addScalar("ID", LongType.INSTANCE)
                 .addScalar("EVENT_NAME", StringType.INSTANCE)
-                .addScalar("EVENT_DATE", DateType.INSTANCE);
+                .addScalar("EVENT_DATE", StringType.INSTANCE);
+                //.addScalar("EVENT_DATE", DateType.INSTANCE);
             
             List<Object[]> results = query.list();
             s.getTransaction().commit();
@@ -80,7 +83,7 @@ public class EventDAO {
                 // woot, we have data. :-) 
                 for(Object[] row : results){
                     event.setEventName(row[1].toString());
-                    event.setEventDate((Date)row[2]);
+                    event.setEventDate(row[2].toString());
                     System.out.println("Results: " + row[1].toString() + " Date:" + row[2].toString());
                 }
             }
