@@ -6,30 +6,33 @@
 <?import java.util.*?>
 <?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.control.cell.*?>
 <?import javafx.scene.layout.*?>
 
-<GridPane hgap="5.0" prefHeight="400.0" prefWidth="750.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
   <columnConstraints>
-    <ColumnConstraints hgrow="SOMETIMES" maxWidth="589.0" minWidth="10.0" prefWidth="360.0" />
-    <ColumnConstraints hgrow="SOMETIMES" maxWidth="386.0" minWidth="6.0" prefWidth="386.0" />
+    <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="10.0" prefWidth="360.0" />
+    <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="6.0" prefWidth="360.0" />
   </columnConstraints>
   <rowConstraints>
-      <RowConstraints fillHeight="false" vgrow="NEVER" />
-    <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
-      <RowConstraints />
+      <RowConstraints vgrow="NEVER" />
+    <RowConstraints maxHeight="1.7976931348623157E308" minHeight="200.0" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="0.0" minHeight="0.0" prefHeight="0.0" />
   </rowConstraints>
    <children>
-      <VBox fx:id="splitsVBox" prefHeight="200.0" prefWidth="100.0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+      <VBox fx:id="splitsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="250.0" prefWidth="360.0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
          <children>
             <Label minHeight="25.0" text="Splits">
                <font>
                   <Font size="14.0" />
                </font>
             </Label>
-            <TableView editable="true" minHeight="100.0" prefHeight="100.0" prefWidth="450.0" VBox.vgrow="ALWAYS">
+            <TableView editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" prefHeight="100.0" prefWidth="450.0" VBox.vgrow="ALWAYS">
               <columns>
                 <TableColumn prefWidth="40.0" text="#" />
+
                 <TableColumn prefWidth="79.0" text="Name" />
+
                   <TableColumn prefWidth="75.0" text="Location" />
                   <TableColumn prefWidth="103.0" text="Distance" />
                   <TableColumn prefWidth="63.0" text="\% Time" />
@@ -50,26 +53,45 @@
             <Insets top="10.0" />
          </padding>
       </VBox>
-      <VBox fx:id="waveStartsVBox" prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="250.0" prefWidth="360.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
          <children>
-            <Label minHeight="25.0" text="Wave Start Times" VBox.vgrow="NEVER">
+            <Label minHeight="25.0" text="Start Waves" VBox.vgrow="NEVER">
                <font>
                   <Font size="14.0" />
                </font>
             </Label>
-            <TableView editable="true" minHeight="100.0" prefHeight="100.0" prefWidth="450.0" VBox.vgrow="ALWAYS">
+            <TableView fx:id="waveStartsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" prefHeight="100.0" prefWidth="400.0" VBox.vgrow="ALWAYS">
                <columns>
-                  <TableColumn maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="30.0" text="#" />
-                  <TableColumn prefWidth="97.0" text="Name" />
-                  <TableColumn prefWidth="75.0" text="Start Time" />
-                  <TableColumn prefWidth="103.0" text="Max Start" />
-                  <TableColumn prefWidth="63.0" text="Bib " />
+                    <TableColumn maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="30.0" text="#">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="id" />
+                        </cellValueFactory>
+                    </TableColumn>
+
+                    <TableColumn prefWidth="97.0" text="Name">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="waveName" />
+                        </cellValueFactory>
+                    </TableColumn>
+
+                    <TableColumn prefWidth="75.0" text="Start Time">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="waveStartString" />
+                        </cellValueFactory>
+                    </TableColumn>
+
+                  <TableColumn prefWidth="103.0" text="Max Start">
+                    <cellValueFactory>
+                     <PropertyValueFactory property="waveMaxStartString" />
+                 </cellValueFactory>
+                             </TableColumn>
+
                </columns>
             </TableView>
             <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
                <children>
-                  <Button mnemonicParsing="false" text="Add" />
-                  <Button mnemonicParsing="false" text="Delete" />
+                  <Button fx:id="addWaveButton" mnemonicParsing="false" onAction="#addWave" text="Add" />
+                  <Button fx:id="deleteWaveButton" mnemonicParsing="false" onAction="#deleteWave" text="Delete" />
                </children>
             </HBox>
          </children>
@@ -77,14 +99,35 @@
             <Insets top="10.0" />
          </padding>
       </VBox>
-      <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="1" GridPane.valignment="CENTER">
+      <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="TOP" GridPane.vgrow="SOMETIMES">
          <children>
-            <Button mnemonicParsing="false" text="Course Records" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Button mnemonicParsing="false" text="Age Group Setup" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Button mnemonicParsing="false" text="Award Setup" />
+            <CheckBox fx:id="waveStartsCheckBox" mnemonicParsing="false" text="Wave Starts">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </CheckBox>
+            <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
+               <children>
+                  <CheckBox fx:id="splitsCheckBox" mnemonicParsing="false" text="On-Course Splits">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </CheckBox>
+               </children>
+            </HBox>
+            <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="1" GridPane.valignment="CENTER">
+               <children>
+                  <Button mnemonicParsing="false" text="Course Records" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Button mnemonicParsing="false" text="Age Group Setup" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Button mnemonicParsing="false" text="Award Setup" />
+               </children>
+               <padding>
+                  <Insets top="25.0" />
+               </padding>
+            </HBox>
          </children>
-      </HBox>
-      <VBox spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
+      </VBox>
+      <VBox maxHeight="-Infinity" prefHeight="120.0" prefWidth="360.0" spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
          <children>
             <HBox fx:id="raceNameHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
@@ -101,27 +144,23 @@
             </HBox>
             <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
-                  <Label prefWidth="90.0" text="Start Time">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
-                  <TextField fx:id="raceStartTimeTextField" prefHeight="25.0" prefWidth="96.0" promptText="HH:MM:SS.sss" />
-                  <CheckBox fx:id="waveStartsCheckBox" mnemonicParsing="false" text="Wave Starts">
-                     <font>
-                        <Font size="14.0" />
-                     </font></CheckBox>
-               </children>
-            </HBox>
-            <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
-               <children>
                   <Label prefHeight="20.0" prefWidth="90.0" text="Distance">
                      <font>
                         <Font size="14.0" />
                      </font>
                   </Label>
                   <TextField fx:id="raceDistanceTextField" onAction="#updateRaceDistance" prefWidth="75.0" />
-                  <ChoiceBox fx:id="distanceUnitChoiceBox" />
+                  <ChoiceBox fx:id="distanceUnitChoiceBox" onInputMethodTextChanged="#updateRaceDistance" />
+               </children>
+            </HBox>
+            <HBox fx:id="startTimeHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
+               <children>
+                  <Label prefWidth="90.0" text="Start Time">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="raceStartTimeTextField" onAction="#updateRaceStartTime" prefHeight="25.0" prefWidth="96.0" promptText="HH:MM:SS.sss" />
                </children>
             </HBox>
             <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
@@ -137,20 +176,6 @@
                         <Font size="14.0" />
                      </font>
                   </Label>
-               </children>
-            </HBox>
-            <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
-               <children>
-                  <Label prefHeight="20.0" prefWidth="90.0">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
-                  <CheckBox fx:id="splitsCheckBox" mnemonicParsing="false" text="On-Course Splits">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </CheckBox>
                </children>
             </HBox>
          </children>

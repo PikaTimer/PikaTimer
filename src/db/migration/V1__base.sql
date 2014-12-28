@@ -19,10 +19,10 @@ create table race (
     race_name varchar, 
     race_distance numeric,
     race_dist_unit varchar,
-    race_start_time varchar,
+    --race_start_time varchar,
     race_bib_start varchar,
     race_bib_end varchar,
-    race_cutoff varchar,
+    race_cutoff bigint,
     race_relay boolean
 ); 
 
@@ -31,8 +31,8 @@ create table race_waves (
     race_id int, 
     wave_name varchar, 
     wave_start_time varchar, 
-    wave_max_start_time varchar,
-    wave_assignment varchar, 
+    wave_max_start_time bigint,
+    wave_assignment_method varchar, 
     wave_assignment_attr1 varchar, 
     wave_assignment_attr2 varchar
 ); 
@@ -52,7 +52,7 @@ create table race_split (
     split_pace_unit varchar, 
     split_name varchar, 
     short_name varchar, 
-    cutoff_time varchar
+    cutoff_time bigint
 );
 
 create table participant ( 

@@ -40,6 +40,18 @@ public class RaceDAO {
         raceList.add(r);
     }
     
+    public void addWave(Wave w) {
+        Race r = w.getRace();
+        r.addWave(w);
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.save(w);
+        //s.save(r);
+        s.getTransaction().commit();
+        
+        System.out.println("Adding Wave id: " + w.getID() + "to" + w.getRace().getRaceName());
+    }
+    
     public void refreshRaceList() { 
 
         List<Race> list = new ArrayList<>();
@@ -47,7 +59,7 @@ public class RaceDAO {
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        System.out.println("Runing the Query");
+        System.out.println("RacedAO.refreshRaceList() Starting the query");
         
         try {  
             list=s.createQuery("from Race").list();
@@ -63,8 +75,7 @@ public class RaceDAO {
     }     
     
     public ObservableList<Race> listRaces() { 
-
-        refreshRaceList();
+        if(raceList.size() < 1)  refreshRaceList();
         return raceList;
         //return list;
     }      
@@ -77,6 +88,16 @@ public class RaceDAO {
         raceList.remove(tl);
     }      
     
+    public void removeWave(Wave w) {
+        Race r = w.getRace(); 
+        r.removeWave(w);
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(w);
+        //s.update(r);
+        s.getTransaction().commit();
+        
+    }
  
     public void clearAll() {
         removeRaces(raceList);
@@ -109,6 +130,12 @@ public class RaceDAO {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction(); 
         s.update(tl);
+        s.getTransaction().commit();
+     }
+    public void updateWave (Wave w) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        s.update(w);
         s.getTransaction().commit();
      }
 }

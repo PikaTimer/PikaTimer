@@ -10,19 +10,20 @@ Add 'About' page w/ links to the following items:
 --DataFX
 
 Races:
-Add Races
-If only one race, race name = event name (hide the race name)
-Specify Distance for race
+DONE -- Add Races
+DONE -- If only one race, race name = event name (hide the race name)
+DONE -- Specify Distance for race
 Specify an optional cutoff time for the race
-Setup wave starts (by bib, AG, etc) with a minimum of 1 per race
+Calculate the pace needed to make the cutoff 
+Setup wave starts (assigned by bib for now, AG/Other later) with a minimum of 1 per race
 Setup wave <-> participant map
 Setup AG's
 Setup split locations
 Split -> timing location map
 Map segments to split locations (distance, min/max times, display rate: m/s, m/h, k/h, s/100y, s/100m) 
-Setup wave
+Setup start waves
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
-Optional alternate date for the race, otherwise inherit the event date. 
+Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
 
 Participants:
 DONE -- Delete a row/rows via a context menu
@@ -36,11 +37,11 @@ DONE -- swap bibs menu option if two and only two rows are selected
 DONE -- Move the participantsList management into the ParticipantDAO
 DONE -- import from csv
 Clean up import from csv 
-DONE -- (I hope) Fix deadlock with mass write/delete
+DONE (I hope) --  Fix deadlock with mass write/delete
 export to csv
 Validate csv file before continuing. 
 Error check the fields (age, city, state, bib, etc). 
-(Wave(Race) Assignment 
+Wave(Race) Assignment 
 Automatic Wave (Race) Assignment based on bib #
 Update/Add on enter from any valid field
 Custom fields / attributes w/ data types (string, limited select, date, time)

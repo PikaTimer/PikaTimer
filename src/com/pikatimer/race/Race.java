@@ -4,22 +4,31 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
@@ -36,12 +45,13 @@ public class Race {
    private Unit raceUnits; 
    private final StringProperty raceUnitsProperty; 
    private final StringProperty raceName;
-   private  LocalTime raceStart;
-   private  LocalTime raceCutoff; 
+   private  Duration raceCutoff; 
+   private final StringProperty raceCutoffProperty; 
    private final StringProperty raceBibStart;
    private final StringProperty raceBibEnd;
    private final BooleanProperty relayRace; 
    private final StringProperty raceDistanceProperty; 
+   private final ObservableList<Wave> raceWaves; 
    
    //private final ObservableList<split> raceSplits;
    //private final ObservableList<wave> raceWaves; 
@@ -53,9 +63,10 @@ public class Race {
         this.raceName = new SimpleStringProperty();
         this.raceBibStart = new SimpleStringProperty();
         this.raceBibEnd = new SimpleStringProperty();
+        this.raceCutoffProperty = new SimpleStringProperty();
         this.relayRace = new SimpleBooleanProperty();
         this.raceDistanceProperty = new SimpleStringProperty();
-        
+        this.raceWaves = FXCollections.observableArrayList();
         //this.raceCutoff = LocalTime.parse("10:30");
         
         //raceSplits = FXCollections.observableArrayList();
@@ -149,42 +160,48 @@ public class Race {
     }
     
     
-    @Column(name="RACE_START_TIME",nullable=true)
-    public String getRaceStart() {
-        if( raceStart != null) {
-            return raceStart.format(DateTimeFormatter.ISO_LOCAL_TIME);
-        } else {
-            return "";
-        }
-        //return raceCutoff.toString();
-    }
-    public void setRaceStart(String c) {
-        if(! c.isEmpty()) {
-            //Fix this to watch for parse exceptions
-            raceStart = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
-        }
-    }
-    public LocalTime raceStartProperty(){
-        return raceStart; 
-    }
-    
+   
     @Column(name="RACE_CUTOFF", nullable=true)
-    public String getRaceCutoff() {
+    public Long getRaceCutoff() {
         if (raceCutoff != null) {
             // fix this towatch for parse exceptions
-            return raceCutoff.format(DateTimeFormatter.ISO_LOCAL_TIME);
+            return raceCutoff.toNanos();
         } else {
-            return ""; 
+            return 0L; 
         }
         //return raceCutoff.toString();
     }
-    public void setRaceCutoff(String c) {
-        if(! c.isEmpty()) {
-            raceCutoff = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
+    public void setRaceCutoff(Long c) {
+        if(c != null) {
+            System.out.println("setRaceCutoff " + c.toString());
+            raceCutoff = Duration.ofNanos(c);
+            raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff,0)); 
         }
     }
-    public LocalTime raceCutoffProperty(){
-        return raceCutoff; 
+    public StringProperty raceCutoffProperty(){
+        return raceCutoffProperty;  
     }
     
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE})
+    public List<Wave> getWaves() {
+        return raceWaves.sorted(); 
+    }
+    public void setWaves(List<Wave> waves) {
+        System.out.println("Race.setWaves(list) called for " + raceName + " with " + waves.size() + " waves"); 
+        //waves.forEach(null);
+        //raceWaves.clear();
+        //raceWaves.addAll(FXCollections.observableArrayList(waves));
+        raceWaves.setAll(waves);
+        //raceWaves.addAll(waves);
+        System.out.println(raceName + " now has " + raceWaves.size() + " waves");
+    }
+    public ObservableList<Wave> wavesProperty() {
+        return raceWaves; 
+    }
+    public void addWave(Wave w) {
+        raceWaves.add(w);
+    }
+    public void removeWave(Wave w) {
+        raceWaves.remove(w); 
+    }
 }

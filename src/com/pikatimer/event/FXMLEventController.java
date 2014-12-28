@@ -231,7 +231,7 @@ public class FXMLEventController  {
 
         }
         
-        raceTableView.getSelectionModel().clearAndSelect(0);
+        
         // load up the raceDetailsPane
         // Save the FXMLLoader so that we can send it notes when things change in the races box
         raceDetailsPane.getChildren().clear();
@@ -262,6 +262,8 @@ public class FXMLEventController  {
                 raceDetailsController.selectRace(selectedRaces.get(0));
              }
          });
+         
+         raceTableView.getSelectionModel().clearAndSelect(0);
 //         raceTableView.getSelectionModel().getSelectedIndices().addListener((Change<? extends Integer> change) -> {
 ////                if (change.getList().size() == 1) {
 ////                    multipleRacesCheckBox.setDisable(false);
