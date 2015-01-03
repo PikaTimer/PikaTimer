@@ -15,13 +15,13 @@ DONE -- If only one race, race name = event name (hide the race name)
 DONE -- Specify Distance for race
 Specify an optional cutoff time for the race
 Calculate the pace needed to make the cutoff 
-Setup wave starts (assigned by bib for now, AG/Other later) with a minimum of 1 per race
+DONE -- Setup wave starts (assigned by bib for now, AG/Other later) with a minimum of 1 per race
 Setup wave <-> participant map
 Setup AG's
 Setup split locations
 Split -> timing location map
 Map segments to split locations (distance, min/max times, display rate: m/s, m/h, k/h, s/100y, s/100m) 
-Setup start waves
+DONE -- Setup start waves
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
 Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
 

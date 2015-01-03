@@ -58,9 +58,9 @@ public class HibernateUtil {
         //cfg.addAnnotatedClass(Event.class );
         cfg.addAnnotatedClass(Participant.class);
         cfg.addAnnotatedClass(Race.class);
+        cfg.addAnnotatedClass(Split.class);
         cfg.addAnnotatedClass(TimingLocation.class);
         cfg.addAnnotatedClass(Wave.class);
-        cfg.addAnnotatedClass(Split.class);
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");

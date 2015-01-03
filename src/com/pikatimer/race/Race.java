@@ -4,15 +4,12 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.timing.Split;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -29,6 +26,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
@@ -52,12 +50,11 @@ public class Race {
    private final BooleanProperty relayRace; 
    private final StringProperty raceDistanceProperty; 
    private final ObservableList<Wave> raceWaves; 
-   
-   //private final ObservableList<split> raceSplits;
-   //private final ObservableList<wave> raceWaves; 
+   private final ObservableList<Split> raceSplits; 
+   private final Race self; 
            
-        public Race() {
-
+    public Race() {
+        this.self = this; 
         this.IDProperty = new SimpleIntegerProperty();
         this.raceUnitsProperty = new SimpleStringProperty();
         this.raceName = new SimpleStringProperty();
@@ -67,19 +64,38 @@ public class Race {
         this.relayRace = new SimpleBooleanProperty();
         this.raceDistanceProperty = new SimpleStringProperty();
         this.raceWaves = FXCollections.observableArrayList();
-        //this.raceCutoff = LocalTime.parse("10:30");
+        this.raceSplits = FXCollections.observableArrayList();
+
+        // Keep the waves updated as to their position in the list
+//        raceWaves.addListener((Change<? extends Wave> change) -> {
+//            System.out.println("Race::raceWaves(changeListener) for: " + self.getRaceName());
+//            raceWaves.stream().forEach((item) -> {
+//                System.out.println(self.getRaceName() + " has " + item.getWaveName() + " at " + raceWaves.indexOf(item));
+//                item.wavePositionProperty().set(raceWaves.indexOf(item)+1);
+//                //RaceDAO.getInstance().updateWave(item);
+//            });
+//        });
+//        // Keep the splits updated as to their position in the list
+//        raceSplits.addListener((Change<? extends Split> change) -> {
+//            System.out.println("Race::raceSplits(changeListener) for: " + self.getRaceName());
+////            raceSplits.stream().forEach((item) -> {
+////                System.out.println(self.getRaceName() + " has " + item.getSplitName() + " at " + raceSplits.indexOf(item));
+////                item.splitPositionProperty().set(raceSplits.indexOf(item)+1);
+////                Task importTask = new Task<Void>() {
+////                    @Override
+////                    protected Void call() {
+////                        RaceDAO.getInstance().updateSplit(item);
+////                        return null; 
+////                    }
+////                };
+////                new Thread(importTask).start();
+////            });
+//        });
         
-        //raceSplits = FXCollections.observableArrayList();
-        //raceWaves = FXCollections.observableArrayList();
+        
     }
         
-//    public static ObservableList getRaceSplits() {
-//        return raceSplits; 
-//    }
     
-//    public static ObservableList getRaceWaves() {
-//        return raceWaves; 
-//    }     
         
 
     
@@ -164,12 +180,10 @@ public class Race {
     @Column(name="RACE_CUTOFF", nullable=true)
     public Long getRaceCutoff() {
         if (raceCutoff != null) {
-            // fix this towatch for parse exceptions
             return raceCutoff.toNanos();
         } else {
             return 0L; 
         }
-        //return raceCutoff.toString();
     }
     public void setRaceCutoff(Long c) {
         if(c != null) {
@@ -187,13 +201,9 @@ public class Race {
         return raceWaves.sorted(); 
     }
     public void setWaves(List<Wave> waves) {
-        System.out.println("Race.setWaves(list) called for " + raceName + " with " + waves.size() + " waves"); 
-        //waves.forEach(null);
-        //raceWaves.clear();
-        //raceWaves.addAll(FXCollections.observableArrayList(waves));
+        //System.out.println("Race.setWaves(list) called for " + raceName + " with " + waves.size() + " waves"); 
         raceWaves.setAll(waves);
-        //raceWaves.addAll(waves);
-        System.out.println(raceName + " now has " + raceWaves.size() + " waves");
+        //System.out.println("Race.setWaves(list) " + raceName + " now has " + raceWaves.size() + " waves");
     }
     public ObservableList<Wave> wavesProperty() {
         return raceWaves; 
@@ -204,4 +214,38 @@ public class Race {
     public void removeWave(Wave w) {
         raceWaves.remove(w); 
     }
+    
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE})
+    @OrderBy("split_seq_number")
+    public List<Split> getSplits() {
+        return raceSplits.sorted(); 
+        //return raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
+    }
+    public void setSplits(List<Split> splits) {
+//        System.out.println("Race.setSplits(list) called for " + raceName + " with " + splits.size() + " splits"); 
+//        splits.stream().forEach(e -> System.out.println(e.getSplitName() + " " + e.getPosition()));
+//        splits
+//            .stream()
+//            .sorted((e1, e2) -> Integer.compare(e1.getPosition(),
+//                    e2.getPosition()))
+//            .forEach(e -> System.out.println(e.getSplitName()));
+        raceSplits.setAll(splits);
+//        System.out.println("Race.setSplits(list) " + raceName + " now has " + raceSplits.size() + " splits");
+    }
+    public ObservableList<Split> splitsProperty() {
+        return raceSplits; 
+    }
+    public void addSplit(Split s) {
+        if (s.getPosition() > 0) {
+            raceSplits.add(s.getPosition()-1,s); 
+        } else if (raceSplits.size() < 2 ) {
+            raceSplits.add(s);
+        } else {
+            raceSplits.add(raceSplits.size()-1, s);
+        }
+    }
+    public void removeSplit(Split s) {
+        raceSplits.remove(s); 
+    }
+    
 }

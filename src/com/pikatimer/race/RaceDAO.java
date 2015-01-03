@@ -4,6 +4,7 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.timing.Split;
 import com.pikatimer.util.HibernateUtil;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -46,11 +47,21 @@ public class RaceDAO {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.save(w);
-        //s.save(r);
         s.getTransaction().commit();
-        
         System.out.println("Adding Wave id: " + w.getID() + "to" + w.getRace().getRaceName());
     }
+    
+    public void addSplit (Split w) {
+        Race r = w.getRace();
+        r.addSplit(w);
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.save(w);
+        s.getTransaction().commit();
+        System.out.println("Adding Split id: " + w.getID() + "to" + w.getRace().getRaceName());
+        updateSplitOrder(r);
+    }
+
     
     public void refreshRaceList() { 
 
@@ -77,7 +88,6 @@ public class RaceDAO {
     public ObservableList<Race> listRaces() { 
         if(raceList.size() < 1)  refreshRaceList();
         return raceList;
-        //return list;
     }      
 
     public void removeRace(Race tl) {
@@ -94,9 +104,17 @@ public class RaceDAO {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.delete(w);
-        //s.update(r);
         s.getTransaction().commit();
-        
+    }
+    
+    public void removeSplit(Split w) {
+        Race r = w.getRace(); 
+        r.removeSplit(w);
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(w);
+        s.getTransaction().commit();
+        updateSplitOrder(r);
     }
  
     public void clearAll() {
@@ -138,4 +156,22 @@ public class RaceDAO {
         s.update(w);
         s.getTransaction().commit();
      }
+    
+    public void updateSplit (Split sp) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        s.update(sp);
+        s.getTransaction().commit();
+     }
+    
+    public void updateSplitOrder(Race r) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        r.splitsProperty().stream().forEach((item) -> {
+            //System.out.println(self.getRaceName() + " has " + item.getSplitName() + " at " + raceSplits.indexOf(item));
+            item.splitPositionProperty().set(r.splitsProperty().indexOf(item)+1);
+            s.update(item);
+        });
+        s.getTransaction().commit();
+    }
 }

@@ -9,10 +9,10 @@
 <?import javafx.scene.control.cell.*?>
 <?import javafx.scene.layout.*?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="476.0" prefWidth="725.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
   <columnConstraints>
-    <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="10.0" prefWidth="360.0" />
-    <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="6.0" prefWidth="360.0" />
+    <ColumnConstraints hgrow="NEVER" maxWidth="355.0" minWidth="10.0" prefWidth="332.0" />
+    <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="6.0" prefWidth="388.0" />
   </columnConstraints>
   <rowConstraints>
       <RowConstraints vgrow="NEVER" />
@@ -27,25 +27,48 @@
                   <Font size="14.0" />
                </font>
             </Label>
-            <TableView editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" prefHeight="100.0" prefWidth="450.0" VBox.vgrow="ALWAYS">
+            <TableView fx:id="raceSplitsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" prefHeight="100.0" prefWidth="450.0" VBox.vgrow="ALWAYS">
               <columns>
-                <TableColumn prefWidth="40.0" text="#" />
+                    <TableColumn fx:id="splitIDTableColumn" maxWidth="20" minWidth="19" prefWidth="19.0" text="#">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="splitPosition" />
+                        </cellValueFactory>
+                    </TableColumn>
 
-                <TableColumn prefWidth="79.0" text="Name" />
+                    <TableColumn fx:id="splitNameTableColumn" prefWidth="60.0" text="Name">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="splitName" />
+                        </cellValueFactory>
+                    </TableColumn>
 
-                  <TableColumn prefWidth="75.0" text="Location" />
-                  <TableColumn prefWidth="103.0" text="Distance" />
-                  <TableColumn prefWidth="63.0" text="\% Time" />
-                  <TableColumn prefWidth="58.0" text="Cutoff" />
+                    <TableColumn fx:id="splitLocationTableColumn" prefWidth="45.0" text="Location">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="timingLocation" />
+                        </cellValueFactory>
+                    </TableColumn>
+                    <TableColumn fx:id="splitDistanceTableColumn" prefWidth="45.0" text="Distance">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="splitDistance" />
+                        </cellValueFactory>
+                    </TableColumn>
+                    <TableColumn fx:id="splitTimeTableColumn" prefWidth="45.0" text="\% Time">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="splitTime" />
+                        </cellValueFactory>
+                    </TableColumn>
+                    <TableColumn fx:id="splitCutoffTableColumn" prefWidth="45.0" text="Cutoff" >
+                        <cellValueFactory>
+                            <PropertyValueFactory property="splitCutoffString" />
+                        </cellValueFactory>
+                    </TableColumn>
+                  
               </columns>
-               <columnResizePolicy>
-                  <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-               </columnResizePolicy>
+               
             </TableView>
             <HBox fillHeight="false" spacing="5.0">
                <children>
-                  <Button mnemonicParsing="false" text="Add" />
-                  <Button mnemonicParsing="false" text="Delete" />
+                  <Button fx:id="addSplitButton" mnemonicParsing="false" onAction="#addSplit" text="Add" />
+                  <Button fx:id="deleteSplitButton" mnemonicParsing="false" onAction="#deleteSplit"  text="Delete" />
                </children>
             </HBox>
          </children>
@@ -53,7 +76,7 @@
             <Insets top="10.0" />
          </padding>
       </VBox>
-      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="250.0" prefWidth="360.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="250.0" prefWidth="360.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="ALWAYS">
          <children>
             <Label minHeight="25.0" text="Start Waves" VBox.vgrow="NEVER">
                <font>
@@ -62,31 +85,54 @@
             </Label>
             <TableView fx:id="waveStartsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" prefHeight="100.0" prefWidth="400.0" VBox.vgrow="ALWAYS">
                <columns>
-                    <TableColumn maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="30.0" text="#">
+                    <!-- <TableColumn fx:id="wavePositionTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="19.0" text="#">
                         <cellValueFactory>
-                            <PropertyValueFactory property="id" />
+                            <PropertyValueFactory property="wavePosition" />
                         </cellValueFactory>
-                    </TableColumn>
+                    </TableColumn> -->
 
-                    <TableColumn prefWidth="97.0" text="Name">
+                    <TableColumn fx:id="waveNameTableColumn" prefWidth="75.0" text="Name">
                         <cellValueFactory>
                             <PropertyValueFactory property="waveName" />
                         </cellValueFactory>
                     </TableColumn>
 
-                    <TableColumn prefWidth="75.0" text="Start Time">
+                    <TableColumn fx:id="waveStartTimeTableColumn" prefWidth="75.0" text="Start Time">
                         <cellValueFactory>
                             <PropertyValueFactory property="waveStartString" />
                         </cellValueFactory>
                     </TableColumn>
 
-                  <TableColumn prefWidth="103.0" text="Max Start">
-                    <cellValueFactory>
-                     <PropertyValueFactory property="waveMaxStartString" />
-                 </cellValueFactory>
-                             </TableColumn>
-
+                    <TableColumn fx:id="waveMaxStartTimeTableColumn" prefWidth="75.0" text="Max Start">
+                        <cellValueFactory>
+                         <PropertyValueFactory property="waveMaxStartString" />
+                        </cellValueFactory>
+                    </TableColumn>
+                  <TableColumn prefWidth="132.0" text="Assignments">
+                     <columns>
+                              <TableColumn fx:id="waveAssignmentMethodTableColumn" prefWidth="60.0" text="Method">
+                                  <cellValueFactory>
+                                   <PropertyValueFactory property="waveAssignmentMethod" />
+                                  </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="waveAssignmentStartTableColumn" minWidth="6.0" prefWidth="45.0" text="Start">
+                                  <cellValueFactory>
+                                   <PropertyValueFactory property="waveAssignmentStart" />
+                                  </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="waveAssignmentEndTableColumn" prefWidth="45.0" text="End">
+                                  <cellValueFactory>
+                                   <PropertyValueFactory property="waveAssignmentEnd" />
+                                  </cellValueFactory>
+                              </TableColumn>
+                     </columns>
+                       
+                  </TableColumn>
+                        
                </columns>
+                <sortOrder> 
+                    <fx:reference source="waveStartTimeTableColumn" />
+               </sortOrder>
             </TableView>
             <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
                <children>

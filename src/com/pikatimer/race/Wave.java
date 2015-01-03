@@ -4,14 +4,11 @@
  */
 package com.pikatimer.race;
 
-import com.pikatimer.util.Unit;
-import java.math.BigDecimal;
+import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -36,6 +33,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="race_waves")
 public class Wave {
     
+    //private final Wave self; 
     private final IntegerProperty IDProperty;
     private Race race; 
     private final StringProperty waveName;
@@ -45,29 +43,39 @@ public class Wave {
     private final StringProperty waveMaxStartString;
     private WaveAssignment waveAssignmentMethod;
     private final StringProperty waveAssignmentMethodProperty;
-    private final StringProperty waveAssignmentData; 
-    //private StringProperty waveAssignmentData2;
+    private final StringProperty waveAssignmentStart;
+    private final StringProperty waveAssignmentEnd; 
+    private final IntegerProperty wavePosition;
+   
     
     
 
     public Wave(Race r){
         this(); 
-        this.race = r;
+        this.setRace(r);
     }
    public Wave() {
-
+        //this.self = this; 
         this.IDProperty = new SimpleIntegerProperty();
         this.waveName = new SimpleStringProperty();
         this.waveAssignmentMethodProperty = new SimpleStringProperty();
-        this.waveAssignmentData = new SimpleStringProperty();
+        this.waveAssignmentStart = new SimpleStringProperty();
+        this.waveAssignmentEnd = new SimpleStringProperty();
         this.waveStartString = new SimpleStringProperty();
         this.waveMaxStartString = new SimpleStringProperty();
+        this.wavePosition = new SimpleIntegerProperty();
         //this.raceCutoff = LocalTime.parse("10:30");
         
         //raceSplits = FXCollections.observableArrayList();
         //raceWaves = FXCollections.observableArrayList();
+        
     }
    
+//    @Override
+//    public boolean equals(Object w) {
+//        return true; 
+//    }
+//    
     @Id
     @GenericGenerator(name="wave_id" , strategy="increment")
     @GeneratedValue(generator="wave_id")
@@ -80,6 +88,10 @@ public class Wave {
     }
     public IntegerProperty idProperty() {
         return IDProperty; 
+    }
+    
+    public IntegerProperty wavePositionProperty() {
+        return wavePosition; 
     }
     
     @ManyToOne
@@ -137,7 +149,7 @@ public class Wave {
         if(c != null) {
             //Fix this to watch for parse exceptions
             waveMaxStart = Duration.ofNanos(c);
-            waveMaxStartString.set(waveMaxStart.toString());
+            waveMaxStartString.set(DurationFormatter.durationToString(waveMaxStart, 0, Boolean.FALSE));
         }
     }
     public Duration waveMaxStartProperty(){
@@ -157,8 +169,34 @@ public class Wave {
         if (waveAssignmentMethod != null) waveAssignmentMethodProperty.setValue(d.toString());
         
     }
+    public void setWaveAssignmentMethod(String d) {
+        waveAssignmentMethod=WaveAssignment.valueOf(d); 
+        if (waveAssignmentMethod != null) waveAssignmentMethodProperty.setValue(d.toString());
+    }
     public StringProperty waveAssignmentMethodProperty() {
         return waveAssignmentMethodProperty;
+    }
+    
+    @Column(name="WAVE_ASSIGNMENT_ATTR1")
+    public String getWaveAssignmentStart() {
+        return waveAssignmentStart.getValueSafe();
+    }
+    public void setWaveAssignmentStart(String n) {
+        waveAssignmentStart.setValue(n);
+    }
+    public StringProperty waveAssignmentStartProperty() {
+        return waveAssignmentStart;
+    }
+    
+    @Column(name="WAVE_ASSIGNMENT_ATTR2")
+    public String getWaveAssignmentEnd() {
+        return waveAssignmentEnd.getValueSafe();
+    }
+    public void setWaveAssignmentEnd(String n) {
+        waveAssignmentEnd.setValue(n);
+    }
+    public StringProperty waveAssignmentEndProperty() {
+        return waveAssignmentEnd;
     }
 
 
