@@ -10,6 +10,7 @@
 <?import javafx.scene.control.cell.*?>
 <?import javafx.collections.*?>
 <?import com.pikatimer.*?>
+<?import org.controlsfx.control.*?>
 
 <GridPane alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.participant.FXMLParticipantController">
     <padding>
@@ -98,7 +99,12 @@
          <children>
             <VBox fx:id="formVBox" spacing="5.0">
                <children>
-                  <TextField fx:id="bibTextField" promptText="Bib #" />
+                  <HBox spacing="5.0">
+                     <children>
+                        <TextField fx:id="bibTextField" promptText="Bib #" HBox.hgrow="ALWAYS" />
+                        <CheckComboBox fx:id="waveComboBox" prefWidth="150.0" />
+                     </children>
+                  </HBox>
                   <TextField fx:id="lastNameField" prefWidth="90" promptText="Last Name" />
                   <TextField fx:id="firstNameField" prefWidth="90" promptText="First Name" />
                   <HBox spacing="5.0">

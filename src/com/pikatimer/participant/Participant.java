@@ -5,19 +5,27 @@
 
 package com.pikatimer.participant;
 
+import com.pikatimer.race.Wave;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
@@ -45,7 +53,7 @@ public class Participant {
    private final StringProperty stateProperty;
    private final StringProperty countryProperty;
    private LocalDate birthdayProperty; 
-           
+   private final ObservableList<Wave> waves;         
     public Participant() {
         this("","");
     }
@@ -61,7 +69,7 @@ public class Participant {
         this.cityProperty = new SimpleStringProperty();
         this.stateProperty = new SimpleStringProperty();
         this.countryProperty = new SimpleStringProperty();
-        
+        this.waves=FXCollections.observableArrayList();
         setFirstName(firstName);
         setLastName(lastName);
     }
@@ -228,5 +236,22 @@ public class Participant {
     public LocalDate birthdayProperty() {
         return birthdayProperty;
     }
-    
+    //create table part2wave (participant_id int, wave_id int); 
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(name = "part2wave", joinColumns = { 
+                    @JoinColumn(name = "PARTICIPANT_ID", nullable = false, updatable = false) }, 
+                    inverseJoinColumns = { @JoinColumn(name = "WAVE_ID", 
+                                    nullable = false, updatable = false) })
+    public List<Wave> getWaves() {
+            return waves.sorted();
+    }
+    public void setWaves(List<Wave> w) {
+            waves.setAll(w);
+    }
+    public void addWave(Wave w) {
+        waves.add(w); 
+    }
+    public ObservableList<Wave> wavesProperty() {
+        return waves; 
+    }
 }

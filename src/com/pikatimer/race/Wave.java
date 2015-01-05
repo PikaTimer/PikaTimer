@@ -4,21 +4,27 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.participant.Participant;
 import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
@@ -46,7 +52,7 @@ public class Wave {
     private final StringProperty waveAssignmentStart;
     private final StringProperty waveAssignmentEnd; 
     private final IntegerProperty wavePosition;
-   
+    private final ObservableList<Participant> participants; 
     
     
 
@@ -65,7 +71,7 @@ public class Wave {
         this.waveMaxStartString = new SimpleStringProperty();
         this.wavePosition = new SimpleIntegerProperty();
         //this.raceCutoff = LocalTime.parse("10:30");
-        
+        this.participants=FXCollections.observableArrayList();
         //raceSplits = FXCollections.observableArrayList();
         //raceWaves = FXCollections.observableArrayList();
         
@@ -199,5 +205,39 @@ public class Wave {
         return waveAssignmentEnd;
     }
 
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "waves")
+    public List<Participant> getParticipants() {
+            return participants.sorted();
+    }
+    public void setParticipants(List<Participant> stocks) {
+            participants.setAll(stocks);
+    }
+    public ObservableList<Participant> participantsProperty() {
+        return participants; 
+    }
 
+    
+    @Override
+    public String toString(){
+        if(race.wavesProperty().size()> 1) {
+            //System.out.println("Wave.toString() called: " + race.getRaceName() + " " + waveName.getValueSafe());
+            return race.getRaceName() + " " + waveName.getValueSafe(); 
+        } else {
+            //System.out.println("Wave.toString() called: " + race.getRaceName() );
+            return race.getRaceName();
+        }
+    }
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() ); 
+        return this.IDProperty.getValue().equals(((Wave)obj).IDProperty.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+    }
 }

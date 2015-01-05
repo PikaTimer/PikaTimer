@@ -5,6 +5,8 @@
  */
 
 package com.pikatimer.participant;
+import com.pikatimer.race.RaceDAO;
+import com.pikatimer.race.Wave;
 import com.pikatimer.util.AlphanumericComparator;
 import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
@@ -12,11 +14,14 @@ import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.collections.ObservableList;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -38,6 +43,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.controlsfx.control.CheckComboBox;
 
 /**
  *
@@ -49,6 +55,7 @@ public class FXMLParticipantController  {
     @FXML private TableColumn bibNumberColumn;
     @FXML private VBox formVBox; 
     @FXML private TextField bibTextField;
+    @FXML private CheckComboBox<Wave> waveComboBox; 
     @FXML private TextField firstNameField;
     @FXML private TextField lastNameField;
     @FXML private TextField ageTextField;
@@ -198,6 +205,43 @@ public class FXMLParticipantController  {
         listSizeLabel.textProperty().bind(Bindings.size(participantsList).asString());
         filteredSizeLabel.textProperty().bind(Bindings.size(sortedParticipantsList).asString());
         
+        // if there is only one race, hide the option to pick a race... 
+        waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        waveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
+        RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
+            //waveComboBox.getItems().clear();
+            //Platform.runLater(() -> {
+                System.out.println("PartController::raceWaves(changeListener) fired...");
+                waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
+            //});
+        });
+        
+        
+        // DOES NOT WORK :-( 
+        waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                System.out.println("waveComboBox out focus");
+            } else {
+                System.out.println("waveComboBox in focus");
+            }
+        });
+        // Does Work
+        waveComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends Wave> c) -> {
+            while (c.next()) {
+                if (c.wasAdded()) {
+                    c.getAddedSubList().forEach(w -> {
+                        System.out.println("waveComboBox new selection: " + w.toString());
+                        // uncheck all other waves associated with that race... 
+                        waveComboBox.getItems().forEach(i -> {
+                            if (i.getRace() == w.getRace() && !i.equals(w) )
+                                waveComboBox.getCheckModel().clearCheck(i);
+                        }); 
+                    });
+                }
+            }
+            //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
+        });
         System.out.println("Done Initializing ParticipantController");
     }
     
@@ -215,6 +259,7 @@ public class FXMLParticipantController  {
             p.setSex(sexTextField.getText());
             p.setCity(cityComboBox.getValue().toString());
             p.setState(stateComboBox.getValue().toString());
+            p.setWaves(waveComboBox.getCheckModel().getCheckedItems());
             
             //participantsList.add(p);
             participantDAO.addParticipant(p);
@@ -246,7 +291,7 @@ public class FXMLParticipantController  {
     public void editParticipant(Participant p) {
         
         editedParticipant=p;
-
+        waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
         sexTextField.setText(p.getSex());
         ageTextField.setText(p.getAge().toString());
         bibTextField.setText(p.getBib());
@@ -255,6 +300,10 @@ public class FXMLParticipantController  {
         emailField.setText(p.getEmail());   
         cityComboBox.setValue(p.getCity()); 
         stateComboBox.setValue(p.getState());
+        waveComboBox.getCheckModel().clearChecks();
+        p.getWaves().forEach(w -> {waveComboBox.getCheckModel().check(w);});
+        //waveComboBox.getCheckModel().check(null);
+        
         
         // Make the update button visible and hide the add button
         formUpdateButton.setVisible(true);
@@ -268,6 +317,9 @@ public class FXMLParticipantController  {
     public void updateParticipant(ActionEvent fxevent){
         
         if (!firstNameField.getText().isEmpty() && !lastNameField.getText().isEmpty()) {
+            
+            // pull the list of checked waves
+            
             editedParticipant.setFirstName(firstNameField.getText());
             editedParticipant.setLastName(lastNameField.getText());
             editedParticipant.setEmail(emailField.getText());
@@ -276,7 +328,7 @@ public class FXMLParticipantController  {
             editedParticipant.setSex(sexTextField.getText());
             editedParticipant.setCity(cityComboBox.getValue().toString());
             editedParticipant.setState(stateComboBox.getValue().toString());
-            
+            editedParticipant.setWaves(waveComboBox.getCheckModel().getCheckedItems());
             
             // reset the fields
             resetForm();   
@@ -300,6 +352,10 @@ public class FXMLParticipantController  {
         // reset the fields
         cityComboBox.setValue(null); 
         stateComboBox.setValue(null);
+        //waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
+        waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
+        waveComboBox.getCheckModel().clearChecks();
+
 
         sexTextField.setText("");
         ageTextField.setText("");
@@ -324,16 +380,6 @@ public class FXMLParticipantController  {
     }
     
     public void importParticipants(ActionEvent fxevent) throws FlowException{
-//        long starttime = System.currentTimeMillis();
-//        
-//        for ( int i=1; i<=10000; i++ ) {
-//            Participant p = new Participant("Test" + Integer.toString(i), "Last");
-//            p.setBib(Integer.toString(i));
-//            participantDAO.addParticipant(p);
-//        }
-//        long endtime = System.currentTimeMillis();
-//        System.out.println("Import Time: " + (endtime-starttime));
-      
         // todo
         Stage importStage = new Stage();
                 

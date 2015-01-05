@@ -18,8 +18,8 @@ import org.hibernate.Session;
  * @author jcgarner
  */
 public class RaceDAO {
-            private static final ObservableList<Race> raceList =FXCollections.observableArrayList();
-
+    private static final ObservableList<Race> raceList =FXCollections.observableArrayList();
+    private static final ObservableList<Wave> waveList =FXCollections.observableArrayList();
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -42,13 +42,13 @@ public class RaceDAO {
     }
     
     public void addWave(Wave w) {
-        Race r = w.getRace();
-        r.addWave(w);
+        if (w.getRace() != null) w.getRace().addWave(w);
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.save(w);
         s.getTransaction().commit();
         System.out.println("Adding Wave id: " + w.getID() + "to" + w.getRace().getRaceName());
+        waveList.add(w); 
     }
     
     public void addSplit (Split w) {
@@ -64,10 +64,7 @@ public class RaceDAO {
 
     
     public void refreshRaceList() { 
-
         List<Race> list = new ArrayList<>();
-        
-
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         System.out.println("RacedAO.refreshRaceList() Starting the query");
@@ -90,6 +87,33 @@ public class RaceDAO {
         return raceList;
     }      
 
+    public void refreshWaveList() { 
+        List<Wave> list = new ArrayList<>();
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("RacedAO.refreshWaveList() Starting the query");
+        
+        try {  
+            list=s.createQuery("from Wave").list();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } 
+        s.getTransaction().commit(); 
+        
+        //System.out.println("Returning the list");
+        waveList.setAll(list);
+//        waveList.clear();
+//        raceList.forEach( r -> {waveList.addAll(r.getWaves()); });
+    }     
+    
+    public ObservableList<Wave> listWaves() { 
+        if(waveList.size() < 1)  refreshWaveList();
+        System.out.println("ListWaves for " + waveList.size());
+        //refreshWaveList(); 
+        
+        return waveList; //.sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString()));
+    } 
+    
     public void removeRace(Race tl) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
@@ -99,8 +123,15 @@ public class RaceDAO {
     }      
     
     public void removeWave(Wave w) {
-        Race r = w.getRace(); 
-        r.removeWave(w);
+        
+        w.getRace().removeWave(w); 
+        //refreshWaveList();         
+        System.out.println("removeWaves before: waveList.size()= " + waveList.size());
+        System.out.println("Wave: " + w.idProperty());
+        waveList.forEach(e -> {System.out.println("Possible: " + e.idProperty() + " " + e.equals(w));});
+        Boolean res = waveList.remove(w);
+        System.out.println("removeWaves after: waveList.size()= " + waveList.size() + " result: " + res);
+
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.delete(w);
@@ -155,6 +186,8 @@ public class RaceDAO {
         s.beginTransaction(); 
         s.update(w);
         s.getTransaction().commit();
+                //refreshWaveList(); 
+
      }
     
     public void updateSplit (Split sp) {

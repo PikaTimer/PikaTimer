@@ -8,21 +8,31 @@ Add 'About' page w/ links to the following items:
 --AlphanumericComparator 
 --flyaway
 --DataFX
+--ControlsFX 
 
 Races:
 DONE -- Add Races
 DONE -- If only one race, race name = event name (hide the race name)
 DONE -- Specify Distance for race
-Specify an optional cutoff time for the race
-Calculate the pace needed to make the cutoff 
+DONE -- Specify an optional cutoff time for the race
+DONE -- Calculate the pace needed to make the cutoff 
 DONE -- Setup wave starts (assigned by bib for now, AG/Other later) with a minimum of 1 per race
-Setup wave <-> participant map
-Setup AG's
-Setup split locations
-Split -> timing location map
-Map segments to split locations (distance, min/max times, display rate: m/s, m/h, k/h, s/100y, s/100m) 
+DONE -- Setup wave <-> participant map
+DONE -- Setup split locations
+DONE -- Split -> timing location map
 DONE -- Setup start waves
+Setup AG's
+Setup Award Depth 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
+Ability to set min/max speeds for a segment
+Ability to drag/drop splits
+protect start/finish split from removal
+auto-update finish split distance
+allow for zero distance splits (transition)
+Ability to Flag as a relay race
+Cumulative vs differential distance for splits specification?
+Ability to override the pace display for a segment: m/s, m/h, k/h, s/100y, s/100m) 
+Ability to create segment "groups" (swim, bike, run)? 
 Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
 
 Participants:
@@ -36,11 +46,13 @@ DONE -- double click to edit a row
 DONE -- swap bibs menu option if two and only two rows are selected
 DONE -- Move the participantsList management into the ParticipantDAO
 DONE -- import from csv
-Clean up import from csv 
+DONE -- ability to assign the runner to a wave of one or more races
 DONE (I hope) --  Fix deadlock with mass write/delete
+Clean up import from csv (race/wave assignment, field formatting, etc)
 export to csv
 Validate csv file before continuing. 
 Error check the fields (age, city, state, bib, etc). 
+Autocomplete text fields for city/state based on existing data and such
 Wave(Race) Assignment 
 Automatic Wave (Race) Assignment based on bib #
 Update/Add on enter from any valid field
@@ -63,22 +75,25 @@ Auto detect gun times based on triggers in input files and assign to the race/wa
 Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 Continually import times from file (tail in a separate task) to a timing point
 Continually import times from box (via tcp in a separate task) to a timing point
+Time shift (+/- a fixed offset to adjust for clock errors on the timing box) 
 
 Results:
 Show results
 Relay Results
 Publish to static web site
-Publish to responsive 5 based web site
+Publish to responsive / html 5 based web site
 Publish to 3rd party results web site / XXXXX.com? 
 
 Awards: 
 Set depth per race
 Set depth based on # registrants / finishers
 Team based on top X scorers (specified per team category)
+Award Depth options: Fixed depth, variable, top X % with a cap
 
 
-
-Series Manager (seperate App)
+-------------------------------------
+Series Manager (separate App?)
+-------------------------------------
 select events
 Individual vs Team
-
+Sync team info
