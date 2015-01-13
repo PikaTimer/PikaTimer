@@ -5,9 +5,12 @@
 package com.pikatimer.participant;
 
 
+import com.pikatimer.race.Wave;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
@@ -17,6 +20,10 @@ import javafx.beans.property.StringProperty;
  */
 class ImportWizardData {
     private final SimpleStringProperty filename = new SimpleStringProperty();
+    private BooleanProperty waveAssignByBib = new SimpleBooleanProperty();
+    private BooleanProperty waveAssignByAttribute = new SimpleBooleanProperty();
+
+    private Wave assignedWave; 
     private final Map<String, String> attributeMap = new HashMap<>();
     private ResultSet rs = null;
     private int numToAdd = 0; 
@@ -44,6 +51,25 @@ class ImportWizardData {
     }
     public ResultSet getResultSet() {
         return rs; 
+    }
+    
+    public BooleanProperty  waveAssignByAttributeProperty() {
+        return waveAssignByAttribute; 
+    }
+    public Boolean getWaveAssignByAttribute() {
+        return waveAssignByAttribute.getValue(); 
+    }
+    public BooleanProperty  waveAssignByBibProperty() {
+        return waveAssignByBib; 
+    }
+    public Boolean getWaveAssignByBib() {
+        return waveAssignByBib.getValue(); 
+    }
+    public void setAssignedWave(Wave w) {
+        assignedWave=w; 
+    }
+    public Wave getAssignedWave(){
+        return assignedWave; 
     }
     
     public void mapAttrib(String k, String v) {

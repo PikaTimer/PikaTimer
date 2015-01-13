@@ -115,7 +115,7 @@ public class Split {
         return splitPosition; 
     }
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RACE_ID",nullable=false)
     public Race getRace() {
         return race;
@@ -124,7 +124,7 @@ public class Split {
         race=r;
     }
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TIMING_LOC_ID",nullable=false)
     public TimingLocation getTimingLocation() {
         return splitLocation;
@@ -204,6 +204,20 @@ public class Split {
     }
     public StringProperty splitDistanceUnitsProperty() {
         return splitDistanceUnitString; 
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() ); 
+        return this.IDProperty.getValue().equals(((Split)obj).IDProperty.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
     }
 
 }

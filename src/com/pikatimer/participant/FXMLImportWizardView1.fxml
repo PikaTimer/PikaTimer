@@ -10,12 +10,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.text.Font?>
 
-
 <VBox spacing="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <HBox alignment="CENTER" spacing="10.0">
          <children>
-            <Label fx:id="fileNameLabel" prefHeight="35.0" prefWidth="233.0" text="Choose a file... ">
+            <Label fx:id="fileNameLabel" prefHeight="35.0" prefWidth="182.0" text="Choose a file... ">
                 <font>
                     <Font size="24.0" />
                 </font>
@@ -26,9 +25,29 @@
             <Insets />
          </opaqueInsets>
       </HBox>
-      <CheckBox mnemonicParsing="false" text="Merge / Update" />
-      <CheckBox mnemonicParsing="false" text="Cleanup City / State" />
-      <CheckBox mnemonicParsing="false" text="Cleanup Names" />
+      <CheckBox fx:id="clearExistingCheckBox" mnemonicParsing="false" text="Clear existing participants" />
+      <CheckBox fx:id="cleanupCityCheckBox" mnemonicParsing="false" text="Cleanup City / State data" />
+      <CheckBox fx:id="cleanupNamesCheckBox" mnemonicParsing="false" text="Cleanup Names" />
+      <VBox fx:id="bibAssignmentVBox" spacing="5.0">
+         <children>
+            <Label text="Race/Wave Assigment Method:">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <CheckBox fx:id="waveByBibCheckBox" mnemonicParsing="false" text="Assign Race/Wave by Bib Number" />
+            <HBox alignment="CENTER_LEFT" spacing="10.0" VBox.vgrow="NEVER">
+               <children>
+                  <CheckBox fx:id="waveHardCodeCheckBox" mnemonicParsing="false" text="Assign All to Race/Wave" />
+                  <ComboBox fx:id="waveComboBox" />
+               </children>
+            </HBox>
+            <CheckBox fx:id="waveByAttributeCheckBox" mnemonicParsing="false" text="Assign by Import Attribute" />
+         </children>
+         <padding>
+            <Insets top="5.0" />
+         </padding>
+      </VBox>
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

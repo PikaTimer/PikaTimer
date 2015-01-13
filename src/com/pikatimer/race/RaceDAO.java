@@ -76,7 +76,7 @@ public class RaceDAO {
         } 
         s.getTransaction().commit(); 
         
-        System.out.println("Returning the list");
+        System.out.println("RaceDAO::refreshRaceList() Returning the list");
         if(!raceList.isEmpty())
             raceList.clear();
         raceList.addAll(list);
@@ -88,22 +88,9 @@ public class RaceDAO {
     }      
 
     public void refreshWaveList() { 
-        List<Wave> list = new ArrayList<>();
-        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
-        s.beginTransaction();
-        System.out.println("RacedAO.refreshWaveList() Starting the query");
-        
-        try {  
-            list=s.createQuery("from Wave").list();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        } 
-        s.getTransaction().commit(); 
-        
-        //System.out.println("Returning the list");
-        waveList.setAll(list);
-//        waveList.clear();
-//        raceList.forEach( r -> {waveList.addAll(r.getWaves()); });
+
+        waveList.clear();
+        raceList.forEach( r -> {waveList.addAll(r.getWaves()); });
     }     
     
     public ObservableList<Wave> listWaves() { 

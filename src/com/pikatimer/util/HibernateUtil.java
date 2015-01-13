@@ -66,6 +66,7 @@ public class HibernateUtil {
         cfg.setProperty("hibernate.connection.username", "sa");
         cfg.setProperty("hibernate.connection.password", "");
         cfg.setProperty("hibernate.show_sql", "true");
+        cfg.setProperty("hibernate.enable_lazy_load_no_trans", "true");
         cfg.setProperty("hibernate.dialect","org.hibernate.dialect.H2Dialect");
         cfg.setProperty("hibernate.cache.provider_class","org.hibernate.cache.NoCacheProvider");
         cfg.setProperty("hibernate.current_session_context_class", "thread");

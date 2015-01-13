@@ -9,7 +9,9 @@ import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -28,6 +30,8 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.GenericGenerator;
 
 /**
@@ -100,7 +104,7 @@ public class Wave {
         return wavePosition; 
     }
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RACE_ID",nullable=false)
     public Race getRace() {
         return race;
@@ -205,16 +209,17 @@ public class Wave {
         return waveAssignmentEnd;
     }
 
-    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "waves")
-    public List<Participant> getParticipants() {
-            return participants.sorted();
-    }
-    public void setParticipants(List<Participant> stocks) {
-            participants.setAll(stocks);
-    }
-    public ObservableList<Participant> participantsProperty() {
-        return participants; 
-    }
+//    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "waves")
+//    @Fetch(FetchMode.SUBSELECT)
+//    public Set<Participant> getParticipants() {
+//            return new HashSet<>(participants);
+//    }
+//    public void setParticipants(Set<Participant> p) {
+//            participants.setAll(p);
+//    }
+//    public ObservableList<Participant> participantsProperty() {
+//        return participants; 
+//    }
 
     
     @Override

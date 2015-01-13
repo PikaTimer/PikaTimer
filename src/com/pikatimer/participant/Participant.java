@@ -8,8 +8,10 @@ package com.pikatimer.participant;
 import com.pikatimer.race.Wave;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -28,6 +30,8 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.GenericGenerator;
 
 /**
@@ -236,22 +240,41 @@ public class Participant {
     public LocalDate birthdayProperty() {
         return birthdayProperty;
     }
+    
+    
     //create table part2wave (participant_id int, wave_id int); 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "part2wave", joinColumns = { 
-                    @JoinColumn(name = "PARTICIPANT_ID", nullable = false, updatable = false) }, 
-                    inverseJoinColumns = { @JoinColumn(name = "WAVE_ID", 
-                                    nullable = false, updatable = false) })
-    public List<Wave> getWaves() {
-            return waves.sorted();
+                    @JoinColumn(name = "PARTICIPANT_ID") }, 
+                    inverseJoinColumns = { @JoinColumn(name = "WAVE_ID") })
+    @Fetch(FetchMode.SUBSELECT)
+    public Set<Wave> getWaves() {
+            return new HashSet<>(waves);
+    }
+    public void setWaves(Set<Wave> w) {
+            waves.setAll(w);
     }
     public void setWaves(List<Wave> w) {
-            waves.setAll(w);
+        waves.setAll(w);
     }
     public void addWave(Wave w) {
         waves.add(w); 
     }
     public ObservableList<Wave> wavesProperty() {
         return waves; 
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        //System.out.println("Participant.equals called: " + IDProperty.getValue() + " vs " + ((Participant)obj).IDProperty.getValue() ); 
+        return this.IDProperty.getValue().equals(((Participant)obj).IDProperty.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
     }
 }

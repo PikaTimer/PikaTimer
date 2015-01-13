@@ -4,6 +4,7 @@
  */
 package com.pikatimer.timing;
 
+import com.pikatimer.participant.Participant;
 import java.util.List;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -14,6 +15,7 @@ import javafx.collections.ObservableList;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
@@ -65,7 +67,7 @@ public class TimingLocation {
         return locationName;
     }
     
-    @OneToMany(mappedBy="timingLocation",cascade={CascadeType.PERSIST, CascadeType.REMOVE})
+    @OneToMany(mappedBy="timingLocation",fetch = FetchType.LAZY)
     public List<Split> getSplits() {
         //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
         return associatedSplits.sorted(); 
@@ -86,8 +88,17 @@ public class TimingLocation {
     }
     
     
-    public Boolean equals(TimingLocation t) {
-        return t.IDProperty.equals(this.IDProperty);
-        //return t.locationName.equals(this.locationName);
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() ); 
+        return this.IDProperty.getValue().equals(((TimingLocation)obj).IDProperty.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
     }
 }

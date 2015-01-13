@@ -7,11 +7,14 @@
 package com.pikatimer.participant;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
+import com.pikatimer.race.WaveAssignment;
 import com.pikatimer.util.AlphanumericComparator;
 import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 import javafx.application.Platform;
@@ -135,7 +138,10 @@ public class FXMLParticipantController  {
                 }
 		
             });
-            rowMenu.getItems().addAll(editItem, removeItem,swapBibs);
+            
+            //MenuItem assignWave = new MenuItem("Assign");
+            // context menu to assign/unassign runners to a given wave
+            rowMenu.getItems().addAll(editItem, removeItem, swapBibs);
             
             // only display context menu for non-null items:
             row.contextMenuProperty().bind(
@@ -212,14 +218,19 @@ public class FXMLParticipantController  {
         RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
             //waveComboBox.getItems().clear();
             //Platform.runLater(() -> {
-                System.out.println("PartController::raceWaves(changeListener) fired...");
-                waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
+               System.out.println("PartController::raceWaves(changeListener) fired...");
+                
+            // TODO
+            //rework the popup menu for the add/delete
+            
+            waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
             //});
         });
         
         
         // DOES NOT WORK :-( 
         waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            System.out.println("PartController::waveComboBox(focusedListener) fired...");
             if (!newPropertyValue) {
                 System.out.println("waveComboBox out focus");
             } else {
@@ -228,10 +239,15 @@ public class FXMLParticipantController  {
         });
         // Does Work
         waveComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends Wave> c) -> {
+            System.out.println("PartController::waveComboBox(changeListener) fired...");
+
             while (c.next()) {
                 if (c.wasAdded()) {
-                    c.getAddedSubList().forEach(w -> {
-                        System.out.println("waveComboBox new selection: " + w.toString());
+                    //ObservableList<Wave>  added = FXCollections.observableArrayList(c.getAddedSubList());
+                    FXCollections.observableArrayList(c.getAddedSubList()).forEach( w -> {
+                    //added.forEach(w -> { 
+                    //c.getAddedSubList().forEach(w -> {
+                        //System.out.println("waveComboBox new selection: " + w.toString());
                         // uncheck all other waves associated with that race... 
                         waveComboBox.getItems().forEach(i -> {
                             if (i.getRace() == w.getRace() && !i.equals(w) )
@@ -243,6 +259,37 @@ public class FXMLParticipantController  {
             //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
         });
         System.out.println("Done Initializing ParticipantController");
+        
+      
+        bibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                System.out.println("bibTextField out focus");
+                if ( editedParticipant == null || !bibTextField.getText().equals(editedParticipant.getBib())) { 
+                    AlphanumericComparator comp = new AlphanumericComparator(); 
+                    waveComboBox.getCheckModel().clearChecks();
+                    Map raceMap = new HashMap(); 
+                    waveComboBox.getItems().forEach(i -> {
+                        if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
+                            String start = i.getWaveAssignmentStart(); 
+                            String end = i.getWaveAssignmentEnd(); 
+                            if (!(start.isEmpty() && end.isEmpty()) && (comp.compare(start, bibTextField.getText()) <= 0 || start.isEmpty()) && (comp.compare(end, bibTextField.getText()) >= 0 || end.isEmpty())) {
+                                if(raceMap.containsKey(i.getRace())) {
+                                    //System.out.println("Already in race " + i.getRace().getRaceName()); 
+                                } else {
+                                    waveComboBox.getCheckModel().check(i);
+                                    //System.out.println("Bib " + bibTextField.getText() + " matched wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
+                                    raceMap.put(i.getRace(), true); 
+                                }
+                        } else {
+                                //System.out.println("Bib " + bibTextField.getText() + " did not match wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
+                            }
+                        }
+                    }); 
+                }
+            } else {
+                //System.out.println("bibTextField in focus");
+            }
+        });
     }
     
     @FXML
@@ -285,7 +332,7 @@ public class FXMLParticipantController  {
         participantDAO.removeParticipants(p);
         
         long endtime = System.currentTimeMillis();
-        System.out.println("Delete Time: " + (endtime-starttime));
+        //System.out.println("Delete Time: " + (endtime-starttime));
     }
     
     public void editParticipant(Participant p) {
@@ -300,8 +347,15 @@ public class FXMLParticipantController  {
         emailField.setText(p.getEmail());   
         cityComboBox.setValue(p.getCity()); 
         stateComboBox.setValue(p.getState());
+        
         waveComboBox.getCheckModel().clearChecks();
-        p.getWaves().forEach(w -> {waveComboBox.getCheckModel().check(w);});
+        p.getWaves().stream().forEach(w -> {
+            waveComboBox.getCheckModel().check(w);
+            System.out.println("Checking " + w.getID() + " " + w.toString());
+        });
+        waveComboBox.getCheckModel().getCheckedItems().forEach(w -> {
+            System.out.println("Checked " + w.getID() + " " + w.toString());
+        });
         //waveComboBox.getCheckModel().check(null);
         
         

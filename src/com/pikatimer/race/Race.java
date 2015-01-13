@@ -23,6 +23,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
@@ -196,7 +197,7 @@ public class Race {
         return raceCutoffProperty;  
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE})
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
     public List<Wave> getWaves() {
         return raceWaves.sorted(); 
     }
@@ -215,7 +216,7 @@ public class Race {
         raceWaves.remove(w); 
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE})
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
     @OrderBy("split_seq_number")
     public List<Split> getSplits() {
         return raceSplits.sorted(); 
@@ -248,4 +249,17 @@ public class Race {
         raceSplits.remove(s); 
     }
     
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() ); 
+        return this.IDProperty.getValue().equals(((Race)obj).IDProperty.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+    }
 }

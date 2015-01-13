@@ -4,6 +4,10 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.race.RaceDAO;
+import com.pikatimer.race.Wave;
+import com.pikatimer.race.WaveAssignment;
+import com.pikatimer.util.AlphanumericComparator;
 import io.datafx.controller.FXMLController;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.context.FXMLViewFlowContext;
@@ -11,8 +15,13 @@ import io.datafx.controller.flow.context.ViewFlowContext;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -46,7 +55,11 @@ public class ImportWizardView3Controller {
         label.setText("Adding Participants...");
         Map<String,String> mapping = model.getAttributeMap(); 
         
-        // add in a progress bar
+        // if we are assigning the race/wave by bib, lets build a list of possible
+        // if assigning by an imported attribute
+        // if doing a straight assignment, let's just set that up
+        
+//        
         
         // Itterate over the results set, create the map of attributes -> values, 
         // (optionally) clean up the imported values, 
@@ -85,6 +98,13 @@ public class ImportWizardView3Controller {
                             }
                         }
                         Participant newPerson = new Participant(p); 
+                        if(model.getWaveAssignByBib()) {
+                            newPerson.setWaves(getWaveByBib(p.get("bib")));
+                        } else if (model.getWaveAssignByAttribute()) {
+                           // todo
+                        } else {
+                            newPerson.addWave(model.getAssignedWave()); 
+                        }
                         
                         //TODO: merge vs add
                         //TODO: Cleanup Name Capitalization (if selected)
@@ -100,7 +120,7 @@ public class ImportWizardView3Controller {
                     }
                 } catch (SQLException ex) {
                     System.out.println("Something bad happened... ");
-                    Logger.getLogger(ImportWizardView2Controller.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(ImportWizardView3Controller.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 updateMessage("Saving...");
                 participantDAO.addParticipant(participantsList);
@@ -110,11 +130,37 @@ public class ImportWizardView3Controller {
             }
         };
         
-        //TODO: Update the progress bar
+        
         //TODO: hide the 'done' button until the task is, well, done. 
         progressBar.progressProperty().bind(importTask.progressProperty());
         label.textProperty().bind(importTask.messageProperty());
         new Thread(importTask).start();
                 
     }
+    
+   
+    
+    private Set<Wave> getWaveByBib(String bib) {
+        AlphanumericComparator comp = new AlphanumericComparator(); 
+        
+        Set<Wave> waves = new HashSet<>();
+        Map raceMap = new HashMap(); 
+        
+        RaceDAO.getInstance().listWaves().forEach(i -> {
+            if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
+                String start = i.getWaveAssignmentStart(); 
+                String end = i.getWaveAssignmentEnd(); 
+                if (!(start.isEmpty() && end.isEmpty()) && (comp.compare(start, bib) <= 0 || start.isEmpty()) && (comp.compare(end, bib) >= 0 || end.isEmpty())) {
+                    if(!raceMap.containsKey(i.getRace())) {
+                        //System.out.println("Bib " + bibTextField.getText() + " matched wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
+                        raceMap.put(i.getRace(), true); 
+                        waves.add(i); 
+                    }
+                }
+            }
+        });
+        
+        return waves; 
+    }
+    
 }
