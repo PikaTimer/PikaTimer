@@ -83,8 +83,18 @@ create table bib2chip (bib_id varchar, chip_id varchar unique);
 
 create table part2wave (participant_id int, wave_id int); 
 
-create table timing_data (timing_loc_id int, chip_id varchar, chip_time varchar); 
+create table timing_location_input (
+    id int primary key,
+    timing_location_id int,
+    time_skew bigint,
+    timing_location_type varchar,
+    backup boolean
+);
+ 
+create table raw_timing_data (timing_loc_id int, chip_id varchar, chip_time bigint); 
 
+create table cooked_timing_data (time_loc_id int, bib_id varchar, time bigint, backup_time boolean);
+ 
 create table results (race_id int, participant_id int, split_id int, time bigint); 
 
 commit;
