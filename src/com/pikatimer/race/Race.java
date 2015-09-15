@@ -145,10 +145,19 @@ public class Race {
         return raceUnits;
     }
     public void setRaceDistanceUnits(Unit d) {
-        raceUnits=d;
-        if (raceUnits != null) raceUnitsProperty.setValue(d.toString());
-        if(raceDistance != null && raceUnits != null)
-            raceDistanceProperty.setValue(raceDistance.toPlainString() + " " +raceUnits.toShortString()); 
+        if ( raceUnits != d) {
+            // update existing splits
+            raceUnits=d;
+            raceSplits.stream().forEach(e -> {
+                e.setSplitDistanceUnits(raceUnits);
+                RaceDAO.getInstance().updateSplit(e);
+            });
+
+            if (raceUnits != null) raceUnitsProperty.setValue(d.toString());
+            if(raceDistance != null && raceUnits != null)
+                raceDistanceProperty.setValue(raceDistance.toPlainString() + " " +raceUnits.toShortString()); 
+        }
+        
     }
     public StringProperty raceDistanceUnitsProperty() {
         return raceUnitsProperty;

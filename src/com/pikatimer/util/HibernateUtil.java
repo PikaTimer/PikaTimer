@@ -10,6 +10,7 @@ import com.pikatimer.race.Race;
 import com.pikatimer.race.Wave;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
+import com.pikatimer.timing.TimingLocationInput;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
@@ -60,6 +61,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(Race.class);
         cfg.addAnnotatedClass(Split.class);
         cfg.addAnnotatedClass(TimingLocation.class);
+        cfg.addAnnotatedClass(TimingLocationInput.class);
         cfg.addAnnotatedClass(Wave.class);
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());

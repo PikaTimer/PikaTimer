@@ -53,6 +53,7 @@ public class ImportWizardView1Controller {
         
         fileChooserButton.setOnAction(this::chooseFile);
         
+        model.clearExistingProperty().bind(clearExistingCheckBox.selectedProperty());
         
         // Wave assignment options:
         // if only one race, hide it all and just do a straight assignment

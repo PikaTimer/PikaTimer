@@ -74,14 +74,15 @@ public class ImportWizardView3Controller {
                 //To change body of generated methods, choose Tools | Templates.
                 // get the ParticipantDAO object
                 ParticipantDAO participantDAO = ParticipantDAO.getInstance(); 
-               int numAdded = 0; 
-               int numToAdd = model.getNumToAdd(); 
-               updateProgress(numAdded,numToAdd);
+                int numAdded = 0; 
+                int numToAdd = model.getNumToAdd(); 
+                updateProgress(numAdded,numToAdd);
                
                // add check to see if we should clear first
-               updateMessage("Clearing the existing participants...");
-               participantDAO.blockingClearAll(); 
-               
+                if (model.clearExistingProperty().get()) {
+                    updateMessage("Clearing the existing participants...");
+                    participantDAO.blockingClearAll(); 
+                }
                ObservableList<Participant> participantsList =FXCollections.observableArrayList();
                 try {
                     ResultSet rs = new Csv().read(model.getFileName(),null,null);

@@ -134,7 +134,7 @@ public class Split {
             System.out.println("Split.setTimingLocation: " + l.getID());
             splitLocation=l;
             splitLocationString.unbind();
-            splitLocationString.bind(l.raceLocationProperty()); 
+            splitLocationString.bind(l.LocationNameProperty()); 
             System.out.println("Split.setTimingLocation: " + splitLocationString.getValueSafe()); 
         } else {
             System.out.println("Split.setTimingLocation: null"); 

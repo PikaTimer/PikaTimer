@@ -11,32 +11,30 @@
 
 <GridPane fx:id="rootGridPane" alignment="CENTER" hgap="10.0" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLopenEventController">
     <children>
-      <HBox GridPane.rowIndex="1">
+      <HBox spacing="10.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
          <children>
-            <Button mnemonicParsing="false" text="Clone Race" textAlignment="CENTER" GridPane.rowIndex="1">
+            <Button mnemonicParsing="false" onAction="#openEvent" text="Open" GridPane.rowIndex="1" HBox.hgrow="ALWAYS">
                <padding>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </padding>
             </Button>
-            <Button mnemonicParsing="false" onAction="#openEvent" text="Open" GridPane.rowIndex="1">
-               <padding>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </padding>
-            </Button>
-            <Button mnemonicParsing="false" onAction="#newEvent" text="New Race" textAlignment="CENTER" GridPane.rowIndex="1">
+            <Button mnemonicParsing="false" onAction="#newEvent" text="New Race" textAlignment="CENTER" GridPane.rowIndex="1" HBox.hgrow="ALWAYS">
                <padding>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </padding>
             </Button>
          </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
       </HBox>
-      <VBox GridPane.rowIndex="0">
+      <VBox prefHeight="29.0" prefWidth="207.0" GridPane.hgrow="NEVER" GridPane.rowIndex="0">
          <children>
             <Label alignment="CENTER" prefHeight="43.0" prefWidth="193.0" text="PikaTimer" GridPane.columnIndex="1" />
             <Label fx:id="eventFileName" alignment="CENTER" prefHeight="43.0" prefWidth="193.0" text="" />
          </children>
       </VBox>
-      <VBox GridPane.rowIndex="2">
+      <VBox GridPane.hgrow="ALWAYS" GridPane.rowIndex="2">
          <children>
             <Label fx:id="LoadingLabel" alignment="CENTER" prefHeight="43.0" prefWidth="205.0" text="Loading" textAlignment="CENTER" />
             <ProgressBar fx:id="LoadingProgressBar" prefHeight="18.0" prefWidth="207.0" progress="0.0" />

@@ -59,9 +59,9 @@
           </Tab>
 
             <Tab text="Timing">
-              <content>
-                <AnchorPane minHeight="0.0" minWidth="0.0" />
-              </content>
+            <content>
+                <fx:include fx:id="timingTabPage" source="timing/FXMLTiming.fxml" />
+            </content>
             </Tab>
             <Tab text="Results">
               <content>

@@ -22,6 +22,8 @@ class ImportWizardData {
     private final SimpleStringProperty filename = new SimpleStringProperty();
     private BooleanProperty waveAssignByBib = new SimpleBooleanProperty();
     private BooleanProperty waveAssignByAttribute = new SimpleBooleanProperty();
+    
+    private BooleanProperty clearExistingAttribute = new SimpleBooleanProperty();
 
     private Wave assignedWave; 
     private final Map<String, String> attributeMap = new HashMap<>();
@@ -71,6 +73,11 @@ class ImportWizardData {
     public Wave getAssignedWave(){
         return assignedWave; 
     }
+    
+    public BooleanProperty  clearExistingProperty() {
+        return clearExistingAttribute; 
+    }
+
     
     public void mapAttrib(String k, String v) {
         attributeMap.put(k, v); 

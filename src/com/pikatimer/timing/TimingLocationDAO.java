@@ -20,7 +20,7 @@ import org.hibernate.Session;
  * @author jcgarner
  */
 public class TimingLocationDAO {
-        private static final ObservableList<TimingLocation> timingLocationList =FXCollections.observableArrayList();
+        private static final ObservableList<TimingLocation> timingLocationList =FXCollections.observableArrayList(TimingLocation.extractor());
 
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -172,4 +172,12 @@ public class TimingLocationDAO {
         s.update(tl);
         s.getTransaction().commit();
      } 
+    
+    public void addTimingLocationInput(TimingLocationInput t) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.save(t);
+        s.getTransaction().commit();
+      
+    }
 }

@@ -4,15 +4,15 @@
  */
 package com.pikatimer.timing;
 
-import com.pikatimer.participant.Participant;
 import java.util.List;
+import javafx.beans.Observable;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javax.persistence.CascadeType;
+import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -32,14 +32,16 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="timing_location")
 public class TimingLocation {
     
-    private final IntegerProperty IDProperty;
+   private final IntegerProperty IDProperty;
    private final StringProperty locationName;
    private final ObservableList<Split> associatedSplits; 
+   private final ObservableList<TimingLocationInput> timingInputs; 
 
    public TimingLocation() {
         this.IDProperty = new SimpleIntegerProperty();
         this.locationName = new SimpleStringProperty("Not Yet Set");
         this.associatedSplits = FXCollections.observableArrayList();
+        this.timingInputs = FXCollections.observableArrayList();
    }
    
     @Id
@@ -63,7 +65,7 @@ public class TimingLocation {
     public void setLocationName(String n) {
         locationName.setValue(n);
     }
-    public StringProperty raceLocationProperty() {
+    public StringProperty LocationNameProperty() {
         return locationName;
     }
     
@@ -81,6 +83,19 @@ public class TimingLocation {
         return associatedSplits; 
     }
     
+    @OneToMany(mappedBy="timingLocation",fetch = FetchType.LAZY)
+    public List<TimingLocationInput> getInputs() {
+        //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
+        return timingInputs.sorted(); 
+    }
+    public void setInputs(List<TimingLocationInput> inputs) {
+        //System.out.println("TimingLocation.setSplits(list) called for " + locationName + " with " + splits.size() + " splits"); 
+        timingInputs.setAll(inputs);
+        System.out.println(locationName + " now has " + timingInputs.size() + " splits");
+    }
+    public ObservableList<TimingLocationInput> inputsProperty() {
+        return timingInputs; 
+    }
     
     @Override
     public String toString(){
@@ -101,4 +116,11 @@ public class TimingLocation {
     public int hashCode() {
         return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
     }
+    
+    public static Callback<TimingLocation, Observable[]> extractor() {
+
+        return (TimingLocation tl) -> new Observable[]{tl.LocationNameProperty()};
+
+    }
+
 }

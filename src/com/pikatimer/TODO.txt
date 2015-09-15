@@ -1,4 +1,6 @@
 Overall:
+Upgrade H2 
+Upgrade Hibernate to 5.x
 Fix FXML layout resizing
 Add License Key enforcement
 Add 'About' page w/ links to the following items:
@@ -21,6 +23,7 @@ DONE -- Setup wave <-> participant map
 DONE -- Setup split locations
 DONE -- Split -> timing location map
 DONE -- Setup start waves
+DONE -- Update split distance units when main race unit is updated
 Setup AG's
 Setup Award Depth 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
@@ -32,13 +35,15 @@ allow for zero distance splits (transition)
 Ability to Flag as a relay race
 Cumulative vs differential distance for splits specification?
 Ability to override the pace display for a segment: m/s, m/h, k/h, s/100y, s/100m) 
+Ability to set split specific distance unit
 Ability to create segment "groups" (swim, bike, run)? 
 Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
-Prevent removal of wages that have assigned participants
+Prevent removal of waves that have assigned participants
 Prevent removal of races that have assigned participants
-Prevent removal of Timing Locations that are mapped to splits
+Prevent removal of Timing Locations that are mapped to splits (or cascade)
 Prevent removal of start/finish split
 Auto-update finish split distance/cutoff
+Show bib range if there are multiple races and wave starts is not checked
 
 Participants:
 DONE -- Delete a row/rows via a context menu
@@ -53,6 +58,7 @@ DONE -- Move the participantsList management into the ParticipantDAO
 DONE -- import from csv
 DONE -- ability to assign the runner to a wave of one or more races
 DONE (I hope) --  Fix deadlock with mass write/delete
+Middle Name/Initial
 Clean up import from csv (field formatting, etc)
 export to csv
 Validate csv file before continuing. 
@@ -67,36 +73,70 @@ Link to Relay Team
 Inline Edit of the cells?
 Mass bib assignment 
 Show race/wave as column
-sync from active.com / runsignup / other
+sync from/to fusesport / active.com / runsignup / other
 
 Relay Teams? Figure this one out!
 ? Relay team attribute set to the team name or team id?
 ? Same as regular teams? 
-
+Auto-determine relay team category based on participants (male, female, coed, etc)
+Allow team to cover multiple categories? (female + coed?)
+Team category setup (gender, mixed gender, custom data field setting, etc)
 
 Timing:
 Setup bib -> chip map
-import times from file with min/max times
+
+Raw vs cooked tables. 
+        -- import to raw and place in queue
+        -- run any time shifts, cuts, chip -> bib map
+        -- then insert into cooked and place into results queue
+        -- reprocess raw if parameters for the timing location change
+            -- time shift
+            -- bib -> chip
+            -- min/max times
+
+
+Clear All Option
+Clear timing location Option
+Clear timing location reader option
+Backup only flag for a given reader at a split
+Multiple readers per timing location
+Import times from file
+Discard duplicates
 Auto detect gun times based on triggers in input files and assign to the race/wave
-Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
+
 Continually import times from file (tail in a separate task) to a timing point
 Continually import times from box (via tcp in a separate task) to a timing point
+Rewind option for times read from box/outreach
+Chip sequence gap detection that triggers an automatic rewind for direct reads
+
 Time shift (+/- a fixed offset to adjust for clock errors on the timing box) 
 
+Show most recent data read for a reader / timing location
+Search data read for a reader / timing location
 
 Results:
-Show results
+Read from "cooked" tables queue; 
+    --process, place into results tables, shift/mask other results as warranted
+    --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
+Show results in filterable / sortable view
 Relay Results
 Publish to static web site
 Publish to responsive / html 5 based web site
 Publish to 3rd party results web site / XXXXX.com? 
+
+Team Results
+Male, Female, Coed, user selected variable (city, state, custom, etc)
+scoring numbers per team (1->N)
+for co-ed, number per team of each gender (1->(N-1))
 
 Awards: 
 Set depth per race
 Set depth based on # registrants / finishers
 Team based on top X scorers (specified per team category)
 Award Depth options: Fixed depth, variable, top X % with a cap
-
+Ordered list (overall, masters, AG) with per group option to pull winners from
+downstream awards. (double dipping yes, no, maybe)
+Team awards
 
 -------------------------------------
 Series Manager (separate App?)

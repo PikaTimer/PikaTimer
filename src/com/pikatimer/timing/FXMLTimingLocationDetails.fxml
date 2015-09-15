@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<GridPane fx:id="parentPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingLocationDetailsController">
+   <children>
+      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.valignment="CENTER">
+         <children>
+          
+                  <TextField fx:id="timingLocationInputNameTextField" layoutX="182.0" layoutY="42.0" prefWidth="236.0" GridPane.columnIndex="1" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
+            <Button fx:id="InputFileChooserButton" mnemonicParsing="false" prefHeight="27.0" prefWidth="52.0" text="File...">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </Button>
+         </children>
+         <padding>
+            <Insets left="5.0" right="5.0" />
+         </padding>
+      </HBox>
+      <Label text="Input" GridPane.rowIndex="2">
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </Label>
+      <Label text="Type" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </Label>
+      <ChoiceBox fx:id="InputTypeChoiceBox" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+         <padding>
+            <Insets left="5.0" />
+         </padding>
+         <GridPane.margin>
+            <Insets left="5.0" right="5.0" />
+         </GridPane.margin></ChoiceBox>
+      <Button fx:id="RemoveInput" mnemonicParsing="false" text="Remove" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="3">
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+         <GridPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </GridPane.margin>
+      </Button>
+      <HBox spacing="5.0" GridPane.columnIndex="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1">
+         <children>
+            <ToggleButton fx:id="StartToggleButton" mnemonicParsing="false" text="Tail Input" />
+            <ProgressIndicator fx:id="LocationProgressIndicator" focusTraversable="false" prefHeight="10.0" prefWidth="29.0" GridPane.columnIndex="2" />
+         </children>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </HBox>
+      <TextField fx:id="LocationNameTextField" promptText="Input Name" GridPane.columnIndex="1">
+         <GridPane.margin>
+            <Insets left="5.0" right="5.0" />
+         </GridPane.margin></TextField>
+      <HBox GridPane.columnIndex="1" GridPane.rowIndex="3">
+         <children>
+            <CheckBox fx:id="BackupCheckBox1" mnemonicParsing="false" prefHeight="27.0" prefWidth="100.0" text="Time Skew" GridPane.columnIndex="1" GridPane.rowIndex="3">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </CheckBox>
+            <TextField fx:id="LocationNameTextField1" disable="true" prefHeight="25.0" prefWidth="80.0" promptText="[-]ssssss[.SSS]" />
+            <CheckBox fx:id="BackupCheckBox" mnemonicParsing="false" text="Backup Input">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </CheckBox>
+         </children>
+      </HBox>
+      <Separator prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.vgrow="NEVER" />
+   </children>
+   <columnConstraints>
+      <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="57.0" minWidth="33.0" prefWidth="57.0" />
+      <ColumnConstraints hgrow="ALWAYS" maxWidth="476.0" minWidth="393.0" prefWidth="393.0" />
+      <ColumnConstraints hgrow="SOMETIMES" maxWidth="145.0" minWidth="96.0" prefWidth="145.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" />
+   </rowConstraints>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</GridPane>
