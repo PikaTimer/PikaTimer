@@ -10,6 +10,7 @@ import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -258,17 +259,48 @@ public class Race {
         raceSplits.remove(s); 
     }
     
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() ); 
-        return this.IDProperty.getValue().equals(((Race)obj).IDProperty.getValue());
-    }
+
 
     @Override
     public int hashCode() {
-        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+        int hash = 7;
+        hash = 53 * hash + Objects.hashCode(this.raceDistance);
+        hash = 53 * hash + Objects.hashCode(this.raceUnitsProperty);
+        hash = 53 * hash + Objects.hashCode(this.raceName);
+        hash = 53 * hash + Objects.hashCode(this.relayRace);
+        hash = 53 * hash + Objects.hashCode(this.raceDistanceProperty);
+        return hash;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Race other = (Race) obj;
+        if (!Objects.equals(this.raceDistance, other.raceDistance)) {
+            return false;
+        }
+        if (this.raceUnits != other.raceUnits) {
+            return false;
+        }
+        if (!Objects.equals(this.raceUnitsProperty.getValue(), other.raceUnitsProperty.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.raceName.getValue(), other.raceName.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.relayRace.getValue(), other.relayRace.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.raceDistanceProperty.getValue(), other.raceDistanceProperty.getValue())) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 }

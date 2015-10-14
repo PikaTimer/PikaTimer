@@ -10,6 +10,7 @@ import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.Objects;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -206,18 +207,79 @@ public class Split {
         return splitDistanceUnitString; 
     }
     
-    @Override
+    /*    @Override
     public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() ); 
-        return this.IDProperty.getValue().equals(((Split)obj).IDProperty.getValue());
+    if (obj == null || getClass() != obj.getClass()) {
+    return false;
     }
+    //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() );
+    return this.IDProperty.getValue().equals(((Split)obj).IDProperty.getValue());
+    }
+    
+    @Override
+    public int hashCode() {
+    return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+    }*/
 
     @Override
     public int hashCode() {
-        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+        int hash = 7;
+        hash = 29 * hash + Objects.hashCode(this.race);
+        hash = 29 * hash + Objects.hashCode(this.splitLocation);
+        hash = 29 * hash + Objects.hashCode(this.splitLocationString);
+        hash = 29 * hash + Objects.hashCode(this.splitPosition);
+        hash = 29 * hash + Objects.hashCode(this.splitDistance);
+        hash = 29 * hash + Objects.hashCode(this.splitDistanceString);
+        hash = 29 * hash + Objects.hashCode(this.splitDistanceUnit);
+        hash = 29 * hash + Objects.hashCode(this.splitDistanceUnitString);
+        hash = 29 * hash + Objects.hashCode(this.splitPace);
+        hash = 29 * hash + Objects.hashCode(this.splitPaceString);
+        hash = 29 * hash + Objects.hashCode(this.splitName);
+        hash = 29 * hash + Objects.hashCode(this.splitCutoff);
+        hash = 29 * hash + Objects.hashCode(this.splitCutoffString);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Split other = (Split) obj;
+        if (!Objects.equals(this.race, other.race)) {
+            return false;
+        }
+        if (!Objects.equals(this.splitLocation, other.splitLocation)) {
+            return false;
+        }
+        if (!Objects.equals(this.splitLocationString.getValue(), other.splitLocationString.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.splitPosition.getValue(), other.splitPosition.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.splitDistance, other.splitDistance)) {
+            return false;
+        }
+        if (this.splitDistanceUnit != other.splitDistanceUnit) {
+            return false;
+        }
+
+        if (this.splitPace != other.splitPace) {
+            return false;
+        }
+
+        if (!Objects.equals(this.splitName.getValue(), other.splitName.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.splitCutoff, other.splitCutoff)) {
+            return false;
+        }
+
+        return true;
     }
 
 }

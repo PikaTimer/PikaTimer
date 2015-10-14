@@ -6,8 +6,12 @@ package com.pikatimer.timing;
 
 import com.pikatimer.util.HibernateUtil;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 //import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,21 +23,30 @@ import org.hibernate.Session;
  *
  * @author jcgarner
  */
-public class TimingLocationDAO {
+public class TimingDAO {
         private static final ObservableList<TimingLocation> timingLocationList =FXCollections.observableArrayList(TimingLocation.extractor());
-
+        private static final BlockingQueue<RawTimeData> rawTimeQueue = new ArrayBlockingQueue(100000);
+        private static final BlockingQueue<CookedTimeData> cookedTimeQueue = new ArrayBlockingQueue(100000);
+        private static final Map<TimingLocationInput,Thread> timingInputThreadMap = new HashMap();
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
     * or the first access to SingletonHolder.INSTANCE, not before.
     */
     private static class SingletonHolder { 
-            private static final TimingLocationDAO INSTANCE = new TimingLocationDAO();
+            private static final TimingDAO INSTANCE = new TimingDAO();
     }
 
-    public static TimingLocationDAO getInstance() {
+    public static TimingDAO getInstance() {
             return SingletonHolder.INSTANCE;
     }
     
+    public BlockingQueue<RawTimeData> getRawTimeQueue () {
+        return rawTimeQueue; 
+    }
+    
+    public BlockingQueue<CookedTimeData> getCookedTimeQueue () {
+        return cookedTimeQueue; 
+    }
     public void addTimingLocation(TimingLocation tl) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
@@ -72,7 +85,7 @@ public class TimingLocationDAO {
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        System.out.println("Runing the Query");
+        System.out.println("Runing the refreshTimingLocationList Query");
         
         try {  
             list=s.createQuery("from TimingLocation").list();
@@ -81,7 +94,7 @@ public class TimingLocationDAO {
         } 
         s.getTransaction().commit(); 
         
-        System.out.println("Returning the list");
+        System.out.println("Returning the refreshTimingLocationList list");
         if(!timingLocationList.isEmpty())
             timingLocationList.clear();
         timingLocationList.addAll(list);
@@ -174,10 +187,37 @@ public class TimingLocationDAO {
      } 
     
     public void addTimingLocationInput(TimingLocationInput t) {
+        if (t.getTimingLocation() != null) t.getTimingLocation().addInput(t);
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.save(t);
         s.getTransaction().commit();
       
     }
+    public void updateTimingLocationInput(TimingLocationInput t) {
+        
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.saveOrUpdate(t);
+        //s.update(t);
+        s.getTransaction().commit();
+      
+    }
+    public void removeTimingLocationInput(TimingLocationInput t) {
+        if (t.getTimingLocation() != null) t.getTimingLocation().removeInput(t);
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(t);
+        s.getTransaction().commit();
+      
+    }
+    
+    public void timingLocationInputPauseReader(TimingLocationInput tl) {
+        //Set a flag so that the 
+    }
+    public void timingLocationInputStartReader(TimingLocationInput tl) {
+        
+        
+    }   
+        
 }

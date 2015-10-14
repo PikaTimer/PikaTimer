@@ -11,6 +11,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -209,17 +210,17 @@ public class Wave {
         return waveAssignmentEnd;
     }
 
-//    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "waves")
-//    @Fetch(FetchMode.SUBSELECT)
-//    public Set<Participant> getParticipants() {
-//            return new HashSet<>(participants);
-//    }
-//    public void setParticipants(Set<Participant> p) {
-//            participants.setAll(p);
-//    }
-//    public ObservableList<Participant> participantsProperty() {
-//        return participants; 
-//    }
+    /*    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "waves")
+    @Fetch(FetchMode.SUBSELECT)
+    public Set<Participant> getParticipants() {
+    return new HashSet<>(participants);
+    }
+    public void setParticipants(Set<Participant> p) {
+    participants.setAll(p);
+    }
+    public ObservableList<Participant> participantsProperty() {
+    return participants;
+    }*/
 
     
     @Override
@@ -232,17 +233,52 @@ public class Wave {
             return race.getRaceName();
         }
     }
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() ); 
-        return this.IDProperty.getValue().equals(((Wave)obj).IDProperty.getValue());
-    }
+
 
     @Override
     public int hashCode() {
-        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+        int hash = 7;
+        hash = 67 * hash + Objects.hashCode(this.race);
+        hash = 67 * hash + Objects.hashCode(this.waveName);
+        hash = 67 * hash + Objects.hashCode(this.waveStart);
+        hash = 67 * hash + Objects.hashCode(this.waveAssignmentMethod);
+        hash = 67 * hash + Objects.hashCode(this.wavePosition);
+        return hash;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        //System.out.println("Wave.equals called for " + this.IDProperty.toString());
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Wave other = (Wave) obj;
+        //System.out.println("Wave.equals comparing to " + other.IDProperty.toString());
+        if (!Objects.equals(this.race, other.race)) {
+        //System.out.println("Wave.equals false: race");
+        return false;
+        }
+        if (!Objects.equals(this.waveName.getValue(), other.waveName.getValue())) {
+            //System.out.println("Wave.equals false: waveName: " + this.waveName + " vs " + other.waveName);
+            return false;
+        }
+        if (!Objects.equals(this.waveStart, other.waveStart)) {
+            //System.out.println("Wave.equals false: waveStart");
+            return false;
+        }
+        if (this.waveAssignmentMethod != other.waveAssignmentMethod) {
+            //System.out.println("Wave.equals false: waveAssignmentMethod");
+            return false;
+        }
+        if (!Objects.equals(this.wavePosition.getValue(), other.wavePosition.getValue())) {
+            //System.out.println("Wave.equals false: wavePosition");
+            return false;
+        }
+        //System.out.println("Wave.equals true");
+        return true;
+    }
+    
 }

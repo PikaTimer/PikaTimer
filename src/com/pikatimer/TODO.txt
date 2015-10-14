@@ -46,6 +46,7 @@ Auto-update finish split distance/cutoff
 Show bib range if there are multiple races and wave starts is not checked
 
 Participants:
+Switch wave attribute mapping to a "getWaveByID" type of system to avoid hibernate fetching hell
 DONE -- Delete a row/rows via a context menu
 DONE -- Select which columns to show (bib, first, last, age, city, race, etc)
 DONE -- Alphanumeric sort of the bib numbers 
@@ -114,6 +115,8 @@ Time shift (+/- a fixed offset to adjust for clock errors on the timing box)
 Show most recent data read for a reader / timing location
 Search data read for a reader / timing location
 
+
+
 Results:
 Read from "cooked" tables queue; 
     --process, place into results tables, shift/mask other results as warranted
@@ -124,10 +127,12 @@ Publish to static web site
 Publish to responsive / html 5 based web site
 Publish to 3rd party results web site / XXXXX.com? 
 
+
 Team Results
 Male, Female, Coed, user selected variable (city, state, custom, etc)
 scoring numbers per team (1->N)
 for co-ed, number per team of each gender (1->(N-1))
+
 
 Awards: 
 Set depth per race

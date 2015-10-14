@@ -16,18 +16,55 @@
    </columnConstraints>
    <rowConstraints>
       <RowConstraints valignment="CENTER" vgrow="NEVER" />
-      <RowConstraints fillHeight="true" maxHeight="1.7976931348623157E308" minHeight="200.0" prefHeight="500.0" valignment="CENTER" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="200.0" prefHeight="248.0" valignment="CENTER" vgrow="ALWAYS" />
+      <RowConstraints />
    </rowConstraints>
    <children>
-      <ScrollPane fx:id="timingDetailsPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefViewportHeight="486.0" prefViewportWidth="408.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
-         <content>
-            <VBox fx:id="timingDetailsVBox" prefHeight="200.0" prefWidth="100.0" spacing="10.0" />
-         </content></ScrollPane>
-      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
+      <SplitPane dividerPositions="0.66" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+         <items>
+            <ScrollPane fx:id="timingDetailsPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefViewportHeight="486.0" prefViewportWidth="408.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+               <content>
+                  <VBox fx:id="timingDetailsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="100.0" spacing="10.0" />
+               </content>
+               <padding>
+                  <Insets bottom="5.0" />
+               </padding>
+            </ScrollPane>
+            <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0">
+               <children>
+                  <HBox alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
+                     <children>
+                        <Label text="Search" />
+                        <TextField fx:id="searchTextBox" />
+                        <ComboBox fx:id="searchScopeComboBox" prefWidth="150.0" />
+                        <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                        <Label fx:id="inputCountLabel" text="0/0" />
+                     </children>
+                     <padding>
+                        <Insets top="5.0" />
+                     </padding>
+                  </HBox>
+                  <TableView maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+                    <columns>
+                      <TableColumn prefWidth="52.0" text="Bib" />
+                        <TableColumn prefWidth="110.0" text="Chip" />
+                      <TableColumn prefWidth="39.0" text="Time" />
+                        <TableColumn prefWidth="122.0" text="Name" />
+                        <TableColumn prefWidth="118.0" text="Input" />
+                    </columns>
+                  </TableView>
+               </children>
+            </VBox>
+         </items>
+         <GridPane.margin>
+            <Insets />
+         </GridPane.margin>
+      </SplitPane>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.rowSpan="2" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
          <children>
             <VBox fx:id="timingVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
                <children>
-                  <ListView fx:id="timingLocListView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="145.0" VBox.vgrow="ALWAYS" />
+                  <ListView fx:id="timingLocListView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
                   <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
                         <Button fx:id="timingLocRemoveAllButton" mnemonicParsing="false" onAction="#resetTimingLocations" text="Reset" />
@@ -35,6 +72,23 @@
                         <Button fx:id="timingLocAddButton" mnemonicParsing="false" onAction="#addTimingLocation" text="Add" />
                         <Button fx:id="timingLocRemoveButton" mnemonicParsing="false" onAction="#removeTimingLocation" text="Remove" />
                      </children>
+                     <padding>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                     </padding>
+                  </HBox>
+                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0">
+                     <children>
+                        <CheckBox fx:id="customChipBibCheckBox" mnemonicParsing="false" text="Custom Chip -&gt; Bib">
+                           <HBox.margin>
+                              <Insets left="5.0" />
+                           </HBox.margin>
+                        </CheckBox>
+                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="customChipMapButton" mnemonicParsing="false" text="Setup" />
+                     </children>
+                     <VBox.margin>
+                        <Insets />
+                     </VBox.margin>
                      <padding>
                         <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                      </padding>
@@ -49,24 +103,46 @@
             <Insets />
          </GridPane.margin>
       </VBox>
-      <Label contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Timing Locations" textAlignment="CENTER" GridPane.vgrow="NEVER">
-         <font>
-            <Font size="18.0" />
-         </font>
-         <GridPane.margin>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </GridPane.margin>
-      </Label>
-      <HBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">
+      <HBox>
          <children>
-            <TextField fx:id="timingLocationNameTextField" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" />
-            <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-            <Button fx:id="addInputButton" alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#addTimingInput" text="Add Input" />
+            <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Timing Locations" textAlignment="CENTER" GridPane.vgrow="NEVER">
+               <font>
+                  <Font size="18.0" />
+               </font>
+               <GridPane.margin>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </GridPane.margin>
+            </Label>
          </children>
-         <GridPane.margin>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </GridPane.margin>
       </HBox>
+      <VBox spacing="5.0" GridPane.columnIndex="1">
+         <children>
+            <HBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">
+               <children>
+                  <TextField fx:id="timingLocationNameTextField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="200.0" GridPane.columnIndex="1" />
+                  <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="addInputButton" alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#addTimingInput" text="Add Input" />
+               </children>
+               <GridPane.margin>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </GridPane.margin>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" prefWidth="200.0" spacing="5.0" VBox.vgrow="NEVER">
+               <children>
+                  <CheckBox fx:id="filterTimesCheckBox" mnemonicParsing="false" text="Filter Times" HBox.hgrow="NEVER" />
+                  <Label text="Start" HBox.hgrow="NEVER">
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin></Label>
+                  <TextField fx:id="startTimeCheckBox" prefHeight="25.0" prefWidth="72.0" promptText="HH:MM:SS" />
+                  <Label text="End" />
+                  <TextField fx:id="endTimeCheckBox" prefHeight="25.0" prefWidth="73.0" promptText="HH:MM:SS" />
+                  <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#clearAllTimes" text="Clear All" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

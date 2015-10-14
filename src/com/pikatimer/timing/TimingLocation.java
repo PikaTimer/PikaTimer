@@ -5,6 +5,7 @@
 package com.pikatimer.timing;
 
 import java.util.List;
+import java.util.Objects;
 import javafx.beans.Observable;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -89,12 +90,20 @@ public class TimingLocation {
         return timingInputs.sorted(); 
     }
     public void setInputs(List<TimingLocationInput> inputs) {
-        //System.out.println("TimingLocation.setSplits(list) called for " + locationName + " with " + splits.size() + " splits"); 
+        //System.out.println("TimingLocation.setInputs(list) called for " + locationName + " with " + inputs.size() + " splits"); 
         timingInputs.setAll(inputs);
-        System.out.println(locationName + " now has " + timingInputs.size() + " splits");
+        //System.out.println(locationName + " now has " + timingInputs.size() + " inputs");   
     }
     public ObservableList<TimingLocationInput> inputsProperty() {
         return timingInputs; 
+    }
+    public void addInput(TimingLocationInput t){
+        System.out.println("TimingLocation.addInput called");
+        timingInputs.add(t);
+        System.out.println(locationName + " now has " + timingInputs.size() + " inputs");
+    }
+    public void removeInput(TimingLocationInput t){
+        timingInputs.remove(t); 
     }
     
     @Override
@@ -103,24 +112,50 @@ public class TimingLocation {
     }
     
     
-    @Override
+    /*    @Override
     public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() ); 
-        return this.IDProperty.getValue().equals(((TimingLocation)obj).IDProperty.getValue());
+    if (obj == null || getClass() != obj.getClass()) {
+    return false;
+    }
+    //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() );
+    return this.IDProperty.getValue().equals(((TimingLocation)obj).IDProperty.getValue());
+    }
+    
+    @Override
+    public int hashCode() {
+    return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+    }
+    */
+    public static Callback<TimingLocation, Observable[]> extractor() {
+    
+    return (TimingLocation tl) -> new Observable[]{tl.LocationNameProperty()};
+    
     }
 
     @Override
     public int hashCode() {
-        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+        int hash = 3;
+        hash = 17 * hash + Objects.hashCode(this.locationName);
+        hash = 17 * hash + Objects.hashCode(this.IDProperty);
+        return hash;
     }
-    
-    public static Callback<TimingLocation, Observable[]> extractor() {
 
-        return (TimingLocation tl) -> new Observable[]{tl.LocationNameProperty()};
-
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final TimingLocation other = (TimingLocation) obj;
+        if (!Objects.equals(this.locationName.getValue(), other.locationName.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.IDProperty.getValue(), other.IDProperty.getValue())) {
+            return false;
+        }
+        return true;
     }
 
 }

@@ -7,7 +7,7 @@ package com.pikatimer.race;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
-import com.pikatimer.timing.TimingLocationDAO;
+import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
@@ -310,7 +310,7 @@ public class FXMLRaceDetailsController {
             w.setSplitName(t.getNewValue());
             raceDAO.updateSplit(w);
         });
-        splitLocationTableColumn.setCellFactory(ComboBoxTableCell.<Split, TimingLocation>forTableColumn(TimingLocationDAO.getInstance().listTimingLocations()));
+        splitLocationTableColumn.setCellFactory(ComboBoxTableCell.<Split, TimingLocation>forTableColumn(TimingDAO.getInstance().listTimingLocations()));
         splitLocationTableColumn.setOnEditCommit((CellEditEvent<Split, TimingLocation> t) -> {
             Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
             s.setTimingLocation(t.getNewValue());
@@ -479,7 +479,7 @@ public class FXMLRaceDetailsController {
                startSplit.setSplitName("Start");
                startSplit.setSplitDistance(BigDecimal.ZERO);
                startSplit.setSplitDistanceUnits(selectedRace.getRaceDistanceUnits());
-               startSplit.setTimingLocation(TimingLocationDAO.getInstance().listTimingLocations().get(0));
+               startSplit.setTimingLocation(TimingDAO.getInstance().listTimingLocations().get(0));
                //startSplit.setPosition(1);
                raceDAO.addSplit(startSplit);
                
@@ -488,7 +488,7 @@ public class FXMLRaceDetailsController {
                finishSplit.setSplitDistance(selectedRace.getRaceDistance());
                finishSplit.setSplitDistanceUnits(selectedRace.getRaceDistanceUnits());
                finishSplit.setSplitCutoff(selectedRace.getRaceCutoff());
-               finishSplit.setTimingLocation(TimingLocationDAO.getInstance().listTimingLocations().get(1));
+               finishSplit.setTimingLocation(TimingDAO.getInstance().listTimingLocations().get(1));
                //finishSplit.setPosition(2);
                raceDAO.addSplit(finishSplit);
             } 
@@ -614,7 +614,7 @@ public class FXMLRaceDetailsController {
         Split newSplit = new Split(selectedRace);
         newSplit.setSplitName("New Split");
         newSplit.setSplitDistanceUnits(selectedRace.getRaceDistanceUnits());
-        newSplit.setTimingLocation(TimingLocationDAO.getInstance().listTimingLocations().get(1));
+        newSplit.setTimingLocation(TimingDAO.getInstance().listTimingLocations().get(1));
         if(raceSplitsTableView.getSelectionModel().getSelectedItems().size()> 0 ) {
             Integer pos = raceSplitsTableView.getSelectionModel().getSelectedItem().getPosition(); 
             if (pos > 1) {

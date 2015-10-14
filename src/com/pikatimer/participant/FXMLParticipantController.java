@@ -349,6 +349,8 @@ public class FXMLParticipantController  {
         stateComboBox.setValue(p.getState());
         
         waveComboBox.getCheckModel().clearChecks();
+        
+        
         p.getWaves().stream().forEach(w -> {
             waveComboBox.getCheckModel().check(w);
             System.out.println("Checking " + w.getID() + " " + w.toString());

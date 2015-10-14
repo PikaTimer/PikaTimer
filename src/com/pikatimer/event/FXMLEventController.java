@@ -10,7 +10,7 @@ import com.pikatimer.race.FXMLRaceDetailsController;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.timing.TimingLocation;
-import com.pikatimer.timing.TimingLocationDAO;
+import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.Unit;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -65,7 +65,7 @@ public class FXMLEventController  {
     @FXML private Button timingLocAddButton;
     @FXML private Button timingLocRemoveButton;  
     private ObservableList<TimingLocation> timingLocationList;
-    private TimingLocationDAO timingLocationDAO; 
+    private TimingDAO timingLocationDAO; 
     private FXMLRaceDetailsController raceDetailsController;
     private RaceDAO raceDAO;
     
@@ -124,7 +124,7 @@ public class FXMLEventController  {
         // if we have more than one race then let's set the multipleRacesCheckBox to true.
         multipleTimingCheckBox.setSelected(false);
         
-        timingLocationDAO=TimingLocationDAO.getInstance();
+        timingLocationDAO=TimingDAO.getInstance();
         timingLocationList=timingLocationDAO.listTimingLocations(); 
         if (timingLocationList.isEmpty()) {
             timingLocationDAO.createDefaultTimingLocations();
@@ -379,7 +379,7 @@ public class FXMLEventController  {
     public void addTimingLocation(ActionEvent fxevent){
         // prompt 
         TimingLocation t = new TimingLocation();
-        t.setLocationName("");
+        t.setLocationName("New Timing Location");
         
         timingLocationDAO.addTimingLocation(t);
         System.out.println("Setting the timingLocListView.edit to " + timingLocationList.size() + " " + timingLocationList.indexOf(t));

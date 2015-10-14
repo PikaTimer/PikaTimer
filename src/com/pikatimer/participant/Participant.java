@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -19,7 +20,6 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -47,6 +47,7 @@ public class Participant {
 
    
    private final StringProperty firstNameProperty;
+   private final StringProperty middleNameProperty;
    private final StringProperty lastNameProperty;
    private final StringProperty emailProperty; 
    private final IntegerProperty IDProperty;
@@ -64,6 +65,7 @@ public class Participant {
  
     public Participant(String firstName, String lastName) {
         this.firstNameProperty = new SimpleStringProperty();
+        this.middleNameProperty = new SimpleStringProperty();
         this.lastNameProperty = new SimpleStringProperty();
         this.emailProperty = new SimpleStringProperty();
         this.IDProperty = new SimpleIntegerProperty();
@@ -81,6 +83,7 @@ public class Participant {
         ObservableMap<String,String> attribMap = FXCollections.observableHashMap();
         attribMap.put("bib", "Bib");
         attribMap.put("firstName", "First Name");
+        attribMap.put("middleName", "Middle Name");
         attribMap.put("lastName", "Last Name");
         attribMap.put("age", "Age");
         attribMap.put("sex", "Sex");
@@ -102,12 +105,19 @@ public class Participant {
                  case "bib": this.setBib(entry.getValue()); break; 
                  case "firstName": this.setFirstName(entry.getValue()); break;
                  case "lastName": this.setLastName(entry.getValue()); break;
-                     // TODO: catch bad integers 
+                 //case "middleName": this.setLastName(entry.getValue()); break;
+                     
+                 // TODO: catch bad integers 
                  case "age": this.setAge(Integer.parseUnsignedInt(entry.getValue())); break; 
+                     
+                 // TODO: map to selected sex translator
                  case "sex": this.setSex(entry.getValue()); break; 
+                     
                  case "city": this.setCity(entry.getValue()); break; 
                  case "state": this.setState(entry.getValue()); break; 
                  case "email": this.setEmail(entry.getValue()); break; 
+                     
+                 // TODO: Team value
              }
             }
         });
@@ -247,7 +257,7 @@ public class Participant {
     @JoinTable(name = "part2wave", joinColumns = { 
                     @JoinColumn(name = "PARTICIPANT_ID") }, 
                     inverseJoinColumns = { @JoinColumn(name = "WAVE_ID") })
-    @Fetch(FetchMode.SUBSELECT)
+    @Fetch(FetchMode.SELECT)
     public Set<Wave> getWaves() {
             return new HashSet<>(waves);
     }
@@ -264,17 +274,62 @@ public class Participant {
         return waves; 
     }
     
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        //System.out.println("Participant.equals called: " + IDProperty.getValue() + " vs " + ((Participant)obj).IDProperty.getValue() ); 
-        return this.IDProperty.getValue().equals(((Participant)obj).IDProperty.getValue());
-    }
 
     @Override
     public int hashCode() {
-        return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
+        int hash = 5;
+        hash = 89 * hash + Objects.hashCode(this.firstNameProperty);
+        hash = 89 * hash + Objects.hashCode(this.lastNameProperty);
+        hash = 89 * hash + Objects.hashCode(this.emailProperty);
+        hash = 89 * hash + Objects.hashCode(this.bibProperty);
+        hash = 89 * hash + Objects.hashCode(this.ageProperty);
+        hash = 89 * hash + Objects.hashCode(this.sexProperty);
+        hash = 89 * hash + Objects.hashCode(this.cityProperty);
+        hash = 89 * hash + Objects.hashCode(this.countryProperty);
+        hash = 89 * hash + Objects.hashCode(this.birthdayProperty);
+        return hash;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Participant other = (Participant) obj;
+        if (!Objects.equals(this.firstNameProperty.getValue(), other.firstNameProperty.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.lastNameProperty.getValue(), other.lastNameProperty.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.emailProperty.getValue(), other.emailProperty.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.bibProperty.getValue(), other.bibProperty.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.ageProperty.getValue(), other.ageProperty.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.sexProperty.getValue(), other.sexProperty)) {
+            return false;
+        }
+        if (!Objects.equals(this.cityProperty.getValue(), other.cityProperty)) {
+            return false;
+        }
+        if (!Objects.equals(this.stateProperty.getValue(), other.stateProperty.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.countryProperty.getValue(), other.countryProperty.getValue())) {
+            return false;
+        }
+        if (!Objects.equals(this.birthdayProperty, other.birthdayProperty)) {
+            return false;
+        }
+        return true;
+    }
+    
 }

@@ -15,7 +15,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -39,8 +41,8 @@ public class FXMLTimingController {
     
     private ObservableList<TimingLocation> timingLocationList;
     private TimingLocation selectedTimingLocation;
-    private TimingLocationDAO timingLocationDAO; 
-    private FXMLTimingLocationDetailsController timingLocationDetailsController;
+    private TimingDAO timingLocationDAO; 
+    //private FXMLTimingLocationInputController timingLocationDetailsController;
     private FXMLLoader timingLocationDetailsLoader ;
     
     @FXML private VBox timingDetailsVBox;
@@ -53,7 +55,7 @@ public class FXMLTimingController {
         selectedTimingLocation = null;
         // TODO
         
-        timingLocationDAO=TimingLocationDAO.getInstance();
+        timingLocationDAO=TimingDAO.getInstance();
         timingLocationList=timingLocationDAO.listTimingLocations(); 
         
         timingLocListView.setItems(timingLocationList);
@@ -118,21 +120,21 @@ public class FXMLTimingController {
         // load up the TimingLocationDetailsPane
         // Save the FXMLLoader so that we can send it notes when things change in the races box
         
-        timingDetailsVBox.getChildren().clear();
+        /*        timingDetailsVBox.getChildren().clear();
         try {
-            timingLocationDetailsLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/timing/FXMLTimingLocationDetails.fxml"));
-            timingDetailsVBox.getChildren().add(timingLocationDetailsLoader.load());
+        timingLocationDetailsLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/timing/FXMLTimingLocationInput.fxml"));
+        timingDetailsVBox.getChildren().add(timingLocationDetailsLoader.load());
         } catch (IOException ex) {
-            Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
-            ex.printStackTrace();
+        Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
+        ex.printStackTrace();
         }
         
-        timingLocationDetailsController =(FXMLTimingLocationDetailsController)timingLocationDetailsLoader.getController(); 
+        timingLocationDetailsController =(FXMLTimingLocationInputController)timingLocationDetailsLoader.getController(); 
         //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
-
+        */
             
          //if there are no timing locations selected in the view then disable the entire right hand side
-         timingDetailsVBox.disableProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull());
+         timingDetailsVBox.visibleProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull().not());
          timingLocListView.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Cha‌​nge<? extends TimingLocation> c) -> { 
              System.out.println("timingLocListView changed...");
              //timingLocListView.getSelectionModel().getSelectedItems().forEach(System.out::println); 
@@ -148,7 +150,7 @@ public class FXMLTimingController {
                     selectedTimingLocation=null; 
                 }
              } else {
-                System.out.println(selectedTimingLocations.get(0).getLocationName());
+                System.out.println("We just selected " + selectedTimingLocations.get(0).getLocationName());
                 //timingLocationNameTextField.textProperty().setValue(selectedTimingLocations.get(0).LocationNameProperty().getValue());
                 
                 if (selectedTimingLocation != null) {
@@ -158,7 +160,17 @@ public class FXMLTimingController {
                 selectedTimingLocation=selectedTimingLocations.get(0); 
                 timingLocationNameTextField.textProperty().bindBidirectional(selectedTimingLocation.LocationNameProperty());
                 System.out.println("Selected timing location is now " + selectedTimingLocation.getLocationName());
-                timingLocationDetailsController.setTimingLocationInput(null); // .selectTimingLocation(selectedTimingLocations.get(0));
+                //timingLocationDetailsController.setTimingLocationInput(null); // .selectTimingLocation(selectedTimingLocations.get(0));
+                if (selectedTimingLocation.getInputs().size() == 0 ) { // no inputs yet
+                    addTimingInput(null);
+                } else { // display all of the inputs
+                    System.out.println("Starting the display of inputs for a timing location");
+                    selectedTimingLocation.getInputs().forEach(i -> {
+                        System.out.println("showing input for a timing location ");
+                        showTimingInput(i);
+                    });
+                    System.out.println("Done showing inputs for a timing location");
+                }
              }
          });
          
@@ -170,10 +182,10 @@ public class FXMLTimingController {
 
                 if ( timingLocationNameTextField.getText().isEmpty() ) {
                     timingLocationNameTextField.textProperty().setValue("Unnamed");
-                    TimingLocationDAO.getInstance().updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
+                    TimingDAO.getInstance().updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
                 }
                 
-                TimingLocationDAO.getInstance().updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
+                TimingDAO.getInstance().updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
                 
             }
         });
@@ -205,14 +217,17 @@ public class FXMLTimingController {
     public void addTimingLocation(ActionEvent fxevent){
         // prompt 
         TimingLocation t = new TimingLocation();
-        t.setLocationName("");
+        t.setLocationName("New Timing Location");
+
         
         timingLocationDAO.addTimingLocation(t);
 
         System.out.println("Setting the timingLocListView.edit to " + timingLocationList.size() + " " + timingLocationList.indexOf(t));
         timingLocListView.getSelectionModel().select(timingLocationList.indexOf(t));
-        timingLocListView.edit(timingLocationList.indexOf(t));
         
+        //timingLocListView.edit(timingLocationList.indexOf(t));
+        timingLocationNameTextField.requestFocus();
+        timingLocationNameTextField.selectAll();
         //Because we call the timingLocListView.edit, we don't want to pull back focus
         //timingLocAddButton.requestFocus();
 
@@ -222,18 +237,58 @@ public class FXMLTimingController {
         //prompt to reassign the split to a new location or cancel the edit. 
         
         timingLocationDAO.removeTimingLocation(timingLocListView.getSelectionModel().getSelectedItem());
-        timingLocAddButton.requestFocus();
-        timingLocAddButton.setDefaultButton(true);
+        //timingLocAddButton.requestFocus();
+        //timingLocAddButton.setDefaultButton(true);
     }
     
     public void addTimingInput(ActionEvent fxevent){
-        FXMLLoader tlLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/timing/FXMLTimingLocationDetails.fxml"));
+        TimingLocationInput tli = new TimingLocationInput();
+        tli.setTimingLocation(selectedTimingLocation);
+        tli.setLocationName(selectedTimingLocation.getLocationName() + " Input " + selectedTimingLocation.getInputs().size()+1);
+        timingLocationDAO.addTimingLocationInput(tli);
+        showTimingInput(tli);
+        //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
+    }
+    
+    private void showTimingInput(TimingLocationInput i) {
+        System.out.println("showTimingInput called... ");
+        FXMLLoader tlLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/timing/FXMLTimingLocationInput.fxml"));
         try {
             timingDetailsVBox.getChildren().add(tlLoader.load());
             
         } catch (IOException ex) {
             Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+        ((FXMLTimingLocationInputController)tlLoader.getController()).setTimingLocationInput(i); 
+        //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
     }
+    public void clearAllTimes(ActionEvent fxevent){
+        //TODO: Prompt and then remove all times associated with that timing location 
+        // _or_ all timing locations
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Clear Timing Data...");
+        alert.setHeaderText("Clear Timing Data:");
+        alert.setContentText("Do you want to clear the times for just this imput or all inputs?.");
+
+        ButtonType allButtonType = new ButtonType("All");
+        
+        ButtonType currentButtonType = new ButtonType("Current",ButtonData.YES);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(cancelButtonType, allButtonType,  currentButtonType );
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == allButtonType){
+            // ... user chose "One"
+        } else if (result.get() == currentButtonType) {
+            // ... user chose "Two"
+
+        } else {
+            // ... user chose CANCEL or closed the dialog
+        }
+ 
+    }
+
+
+    
 }
