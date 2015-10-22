@@ -5,6 +5,7 @@
 package com.pikatimer.timing.reader;
 
 import com.pikatimer.timing.RawTimeData;
+import com.pikatimer.timing.TimingListener;
 import com.pikatimer.timing.TimingLocationInput;
 import com.pikatimer.timing.TimingReader;
 import java.io.File;
@@ -23,12 +24,18 @@ import java.time.temporal.ChronoField;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.concurrent.Task;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
 import org.apache.commons.io.input.Tailer;
@@ -40,24 +47,27 @@ import org.apache.commons.io.input.TailerListenerAdapter;
  */
 public class PikaRFIDFileReader implements TimingReader{
     
-    private TimingLocationInput timingLocationInput;
+    private TimingListener timingListener;
     private File sourceFile; 
     private StringProperty fileName; 
     private Pane displayPane; 
     private Button inputButton;
     private TextField inputTextField; 
-
+    private Label statusLabel; 
+    private HBox displayHBox; 
+    private VBox displayVBox; 
+    private Tailer tailer;
+    private Thread thread; 
+    private BooleanProperty readingStatus;
     
     public PikaRFIDFileReader(){
         fileName = new SimpleStringProperty();
+        readingStatus = new SimpleBooleanProperty();
+        
     }
 
-    @Override
-    public void setInput(String input) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 
-    @Override
+
     public void selectInput() {
         final FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select File");
@@ -77,8 +87,10 @@ public class PikaRFIDFileReader implements TimingReader{
         if (sourceFile != null) {
             fileName.setValue(sourceFile.getAbsolutePath());
             // save the filename 
-            timingLocationInput.setAttribute("RFIDFileReader:filename", sourceFile.getAbsolutePath());
+            timingListener.setAttribute("RFIDFileReader:filename", sourceFile.getAbsolutePath());
             
+            // set the text field to the filename
+            inputTextField.textProperty().setValue(fileName.getValueSafe());
             // read the file
             readOnce();
             
@@ -87,31 +99,139 @@ public class PikaRFIDFileReader implements TimingReader{
         
     }
 
-    @Override
-    public StringProperty getInputStringProperty() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    
 
     @Override
     public void startReading() {
         // make sure the file exists
-        MyListener listener = new MyListener();
-        Tailer tailer = Tailer.create(new File("/tmp/log.txt"), listener, 500);
+        
+        // If a tailer already exists, stop it
+        if (! readingStatus.getValue() ) {
+            MyHandler listener = new MyHandler();
+            tailer = Tailer.create(sourceFile, listener, 500, Boolean.FALSE, Boolean.TRUE);
+            thread = new Thread(tailer);
+            thread.setDaemon(true); // optional
+            thread.start();
 
+            readingStatus.setValue(Boolean.FALSE);
+        }
     }
     
-    public class MyListener extends TailerListenerAdapter {
+    @Override
+    public void stopReading() {
+        if (tailer != null) {
+            tailer.stop();
+        }
+        readingStatus.setValue(Boolean.FALSE);
+    }
+
+
+    @Override
+    public void showControls(Pane p) {
+        
+        if (displayPane == null) {
+            // initialize our display
+            displayHBox = new HBox();
+            displayVBox = new VBox();
+            
+            displayVBox.setSpacing(5); 
+            displayVBox.setPadding(new Insets(5, 5, 5, 5));
+            
+            inputButton = new Button("File...");
+            inputTextField = new TextField();
+            statusLabel = new Label();
+            
+            displayHBox.setSpacing(5);
+            displayHBox.getChildren().addAll(inputTextField, inputButton); 
+            displayVBox.getChildren().addAll(displayHBox, statusLabel); 
+            
+            // Set the action for the inputButton
+            inputButton.setOnAction((event) -> {
+                // Button was clicked, do something...
+                selectInput();
+            });
+            
+            // set the action for the inputTextField
+            
+        }
+        
+        // If we were previously visible, clear the old one
+        if (displayPane != null) displayPane.getChildren().clear();
+        
+        // Now show ourselves.... 
+        displayPane = p; 
+        displayPane.getChildren().clear();
+        displayPane.getChildren().add(displayVBox); 
+        
+        
+    }
+
+    @Override
+    public BooleanProperty getReadingStatus() {
+        return readingStatus; 
+    }
+    
+    private class MyHandler extends TailerListenerAdapter {
 
         @Override
         public void handle(String line) {
-            System.out.println(line);
+            PikaRFIDFileReader.this.handle(line);
+            //System.out.println(line);
         }
 
     }
     
+    
+    public void handle(String s) {
+        
+        LocalDate eventDate = timingListener.getEventDate();
+        String[] tokens = s.split(",", -1);
+        // we only care about the following fields:
+        // 0 -- The reader
+        // 1 -- chip
+        // 2 -- bib
+        // 3 -- time (as a string)
+
+        // Step 1: Make sure we have a time in the 4th field
+        // Find out if we have a date + time or just a time
+        String chip = tokens[1];
+        String dateTime = tokens[3].replaceAll("\"", "");
+
+        //System.out.println("Chip: " + chip);
+        //System.out.println("dateTime: " + dateTime);
+
+        if(dateTime.matches("^\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}$")) {
+            if(dateTime.matches("^\\d{1}:\\d{2}:\\d{2}\\.\\d{3}$")) {
+                //ISO_LOCAL_TIME wants a two digit hour....
+                dateTime = "0" + dateTime;
+            }
+            try { 
+                LocalTime time = LocalTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_TIME );
+                RawTimeData rawTime = new RawTimeData();
+                LocalDateTime fullTime = LocalDateTime.of(eventDate, time);
+                
+                rawTime.setChip(chip);
+                rawTime.setTimestamp(fullTime);
+
+                //data.setChip(chip);
+                //data.setTime(fullTime); 
+                
+                System.out.println("Added raw time: " + chip + " " + fullTime.toString());
+                timingListener.processRead(rawTime); // process it
+               
+            } catch(DateTimeParseException e) {
+                System.out.println("Unable to parse the time in " + dateTime);
+            }
+        } else {
+            System.out.println("Unable to parse the line: " + s);
+        }
+
+    }
+        
+    @Override
     public void readOnce() {
         // get the event date, just in case we need it
-        LocalDate eventDate = timingLocationInput.getEventDate();
+        System.out.println("PikaRFIDFileReader.readOnce called. Current file is: " + sourceFile.getAbsolutePath());
         
         // Run this in a thread.... 
         Task task;
@@ -122,47 +242,12 @@ public class PikaRFIDFileReader implements TimingReader{
                         .map(s -> s.trim())
                         .filter(s -> !s.isEmpty())
                         .forEach(s -> {
-                            String[] tokens = s.split(",", -1);
-                            // we only care about the following fields:
-                            // 0 -- The reader
-                            // 1 -- chip
-                            // 2 -- bib
-                            // 3 -- time (as a string)
-
-                            // Step 1: Make sure we have a time in the 4th field
-                            // Find out if we have a date + time or just a time
-                            String chip = tokens[1];
-                            String dateTime = tokens[3].replaceAll("\"", "");
-                            
-                            //System.out.println("Chip: " + chip);
-                            //System.out.println("dateTime: " + dateTime);
-
-                            if(dateTime.matches("^\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}$")) {
-                                if(dateTime.matches("^\\d{1}:\\d{2}:\\d{2}\\.\\d{3}$")) {
-                                    //ISO_LOCAL_TIME wants a two digit hour....
-                                    dateTime = "0" + dateTime;
-                                }
-                                try { 
-                                    LocalTime time = LocalTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_TIME );
-                                    RawTimeData data = new RawTimeData();
-                                    LocalDateTime fullTime = LocalDateTime.of(eventDate, time);
-
-                                    //data.setChip(chip);
-                                    //data.setTime(fullTime);
-                                    timingLocationInput.addRawTime(data); // process it
-                                    System.out.println("Added raw time: " + chip + " " + fullTime.toString());
-                                } catch(DateTimeParseException e) {
-                                    System.out.println("Unable to parse the time in " + dateTime);
-                                }
-                            } else {
-                                System.out.println("Unable to parse the line: " + s);
-                            }
-
+                            System.out.println("readOnce read " + s); 
+                            handle(s); 
                         });
                 } catch (IOException ex) {
                     Logger.getLogger(PikaRFIDFileReader.class.getName()).log(Level.SEVERE, null, ex);
                     // We had an issue reading the file.... 
-
                 }
                 return null;
             }
@@ -170,19 +255,14 @@ public class PikaRFIDFileReader implements TimingReader{
         new Thread(task).start();
     }
     
-    @Override
-    public void stopReading() {
-        
-    }
+    
 
     @Override
-    public void setTimingInput(TimingLocationInput t) {
-        timingLocationInput = t; 
-        
-        // get the pane to display our stuff in
+    public void setTimingListener(TimingListener t) {
+        timingListener = t; 
         
         // get any existing attributes
-        String filename = timingLocationInput.getAttribute("RFIDFileReader:filename");
+        String filename = timingListener.getAttribute("RFIDFileReader:filename");
         if (filename != null) {
             System.out.println("RFIDFileReader: Found existing file setting: " + filename);
             sourceFile = new File(filename);
@@ -190,14 +270,7 @@ public class PikaRFIDFileReader implements TimingReader{
         } else {
             System.out.println("RFIDFileReader: Did not find existing file setting." );
         }
-        // initialize our local variables 
-        inputButton = timingLocationInput.getInputButton();
-        inputTextField = timingLocationInput.getInputTextField();
-        inputButton.setOnAction((event) -> {
-            // Button was clicked, do something...
-            selectInput();
-        });
-        // display the controls in the pane
+        
         
     }
     

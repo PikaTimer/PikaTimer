@@ -34,8 +34,8 @@ public class FXMLTimingLocationInputController{
     @FXML private ToggleButton startToggleButton;
     @FXML private Pane readerPane;
     @FXML private ChoiceBox inputTypeChoiceBox;
-    @FXML private Button inputChooserButton;
-    @FXML private TextField timingLocationInputDataTextField;
+    //@FXML private Button inputChooserButton;
+    //@FXML private TextField timingLocationInputDataTextField;
     @FXML private Label readCountLabel;
     
     //private VBox parentPane;  
@@ -81,15 +81,15 @@ public class FXMLTimingLocationInputController{
             locationNameTextField.textProperty().setValue(ti.getTimingLocation().getLocationName() + " " + ti.getID().toString());
             
             //Init the input and wire itinto the select button and display
-            timingLocationInput.setInputButton(inputChooserButton);
-            timingLocationInput.setInputTextField(locationNameTextField);
+            //timingLocationInput.setInputButton(inputChooserButton);
+            //timingLocationInput.setInputTextField(timingLocationInputDataTextField);
             
             // Get the reader type and wire in the choice box
             ObservableList<TimingInputTypes> readerTypeList = FXCollections.observableArrayList(Arrays.asList(TimingInputTypes.values()));
             inputTypeChoiceBox.setItems(readerTypeList);
             
             
-            timingLocationInput.continueReadingProperty().bind(startToggleButton.selectedProperty());
+            
             
             
             if(timingLocationInput.getTimingInputType() != null) {
@@ -98,7 +98,11 @@ public class FXMLTimingLocationInputController{
                 inputTypeChoiceBox.setValue(TimingInputTypes.RFIDFile);
             }
 
-            timingLocationInput.initializeReader();
+            timingLocationInput.initializeReader(readerPane);
+            
+            // get the current status of the reader
+            startToggleButton.selectedProperty().setValue(timingLocationInput.continueReadingProperty().getValue());
+            timingLocationInput.continueReadingProperty().bind(startToggleButton.selectedProperty());
             
             //Get a count for the reader and wire into the readCountLabel
             
@@ -129,10 +133,6 @@ public class FXMLTimingLocationInputController{
        
     }
     
-    public void selectReaderInputButton(ActionEvent fxevent){
-       
-        timingLocationInput.selectInput();
-       
-    }
+    
 
 }

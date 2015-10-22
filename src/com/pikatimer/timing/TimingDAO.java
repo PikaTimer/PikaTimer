@@ -47,6 +47,25 @@ public class TimingDAO {
     public BlockingQueue<CookedTimeData> getCookedTimeQueue () {
         return cookedTimeQueue; 
     }
+    
+    public void cookRawTime(RawTimeData r) {
+        // If it has a chip number, fix the bib number
+        
+        
+        // create a cooked time
+        
+        //CookedTimeData cooked = new CookedTimeData(r);
+        
+        // if unique, save it to the db
+        //saveCookedTime(cooked); 
+        
+        // Send it to the results queue for processing
+        // bibList = cookedMap.get(cooked.bib); 
+        // if (bibList == null) bibList = FXCollections.observableArrayList();
+        // bibList.add(cooked);
+        // cookedMap.put(cooked.bib, bibList); 
+        // pendingResultsQueue.add(cooked.bib); 
+    }
     public void addTimingLocation(TimingLocation tl) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();

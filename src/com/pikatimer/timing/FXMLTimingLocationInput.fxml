@@ -9,21 +9,25 @@
 
 <GridPane fx:id="baseGridPane" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingLocationInputController">
    <children>
-      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.valignment="CENTER">
+      <Pane fx:id="readerPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
          <children>
-          
-                  <TextField fx:id="timingLocationInputDataTextField" layoutX="182.0" layoutY="42.0" GridPane.columnIndex="1" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
-            <Button fx:id="inputChooserButton" mnemonicParsing="false" prefHeight="27.0" prefWidth="52.0" text="File...">
+            <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0">
+               <children>
+                
+                                    <TextField fx:id="timingLocationInputDataTextField" layoutX="182.0" layoutY="42.0" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="inputChooserButton" mnemonicParsing="false" prefHeight="27.0" prefWidth="52.0" text="File...">
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </Button>
+               </children>
                <padding>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                  <Insets left="5.0" right="5.0" />
                </padding>
-            </Button>
+            </HBox>
          </children>
-         <padding>
-            <Insets left="5.0" right="5.0" />
-         </padding>
-      </HBox>
-      <Label text="Input" GridPane.rowIndex="2">
+      </Pane>
+      <Label alignment="TOP_LEFT" text="Input" GridPane.rowIndex="2">
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
@@ -81,7 +85,6 @@
       <Label fx:id="readCountLabel" maxWidth="1.7976931348623157E308" prefHeight="17.0" prefWidth="71.0" GridPane.columnIndex="2" GridPane.hgrow="ALWAYS" />
       <Label text="Input Name" textAlignment="RIGHT" />
       <Label text="Options" GridPane.rowIndex="4" />
-      <Pane fx:id="readerPane" GridPane.columnIndex="1" GridPane.rowIndex="3" />
    </children>
    <columnConstraints>
       <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="70.0" minWidth="33.0" prefWidth="70.0" />

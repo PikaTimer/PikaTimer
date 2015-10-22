@@ -5,7 +5,9 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.event.Event;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,8 +18,11 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.Pane;
 import javafx.util.Callback;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -44,7 +49,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 @DynamicUpdate
 @Table(name="timing_location_input")
-public class TimingLocationInput {
+public class TimingLocationInput implements TimingListener{
     private final IntegerProperty IDProperty;
     private final StringProperty TimingLocationInputName;
     private TimingLocation timingLocation; // timing_loc_id
@@ -52,17 +57,34 @@ public class TimingLocationInput {
     private TimingInputTypes timingInputType; 
     private final Map<String, String> attributes = new ConcurrentHashMap<>(8, 0.9f, 1);
     private TimingReader timingReader;
-    private BooleanProperty keepReadingBooleanProperty;
+    private BooleanProperty tailFileBooleanProperty;
+    private BooleanProperty timingReaderInitialized; 
     private static final TimingDAO timingDAO = TimingDAO.getInstance();
     private Button inputButton;
     private TextField inputTextField; 
+    private final BooleanProperty skewInput;
+    private Duration skewTime; 
+    private LocalDateTime firstRead;
+    private LocalDateTime lastRead; 
     
     public TimingLocationInput() {
         this.IDProperty = new SimpleIntegerProperty();
         this.TimingLocationInputName = new SimpleStringProperty("Not Yet Set");
         this.timingInputString = new SimpleStringProperty();
-        keepReadingBooleanProperty = new SimpleBooleanProperty();
+        tailFileBooleanProperty = new SimpleBooleanProperty();
+        timingReaderInitialized = new SimpleBooleanProperty();
+        skewInput = new SimpleBooleanProperty();
         //attributes = new ConcurrentHashMap <>();
+        
+        tailFileBooleanProperty.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
+            if(newValue) {
+                
+            }
+        });
+        
+        
+        
+        
    }
     
     @Id
@@ -92,7 +114,7 @@ public class TimingLocationInput {
     
     //@Transient
     public BooleanProperty continueReadingProperty() {
-        return keepReadingBooleanProperty;
+        return tailFileBooleanProperty;
     }
     
     @ManyToOne(fetch = FetchType.LAZY)
@@ -133,8 +155,25 @@ public class TimingLocationInput {
         }
     }
     
-    public void initializeReader() {
-        timingReader.setTimingInput(this);
+    
+    public void initializeReader(Pane readerDisplayPane) {
+        
+        // only do this once to prevent issues
+        if (!timingReaderInitialized.getValue()) {
+            timingReader.setTimingListener(this);
+            
+            tailFileBooleanProperty.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
+                if(newValue) {
+                    System.out.println("TimingLocationInput: calling timingReader.startReading()");
+                    timingReader.startReading();
+                } else {
+                    System.out.println("TimingLocationInput: calling timingReader.stopReading()");
+                    timingReader.stopReading();
+                }
+            });
+            timingReaderInitialized.setValue(Boolean.TRUE);
+        }
+        timingReader.showControls(readerDisplayPane);
     }
 
     
@@ -160,10 +199,12 @@ public class TimingLocationInput {
     } 
     
     
+    @Override
     public String getAttribute(String key) {
         //System.out.println("TLI.getAttribute called for " + key);
         return attributes.get(key); 
     }
+    @Override
     public void setAttribute(String key, String value) {
         //System.out.println("Setting Attribute " + key + " to " + value);
         attributes.put(key, value); 
@@ -178,13 +219,12 @@ public class TimingLocationInput {
     }
     
     @Transient
+    @Override
     public LocalDate getEventDate() {
         return Event.getInstance().getLocalEventDate();
     }
 
-    public void selectInput() {
-        timingReader.selectInput();
-    }
+    
     
     @Override
     public int hashCode() {
@@ -245,5 +285,28 @@ public class TimingLocationInput {
     }
     public void setInputTextField(TextField t) {
         inputTextField = t;
+    }
+
+    @Override
+    public void processRead(RawTimeData r) {
+        System.out.println("TimingLocationInput.processRead called" );
+        
+        // Mark it as our own
+        r.setTimingLocationId(IDProperty.getValue());
+        
+        // Save it
+        timingDAO.getRawTimeQueue().add(r); 
+        
+        // skew it
+        //if(skewInput.getValue()) {
+        //    r.setTimestamp(r.getTimestamp().plus(skewTime)); 
+        //}
+        
+        // Filter it
+        //if (r.getTimestamp().isBefore(firstRead) || r.getTimestamp().isAfter(lastRead)) return; 
+        
+        timingDAO.cookRawTime(r); 
+        
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

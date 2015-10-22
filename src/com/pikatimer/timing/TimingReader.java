@@ -4,7 +4,10 @@
  */
 package com.pikatimer.timing;
 
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.BooleanProperty;
+import javafx.scene.layout.Pane;
+
+
 
 /**
  *
@@ -12,16 +15,18 @@ import javafx.beans.property.StringProperty;
  */
 public interface TimingReader {
     
-    public void setInput(String input);
     
-    public void setTimingInput(TimingLocationInput t); 
     
-    public void selectInput(); 
-          
-    public StringProperty getInputStringProperty();
+    public void setTimingListener(TimingListener t); 
+    
+    public void showControls(Pane p); 
+    
+    public void readOnce();
     
     public void startReading();
     
     public void stopReading(); 
+    
+    public BooleanProperty getReadingStatus();
     
 }

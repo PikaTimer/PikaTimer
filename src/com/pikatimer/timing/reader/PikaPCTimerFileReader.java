@@ -4,11 +4,12 @@
  */
 package com.pikatimer.timing.reader;
 
+import com.pikatimer.timing.TimingListener;
 import com.pikatimer.timing.TimingLocationInput;
 import com.pikatimer.timing.TimingReader;
 import java.io.File;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.scene.layout.Pane;
 
 /**
@@ -24,19 +25,19 @@ public class PikaPCTimerFileReader implements TimingReader {
     public PikaPCTimerFileReader(){
         
     }
-    
+
     @Override
-    public void setInput(String input) {
+    public void setTimingListener(TimingListener t) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void selectInput() {
+    public void showControls(Pane p) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public StringProperty getInputStringProperty() {
+    public void readOnce() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -51,9 +52,10 @@ public class PikaPCTimerFileReader implements TimingReader {
     }
 
     @Override
-    public void setTimingInput(TimingLocationInput t) {
-        timingLocationInput = t; 
-
+    public BooleanProperty getReadingStatus() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+   
     
 }
