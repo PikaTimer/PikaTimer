@@ -274,4 +274,9 @@ public class PikaRFIDFileReader implements TimingReader{
         
     }
     
+    @Override
+    public Boolean chipIsBib() {
+        return Boolean.FALSE; 
+    }
+    
 }

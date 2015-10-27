@@ -147,6 +147,7 @@ public class Wave {
     public StringProperty waveStartStringProperty(){
         return waveStartString;
     }
+    
     @Column(name="WAVE_MAX_START_TIME",nullable=true)
     public Long getWaveMaxStart() {
         if( waveMaxStart != null) {

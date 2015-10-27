@@ -2,7 +2,7 @@
 -- Java -> SQL types used
 -- Integer - int (ID's, list indexes, etc)
 -- Strings - varchar
--- Duration -- bigint (in nanoseconds)
+-- Duration -- bigint (durations are stored as nanoseconds)
 -- LocalTime / LocalDate / LocalDateTime -- varchar (use toString() and .parse() to store/retrieve)
 -- Boolean - boolean 
 -- BigDecimal - numeric (for race distances and numbers that require exact precision, like 3.140 vs 3.13999999999999)

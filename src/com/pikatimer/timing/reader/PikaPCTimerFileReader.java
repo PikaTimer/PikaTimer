@@ -12,6 +12,14 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.layout.Pane;
 
+
+/**
+ *  Notes: Checkbox for time of day vs time since start. 
+ *  If time since start, prompt for start time that is
+ * independent of the actual race time. 
+ * 
+ *  
+ */
 /**
  *
  * @author jcgarner
@@ -54,6 +62,11 @@ public class PikaPCTimerFileReader implements TimingReader {
     @Override
     public BooleanProperty getReadingStatus() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Boolean chipIsBib() {
+        return Boolean.TRUE; 
     }
     
    

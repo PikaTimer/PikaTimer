@@ -6,10 +6,13 @@ package com.pikatimer.timing;
 
 import com.pikatimer.util.HibernateUtil;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 //import javafx.application.Platform;
@@ -28,6 +31,31 @@ public class TimingDAO {
         private static final BlockingQueue<RawTimeData> rawTimeQueue = new ArrayBlockingQueue(100000);
         private static final BlockingQueue<CookedTimeData> cookedTimeQueue = new ArrayBlockingQueue(100000);
         private static final Map<TimingLocationInput,Thread> timingInputThreadMap = new HashMap();
+
+    Collection getRawTimes(TimingLocationInput tli) {
+        List<RawTimeData> list = new ArrayList<>();
+        Set<RawTimeData> set = new HashSet<>(); 
+
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("Runing the getRawTimes for " + tli.getLocationName() + " Query");
+        
+        try {  
+            list=s.createQuery("from RawTimeData where timingLocationInputId = :tli_id").setParameter("tli_id", tli.getID()).list();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } 
+        s.getTransaction().commit(); 
+        
+        return list; 
+    }
+    
+    public void saveRawTimes(RawTimeData r) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.save(r);
+        s.getTransaction().commit();
+    }
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
     * or the first access to SingletonHolder.INSTANCE, not before.

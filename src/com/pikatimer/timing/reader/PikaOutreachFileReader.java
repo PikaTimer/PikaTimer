@@ -18,6 +18,11 @@ public class PikaOutreachFileReader implements TimingReader {
     public PikaOutreachFileReader(){
         
     }
+    
+    @Override
+    public Boolean chipIsBib() {
+        return Boolean.FALSE; 
+    }
 
     @Override
     public void setTimingListener(TimingListener t) {

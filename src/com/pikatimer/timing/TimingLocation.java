@@ -112,24 +112,8 @@ public class TimingLocation {
     }
     
     
-    /*    @Override
-    public boolean equals(Object obj) {
-    if (obj == null || getClass() != obj.getClass()) {
-    return false;
-    }
-    //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() );
-    return this.IDProperty.getValue().equals(((TimingLocation)obj).IDProperty.getValue());
-    }
-    
-    @Override
-    public int hashCode() {
-    return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
-    }
-    */
     public static Callback<TimingLocation, Observable[]> extractor() {
-    
-    return (TimingLocation tl) -> new Observable[]{tl.LocationNameProperty()};
-    
+        return (TimingLocation tl) -> new Observable[]{tl.LocationNameProperty()};
     }
 
     @Override

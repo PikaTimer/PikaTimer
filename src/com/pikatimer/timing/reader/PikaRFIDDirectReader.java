@@ -48,6 +48,11 @@ public class PikaRFIDDirectReader implements TimingReader {
     public BooleanProperty getReadingStatus() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public Boolean chipIsBib() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
     
     
     

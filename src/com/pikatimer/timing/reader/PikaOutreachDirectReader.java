@@ -20,6 +20,11 @@ public class PikaOutreachDirectReader implements TimingReader {
     }
 
     @Override
+    public Boolean chipIsBib() {
+        return Boolean.FALSE; 
+    }
+    
+    @Override
     public void setTimingListener(TimingListener t) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

@@ -8,8 +8,10 @@ import com.pikatimer.event.Event;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
@@ -18,7 +20,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -66,6 +67,9 @@ public class TimingLocationInput implements TimingListener{
     private Duration skewTime; 
     private LocalDateTime firstRead;
     private LocalDateTime lastRead; 
+    
+    private Set rawTimeSet;
+    
     
     public TimingLocationInput() {
         this.IDProperty = new SimpleIntegerProperty();
@@ -173,6 +177,12 @@ public class TimingLocationInput implements TimingListener{
             });
             timingReaderInitialized.setValue(Boolean.TRUE);
         }
+        
+        if (rawTimeSet == null) {
+            rawTimeSet = new HashSet(); 
+            rawTimeSet.addAll(timingDAO.getRawTimes(this));
+        } 
+        
         timingReader.showControls(readerDisplayPane);
     }
 
@@ -294,19 +304,43 @@ public class TimingLocationInput implements TimingListener{
         // Mark it as our own
         r.setTimingLocationId(IDProperty.getValue());
         
-        // Save it
-        timingDAO.getRawTimeQueue().add(r); 
+        // is it a duplicate?
         
+        // if so, just return
+        if (rawTimeSet.contains(r)) {
+            System.out.println("TimingLocationInput.processRead: Duplicate " + r.getChip() + " " + r.getTimestamp().toString()); 
+            return;
+        }
+        
+        //if not, save it to our local stash of times. 
+        timingDAO.saveRawTimes(r); 
+        rawTimeSet.add(r);
+        
+        //timingDAO.getRawTimeQueue().add(r); 
+        
+        // Create a cooked time
+        CookedTimeData c = new CookedTimeData();
+                
         // skew it
         //if(skewInput.getValue()) {
         //    r.setTimestamp(r.getTimestamp().plus(skewTime)); 
         //}
         
-        // Filter it
+        // Tag it as a backup if needed
+        
+        // Swap the chip for a bib
+        if (!timingReader.chipIsBib()){
+            //r.setChip(timingDAO.getBibFromChip(r.getChip()));
+        }
+        
+        // Send it up to the TimingLocation for further processing...
+        //timingLocation.cookTime(c);
+        
+        // Filter it  (move to the TimingLocation)
         //if (r.getTimestamp().isBefore(firstRead) || r.getTimestamp().isAfter(lastRead)) return; 
         
-        timingDAO.cookRawTime(r); 
+        // Move to the timing location
+        //timingDAO.cookRawTime(r); 
         
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
