@@ -32,6 +32,7 @@ DONE -- Setup split locations
 DONE -- Split -> timing location map
 DONE -- Setup start waves
 DONE -- Update split distance units when main race unit is updated
+Sort splits by number
 Setup AG's
 Setup Award Depth 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
@@ -95,6 +96,8 @@ Team category setup (gender, mixed gender, custom data field setting, etc)
 Timing:
 Setup bib -> chip map
 
+TODO: Make timestamp not a LocalDateTime but a Duration from the start of the day of the event
+
 Raw vs cooked tables. 
         -- import to raw and place in queue
         -- run any time shifts, cuts, chip -> bib map
@@ -106,11 +109,14 @@ Raw vs cooked tables.
 Clear All Option
 Clear all times for a given timing location Option
 Clear all times for a given timing location reader option
+Clear all times for the timing location input when the user selects a new reader
+If Event date changes and there are results in the db, offer to either keep the existing results (but shift all raw times by the difference and reprocess) _or_ delete all timing data / results
 Backup only flag for a given reader at a split
 DONE: Multiple readers per timing location
 DONE: Import times from file
-Discard duplicates
+DONE: Discard duplicates
 If Start, Auto detect gun times based on triggers in input files and assign to the race/wave
+Use rawTimeDataQueue to batch process adding new raw times to the db
 
 DONE: Continually import times from file (tail in a separate task) to a timing point
 Continually import times from box (via tcp in a separate task) to a timing point

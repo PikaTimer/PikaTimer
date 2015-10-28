@@ -91,9 +91,9 @@ create table timing_location_input (
     backup boolean
 );
  
-create table raw_timing_data (id int, timing_loc_id int, timing_location_input_id int, chip_id varchar, raw_time varchar); 
+create table raw_timing_data (id int, timing_loc_input_id int, chip_id varchar, raw_time bigint); 
 
-create table cooked_timing_data (id int, time_loc_id int, bib_id varchar, cooked_time varchar, backup_time boolean);
+create table cooked_timing_data (id int, time_loc_id int, raw_id int, bib_id varchar, cooked_time bigint, backup_time boolean);
  
 create table results (race_id int, participant_id int, split_id int, time bigint); 
 

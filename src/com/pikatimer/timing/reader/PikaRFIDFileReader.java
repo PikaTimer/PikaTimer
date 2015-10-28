@@ -151,6 +151,7 @@ public class PikaRFIDFileReader implements TimingReader{
                 selectInput();
             });
             
+            inputTextField.textProperty().setValue(fileName.getValueSafe());
             // set the action for the inputTextField
             
         }
@@ -184,7 +185,7 @@ public class PikaRFIDFileReader implements TimingReader{
     
     public void handle(String s) {
         
-        LocalDate eventDate = timingListener.getEventDate();
+        
         String[] tokens = s.split(",", -1);
         // we only care about the following fields:
         // 0 -- The reader
@@ -206,17 +207,18 @@ public class PikaRFIDFileReader implements TimingReader{
                 dateTime = "0" + dateTime;
             }
             try { 
-                LocalTime time = LocalTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_TIME );
-                RawTimeData rawTime = new RawTimeData();
-                LocalDateTime fullTime = LocalDateTime.of(eventDate, time);
                 
+                LocalTime timestamp = LocalTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_TIME );
+                
+                RawTimeData rawTime = new RawTimeData();
+                              
                 rawTime.setChip(chip);
-                rawTime.setTimestamp(fullTime);
+                rawTime.setTimestampLong(timestamp.toNanoOfDay());
 
                 //data.setChip(chip);
                 //data.setTime(fullTime); 
                 
-                System.out.println("Added raw time: " + chip + " " + fullTime.toString());
+                System.out.println("Added raw time: " + chip + " " + timestamp.toString());
                 timingListener.processRead(rawTime); // process it
                
             } catch(DateTimeParseException e) {
@@ -224,6 +226,11 @@ public class PikaRFIDFileReader implements TimingReader{
             }
         } else {
             System.out.println("Unable to parse the line: " + s);
+            
+            /* Odds are it is a Date + Time. In which case we need to pull the date of the event and then 
+             * get the duration between the start of the event date and the time read. 
+             * LocalDate eventDate = timingListener.getEventDate();
+             */
         }
 
     }
@@ -267,6 +274,7 @@ public class PikaRFIDFileReader implements TimingReader{
             System.out.println("RFIDFileReader: Found existing file setting: " + filename);
             sourceFile = new File(filename);
             fileName.setValue(sourceFile.getAbsolutePath());
+            
         } else {
             System.out.println("RFIDFileReader: Did not find existing file setting." );
         }

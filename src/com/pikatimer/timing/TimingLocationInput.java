@@ -176,12 +176,13 @@ public class TimingLocationInput implements TimingListener{
                 }
             });
             timingReaderInitialized.setValue(Boolean.TRUE);
-        }
         
-        if (rawTimeSet == null) {
-            rawTimeSet = new HashSet(); 
-            rawTimeSet.addAll(timingDAO.getRawTimes(this));
-        } 
+            if (rawTimeSet == null) {
+                rawTimeSet = new HashSet(); 
+                rawTimeSet.addAll(timingDAO.getRawTimes(this));
+                System.out.println("TimingLocationInput.initializeReader: Read in " + rawTimeSet.size() + " existing times"); 
+            } 
+        }
         
         timingReader.showControls(readerDisplayPane);
     }
@@ -302,7 +303,8 @@ public class TimingLocationInput implements TimingListener{
         System.out.println("TimingLocationInput.processRead called" );
         
         // Mark it as our own
-        r.setTimingLocationId(IDProperty.getValue());
+        r.setTimingLocationInputId(IDProperty.getValue());
+        
         
         // is it a duplicate?
         

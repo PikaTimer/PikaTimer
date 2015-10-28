@@ -32,13 +32,29 @@ public class TimingDAO {
         private static final BlockingQueue<CookedTimeData> cookedTimeQueue = new ArrayBlockingQueue(100000);
         private static final Map<TimingLocationInput,Thread> timingInputThreadMap = new HashMap();
 
+    
+    /**
+    * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
+    * or the first access to SingletonHolder.INSTANCE, not before.
+    */
+    private static class SingletonHolder { 
+            private static final TimingDAO INSTANCE = new TimingDAO();
+    }
+
+    public static TimingDAO getInstance() {
+            return SingletonHolder.INSTANCE;
+    }
+    
+    public BlockingQueue<RawTimeData> getRawTimeQueue () {
+        return rawTimeQueue; 
+    }
     Collection getRawTimes(TimingLocationInput tli) {
         List<RawTimeData> list = new ArrayList<>();
         Set<RawTimeData> set = new HashSet<>(); 
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        System.out.println("Runing the getRawTimes for " + tli.getLocationName() + " Query");
+        System.out.println("Runing the getRawTimes Query for " + tli.getLocationName());
         
         try {  
             list=s.createQuery("from RawTimeData where timingLocationInputId = :tli_id").setParameter("tli_id", tli.getID()).list();
@@ -55,21 +71,6 @@ public class TimingDAO {
         s.beginTransaction();
         s.save(r);
         s.getTransaction().commit();
-    }
-    /**
-    * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
-    * or the first access to SingletonHolder.INSTANCE, not before.
-    */
-    private static class SingletonHolder { 
-            private static final TimingDAO INSTANCE = new TimingDAO();
-    }
-
-    public static TimingDAO getInstance() {
-            return SingletonHolder.INSTANCE;
-    }
-    
-    public BlockingQueue<RawTimeData> getRawTimeQueue () {
-        return rawTimeQueue; 
     }
     
     public BlockingQueue<CookedTimeData> getCookedTimeQueue () {

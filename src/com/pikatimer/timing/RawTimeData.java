@@ -4,8 +4,7 @@
  */
 package com.pikatimer.timing;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Duration;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,9 +23,8 @@ import org.hibernate.annotations.GenericGenerator;
 @DynamicUpdate
 @Table(name="raw_timing_data")
 public class RawTimeData {
-    private LocalDateTime timestamp;
+    private Duration timestamp;
     private String chip;
-    private Integer timingLocationId;
     private Integer timingLocationInputId;
     private Integer rawTimeId; 
 
@@ -42,27 +40,25 @@ public class RawTimeData {
     }
 
     @Column(name="raw_time")
-    public String getWaveStart() {
-        if( timestamp != null) {
-            return timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    public Long getTimestampLong() {
+        if (timestamp != null) {
+            return timestamp.toNanos();
         } else {
-            return "";
-        }
-        //return waveCutoff.toString();
-    }
-    public void setWaveStart(String c) {
-        if(! c.isEmpty()) {
-            //Fix this to watch for parse exceptions
-            timestamp = LocalDateTime.parse(c, DateTimeFormatter.ISO_LOCAL_DATE_TIME );
-            
+            return 0L; 
         }
     }
+    public void setTimestampLong(Long c) {
+        if(c != null) {
+            timestamp = Duration.ofNanos(c);
+        }
+    }
+    
     @Transient
-    public LocalDateTime getTimestamp() {
+    public Duration getTimestamp() {
         return timestamp;
     }
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void setTimestamp(Duration d) {
+        this.timestamp = d;
     }
 
     @Column(name="CHIP_ID")
@@ -74,21 +70,15 @@ public class RawTimeData {
         this.chip = chip;
     }
 
-    @Column(name="timing_loc_id") 
-    public Integer getTimingLocationId() {
-        return timingLocationId;
-    }
-
-    public void setTimingLocationId(Integer timingLocationId) {
-        this.timingLocationId = timingLocationId;
-    }
-    
-    @Column(name="timing_location_input_id") 
+     
+    @Column(name="timing_loc_input_id") 
     public Integer getTimingLocationInputId() {
+        //System.out.println("RawTimeData: Returning timingLocationInputId of " + timingLocationInputId);
         return timingLocationInputId;
     }
-    public void setTimingLocationInputId(Integer timingLocationInputId) {
-        this.timingLocationInputId = timingLocationId;
+    public void setTimingLocationInputId(Integer i) {
+        //System.out.println("RawTimeData: Setting timingLocationInputId to " + i);
+        this.timingLocationInputId = i;
     }
 
     
@@ -110,6 +100,7 @@ public class RawTimeData {
         if (getClass() != obj.getClass()) {
             return false;
         }
+       
         final RawTimeData other = (RawTimeData) obj;
         if (!Objects.equals(this.timestamp, other.timestamp)) {
             return false;
