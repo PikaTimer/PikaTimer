@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -46,39 +47,36 @@ public class Participant {
     
 
    
-   private final StringProperty firstNameProperty;
-   private final StringProperty middleNameProperty;
-   private final StringProperty lastNameProperty;
-   private final StringProperty emailProperty; 
-   private final IntegerProperty IDProperty;
-   private final StringProperty bibProperty;
-   private final IntegerProperty ageProperty;
-   private final StringProperty sexProperty; 
-   private final StringProperty cityProperty;
-   private final StringProperty stateProperty;
-   private final StringProperty countryProperty;
-   private LocalDate birthdayProperty; 
-   private final ObservableList<Wave> waves;         
+    private final StringProperty firstNameProperty = new SimpleStringProperty();
+    private final StringProperty middleNameProperty= new SimpleStringProperty();
+    private final StringProperty lastNameProperty= new SimpleStringProperty();
+    private final StringProperty fullNameProperty= new SimpleStringProperty();
+    private final StringProperty emailProperty= new SimpleStringProperty(); 
+    private final IntegerProperty IDProperty = new SimpleIntegerProperty();
+    private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
+    private final StringProperty bibProperty= new SimpleStringProperty();
+    private final IntegerProperty ageProperty = new SimpleIntegerProperty();
+    private final StringProperty sexProperty= new SimpleStringProperty(); 
+    private final StringProperty cityProperty= new SimpleStringProperty();
+    private final StringProperty stateProperty= new SimpleStringProperty();
+    private final StringProperty countryProperty= new SimpleStringProperty();
+    private LocalDate birthdayProperty; 
+    private final ObservableList<Wave> waves = FXCollections.observableArrayList();    
+    private final ObservableList<Integer> waveIDs = FXCollections.observableArrayList();
+   
     public Participant() {
         this("","");
     }
  
     public Participant(String firstName, String lastName) {
-        this.firstNameProperty = new SimpleStringProperty();
-        this.middleNameProperty = new SimpleStringProperty();
-        this.lastNameProperty = new SimpleStringProperty();
-        this.emailProperty = new SimpleStringProperty();
-        this.IDProperty = new SimpleIntegerProperty();
-        this.bibProperty = new SimpleStringProperty();
-        this.ageProperty = new SimpleIntegerProperty();
-        this.sexProperty = new SimpleStringProperty();
-        this.cityProperty = new SimpleStringProperty();
-        this.stateProperty = new SimpleStringProperty();
-        this.countryProperty = new SimpleStringProperty();
-        this.waves=FXCollections.observableArrayList();
+
+        
         setFirstName(firstName);
         setLastName(lastName);
+        // TODO: Fix this to include the middle name if it is set
+        fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", lastNameProperty));
     }
+    
     public static ObservableMap getAvailableAttributes() {
         ObservableMap<String,String> attribMap = FXCollections.observableHashMap();
         attribMap.put("bib", "Bib");
@@ -104,6 +102,7 @@ public class Participant {
              switch(entry.getKey()) {
                  case "bib": this.setBib(entry.getValue()); break; 
                  case "firstName": this.setFirstName(entry.getValue()); break;
+                 case "middleName": this.setMiddleName(entry.getValue()); break;
                  case "lastName": this.setLastName(entry.getValue()); break;
                  //case "middleName": this.setLastName(entry.getValue()); break;
                      
@@ -137,6 +136,19 @@ public class Participant {
         return IDProperty; 
     }
     
+    @Column(name="uuid")
+    public String getUUID() {
+       // System.out.println("Participant UUID is " + uuidProperty.get());
+        return uuidProperty.getValue(); 
+    }
+    public void setUUID(String  uuid) {
+        uuidProperty.setValue(uuid);
+        //System.out.println("Participant UUID is now " + uuidProperty.get());
+    }
+    public StringProperty uuidProperty() {
+        return uuidProperty; 
+    }
+    
     @Column(name="FIRST_NAME")
     public String getFirstName() {
         return firstNameProperty.getValueSafe();
@@ -158,6 +170,28 @@ public class Participant {
     }
     public StringProperty lastNameProperty() {
         return lastNameProperty;
+    }
+    
+    @Column(name="MIDDLE_NAME")
+    public String getMiddleName() {
+        return middleNameProperty.getValueSafe();
+    }
+    public void setMiddleName(String mName) {
+        middleNameProperty.setValue(mName);
+        if ( mName != null && mName.length()>0 ) {
+            fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", Bindings.createStringBinding(() -> 
+        middleNameProperty.get().substring(0,1), middleNameProperty), " ", lastNameProperty));
+        } else {
+            fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", lastNameProperty));
+        }
+
+    }
+    public StringProperty lastMiddleProperty() {
+        return middleNameProperty;
+    }
+    
+    public StringProperty fullNameProperty(){
+        return fullNameProperty;
     }
     
     @Column(name="EMAIL")
@@ -278,15 +312,16 @@ public class Participant {
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 89 * hash + Objects.hashCode(this.firstNameProperty);
-        hash = 89 * hash + Objects.hashCode(this.lastNameProperty);
-        hash = 89 * hash + Objects.hashCode(this.emailProperty);
-        hash = 89 * hash + Objects.hashCode(this.bibProperty);
-        hash = 89 * hash + Objects.hashCode(this.ageProperty);
-        hash = 89 * hash + Objects.hashCode(this.sexProperty);
-        hash = 89 * hash + Objects.hashCode(this.cityProperty);
-        hash = 89 * hash + Objects.hashCode(this.countryProperty);
-        hash = 89 * hash + Objects.hashCode(this.birthdayProperty);
+        hash = 89 * hash + Objects.hashCode(this.uuidProperty.getValue());
+//        hash = 89 * hash + Objects.hashCode(this.firstNameProperty);
+//        hash = 89 * hash + Objects.hashCode(this.lastNameProperty);
+//        hash = 89 * hash + Objects.hashCode(this.emailProperty);
+//        hash = 89 * hash + Objects.hashCode(this.bibProperty);
+//        hash = 89 * hash + Objects.hashCode(this.ageProperty);
+//        hash = 89 * hash + Objects.hashCode(this.sexProperty);
+//        hash = 89 * hash + Objects.hashCode(this.cityProperty);
+//        hash = 89 * hash + Objects.hashCode(this.countryProperty);
+//        hash = 89 * hash + Objects.hashCode(this.birthdayProperty);
         return hash;
     }
 
@@ -299,37 +334,42 @@ public class Participant {
             return false;
         }
         final Participant other = (Participant) obj;
-        if (!Objects.equals(this.firstNameProperty.getValue(), other.firstNameProperty.getValue())) {
-            return false;
+        if (!Objects.equals(this.uuidProperty.getValue(),other.uuidProperty.getValue())) {
+            return false; 
         }
-        if (!Objects.equals(this.lastNameProperty.getValue(), other.lastNameProperty.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.emailProperty.getValue(), other.emailProperty.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.bibProperty.getValue(), other.bibProperty.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.ageProperty.getValue(), other.ageProperty.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.sexProperty.getValue(), other.sexProperty)) {
-            return false;
-        }
-        if (!Objects.equals(this.cityProperty.getValue(), other.cityProperty)) {
-            return false;
-        }
-        if (!Objects.equals(this.stateProperty.getValue(), other.stateProperty.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.countryProperty.getValue(), other.countryProperty.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.birthdayProperty, other.birthdayProperty)) {
-            return false;
-        }
+//        if (!Objects.equals(this.firstNameProperty.getValue(), other.firstNameProperty.getValue())) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.lastNameProperty.getValue(), other.lastNameProperty.getValue())) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.emailProperty.getValue(), other.emailProperty.getValue())) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.bibProperty.getValue(), other.bibProperty.getValue())) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.ageProperty.getValue(), other.ageProperty.getValue())) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.sexProperty.getValue(), other.sexProperty)) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.cityProperty.getValue(), other.cityProperty)) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.stateProperty.getValue(), other.stateProperty.getValue())) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.countryProperty.getValue(), other.countryProperty.getValue())) {
+//            return false;
+//        }
+//        if (!Objects.equals(this.birthdayProperty, other.birthdayProperty)) {
+//            return false;
+//        }
         return true;
     }
+
+    
     
 }

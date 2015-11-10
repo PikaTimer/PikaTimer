@@ -15,7 +15,7 @@ import java.time.Duration;
 public class DurationFormatter {
     
     public static final String durationToString(Duration d, Integer p, Boolean Hours, RoundingMode rm) {
-        System.out.println("durationToString start with " + d.toNanos() + " and " + p.toString() + " or " + d.toString());
+        //System.out.println("durationToString start with " + d.toNanos() + " and " + p.toString() + " or " + d.toString());
         //String result = d.toString(); 
         //result = d.toString().replace("PT", "").replace("H",":").replace("M",":"); 
         Long s = d.getSeconds(); 
@@ -25,7 +25,7 @@ public class DurationFormatter {
         Integer t = d.getNano(); 
         if (d.toNanos() == 0) return ""; 
         BigDecimal S = new BigDecimal("0." + t.toString()).setScale(p, rm);
-        System.out.println("H:" + H.toString() + " M:" + M.toString() + " S:" + s.toString() + " S:" + S.toPlainString());
+        //System.out.println("H:" + H.toString() + " M:" + M.toString() + " s:" + s.toString() + " S:" + S.toPlainString());
 
         String r = "";
         if (H > 0 ) r = H.toString() + ":";
@@ -49,6 +49,6 @@ public class DurationFormatter {
     }
     
     public static final String durationToString(Duration d) {
-        return durationToString(d,0,true);
+        return durationToString(d,0,true,RoundingMode.HALF_UP);
     }
 }

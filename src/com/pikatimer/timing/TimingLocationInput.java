@@ -5,14 +5,24 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.timing.reader.PikaRFIDFileReader;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.util.Collections;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
@@ -20,11 +30,12 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
 import javafx.util.Callback;
+import javafx.util.converter.BigDecimalStringConverter;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -52,7 +63,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="timing_location_input")
 public class TimingLocationInput implements TimingListener{
     private final IntegerProperty IDProperty;
-    private final StringProperty TimingLocationInputName;
+    private final StringProperty timingLocationInputName;
     private TimingLocation timingLocation; // timing_loc_id
     private final StringProperty timingInputString; 
     private TimingInputTypes timingInputType; 
@@ -64,30 +75,24 @@ public class TimingLocationInput implements TimingListener{
     private Button inputButton;
     private TextField inputTextField; 
     private final BooleanProperty skewInput;
-    private Duration skewTime; 
-    private LocalDateTime firstRead;
-    private LocalDateTime lastRead; 
-    
-    private Set rawTimeSet;
+    private Duration skewDuration; 
+    private Semaphore processRead = new Semaphore(1);
+
+    private final IntegerProperty readCountProperty = new SimpleIntegerProperty();
+    private Set<RawTimeData> rawTimeSet;
     
     
     public TimingLocationInput() {
         this.IDProperty = new SimpleIntegerProperty();
-        this.TimingLocationInputName = new SimpleStringProperty("Not Yet Set");
+        this.timingLocationInputName = new SimpleStringProperty("Not Yet Set");
         this.timingInputString = new SimpleStringProperty();
         tailFileBooleanProperty = new SimpleBooleanProperty();
         timingReaderInitialized = new SimpleBooleanProperty();
         skewInput = new SimpleBooleanProperty();
         //attributes = new ConcurrentHashMap <>();
-        
-        tailFileBooleanProperty.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
-            if(newValue) {
-                
-            }
-        });
-        
-        
-        
+        skewDuration = Duration.ofNanos(0);
+        skewInput.setValue(Boolean.FALSE);
+
         
    }
     
@@ -105,15 +110,15 @@ public class TimingLocationInput implements TimingListener{
         return IDProperty; 
     }
     
-    @Transient
+    @Column(name="input_name")
     public String getLocationName() {
-    return TimingLocationInputName.getValueSafe();
+        return timingLocationInputName.getValueSafe();
     }
     public void setLocationName(String n) {
-    TimingLocationInputName.setValue(n);
+        timingLocationInputName.setValue(n);
     }
     public StringProperty LocationNameProperty() {
-    return TimingLocationInputName;
+        return timingLocationInputName;
     }
     
     //@Transient
@@ -150,7 +155,14 @@ public class TimingLocationInput implements TimingListener{
         
         if (t != null && (timingInputType == null || ! timingInputType.equals(t)) ){
             
-            
+            // If we already have a reader
+            if (timingReader != null) {
+                // , tell it to stop reading
+                timingReader.stopReading();
+                // clear out all existing readsf
+                clearReads();
+            }
+                               
             timingReader = t.getNewReader();
             //timingReader.setTimingInput(this);
             
@@ -160,27 +172,26 @@ public class TimingLocationInput implements TimingListener{
     }
     
     
+    public IntegerProperty readCountProperty() {
+        return readCountProperty;         
+    }
+    
     public void initializeReader(Pane readerDisplayPane) {
         
         // only do this once to prevent issues
         if (!timingReaderInitialized.getValue()) {
             timingReader.setTimingListener(this);
             
-            tailFileBooleanProperty.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
-                if(newValue) {
-                    System.out.println("TimingLocationInput: calling timingReader.startReading()");
-                    timingReader.startReading();
-                } else {
-                    System.out.println("TimingLocationInput: calling timingReader.stopReading()");
-                    timingReader.stopReading();
-                }
-            });
+            
             timingReaderInitialized.setValue(Boolean.TRUE);
         
             if (rawTimeSet == null) {
-                rawTimeSet = new HashSet(); 
+                
+                rawTimeSet = Collections.newSetFromMap(new ConcurrentHashMap<>()); 
+                
                 rawTimeSet.addAll(timingDAO.getRawTimes(this));
                 System.out.println("TimingLocationInput.initializeReader: Read in " + rawTimeSet.size() + " existing times"); 
+                readCountProperty.set(rawTimeSet.size());
             } 
         }
         
@@ -240,7 +251,7 @@ public class TimingLocationInput implements TimingListener{
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 13 * hash + Objects.hashCode(this.TimingLocationInputName);
+        hash = 13 * hash + Objects.hashCode(this.timingLocationInputName);
         hash = 13 * hash + Objects.hashCode(this.timingLocation);
         hash = 13 * hash + Objects.hashCode(this.timingInputString);
         return hash;
@@ -266,7 +277,7 @@ public class TimingLocationInput implements TimingListener{
             return false;
         }
         final TimingLocationInput other = (TimingLocationInput) obj;
-        if (!Objects.equals(this.TimingLocationInputName, other.TimingLocationInputName)) {
+        if (!Objects.equals(this.timingLocationInputName, other.timingLocationInputName)) {
             return false;
         }
         if (!Objects.equals(this.timingLocation, other.timingLocation)) {
@@ -300,7 +311,15 @@ public class TimingLocationInput implements TimingListener{
 
     @Override
     public void processRead(RawTimeData r) {
-        System.out.println("TimingLocationInput.processRead called" );
+        try {
+            //System.out.println("TimingLocationInput.processRead called" );
+            //System.out.println("processRead() ProcessRead.aquire()");
+            processRead.acquire();
+            //System.out.println("Got it... ");
+        } catch (InterruptedException ex) {
+            Logger.getLogger(TimingLocationInput.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         
         // Mark it as our own
         r.setTimingLocationInputId(IDProperty.getValue());
@@ -310,39 +329,161 @@ public class TimingLocationInput implements TimingListener{
         
         // if so, just return
         if (rawTimeSet.contains(r)) {
-            System.out.println("TimingLocationInput.processRead: Duplicate " + r.getChip() + " " + r.getTimestamp().toString()); 
+            //System.out.println("TimingLocationInput.processRead: Duplicate " + r.getChip() + " " + r.getTimestamp().toString()); 
+            processRead.release();
             return;
         }
+        
+        
+        Platform.runLater(() -> {
+            readCountProperty.set(rawTimeSet.size());
+        });
+        
         
         //if not, save it to our local stash of times. 
         timingDAO.saveRawTimes(r); 
         rawTimeSet.add(r);
         
-        //timingDAO.getRawTimeQueue().add(r); 
-        
+        processRead.release();
+
+        processReadStage2(r);
+    }
+    
+    public void processReadStage2(RawTimeData r){
         // Create a cooked time
+        System.out.println("Stage 2 processing of raw id " + r.getID()); 
         CookedTimeData c = new CookedTimeData();
                 
+        // mark it as our own
+        c.setTimingLocationInputId(this.IDProperty.intValue());
+        
         // skew it
-        //if(skewInput.getValue()) {
-        //    r.setTimestamp(r.getTimestamp().plus(skewTime)); 
-        //}
+        if(skewInput.getValue()) {
+            c.setTimestamp(r.getTimestamp().plus(skewDuration)); 
+            System.out.println("Skewing input from " + r.getTimestamp() + " to " + c.getTimestamp());
+        } else {
+            c.setTimestamp(r.getTimestamp());
+        }
+       
         
         // Tag it as a backup if needed
         
+        
+        
         // Swap the chip for a bib
         if (!timingReader.chipIsBib()){
-            //r.setChip(timingDAO.getBibFromChip(r.getChip()));
+            c.setBib(timingDAO.getBibFromChip(r.getChip()));
+        } else {
+            c.setBib(r.getChip()); 
         }
         
         // Send it up to the TimingLocation for further processing...
-        //timingLocation.cookTime(c);
+        System.out.println("Cooking time " + c.getBib() + " " + c.getTimestamp()); 
+        timingLocation.cookTime(c);
+    }
+    
+    public void clearLocalReads() {
+        stopReader();
+        // blow away the rawTimeSet
+        if (rawTimeSet != null) {
+            rawTimeSet.clear();
+            Platform.runLater(() -> {
+                readCountProperty.set(rawTimeSet.size());
+            });
+        }
+    }
+    public void clearReads() {
+        clearLocalReads();
+        // Delete all from the DB
+        // This will trigger a removal of all cooked times associated with 
+        // this instance. 
+        timingDAO.clearRawTimes(this); 
         
-        // Filter it  (move to the TimingLocation)
-        //if (r.getTimestamp().isBefore(firstRead) || r.getTimestamp().isAfter(lastRead)) return; 
+    }
+    
+    public void reprocessAll() {
+        System.out.println("ReprocessAll called... ");
+        TimingLocationInput tli = this; 
+        // set the processReadSemaphore to pause the processRead()
+
+        // start background thread
+
+        Task task;
+        task = new Task<Void>() {
+            @Override public Void call() {
+                try {
+                    processRead.acquire();// clear out all cooked times for our location
+
+                    timingDAO.clearCookedTimes(tli);
+
+                    rawTimeSet.stream().forEach( r -> {
+                        // for everything in our rawTimeSet, reprocess the read 
+
+                        tli.processReadStage2(r);
+                        // setting the skew or ignore flag as needed
+
+                    });
+
+                    //resume processing of new times. 
+                    processRead.release();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(TimingLocationInput.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                //when done, resume processRead()
+                return null;
+            }
+        };
+         // Run this in a thread.... 
+        new Thread(task).start();
         
-        // Move to the timing location
-        //timingDAO.cookRawTime(r); 
-        
+    }
+
+    public void stopReader() {
+        timingReader.stopReading();
+    }
+
+    
+    @Column(name="skew")
+    public Boolean getSkewLocationTime() {
+        System.out.println("returning SkewLocation()");
+        return skewInput.getValue();
+    }
+    public void setSkewLocationTime(Boolean i) {
+        if (i != null) { 
+            skewInput.setValue(i);
+        }
+    }
+    public BooleanProperty skewLocation(){
+        return skewInput;
+    }
+    
+    
+    @Column(name="time_skew")
+    public Long getSkewNanos(){
+        return skewDuration.toNanos();
+    }
+    public void setSkewNanos(Long s) {
+        if (s != null) {
+            skewDuration = Duration.ofNanos(s);     
+            System.out.println("Skew duration is now " + skewDuration);
+        } 
+    }
+    @Transient
+    public String getSkewString() {
+        String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
+
+        System.out.println("Returning skew duration string of " + durationString + " for " + skewDuration);
+        return durationString; 
+    }
+    public void setSkewString(String text) {
+        String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
+        if (!durationString.equals(text)) {
+            skewDuration = Duration.ofNanos(new BigDecimalStringConverter().fromString(text).multiply(new BigDecimal(1000000000L)).longValue());
+            System.out.println("Skew duration is now " + skewDuration);
+        }
+    }
+    @Transient
+    public Duration getSkew() {
+        return skewDuration; 
     }
 }

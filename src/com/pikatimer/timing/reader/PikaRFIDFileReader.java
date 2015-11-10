@@ -6,33 +6,27 @@ package com.pikatimer.timing.reader;
 
 import com.pikatimer.timing.RawTimeData;
 import com.pikatimer.timing.TimingListener;
-import com.pikatimer.timing.TimingLocationInput;
 import com.pikatimer.timing.TimingReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
-import java.time.format.TextStyle;
-import java.time.temporal.ChronoField;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
-import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -49,7 +43,7 @@ public class PikaRFIDFileReader implements TimingReader{
     
     private TimingListener timingListener;
     private File sourceFile; 
-    private StringProperty fileName; 
+    private final StringProperty fileName; 
     private Pane displayPane; 
     private Button inputButton;
     private TextField inputTextField; 
@@ -58,7 +52,9 @@ public class PikaRFIDFileReader implements TimingReader{
     private VBox displayVBox; 
     private Tailer tailer;
     private Thread thread; 
-    private BooleanProperty readingStatus;
+    private final BooleanProperty readingStatus;
+    ProgressIndicator watchProgressIndicator;
+    ToggleButton watchToggleButton;
     
     public PikaRFIDFileReader(){
         fileName = new SimpleStringProperty();
@@ -112,8 +108,10 @@ public class PikaRFIDFileReader implements TimingReader{
             thread = new Thread(tailer);
             thread.setDaemon(true); // optional
             thread.start();
+            
+            
 
-            readingStatus.setValue(Boolean.FALSE);
+            readingStatus.setValue(Boolean.TRUE);
         }
     }
     
@@ -133,16 +131,19 @@ public class PikaRFIDFileReader implements TimingReader{
             // initialize our display
             displayHBox = new HBox();
             displayVBox = new VBox();
+            watchProgressIndicator = new ProgressIndicator();
+            watchToggleButton = new ToggleButton("Watch File...");
             
             displayVBox.setSpacing(5); 
-            displayVBox.setPadding(new Insets(5, 5, 5, 5));
+            //displayVBox.setPadding(new Insets(5, 5, 5, 5));
+            
             
             inputButton = new Button("File...");
             inputTextField = new TextField();
-            statusLabel = new Label();
+            statusLabel = new Label("");
             
             displayHBox.setSpacing(5);
-            displayHBox.getChildren().addAll(inputTextField, inputButton); 
+            displayHBox.getChildren().addAll(inputTextField, inputButton, watchToggleButton, watchProgressIndicator); 
             displayVBox.getChildren().addAll(displayHBox, statusLabel); 
             
             // Set the action for the inputButton
@@ -150,6 +151,24 @@ public class PikaRFIDFileReader implements TimingReader{
                 // Button was clicked, do something...
                 selectInput();
             });
+            
+            watchProgressIndicator.visibleProperty().bind(watchToggleButton.selectedProperty());
+            watchProgressIndicator.setProgress(-1.0);
+            // get the current status of the reader
+            //watchProgressIndicator.setPrefHeight(30.0);
+            watchProgressIndicator.setMaxHeight(30.0);
+            watchToggleButton.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
+                
+                
+                if(newValue) {
+                    System.out.println("PikaRFIDFileReader: watchToggleButton event: calling startReading()");
+                    startReading();
+                } else {
+                    System.out.println("PikaRFIDFileReader: watchToggleButton event: calling stopReading()");
+                    stopReading();
+                }
+            });
+            watchToggleButton.selectedProperty().bindBidirectional(readingStatus);
             
             inputTextField.textProperty().setValue(fileName.getValueSafe());
             // set the action for the inputTextField
@@ -218,7 +237,12 @@ public class PikaRFIDFileReader implements TimingReader{
                 //data.setChip(chip);
                 //data.setTime(fullTime); 
                 
-                System.out.println("Added raw time: " + chip + " " + timestamp.toString());
+                //System.out.println("Added raw time: " + chip + " " + timestamp.toString());
+                
+                Platform.runLater(() -> {
+                    statusLabel.textProperty().setValue("Added raw time: " + chip + " " + timestamp.toString());
+                });
+                
                 timingListener.processRead(rawTime); // process it
                
             } catch(DateTimeParseException e) {
@@ -249,7 +273,7 @@ public class PikaRFIDFileReader implements TimingReader{
                         .map(s -> s.trim())
                         .filter(s -> !s.isEmpty())
                         .forEach(s -> {
-                            System.out.println("readOnce read " + s); 
+                            //System.out.println("readOnce read " + s); 
                             handle(s); 
                         });
                 } catch (IOException ex) {

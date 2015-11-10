@@ -1,7 +1,7 @@
 Overall:
 Upgrade H2 
 Upgrade Hibernate to 5.x
-Fix FXML layout resizing
+Fix FXML layout resizing checks
 Add License Key enforcement
 Add 'About' page w/ links to the following items:
 --gliphicons
@@ -11,9 +11,10 @@ Add 'About' page w/ links to the following items:
 --flyaway
 --DataFX
 --ControlsFX 
+
 Logging 
   --no more System.out.println
-  --switch to log4j
+  --switch to log4j or something else
   --enable debug output log viewing
   --enable saving debug output log to file
   --enable toggle to set debug level to Normal/Debug/Trace
@@ -32,7 +33,7 @@ DONE -- Setup split locations
 DONE -- Split -> timing location map
 DONE -- Setup start waves
 DONE -- Update split distance units when main race unit is updated
-Sort splits by number
+Auto Sort splits by number
 Setup AG's
 Setup Award Depth 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
@@ -56,6 +57,17 @@ Show bib range if there are multiple races and wave starts is not checked
 
 Participants:
 Switch wave attribute mapping to a "getWaveByID" type of system to avoid hibernate fetching hell
+Fix participants structure
+  -- store wave ID and not the wave
+  -- background task to read from db
+  -- limit to one wave or multiple per checkbox on the form
+  DONE: take over control of the ID so that it is set by us and not hibernate (set to uuid if not set on first get?)
+  -- store the team id
+  DONE: middle initial / name
+
+  -- textfield for city/state with auto complete
+  -- textfield for teams pre-populated with auto complete
+
 DONE -- Delete a row/rows via a context menu
 DONE -- Select which columns to show (bib, first, last, age, city, race, etc)
 DONE -- Alphanumeric sort of the bib numbers 
@@ -73,6 +85,7 @@ Clean up import from csv (field formatting, etc)
 export to csv
 Validate csv file before continuing. 
 Error check the fields (age, city, state, bib, etc). 
+Prevent duplicate bib number assignment
 DONE -- Wave(Race) Assignment 
 DONE -- Automatic Wave (Race) Assignment based on bib #
 Wave/Race assignment based on import field
@@ -83,7 +96,7 @@ Link to Relay Team? (or do we just set "Relay Team Race" as  a race attribute?)
 Inline Edit of the cells?
 Mass bib assignment 
 Show race/wave as column
-Only store wave id and then programatically do the linking rather than letting hibernate mess it up
+Only store wave id and then programmatically do the linking rather than letting hibernate mess it up
 sync from/to fusesport / active.com / runsignup / other
 
 Relay Teams? Figure this one out!
@@ -96,7 +109,7 @@ Team category setup (gender, mixed gender, custom data field setting, etc)
 Timing:
 Setup bib -> chip map
 
-TODO: Make timestamp not a LocalDateTime but a Duration from the start of the day of the event
+Done: Make timestamp not a LocalDateTime but a Duration from the start of the day of the event
 
 Raw vs cooked tables. 
         -- import to raw and place in queue
@@ -106,28 +119,32 @@ Raw vs cooked tables.
             -- time shift
             -- bib -> chip
             -- min/max times
-Clear All Option
-Clear all times for a given timing location Option
-Clear all times for a given timing location reader option
+DONE: Clear All Option
+DONE: Clear all times for a given timing location Option
+DONE: Clear all times for a given timing location reader option
 Clear all times for the timing location input when the user selects a new reader
-If Event date changes and there are results in the db, offer to either keep the existing results (but shift all raw times by the difference and reprocess) _or_ delete all timing data / results
+Clear all times for a location when the location is deleted
 Backup only flag for a given reader at a split
 DONE: Multiple readers per timing location
 DONE: Import times from file
 DONE: Discard duplicates
 If Start, Auto detect gun times based on triggers in input files and assign to the race/wave
-Use rawTimeDataQueue to batch process adding new raw times to the db
+OBE: Use rawTimeDataQueue to batch process adding new raw times to the db
 
 DONE: Continually import times from file (tail in a separate task) to a timing point
+DONE: Time shift (+/- a fixed offset to adjust for clock errors on the timing box) 
+DONE: Show most recent data read for a reader / timing location
+Search data read for a reader / timing location
+
 Continually import times from box (via tcp in a separate task) to a timing point
 Rewind option for times read from box/outreach
 Chip sequence gap detection that triggers an automatic rewind for direct reads
 
-Time shift (+/- a fixed offset to adjust for clock errors on the timing box) 
+Search filter by location
 
-Show most recent data read for a reader / timing location
-Search data read for a reader / timing location
+fix column widths
 
+Add/delete fixed times (overrides) 
 
 
 Results:

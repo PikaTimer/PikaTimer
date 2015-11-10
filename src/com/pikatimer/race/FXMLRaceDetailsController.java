@@ -614,6 +614,7 @@ public class FXMLRaceDetailsController {
         Split newSplit = new Split(selectedRace);
         newSplit.setSplitName("New Split");
         newSplit.setSplitDistanceUnits(selectedRace.getRaceDistanceUnits());
+        newSplit.setSplitDistance(BigDecimal.valueOf(0));
         newSplit.setTimingLocation(TimingDAO.getInstance().listTimingLocations().get(1));
         if(raceSplitsTableView.getSelectionModel().getSelectedItems().size()> 0 ) {
             Integer pos = raceSplitsTableView.getSelectionModel().getSelectedItem().getPosition(); 

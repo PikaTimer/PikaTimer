@@ -69,8 +69,7 @@ public class RawTimeData {
     public void setChip(String chip) {
         this.chip = chip;
     }
-
-     
+    
     @Column(name="timing_loc_input_id") 
     public Integer getTimingLocationInputId() {
         //System.out.println("RawTimeData: Returning timingLocationInputId of " + timingLocationInputId);

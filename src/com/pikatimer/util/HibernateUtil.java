@@ -8,6 +8,8 @@ import com.pikatimer.Pikatimer;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.Wave;
+import com.pikatimer.timing.Bib2ChipMap;
+import com.pikatimer.timing.CookedTimeData;
 import com.pikatimer.timing.RawTimeData;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
@@ -65,11 +67,15 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(TimingLocationInput.class);
         cfg.addAnnotatedClass(Wave.class);
         cfg.addAnnotatedClass(RawTimeData.class);
+        cfg.addAnnotatedClass(CookedTimeData.class);
+        cfg.addAnnotatedClass(Bib2ChipMap.class);
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");
         cfg.setProperty("hibernate.connection.password", "");
         cfg.setProperty("hibernate.show_sql", "true");
+        cfg.setProperty("hibernate.jdbc.batch_size","100"); 
+        
         cfg.setProperty("hibernate.enable_lazy_load_no_trans", "true");
         cfg.setProperty("hibernate.dialect","org.hibernate.dialect.H2Dialect");
         cfg.setProperty("hibernate.cache.provider_class","org.hibernate.cache.NoCacheProvider");

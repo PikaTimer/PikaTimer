@@ -16,15 +16,16 @@
    </columnConstraints>
    <rowConstraints>
       <RowConstraints valignment="CENTER" vgrow="NEVER" />
+      <RowConstraints maxHeight="1.7976931348623157E308" valignment="CENTER" vgrow="NEVER" />
       <RowConstraints maxHeight="1.7976931348623157E308" minHeight="200.0" prefHeight="248.0" valignment="CENTER" vgrow="ALWAYS" />
       <RowConstraints />
    </rowConstraints>
    <children>
-      <SplitPane dividerPositions="0.66" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+      <SplitPane dividerPositions="0.66" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
          <items>
             <ScrollPane fx:id="timingDetailsPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefViewportHeight="486.0" prefViewportWidth="408.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
                <content>
-                  <VBox fx:id="timingDetailsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="100.0" spacing="10.0" />
+                  <VBox fx:id="timingDetailsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="10.0" />
                </content>
                <padding>
                   <Insets bottom="5.0" />
@@ -38,20 +39,26 @@
                         <TextField fx:id="searchTextBox" />
                         <ComboBox fx:id="searchScopeComboBox" prefWidth="150.0" />
                         <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                        <Label fx:id="inputCountLabel" text="0/0" />
+                        <Label fx:id="filteredSizeLabel" text="0" />
+                        <Label fx:id="filteredSizeLabel1" text="/" />
+                        <Label fx:id="listSizeLabel" text="0" />
                      </children>
                      <padding>
                         <Insets top="5.0" />
                      </padding>
                   </HBox>
-                  <TableView maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+                  <TableView fx:id="timeTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                     <columns>
-                      <TableColumn prefWidth="52.0" text="Bib" />
-                        <TableColumn prefWidth="110.0" text="Chip" />
-                      <TableColumn prefWidth="39.0" text="Time" />
-                        <TableColumn prefWidth="122.0" text="Name" />
-                        <TableColumn prefWidth="118.0" text="Input" />
+                      <TableColumn fx:id="bibColumn" prefWidth="52.0" text="Bib" />
+                      <TableColumn fx:id="timeColumn" prefWidth="79.0" text="Time" />
+                        <TableColumn fx:id="nameColumn" prefWidth="85.0" text="Name" />
+                        <TableColumn fx:id="inputColumn" prefWidth="90.0" text="Input" />
+                        <TableColumn fx:id="backupColumn" prefWidth="50.0" text="Backup" />
+                        <TableColumn fx:id="ignoreColumn" editable="true" prefWidth="43.0" text="Ignore" />
                     </columns>
+                    <sortOrder> 
+                        <fx:reference source="timeColumn" />
+                    </sortOrder>
                   </TableView>
                </children>
             </VBox>
@@ -84,7 +91,7 @@
                            </HBox.margin>
                         </CheckBox>
                         <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
-                        <Button fx:id="customChipMapButton" mnemonicParsing="false" text="Setup" />
+                        <Button fx:id="customChipMapButton" mnemonicParsing="false" onAction="#setupCustomChipMap" text="Setup" />
                      </children>
                      <VBox.margin>
                         <Insets />
@@ -94,9 +101,6 @@
                      </padding>
                   </HBox>
                </children>
-               <padding>
-                  <Insets top="10.0" />
-               </padding>
             </VBox>
          </children>
          <GridPane.margin>
@@ -115,7 +119,7 @@
             </Label>
          </children>
       </HBox>
-      <VBox spacing="5.0" GridPane.columnIndex="1">
+      <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
          <children>
             <HBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">
                <children>

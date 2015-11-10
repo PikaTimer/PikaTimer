@@ -37,6 +37,8 @@ public class TimingLocation {
    private final StringProperty locationName;
    private final ObservableList<Split> associatedSplits; 
    private final ObservableList<TimingLocationInput> timingInputs; 
+   private static final TimingDAO timingDAO = TimingDAO.getInstance();
+
 
    public TimingLocation() {
         this.IDProperty = new SimpleIntegerProperty();
@@ -104,6 +106,16 @@ public class TimingLocation {
     }
     public void removeInput(TimingLocationInput t){
         timingInputs.remove(t); 
+    }
+    
+    public void cookTime(CookedTimeData c) {
+        
+        // Filter it
+        //if (c.getTimestamp().isBefore(firstRead) || c.getTimestamp().isAfter(lastRead)) return; 
+        
+        c.setTimingLocationId(this.getID());
+        // Move to the timing location
+        timingDAO.processCookedTime(c); 
     }
     
     @Override

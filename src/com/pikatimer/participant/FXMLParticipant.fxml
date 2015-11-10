@@ -105,18 +105,19 @@
                         <CheckComboBox fx:id="waveComboBox" prefWidth="150.0" />
                      </children>
                   </HBox>
-                  <TextField fx:id="lastNameField" prefWidth="90" promptText="Last Name" />
                   <TextField fx:id="firstNameField" prefWidth="90" promptText="First Name" />
+                  <TextField fx:id="middleNameTextField" prefWidth="90" promptText="Middle Name / Initial" />
+                  <TextField fx:id="lastNameField" prefWidth="90" promptText="Last Name" />
                   <HBox spacing="5.0">
                      <children>
                         <TextField fx:id="ageTextField" promptText="Age" />
-                        <TextField fx:id="sexTextField" promptText="Sex" />
+                        <TextField fx:id="sexTextField" prefHeight="25.0" prefWidth="70.0" promptText="Sex" />
                      </children>
                   </HBox>
                   <HBox spacing="5.0">
                      <children>
-                        <ComboBox fx:id="cityComboBox" editable="true" prefWidth="150.0" promptText="City" />
-                        <ComboBox fx:id="stateComboBox" editable="true" prefWidth="75.0" promptText="State" />
+                        <TextField fx:id="cityTextField" prefHeight="25.0" prefWidth="228.0" promptText="City" />
+                        <TextField fx:id="stateTextField" promptText="State" />
                      </children>
                   </HBox>
                         <TextField fx:id="emailField" onAction="#addPerson" prefWidth="150" promptText="Email" />

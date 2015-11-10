@@ -4,13 +4,29 @@
  */
 package com.pikatimer.timing;
 
+import com.pikatimer.participant.Participant;
+import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.timing.reader.PikaRFIDFileReader;
+import com.pikatimer.util.AlphanumericComparator;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.PatternSyntaxException;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -19,10 +35,17 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 
 /**
@@ -39,11 +62,26 @@ public class FXMLTimingController {
     @FXML private Button timingLocRemoveButton;  
     @FXML private TextField timingLocationNameTextField; 
     
+    @FXML private TextField searchTextBox;
+    @FXML private Label listSizeLabel;
+    @FXML private Label filteredSizeLabel;
+    @FXML private TableView<CookedTimeData> timeTableView;
+    @FXML private TableColumn bibColumn;
+    @FXML private TableColumn timeColumn;
+    @FXML private TableColumn<CookedTimeData,String> nameColumn;
+    @FXML private TableColumn<CookedTimeData,String> inputColumn;
+    @FXML private TableColumn backupColumn;
+    @FXML private TableColumn ignoreColumn;
+    @FXML private CheckBox customChipBibCheckBox;
+    
+    private ObservableList<CookedTimeData> cookedTimeList;
     private ObservableList<TimingLocation> timingLocationList;
     private TimingLocation selectedTimingLocation;
-    private TimingDAO timingLocationDAO; 
+    private TimingDAO timingDAO; 
+    private ParticipantDAO participantDAO;
     //private FXMLTimingLocationInputController timingLocationDetailsController;
     private FXMLLoader timingLocationDetailsLoader ;
+    private Bib2ChipMap bib2ChipMap;
     
     @FXML private VBox timingDetailsVBox;
     /**
@@ -55,8 +93,9 @@ public class FXMLTimingController {
         selectedTimingLocation = null;
         // TODO
         
-        timingLocationDAO=TimingDAO.getInstance();
-        timingLocationList=timingLocationDAO.listTimingLocations(); 
+        timingDAO=TimingDAO.getInstance();
+        participantDAO=ParticipantDAO.getInstance();
+        timingLocationList=timingDAO.listTimingLocations(); 
         
         timingLocListView.setItems(timingLocationList);
         timingLocListView.setEditable(true);
@@ -88,10 +127,10 @@ public class FXMLTimingController {
                 if (t.getNewValue().toString().isEmpty()) {
                     //timingLocationDAO.removeTimingLocation(tl);
                     //tl.setLocationName("New Timing Location");
-                    timingLocationDAO.removeTimingLocation(tl);
+                    timingDAO.removeTimingLocation(tl);
                 } else {
                     tl.setLocationName(t.getNewValue().toString());
-                    timingLocationDAO.updateTimingLocation(tl);
+                    timingDAO.updateTimingLocation(tl);
                 }
             } else {
                 System.out.println("Timing setOnEditCommit event out of index: " + t.getIndex());
@@ -106,7 +145,7 @@ public class FXMLTimingController {
                 TimingLocation tl = t.getSource().getItems().get(t.getIndex());
                 if (tl.getLocationName().isEmpty()) {
                     //tl.setLocationName("New Timing Location");
-                    timingLocationDAO.removeTimingLocation(tl);
+                    timingDAO.removeTimingLocation(tl);
                 }
             } else {
                 System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
@@ -117,24 +156,85 @@ public class FXMLTimingController {
         
         timingLocRemoveButton.disableProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull());
 
+        
+        
+        
+        
+        // Deal with the filtering and such. 
+        // TODO Only filter on the visible colums 
+        // 1. Wrap the ObservableList in a FilteredList (initially display all data).
+        cookedTimeList = timingDAO.getCookedTimes();
+        FilteredList<CookedTimeData> filteredTimesList = new FilteredList<>(cookedTimeList, p -> true);
+
+        // 2. Set the filter Predicate whenever the filter changes.
+        searchTextBox.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredTimesList.setPredicate(time -> {
+                // If filter text is empty, display all persons.
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+
+                // Compare first name and last name of every person with filter text.
+                String lowerCaseFilter = "(.*)(" + newValue.toLowerCase() + ")(.*)";
+                try {    
+                    if ((time.getParticipantName() + " " + time.getBib()).toLowerCase().matches(lowerCaseFilter)) {
+                        return true; // Filter matches first/last/email/bib.
+                    } 
+
+                } catch (PatternSyntaxException e) {
+                    return true;
+                }
+                return false; // Does not match.
+            });
+        });
+        // 3. Wrap the FilteredList in a SortedList. 
+        SortedList<CookedTimeData> sortedTimeList = new SortedList<>(filteredTimesList);
+
+        // 4. Bind the SortedList comparator to the TableView comparator.
+        sortedTimeList.comparatorProperty().bind(timeTableView.comparatorProperty());
+        
+        // 5. Set the cell factories and stort routines... 
+        bibColumn.setCellValueFactory(new PropertyValueFactory<>("bib"));
+        bibColumn.setComparator(new AlphanumericComparator());
+        timeColumn.setCellValueFactory(new PropertyValueFactory<>("timestampString"));
+        timeColumn.setComparator(new AlphanumericComparator());
+        nameColumn.setCellValueFactory(cellData -> {
+            Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
+            if (p == null) { return new SimpleStringProperty("Unknown");
+            } else {
+                return p.fullNameProperty();
+            }
+        });
+        inputColumn.setCellValueFactory(cellData -> {
+            TimingLocation t =  timingDAO.getTimingLocationByID(cellData.getValue().getTimingLocationId());
+            if (t == null) { return new SimpleStringProperty("Unknown");
+            } else {
+                return t.LocationNameProperty();
+            }
+        });
+        
+        backupColumn.setCellValueFactory(new PropertyValueFactory<>("backupTime"));
+        backupColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        ignoreColumn.setCellValueFactory(new PropertyValueFactory<>("ignoreTime"));
+        ignoreColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+
+        // 6. Add sorted (and filtered) data to the table.
+        timeTableView.setItems(sortedTimeList);
+        
+        // Set the bib number to be an alphanumeric sort
+        
+        
+        
+        listSizeLabel.textProperty().bind(Bindings.size(cookedTimeList).asString());
+        filteredSizeLabel.textProperty().bind(Bindings.size(sortedTimeList).asString());
+        
+        
         // load up the TimingLocationDetailsPane
-        // Save the FXMLLoader so that we can send it notes when things change in the races box
-        
-        /*        timingDetailsVBox.getChildren().clear();
-        try {
-        timingLocationDetailsLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/timing/FXMLTimingLocationInput.fxml"));
-        timingDetailsVBox.getChildren().add(timingLocationDetailsLoader.load());
-        } catch (IOException ex) {
-        Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
-        ex.printStackTrace();
-        }
-        
-        timingLocationDetailsController =(FXMLTimingLocationInputController)timingLocationDetailsLoader.getController(); 
-        //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
-        */
-            
+                    
          //if there are no timing locations selected in the view then disable the entire right hand side
          timingDetailsVBox.visibleProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull().not());
+         
+         
          timingLocListView.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Cha‌​nge<? extends TimingLocation> c) -> { 
              System.out.println("timingLocListView changed...");
              //timingLocListView.getSelectionModel().getSelectedItems().forEach(System.out::println); 
@@ -190,6 +290,18 @@ public class FXMLTimingController {
             }
         });
         
+        
+        // bib2Chip mappings
+        bib2ChipMap = timingDAO.getBib2ChipMap();
+        customChipBibCheckBox.setSelected(bib2ChipMap.getUseCustomMap()); 
+            
+        customChipBibCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+                if (!old_val.equals(new_val)) {
+                    System.out.println("Setting bib2ChipMap custom to " + new_val.toString());
+                    bib2ChipMap.setUseCustomMap(new_val);
+                    timingDAO.saveBib2ChipMap(bib2ChipMap);
+                }
+            });
     }    
     
     
@@ -205,7 +317,7 @@ public class FXMLTimingController {
         
         Optional<ButtonType> result = alert.showAndWait();
         if (result.get() == ButtonType.OK){
-            timingLocationDAO.createDefaultTimingLocations();
+            timingDAO.createDefaultTimingLocations();
         } else {
             // ... user chose CANCEL or closed the dialog
         }
@@ -220,7 +332,7 @@ public class FXMLTimingController {
         t.setLocationName("New Timing Location");
 
         
-        timingLocationDAO.addTimingLocation(t);
+        timingDAO.addTimingLocation(t);
 
         System.out.println("Setting the timingLocListView.edit to " + timingLocationList.size() + " " + timingLocationList.indexOf(t));
         timingLocListView.getSelectionModel().select(timingLocationList.indexOf(t));
@@ -236,7 +348,7 @@ public class FXMLTimingController {
         //TODO: If the location is referenced by a split, 
         //prompt to reassign the split to a new location or cancel the edit. 
         
-        timingLocationDAO.removeTimingLocation(timingLocListView.getSelectionModel().getSelectedItem());
+        timingDAO.removeTimingLocation(timingLocListView.getSelectionModel().getSelectedItem());
         //timingLocAddButton.requestFocus();
         //timingLocAddButton.setDefaultButton(true);
     }
@@ -245,7 +357,7 @@ public class FXMLTimingController {
         TimingLocationInput tli = new TimingLocationInput();
         tli.setTimingLocation(selectedTimingLocation);
         tli.setLocationName(selectedTimingLocation.getLocationName() + " Input " + selectedTimingLocation.getInputs().size()+1);
-        timingLocationDAO.addTimingLocationInput(tli);
+        timingDAO.addTimingLocationInput(tli);
         showTimingInput(tli);
         //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
     }
@@ -279,16 +391,78 @@ public class FXMLTimingController {
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.get() == allButtonType){
-            // ... user chose "One"
+            // ... user chose All
+            timingDAO.clearAllTimes();
+            // itterate over all of the timing locations
+            timingLocationList.stream().forEach(tl -> {tl.getInputs().stream().forEach(tli -> {tli.clearLocalReads();});});
         } else if (result.get() == currentButtonType) {
             // ... user chose "Two"
-
+            selectedTimingLocation.getInputs().stream().forEach(tli -> {tli.clearReads();});
         } else {
             // ... user chose CANCEL or closed the dialog
         }
  
     }
 
-
+    public void setupCustomChipMap(ActionEvent fxevent){
+        FileChooser fileChooser = new FileChooser();
+        File sourceFile;
+        Map<String,String> bibMap = new ConcurrentHashMap();
+        final BooleanProperty chipFirst = new SimpleBooleanProperty(false);
+        
+        fileChooser.setTitle("Select Bib -> Chip File");
+        
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home"))); 
+        
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Text Files", "*.txt","*.csv"),
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv"), 
+                new FileChooser.ExtensionFilter("All files", "*")
+            );
+        
+        sourceFile = fileChooser.showOpenDialog(customChipBibCheckBox.getScene().getWindow());
+        if (sourceFile != null) {
+            try {            
+                    Optional<String> fs = Files.lines(sourceFile.toPath()).findFirst();
+                    String[] t = fs.get().split(",", -1);
+                    if (t.length != 2) return; 
+                    
+                    if(t[0].toLowerCase().contains("chip")) {
+                        chipFirst.set(true);
+                        System.out.println("Found a chip -> bib file");
+                    } else if (t[0].toLowerCase().contains("bib")) {
+                        chipFirst.set(false);
+                        System.out.println("Found a bib -> chip file");
+                    } else {
+                        bibMap.put(t[0], t[1]);
+                        System.out.println("No header in file");
+                        System.out.println("Mapped chip " + t[0] + " to " + t[1]);
+                    }
+                    Files.lines(sourceFile.toPath())
+                        .map(s -> s.trim())
+                        .filter(s -> !s.isEmpty())
+                        .skip(1)
+                        .forEach(s -> {
+                            //System.out.println("readOnce read " + s); 
+                            String[] tokens = s.split(",", -1);
+                            if(chipFirst.get()) {
+                                bibMap.put(tokens[0], tokens[1]);
+                                System.out.println("Mapped chip " + tokens[0] + " to " + tokens[1]);
+                            } else {
+                                bibMap.put(tokens[1], tokens[0]);
+                                System.out.println("Mapped chip " + tokens[1] + " to " + tokens[0]);
+                            }
+                        });
+                    System.out.println("Found a total of " + bibMap.size() + " mappings");
+                    bib2ChipMap.setChip2BibMap(bibMap);
+                    timingDAO.updateBib2ChipMap(bib2ChipMap);
+                } catch (IOException ex) {
+                    Logger.getLogger(PikaRFIDFileReader.class.getName()).log(Level.SEVERE, null, ex);
+                    // We had an issue reading the file.... 
+                }
+            
+            
+        }
+    }
     
 }

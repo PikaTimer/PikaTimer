@@ -12,12 +12,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.application.Platform;
 //import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -30,9 +36,12 @@ public class TimingDAO {
         private static final ObservableList<TimingLocation> timingLocationList =FXCollections.observableArrayList(TimingLocation.extractor());
         private static final BlockingQueue<RawTimeData> rawTimeQueue = new ArrayBlockingQueue(100000);
         private static final BlockingQueue<CookedTimeData> cookedTimeQueue = new ArrayBlockingQueue(100000);
-        private static final Map<TimingLocationInput,Thread> timingInputThreadMap = new HashMap();
-
-    
+        
+        private static ObservableList<CookedTimeData> cookedTimeList;
+        private static final ObservableMap<String,ObservableList<CookedTimeData>> cookedTimeBibMap = FXCollections.observableHashMap();
+        private Bib2ChipMap bib2ChipMap;
+        
+        
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
     * or the first access to SingletonHolder.INSTANCE, not before.
@@ -48,7 +57,7 @@ public class TimingDAO {
     public BlockingQueue<RawTimeData> getRawTimeQueue () {
         return rawTimeQueue; 
     }
-    Collection getRawTimes(TimingLocationInput tli) {
+    public Collection getRawTimes(TimingLocationInput tli) {
         List<RawTimeData> list = new ArrayList<>();
         Set<RawTimeData> set = new HashSet<>(); 
 
@@ -73,20 +82,178 @@ public class TimingDAO {
         s.getTransaction().commit();
     }
     
+    public void clearRawTimes(TimingLocationInput tli) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("Deleting all raw times for " + tli.getLocationName());
+        
+        try {  
+            s.createQuery("delete from RawTimeData where timingLocationInputId = :tli_id").setParameter("tli_id", tli.getID()).executeUpdate();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } 
+        s.getTransaction().commit(); 
+        
+        // Now go and clean up the cooked times too
+        clearCookedTimes(tli); 
+    }
+    
+    public void clearRawTimes(TimingLocation tl) {
+        tl.getInputs().stream().forEach(tli -> {
+            clearRawTimes(tli);
+        });
+    }
+    
+    
+    
+    public ObservableList<CookedTimeData> getCookedTimes() {
+        
+        // if the cooked time list is null, then let's create one,
+        // fetch fetch existing datapoints from the DB,
+        // and add them to the cookedTimesList;
+        
+        if (cookedTimeList == null) {
+            cookedTimeList =FXCollections.observableArrayList();
+            
+            Task fetchCookedFromDB = new Task<Void>() {
+                
+                @Override public Void call() {
+                   final List<CookedTimeData> cookedTimes = new ArrayList(); 
+                   
+                   Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+                   s.beginTransaction();
+                   System.out.println("Runing the getCookedTimes querry");
+
+                    try {  
+                        cookedTimes.addAll(s.createQuery("from CookedTimeData").list());
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    } 
+                    s.getTransaction().commit();  
+                    
+                    Platform.runLater(() -> {
+                        cookedTimeList.addAll(cookedTimes);
+                    });
+                    
+                    return null; 
+                }
+            }; 
+            new Thread(fetchCookedFromDB).start();
+            
+            
+        
+            
+            
+            Task processNewCooked = new Task<Void>() {
+                @Override public Void call() {
+                    
+                    while(true) {
+                        List<CookedTimeData> pending = new ArrayList();
+                        try {
+                            pending.add(cookedTimeQueue.take());
+                        
+                            cookedTimeQueue.drainTo(pending);
+
+                            int i=1;
+                            Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+                            s.beginTransaction();
+                            int count = 0;
+                            Iterator<CookedTimeData> addIterator = pending.iterator();
+                            while (addIterator.hasNext()) {
+                                CookedTimeData c = addIterator.next();
+                                s.save(c); 
+                                if ( ++count % 20 == 0 ) {
+                                    //flush a batch of updates and release memory:
+                                    s.flush();
+                                    s.clear();
+                                }
+
+                            }
+                            s.getTransaction().commit(); 
+
+                            Platform.runLater(() -> {
+                                cookedTimeList.addAll(pending);
+                            });
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+
+                }
+            };
+            Thread processNewCookedThread = new Thread(processNewCooked);
+            processNewCookedThread.setDaemon(true);
+            processNewCookedThread.start();
+            
+     
+        }
+    
+        return cookedTimeList;
+        
+        
+    }
+    public void saveCookedTime(CookedTimeData c) {
+        cookedTimeQueue.add(c); 
+    }
+    
+    public void clearAllCookedTimes() {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("Deleting all cooked times");
+        
+        try {  
+            s.createQuery("delete from CookedTimeData").executeUpdate();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } 
+        s.getTransaction().commit(); 
+        
+        // Now go and clean up the cooked times observable list
+        Platform.runLater(() -> {
+            cookedTimeList.clear();
+            cookedTimeBibMap.clear();
+        });
+    }
+    
+    public void clearCookedTimes(TimingLocation tl) {
+        tl.getInputs().stream().forEach(tli -> {
+            clearCookedTimes(tli);
+        });
+    }
+    
+    void clearCookedTimes(TimingLocationInput tli) {
+        // Go and clean up the cooked times observable list
+        List<CookedTimeData> toRemoveList = new ArrayList<>();
+        cookedTimeList.stream().forEach(c -> { 
+            if (Objects.equals(c.getTimingLocationInputId(), tli.getID()) ) {
+                toRemoveList.add(c);
+                if (cookedTimeBibMap.get(c.getBib()) != null) cookedTimeBibMap.get(c.getBib()).remove(c);
+            }
+         });
+        Platform.runLater(() -> {
+            cookedTimeList.removeAll(toRemoveList); 
+        });
+        
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("Deleting all cooked times for " + tli.getLocationName());
+        
+        try {  
+            s.createQuery("delete from CookedTimeData where timingLocationInputId = :tli_id").setParameter("tli_id", tli.getID()).executeUpdate();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } 
+        s.getTransaction().commit(); 
+    }
+    
     public BlockingQueue<CookedTimeData> getCookedTimeQueue () {
         return cookedTimeQueue; 
     }
     
-    public void cookRawTime(RawTimeData r) {
-        // If it has a chip number, fix the bib number
+    void processCookedTime(CookedTimeData c) {
         
-        
-        // create a cooked time
-        
-        //CookedTimeData cooked = new CookedTimeData(r);
-        
-        // if unique, save it to the db
-        //saveCookedTime(cooked); 
+        // save it to the db
+        saveCookedTime(c); 
         
         // Send it to the results queue for processing
         // bibList = cookedMap.get(cooked.bib); 
@@ -95,6 +262,10 @@ public class TimingDAO {
         // cookedMap.put(cooked.bib, bibList); 
         // pendingResultsQueue.add(cooked.bib); 
     }
+    
+    
+    
+    
     public void addTimingLocation(TimingLocation tl) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
@@ -153,20 +324,55 @@ public class TimingDAO {
         refreshTimingLocationList();
         return timingLocationList;
         //return list;
-    }      
+    }     
+    
+    public TimingLocation getTimingLocationByID(Integer id) {
+        System.out.println("Looking for a timingLocation with id " + id);
+        // This is ugly. Setup a map for faster lookups
+        Optional<TimingLocation> result = timingLocationList.stream()
+                    .filter(t -> Objects.equals(t.getID(), id))
+                    .findFirst();
+        if (result.isPresent()) {
+            System.out.println("Found " + result.get().LocationNameProperty());
+            return result.get();
+        } 
+        
+        return null;
+    }
 
     public void removeTimingLocation(TimingLocation tl) {
+        
+        
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.delete(tl);
         s.getTransaction().commit(); 
         timingLocationList.remove(tl);
     }      
+    public void clearAllRawTimes() {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("Deleting all Raw times");
+        
+        try {  
+            s.createQuery("delete from RawTimeData").executeUpdate();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } 
+        s.getTransaction().commit();
+        
+    }
+    
+    public void clearAllTimes() {
+        clearAllRawTimes();
+        clearAllCookedTimes();
+    }
     
     public void clearAll() {
+        clearAllTimes(); 
         removeTimingLocations(timingLocationList);
     }
-    public void removeTimingLocations(ObservableList<TimingLocation> removeList) {
+    private void removeTimingLocations(ObservableList<TimingLocation> removeList) {
         
         Task task;
         task = new Task<Void>() {
@@ -252,7 +458,13 @@ public class TimingDAO {
       
     }
     public void removeTimingLocationInput(TimingLocationInput t) {
+        // clear out any raw times
+        clearRawTimes(t); 
+        // clear out any cooked times
+        clearCookedTimes(t); 
+        // unlink it from the timing location
         if (t.getTimingLocation() != null) t.getTimingLocation().removeInput(t);
+        // get it out of the db
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.delete(t);
@@ -267,5 +479,45 @@ public class TimingDAO {
         
         
     }   
+    
+    public String getBibFromChip(String c) {
+        if (bib2ChipMap == null) {
+            bib2ChipMap = getBib2ChipMap();
+        }
+        return bib2ChipMap.getBibFromChip(c);
+    }
+    public Bib2ChipMap getBib2ChipMap() {
+        if (bib2ChipMap != null) return bib2ChipMap;
         
+        List<Bib2ChipMap> mapList = new ArrayList();
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("Runing the getBib2ChipMap querry");
+
+         try {  
+             mapList = s.createQuery("from Bib2ChipMap").list();
+         } catch (Exception e) {
+             System.out.println(e.getMessage());
+         } 
+         s.getTransaction().commit();  
+         if(mapList.size()>0) {
+             bib2ChipMap = mapList.get(0);
+         } else {
+             bib2ChipMap = new Bib2ChipMap();
+         }
+         return bib2ChipMap;
+    }
+    
+    public void saveBib2ChipMap(Bib2ChipMap b) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.saveOrUpdate(b);
+        s.getTransaction().commit();
+    }
+    public void updateBib2ChipMap(Bib2ChipMap b) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.update(b);
+        s.getTransaction().commit();
+    }
 }

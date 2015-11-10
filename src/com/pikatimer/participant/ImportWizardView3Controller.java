@@ -40,11 +40,9 @@ public class ImportWizardView3Controller {
     @FXMLViewFlowContext
     private ViewFlowContext context;
     
-    @FXML
-    ProgressBar progressBar;
+    @FXML ProgressBar progressBar;
     
-    @FXML
-    Label label; 
+    @FXML Label label; 
     
     @PostConstruct
     public void init() throws FlowException {
@@ -124,6 +122,7 @@ public class ImportWizardView3Controller {
                     Logger.getLogger(ImportWizardView3Controller.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 updateMessage("Saving...");
+                // TODO: pass the task object down to the DAO so that it can run updateProgress
                 participantDAO.addParticipant(participantsList);
                 updateMessage("Done! Added " + numAdded + " participants.");
                 

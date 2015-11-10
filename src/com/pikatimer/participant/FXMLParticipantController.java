@@ -60,11 +60,12 @@ public class FXMLParticipantController  {
     @FXML private TextField bibTextField;
     @FXML private CheckComboBox<Wave> waveComboBox; 
     @FXML private TextField firstNameField;
+    @FXML private TextField middleNameTextField;
     @FXML private TextField lastNameField;
     @FXML private TextField ageTextField;
     @FXML private TextField sexTextField;
-    @FXML private ComboBox cityComboBox; 
-    @FXML private ComboBox stateComboBox;
+    @FXML private TextField cityTextField; 
+    @FXML private TextField stateTextField;
     @FXML private TextField emailField;
     @FXML private TextField filterField; 
     @FXML private Button formAddButton; 
@@ -300,12 +301,13 @@ public class FXMLParticipantController  {
                 lastNameField.getText()
             );
             
+            p.setMiddleName(middleNameTextField.getText());
             p.setEmail(emailField.getText());
             p.setBib(bibTextField.getText());
             p.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
             p.setSex(sexTextField.getText());
-            p.setCity(cityComboBox.getValue().toString());
-            p.setState(stateComboBox.getValue().toString());
+            p.setState(stateTextField.getText());
+            p.setCity(cityTextField.getText());
             p.setWaves(waveComboBox.getCheckModel().getCheckedItems());
             
             //participantsList.add(p);
@@ -343,10 +345,11 @@ public class FXMLParticipantController  {
         ageTextField.setText(p.getAge().toString());
         bibTextField.setText(p.getBib());
         firstNameField.setText(p.getFirstName());
+        middleNameTextField.setText(p.getMiddleName());
         lastNameField.setText(p.getLastName());
         emailField.setText(p.getEmail());   
-        cityComboBox.setValue(p.getCity()); 
-        stateComboBox.setValue(p.getState());
+        cityTextField.setText(p.getCity()); 
+        stateTextField.setText(p.getState());
         
         waveComboBox.getCheckModel().clearChecks();
         
@@ -377,13 +380,14 @@ public class FXMLParticipantController  {
             // pull the list of checked waves
             
             editedParticipant.setFirstName(firstNameField.getText());
+            editedParticipant.setMiddleName(middleNameTextField.getText());
             editedParticipant.setLastName(lastNameField.getText());
             editedParticipant.setEmail(emailField.getText());
             editedParticipant.setBib(bibTextField.getText());
             editedParticipant.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
             editedParticipant.setSex(sexTextField.getText());
-            editedParticipant.setCity(cityComboBox.getValue().toString());
-            editedParticipant.setState(stateComboBox.getValue().toString());
+            editedParticipant.setCity(cityTextField.getText());
+            editedParticipant.setState(stateTextField.getText());
             editedParticipant.setWaves(waveComboBox.getCheckModel().getCheckedItems());
             
             // reset the fields
@@ -406,8 +410,7 @@ public class FXMLParticipantController  {
         
         
         // reset the fields
-        cityComboBox.setValue(null); 
-        stateComboBox.setValue(null);
+        
         //waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
         waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
         waveComboBox.getCheckModel().clearChecks();
@@ -417,8 +420,11 @@ public class FXMLParticipantController  {
         ageTextField.setText("");
         bibTextField.setText("");
         firstNameField.setText("");
+        middleNameTextField.setText("");
         lastNameField.setText("");
         emailField.setText("");  
+        cityTextField.setText("");
+        stateTextField.setText("");
         
         // set the Update buton to invisible
         formUpdateButton.setVisible(false);
