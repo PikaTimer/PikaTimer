@@ -63,17 +63,18 @@ public class FXMLTimingLocationInputController{
         
         
         inputTypeChoiceBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TimingInputTypes>() {
-                @Override
-                public void changed(ObservableValue<? extends TimingInputTypes> observableValue, TimingInputTypes o, TimingInputTypes n) {
-                    if (o == null || ! o.equals(n)) {
-                        System.out.println("inputTypeChoiceBox event");
-                        timingLocationInput.setTimingInputType(n);
-                        timingLocationDAO.updateTimingLocationInput(timingLocationInput);
-                        
-                        // TODO: clear out any existing reads for this input
-                    }
+            @Override
+            public void changed(ObservableValue<? extends TimingInputTypes> observableValue, TimingInputTypes o, TimingInputTypes n) {
+                if (o == null || ! o.equals(n)) {
+                    System.out.println("inputTypeChoiceBox event");
+                    timingLocationInput.setTimingInputType(n);
+                    timingLocationInput.initializeReader(readerPane);
+                    timingLocationDAO.updateTimingLocationInput(timingLocationInput);
+
+
                 }
-            });
+            }
+        });
         
     }    
     
@@ -170,7 +171,7 @@ public class FXMLTimingLocationInputController{
                         timingLocationInput.setSkewString(skewTextField.getText());
                         timingLocationDAO.updateTimingLocationInput(timingLocationInput);
                         if (timingLocationInput.getSkewNanos().equals(0L)) timeSkewCheckBox.setSelected(false); 
-                        timingLocationInput.reprocessAll();
+                        timingLocationInput.reprocessReads();
                     } else {
                         System.out.println("No change in skew time");
                     }

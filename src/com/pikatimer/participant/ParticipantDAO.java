@@ -25,7 +25,7 @@ import org.hibernate.Session;
  * @author jcgarner
  */
 public class ParticipantDAO {
-    private static final ObservableList<Participant> participantsList =FXCollections.observableArrayList();
+    private static final ObservableList<Participant> participantsList = FXCollections.observableArrayList();
     private static final Map<String,Participant> Bib2ParticipantMap = new HashMap<>();
     private static final Map<Integer,Participant> ID2ParticipantMap = new HashMap<>(); 
     private static final Map<Participant,String> Participant2BibMap = new HashMap<>();
@@ -39,8 +39,12 @@ public class ParticipantDAO {
             private static final ParticipantDAO INSTANCE = new ParticipantDAO();
     }
 
-    public static ParticipantDAO getInstance() {
-            return SingletonHolder.INSTANCE;
+    public static ParticipantDAO getInstance() { 
+        if (participantsList.isEmpty()) {
+            
+            refreshParticipantsList();
+        }
+        return SingletonHolder.INSTANCE; 
     }
     
     public void addParticipant(Participant p) {
@@ -80,39 +84,53 @@ public class ParticipantDAO {
         s.getTransaction().commit(); 
 
         Platform.runLater(() -> {
-                //refreshParticipantsList();
-                participantsList.addAll(newParticipantList); 
-            });
-    }
-    private void refreshParticipantsList() { 
-
-        List<Participant> list = new ArrayList<>();
-        
-
-        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
-        s.beginTransaction();
-        System.out.println("ParticipantDAO:: refreshParticipantsList Runing the Query");
-        
-        try {  
-            list=s.createQuery("from Participant").list();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        } 
-       s.getTransaction().commit(); 
-        
-        System.out.println("ParticipantDAO::refreshParticipantsList found " + list.size() + " Participants");
-        //if(!participantsList.isEmpty()) participantsList.clear();
-        participantsList.setAll(list);
-        participantsList.forEach(p -> {
-            Participant2BibMap.put(p, p.getBib()); 
-            Bib2ParticipantMap.put(p.getBib(),p); 
-            ID2ParticipantMap.put(p.getID(),p);
+            //refreshParticipantsList();
+            participantsList.addAll(newParticipantList); 
         });
+    }
+    private static void refreshParticipantsList() { 
+
+        Task fetchParticipants = new Task<Void>() {
+                
+            @Override 
+            public Void call() {
+                final List<Participant> list;// = new ArrayList<>();
+
+
+                Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+                s.beginTransaction();
+                System.out.println("ParticipantDAO:: refreshParticipantsList Runing the Query");
+
+                try {  
+                    list=s.createQuery("from Participant").list();
+                 
+
+                    System.out.println("ParticipantDAO::refreshParticipantsList found " + list.size() + " Participants");
+                    //if(!participantsList.isEmpty()) participantsList.clear();
+
+                    Platform.runLater(() -> {
+                            participantsList.setAll(list);
+                    });
+                    list.forEach(p -> {
+                        Participant2BibMap.put(p, p.getBib()); 
+                        Bib2ParticipantMap.put(p.getBib(),p); 
+                        ID2ParticipantMap.put(p.getID(),p);
+                    });
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                } 
+                s.getTransaction().commit();
+                return null;
+            }
+        }; 
+
+        new Thread(fetchParticipants).start();
+            
     }     
     
     public ObservableList<Participant> listParticipants() { 
 
-        if (participantsList.isEmpty() ) refreshParticipantsList();
+        //if (participantsList.isEmpty() ) refreshParticipantsList();
         
         return participantsList;
         //return list;

@@ -42,7 +42,7 @@ Ability to drag/drop splits
 protect start/finish split from removal
 auto-update finish split distance
 allow for zero distance splits (transition)
-Ability to Flag as a relay race
+
 Cumulative vs differential distance for splits specification?
 Ability to override the pace display for a segment: m/s, m/h, k/h, s/100y, s/100m) 
 Ability to set split specific distance unit
@@ -54,19 +54,20 @@ Prevent removal of Timing Locations that are mapped to splits (or cascade)
 Prevent removal of start/finish split
 Auto-update finish split distance/cutoff
 Show bib range if there are multiple races and wave starts is not checked
+Ability to Flag as a relay race
 
 Participants:
-Switch wave attribute mapping to a "getWaveByID" type of system to avoid hibernate fetching hell
-Fix participants structure
-  -- store wave ID and not the wave
-  -- background task to read from db
-  -- limit to one wave or multiple per checkbox on the form
+DONE -- Switch wave attribute mapping to a "getWaveByID" type of system to avoid hibernate fetching hell
+DONE -- Fix participants structure
+DONE   -- store wave ID and not the wave
+DONE   -- background task to read from db
+  -- limit to one wave or multiple per checkbox on the event setup
   DONE: take over control of the ID so that it is set by us and not hibernate (set to uuid if not set on first get?)
   -- store the team id
   DONE: middle initial / name
 
-  -- textfield for city/state with auto complete
-  -- textfield for teams pre-populated with auto complete
+  -- textfield auto complete for city/state 
+  -- textfield for teams pre-populated / with auto complete
 
 DONE -- Delete a row/rows via a context menu
 DONE -- Select which columns to show (bib, first, last, age, city, race, etc)
@@ -80,7 +81,7 @@ DONE -- Move the participantsList management into the ParticipantDAO
 DONE -- import from csv
 DONE -- ability to assign the runner to a wave of one or more races
 DONE (I hope) --  Fix deadlock with mass write/delete
-Middle Name/Initial
+DONE -- Middle Name/Initial
 Clean up import from csv (field formatting, etc)
 export to csv
 Validate csv file before continuing. 
@@ -107,24 +108,27 @@ Allow team to cover multiple categories? (female + coed?)
 Team category setup (gender, mixed gender, custom data field setting, etc)
 
 Timing:
-Setup bib -> chip map
+DONE: Setup bib -> chip map
+Add intermediate dialog for bib -> chip setup
 
-Done: Make timestamp not a LocalDateTime but a Duration from the start of the day of the event
 
-Raw vs cooked tables. 
-        -- import to raw and place in queue
-        -- run any time shifts, cuts, chip -> bib map
-        -- then insert into cooked and place into results queue
-        -- reprocess raw if parameters for the timing location change
-            -- time shift
+DONE: Make timestamp a Duration (vs a LocalDateTime) from the start of the day of the event
+
+DONE: Raw vs cooked tables. 
+DONE:   -- import to raw and save in db
+DONE:   -- run any time shifts, cuts, chip -> bib map
+DONE:   -- then insert into cooked and place into results queue
+DONE:   -- reprocess raw if parameters for the timing location change
+DONE:       -- time skew
             -- bib -> chip
-            -- min/max times
-DONE: Clear All Option
+DONE:       -- min/max times
+
+DONE: Clear All Times Option
 DONE: Clear all times for a given timing location Option
 DONE: Clear all times for a given timing location reader option
 Clear all times for the timing location input when the user selects a new reader
 Clear all times for a location when the location is deleted
-Backup only flag for a given reader at a split
+Backup flag for a given reader at a split
 DONE: Multiple readers per timing location
 DONE: Import times from file
 DONE: Discard duplicates
@@ -134,13 +138,14 @@ OBE: Use rawTimeDataQueue to batch process adding new raw times to the db
 DONE: Continually import times from file (tail in a separate task) to a timing point
 DONE: Time shift (+/- a fixed offset to adjust for clock errors on the timing box) 
 DONE: Show most recent data read for a reader / timing location
-Search data read for a reader / timing location
+Search dropdown to show only a single timing location in the TableView
 
-Continually import times from box (via tcp in a separate task) to a timing point
-Rewind option for times read from box/outreach
-Chip sequence gap detection that triggers an automatic rewind for direct reads
 
-Search filter by location
+RFID Direct:
+    --Continually import times from box (via tcp in a separate task) to a timing point
+    --Rewind option for times read from box/outreach
+    --Chip sequence gap detection that triggers an automatic rewind for direct reads
+
 
 fix column widths
 
@@ -148,11 +153,15 @@ Add/delete fixed times (overrides)
 
 
 Results:
-Read from "cooked" tables queue; 
+Background thread to watch the resultsQueue<Bib String> for new bibs to process
+Read list of cooked times from cookedTimeBibMap<String,CookedTimeData>
+    --Line up with splits for that runner's race
     --process, place into results tables, shift/mask other results as warranted
     --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 Show results in filterable / sortable view
-Relay Results
+Figure out how to deal with relay teams
+
+Reports:
 Publish to static web site
 Publish to responsive / html 5 based web site
 Publish to 3rd party results web site / XXXXX.com? 

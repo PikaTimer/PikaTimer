@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<GridPane fx:id="resultsGridPane" prefHeight="410.0" prefWidth="219.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultsController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="ALWAYS" minWidth="100.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints maxHeight="1.7976931348623157E308" vgrow="NEVER" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="200.0" prefHeight="354.0" vgrow="ALWAYS" />
+   </rowConstraints>
+   <children>
+      <HBox>
+         <children>
+            <TextField fx:id="resultsSearchTextField" promptText="Search" />
+            <ChoiceBox fx:id="raceChoiceBox" prefWidth="150.0" />
+         </children>
+      </HBox>
+   </children>
+</GridPane>

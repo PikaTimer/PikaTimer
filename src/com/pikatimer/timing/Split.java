@@ -25,6 +25,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -59,18 +60,6 @@ public class Split {
     private  Duration splitCutoff;
     private final StringProperty splitCutoffString;
     
-    
-//   split_id int primary key, 
-//    race_id int, 
-//    timing_loc_id int, 
-//    split_seq_number int, 
-//    split_distance numeric,
-//    split_dist_unit varchar, 
-//    split_pace_unit varchar, 
-//    split_name varchar, 
-//    short_name varchar, 
-//    cutoff_time bigint
-//    
     
 
     public Split(Race r){
@@ -125,8 +114,16 @@ public class Split {
         race=r;
     }
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "TIMING_LOC_ID",nullable=false)
+    //@ManyToOne(fetch = FetchType.LAZY)
+    //@JoinColumn(name = "TIMING_LOC_ID",nullable=false)
+    @Column(name = "TIMING_LOC_ID",nullable=false)
+    public Integer getTimingLocationID() {
+        return splitLocation.getID();
+    }
+    public void setTimingLocationID(Integer id) {
+        setTimingLocation(TimingDAO.getInstance().getTimingLocationByID(id));
+    }
+    @Transient
     public TimingLocation getTimingLocation() {
         return splitLocation;
     }

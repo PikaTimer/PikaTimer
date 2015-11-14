@@ -9,14 +9,14 @@
 <?import javafx.scene.control.cell.*?>
 <?import javafx.scene.layout.*?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="476.0" prefWidth="725.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
   <columnConstraints>
-    <ColumnConstraints hgrow="NEVER" maxWidth="355.0" minWidth="10.0" prefWidth="332.0" />
-    <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="6.0" prefWidth="388.0" />
+    <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
+    <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
   </columnConstraints>
   <rowConstraints>
       <RowConstraints vgrow="NEVER" />
-    <RowConstraints maxHeight="1.7976931348623157E308" minHeight="200.0" vgrow="ALWAYS" />
+    <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
       <RowConstraints maxHeight="0.0" minHeight="0.0" prefHeight="0.0" />
   </rowConstraints>
    <children>
@@ -27,7 +27,7 @@
                   <Font size="14.0" />
                </font>
             </Label>
-            <TableView fx:id="raceSplitsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" prefHeight="100.0" prefWidth="450.0" VBox.vgrow="ALWAYS">
+            <TableView fx:id="raceSplitsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
               <columns>
                     <TableColumn fx:id="splitIDTableColumn" maxWidth="20" minWidth="19" prefWidth="19.0" text="#">
                         <cellValueFactory>
@@ -35,28 +35,28 @@
                         </cellValueFactory>
                     </TableColumn>
 
-                    <TableColumn fx:id="splitNameTableColumn" prefWidth="60.0" text="Name">
+                    <TableColumn fx:id="splitNameTableColumn" prefWidth="77.0" text="Name">
                         <cellValueFactory>
                             <PropertyValueFactory property="splitName" />
                         </cellValueFactory>
                     </TableColumn>
 
-                    <TableColumn fx:id="splitLocationTableColumn" prefWidth="45.0" text="Location">
+                    <TableColumn fx:id="splitLocationTableColumn" prefWidth="83.0" text="Location">
                         <cellValueFactory>
                             <PropertyValueFactory property="timingLocation" />
                         </cellValueFactory>
                     </TableColumn>
-                    <TableColumn fx:id="splitDistanceTableColumn" prefWidth="45.0" text="Distance">
+                    <TableColumn fx:id="splitDistanceTableColumn" prefWidth="56.0" text="Distance">
                         <cellValueFactory>
                             <PropertyValueFactory property="splitDistance" />
                         </cellValueFactory>
                     </TableColumn>
-                    <TableColumn fx:id="splitTimeTableColumn" prefWidth="45.0" text="\% Time">
+                    <TableColumn fx:id="splitTimeTableColumn" prefWidth="54.0" text="\% Time">
                         <cellValueFactory>
                             <PropertyValueFactory property="splitTime" />
                         </cellValueFactory>
                     </TableColumn>
-                    <TableColumn fx:id="splitCutoffTableColumn" prefWidth="45.0" text="Cutoff" >
+                    <TableColumn fx:id="splitCutoffTableColumn" prefWidth="61.0" text="Cutoff">
                         <cellValueFactory>
                             <PropertyValueFactory property="splitCutoffString" />
                         </cellValueFactory>
@@ -68,7 +68,7 @@
             <HBox fillHeight="false" spacing="5.0">
                <children>
                   <Button fx:id="addSplitButton" mnemonicParsing="false" onAction="#addSplit" text="Add" />
-                  <Button fx:id="deleteSplitButton" mnemonicParsing="false" onAction="#deleteSplit"  text="Delete" />
+                  <Button fx:id="deleteSplitButton" mnemonicParsing="false" onAction="#deleteSplit" text="Delete" />
                </children>
             </HBox>
          </children>
@@ -76,14 +76,14 @@
             <Insets top="10.0" />
          </padding>
       </VBox>
-      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="250.0" prefWidth="360.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="ALWAYS">
+      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="ALWAYS">
          <children>
             <Label minHeight="25.0" text="Start Waves" VBox.vgrow="NEVER">
                <font>
                   <Font size="14.0" />
                </font>
             </Label>
-            <TableView fx:id="waveStartsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" prefHeight="100.0" prefWidth="400.0" VBox.vgrow="ALWAYS">
+            <TableView fx:id="waveStartsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
                <columns>
                     <!-- <TableColumn fx:id="wavePositionTableColumn" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="19.0" text="#">
                         <cellValueFactory>

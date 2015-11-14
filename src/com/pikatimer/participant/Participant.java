@@ -5,10 +5,10 @@
 
 package com.pikatimer.participant;
 
+import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,18 +21,16 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.GenericGenerator;
 
 /**
@@ -61,8 +59,8 @@ public class Participant {
     private final StringProperty stateProperty= new SimpleStringProperty();
     private final StringProperty countryProperty= new SimpleStringProperty();
     private LocalDate birthdayProperty; 
-    private final ObservableList<Wave> waves = FXCollections.observableArrayList();    
-    private final ObservableList<Integer> waveIDs = FXCollections.observableArrayList();
+    private final ObservableList<Wave> waves = FXCollections.observableArrayList();   
+    private Set<Integer> waveSet; 
    
     public Participant() {
         this("","");
@@ -287,24 +285,57 @@ public class Participant {
     
     
     //create table part2wave (participant_id int, wave_id int); 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "part2wave", joinColumns = { 
-                    @JoinColumn(name = "PARTICIPANT_ID") }, 
-                    inverseJoinColumns = { @JoinColumn(name = "WAVE_ID") })
-    @Fetch(FetchMode.SELECT)
-    public Set<Wave> getWaves() {
-            return new HashSet<>(waves);
+//    @ManyToMany(fetch = FetchType.LAZY)
+//    @JoinTable(name = "part2wave", joinColumns = { 
+//                    @JoinColumn(name = "PARTICIPANT_ID") }, 
+//                    inverseJoinColumns = { @JoinColumn(name = "WAVE_ID") })
+//    @Fetch(FetchMode.SELECT)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Column(name="wave_id", nullable=false)
+    @CollectionTable(name="part2wave", joinColumns=@JoinColumn(name="participant_id"))
+//    @OrderColumn(name = "index_id")
+    public Set<Integer> getWaveIDs() {
+        //System.out.println("getWaveIDs called with " + waveSet.size());
+
+        return waveSet;  
     }
-    public void setWaves(Set<Wave> w) {
-            waves.setAll(w);
+    public void setWaveIDs(Set<Integer> w) {
+//        if (w != null) { 
+//            System.out.println("SetWaves(Set<Integer>) called with " + w.size());
+//        } else {
+//             System.out.println("SetWaves(Set<Integer>) called with null value");
+//        }
+        waveSet = w; 
+        
+        waves.clear();
+        waveSet.stream().forEach(id -> {
+            waves.add(RaceDAO.getInstance().getWaveByID(id)); 
+        });
     }
+    
     public void setWaves(List<Wave> w) {
+        //System.out.println("SetWaves(List) called with " + w.size());
         waves.setAll(w);
+        waveSet.addAll(waveSet);
+    }
+    public void setWaves(Set<Wave> w){
+        //System.out.println("SetWaves(Set) called with " + w.size());
+        waves.setAll(w);
+        waveSet.clear();
+        waves.stream().forEach(n -> {waveSet.add(n.getID());});
+    }
+    public void setWaves(Wave w) {
+        waves.setAll(w);
+        
+        waveSet.clear();
+        waveSet.add(w.getID()); 
     }
     public void addWave(Wave w) {
         waves.add(w); 
+        waveSet.add(w.getID()); 
     }
     public ObservableList<Wave> wavesProperty() {
+        
         return waves; 
     }
     

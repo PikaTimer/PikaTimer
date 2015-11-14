@@ -5,14 +5,9 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.event.Event;
-import com.pikatimer.timing.reader.PikaRFIDFileReader;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Collections;
 
 import java.util.Map;
@@ -67,7 +62,7 @@ public class TimingLocationInput implements TimingListener{
     private TimingLocation timingLocation; // timing_loc_id
     private final StringProperty timingInputString; 
     private TimingInputTypes timingInputType; 
-    private final Map<String, String> attributes = new ConcurrentHashMap<>(8, 0.9f, 1);
+    private Map<String, String> attributes = new ConcurrentHashMap<>(8, 0.9f, 1);
     private TimingReader timingReader;
     private BooleanProperty tailFileBooleanProperty;
     private BooleanProperty timingReaderInitialized; 
@@ -137,7 +132,7 @@ public class TimingLocationInput implements TimingListener{
             timingLocation=l;
             timingInputString.unbind();
             timingInputString.bind(l.LocationNameProperty()); 
-            System.out.println("TimingLocationInput.setTimingLocation: name=" + timingInputString.getValueSafe()); 
+            //System.out.println("TimingLocationInput.setTimingLocation: name=" + timingInputString.getValueSafe()); 
         } else {
             System.out.println("TimingLocationInput.setTimingLocation: null or unchanged"); 
         }
@@ -167,7 +162,7 @@ public class TimingLocationInput implements TimingListener{
             //timingReader.setTimingInput(this);
             
             timingInputType = t;
-            
+            timingReaderInitialized.setValue(Boolean.FALSE);
         }
     }
     
@@ -214,8 +209,8 @@ public class TimingLocationInput implements TimingListener{
         //System.out.println("TLI.setAttributes called, we already have " + attributes.size() + " attributes");
         // This really screws things up for some reason, I don't know why. 
         //attributes.clear();  
-        
-        attributes.putAll(tli_attributes);
+        attributes = tli_attributes;
+        //attributes.putAll(tli_attributes);
         //System.out.println("TLI.setAttributes called, adding " + tli_attributes.size() + " attributes");
         //System.out.println("TLI.setAttributes called, we now have " + attributes.size() + " attributes");
     } 
@@ -351,7 +346,7 @@ public class TimingLocationInput implements TimingListener{
     
     public void processReadStage2(RawTimeData r){
         // Create a cooked time
-        System.out.println("Stage 2 processing of raw id " + r.getID()); 
+        //System.out.println("Stage 2 processing of raw id " + r.getID()); 
         CookedTimeData c = new CookedTimeData();
                 
         // mark it as our own
@@ -360,7 +355,7 @@ public class TimingLocationInput implements TimingListener{
         // skew it
         if(skewInput.getValue()) {
             c.setTimestamp(r.getTimestamp().plus(skewDuration)); 
-            System.out.println("Skewing input from " + r.getTimestamp() + " to " + c.getTimestamp());
+            //System.out.println("Skewing input from " + r.getTimestamp() + " to " + c.getTimestamp());
         } else {
             c.setTimestamp(r.getTimestamp());
         }
@@ -378,14 +373,14 @@ public class TimingLocationInput implements TimingListener{
         }
         
         // Send it up to the TimingLocation for further processing...
-        System.out.println("Cooking time " + c.getBib() + " " + c.getTimestamp()); 
+        //System.out.println("Cooking time " + c.getBib() + " " + c.getTimestamp()); 
         timingLocation.cookTime(c);
     }
     
     public void clearLocalReads() {
         stopReader();
         // blow away the rawTimeSet
-        if (rawTimeSet != null) {
+        if (rawTimeSet != null && !rawTimeSet.isEmpty()) {
             rawTimeSet.clear();
             Platform.runLater(() -> {
                 readCountProperty.set(rawTimeSet.size());
@@ -393,28 +388,32 @@ public class TimingLocationInput implements TimingListener{
         }
     }
     public void clearReads() {
-        clearLocalReads();
-        // Delete all from the DB
-        // This will trigger a removal of all cooked times associated with 
-        // this instance. 
-        timingDAO.clearRawTimes(this); 
-        
+        if(rawTimeSet != null && !rawTimeSet.isEmpty()) {
+            clearLocalReads();
+            // Delete all from the DB
+            // This will trigger a removal of all cooked times associated with 
+            // this instance. 
+            timingDAO.clearRawTimes(this); 
+        }
     }
     
-    public void reprocessAll() {
+    public void reprocessReads() {
         System.out.println("ReprocessAll called... ");
         TimingLocationInput tli = this; 
-        // set the processReadSemaphore to pause the processRead()
+        
 
-        // start background thread
+        // start a background thread for this 
 
         Task task;
         task = new Task<Void>() {
             @Override public Void call() {
                 try {
-                    processRead.acquire();// clear out all cooked times for our location
+                    // set the processReadSemaphore to pause the processRead()
+                    processRead.acquire();
 
-                    timingDAO.clearCookedTimes(tli);
+                    // clear out all cooked times for our location
+
+                    timingDAO.blockingClearCookedTimes(tli);
 
                     rawTimeSet.stream().forEach( r -> {
                         // for everything in our rawTimeSet, reprocess the read 
@@ -434,8 +433,9 @@ public class TimingLocationInput implements TimingListener{
             }
         };
          // Run this in a thread.... 
-        new Thread(task).start();
-        
+        Thread reporcessTimes = new Thread(task);
+            reporcessTimes.setDaemon(true);
+            reporcessTimes.start();
     }
 
     public void stopReader() {
@@ -471,7 +471,6 @@ public class TimingLocationInput implements TimingListener{
     @Transient
     public String getSkewString() {
         String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
-
         System.out.println("Returning skew duration string of " + durationString + " for " + skewDuration);
         return durationString; 
     }

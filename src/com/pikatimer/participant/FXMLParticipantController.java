@@ -36,6 +36,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
@@ -136,13 +137,45 @@ public class FXMLParticipantController  {
                     String tmp = swapMe.get(1).getBib();
                     swapMe.get(1).setBib(swapMe.get(0).getBib());
                     swapMe.get(0).setBib(tmp);
+                    
+                    participantDAO.updateParticipant(swapMe.get(2));
+                    participantDAO.updateParticipant(swapMe.get(1));
+                    
                 }
 		
             });
             
-            //MenuItem assignWave = new MenuItem("Assign");
+            Menu assignWave = new Menu("Assign");
+            RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                MenuItem m = new MenuItem(w.toString());
+                m.setOnAction(e -> {
+                    tableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
+                        p.setWaves(w);
+                        participantDAO.updateParticipant(p);
+
+                    });
+                });
+                assignWave.getItems().add(m);
+            });
+            
+            RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
+                assignWave.getItems().clear();
+                RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                    MenuItem m = new MenuItem(w.toString());
+                    m.setOnAction(e -> {
+                        tableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
+                            p.setWaves(w);
+                            participantDAO.updateParticipant(p);
+
+                        });
+                    });
+                    assignWave.getItems().add(m);
+                });
+                
+            });
+            
             // context menu to assign/unassign runners to a given wave
-            rowMenu.getItems().addAll(editItem, removeItem, swapBibs);
+            rowMenu.getItems().addAll(editItem, removeItem, swapBibs, assignWave);
             
             // only display context menu for non-null items:
             row.contextMenuProperty().bind(
@@ -354,7 +387,7 @@ public class FXMLParticipantController  {
         waveComboBox.getCheckModel().clearChecks();
         
         
-        p.getWaves().stream().forEach(w -> {
+        p.wavesProperty().stream().forEach(w -> {
             waveComboBox.getCheckModel().check(w);
             System.out.println("Checking " + w.getID() + " " + w.toString());
         });

@@ -8,6 +8,7 @@ import com.pikatimer.Pikatimer;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.Wave;
+import com.pikatimer.results.Result;
 import com.pikatimer.timing.Bib2ChipMap;
 import com.pikatimer.timing.CookedTimeData;
 import com.pikatimer.timing.RawTimeData;
@@ -69,6 +70,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(RawTimeData.class);
         cfg.addAnnotatedClass(CookedTimeData.class);
         cfg.addAnnotatedClass(Bib2ChipMap.class);
+        cfg.addAnnotatedClass(Result.class);
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");

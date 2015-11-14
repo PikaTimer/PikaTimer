@@ -20,7 +20,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -86,15 +85,15 @@ public class Bib2ChipMap {
     } 
     
     public String getBibFromChip(String Chip) {
-        System.out.println("getBibFromChip called for \"" + Chip +"\"");
+        //System.out.println("getBibFromChip called for \"" + Chip +"\"");
 
         if(customMapProperty.getValue() && chip2bibMap.size() > 0 ) {
-            System.out.println("Using a mapping");
+            //System.out.println("Using a mapping");
 
             if (chip2bibMap.containsKey(Chip)) return chip2bibMap.get(Chip);
-            return "Unmapped";
+            return "Unmapped " + Chip;
         } else {
-            System.out.println("Not using a mapping" + customMapProperty.getValue().toString());
+            //System.out.println("Not using a mapping" + customMapProperty.getValue().toString());
 
             return Chip;
         }

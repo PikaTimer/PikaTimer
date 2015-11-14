@@ -8,9 +8,13 @@ import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.timing.reader.PikaRFIDFileReader;
 import com.pikatimer.util.AlphanumericComparator;
+import com.pikatimer.util.DurationFormatter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -62,6 +66,9 @@ public class FXMLTimingController {
     @FXML private Button timingLocRemoveButton;  
     @FXML private TextField timingLocationNameTextField; 
     
+    @FXML private TextField filterStartTextField;
+    @FXML private TextField filterEndTextField; 
+            
     @FXML private TextField searchTextBox;
     @FXML private Label listSizeLabel;
     @FXML private Label filteredSizeLabel;
@@ -177,9 +184,16 @@ public class FXMLTimingController {
                 // Compare first name and last name of every person with filter text.
                 String lowerCaseFilter = "(.*)(" + newValue.toLowerCase() + ")(.*)";
                 try {    
-                    if ((time.getParticipantName() + " " + time.getBib()).toLowerCase().matches(lowerCaseFilter)) {
+                    String name; 
+                    Participant p = participantDAO.getParticipantByBib(time.getBib());
+                    if (p == null) { 
+                        name="unknown";
+                    } else {
+                        name = p.fullNameProperty().get();
+                    }
+                    if ((time.getBib() + " " + name).toLowerCase().matches(lowerCaseFilter)) {
                         return true; // Filter matches first/last/email/bib.
-                    } 
+                    }
 
                 } catch (PatternSyntaxException e) {
                     return true;
@@ -200,7 +214,7 @@ public class FXMLTimingController {
         timeColumn.setComparator(new AlphanumericComparator());
         nameColumn.setCellValueFactory(cellData -> {
             Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
-            if (p == null) { return new SimpleStringProperty("Unknown");
+            if (p == null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getBib());
             } else {
                 return p.fullNameProperty();
             }
@@ -259,6 +273,11 @@ public class FXMLTimingController {
                 }
                 selectedTimingLocation=selectedTimingLocations.get(0); 
                 timingLocationNameTextField.textProperty().bindBidirectional(selectedTimingLocation.LocationNameProperty());
+                
+                // Show the filter start/end values
+                filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 0, Boolean.TRUE));
+                filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 0, Boolean.TRUE));
+                
                 System.out.println("Selected timing location is now " + selectedTimingLocation.getLocationName());
                 //timingLocationDetailsController.setTimingLocationInput(null); // .selectTimingLocation(selectedTimingLocations.get(0));
                 if (selectedTimingLocation.getInputs().size() == 0 ) { // no inputs yet
@@ -282,13 +301,66 @@ public class FXMLTimingController {
 
                 if ( timingLocationNameTextField.getText().isEmpty() ) {
                     timingLocationNameTextField.textProperty().setValue("Unnamed");
-                    TimingDAO.getInstance().updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
+                    timingDAO.updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
                 }
                 
-                TimingDAO.getInstance().updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
+                timingDAO.updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
                 
             }
         });
+        
+        // Use this if you whant keystroke by keystroke monitoring.... Reject any non digit attempts
+//        filterStartTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+//            if ( newValue.isEmpty() || newValue.matches("([0-9]*|[0-9]*:[0-5]?)") ) {
+//                System.out.println("Possiblely good filter Time (newValue: " + newValue + ")");
+//            } else if(newValue.matches("[0-9]*:[0-5][0-9]") ) { // Looks like a HH:MM time, lets check
+//                System.out.println("Looks like a valid start filter Time (newValue: " + newValue + ")");
+//            } else {
+//                filterStartTextField.setText(oldValue);
+//                System.out.println("Bad filter Start Time (newValue: " + newValue + ")");
+//            }
+//                
+//        });
+        // but only update when the textfield focus changes. 
+        filterStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                System.out.println("filterStartTextField out focus");
+                if (filterStartTextField.getText().equals(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 0, Boolean.TRUE))) {
+                    return; 
+                } else if ( filterStartTextField.getText().isEmpty() ) {
+                    // set duration to zero
+                    selectedTimingLocation.setFilterStart(0L);
+                } else {
+                    // duration is not zero... parse it
+                    LocalTime time = LocalTime.parse(filterStartTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
+                    selectedTimingLocation.setFilterStart(Duration.between(LocalTime.MIDNIGHT, time).toNanos());
+                }
+                selectedTimingLocation.reprocessReads();
+                timingDAO.updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
+                
+            }
+        });
+        filterEndTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                System.out.println("filterEndTextField out focus");
+                
+                if (filterEndTextField.getText().equals(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 0, Boolean.TRUE))) {
+                    return; 
+                } else if ( filterEndTextField.getText().isEmpty() ) {
+                    // set duration to zero
+                    selectedTimingLocation.setFilterEnd(0L);
+                } else {
+                    // duration is not zero... parse it
+                    LocalTime time = LocalTime.parse(filterEndTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
+                    selectedTimingLocation.setFilterEnd(Duration.between(LocalTime.MIDNIGHT, time).toNanos());
+                }
+                
+                selectedTimingLocation.reprocessReads();
+                timingDAO.updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
+                
+            }
+        });
+        
         
         
         // bib2Chip mappings
@@ -347,7 +419,6 @@ public class FXMLTimingController {
     public void removeTimingLocation(ActionEvent fxevent){
         //TODO: If the location is referenced by a split, 
         //prompt to reassign the split to a new location or cancel the edit. 
-        
         timingDAO.removeTimingLocation(timingLocListView.getSelectionModel().getSelectedItem());
         //timingLocAddButton.requestFocus();
         //timingLocAddButton.setDefaultButton(true);
@@ -374,6 +445,7 @@ public class FXMLTimingController {
         ((FXMLTimingLocationInputController)tlLoader.getController()).setTimingLocationInput(i); 
         //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
     }
+    
     public void clearAllTimes(ActionEvent fxevent){
         //TODO: Prompt and then remove all times associated with that timing location 
         // _or_ all timing locations

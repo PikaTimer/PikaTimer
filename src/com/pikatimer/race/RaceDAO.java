@@ -121,28 +121,31 @@ public class RaceDAO {
     } 
     
     public Wave getWaveByID(int id) {
+        if (waveMap.isEmpty()) refreshWaveList(); 
         return waveMap.get(id); 
     }
     
     
     public void refreshWaveList() { 
-
-        waveList.clear();
-        waveMap.clear();
-        raceList.forEach( r -> {
-            waveList.addAll(r.getWaves()); 
-        });
-        waveList.forEach(w -> {
-                waveMap.put(w.getID(), w);
-        });
+        
+        if (waveMap.isEmpty()) {
+            waveList.clear();
+            waveMap.clear();
+            raceList.forEach( r -> {
+                waveList.addAll(r.getWaves()); 
+            });
+            waveList.forEach(w -> {
+                    waveMap.put(w.getID(), w);
+            });
+        }
     }     
     
     public ObservableList<Wave> listWaves() { 
-        if(waveList.size() < 1)  refreshWaveList();
-        System.out.println("ListWaves for " + waveList.size());
+        if(waveList.isEmpty())  refreshWaveList();
+        //System.out.println("ListWaves for " + waveList.size());
         //refreshWaveList(); 
         
-        return waveList; //.sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString()));
+        return waveList; 
     } 
     
     public void removeRace(Race tl) {

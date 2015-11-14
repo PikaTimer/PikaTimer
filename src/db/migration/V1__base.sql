@@ -72,9 +72,13 @@ create table participant (
     email varchar
 );
 
+create table participant_attributes (part_id int, index_id int, attribute varchar, value varchar); 
+
 create table timing_location (
     timing_location_id int primary key, 
-    timing_location_name varchar
+    timing_location_name varchar,
+    filterStartDuration bigint, 
+    filterEndDuration bigint
 );
  
 create table bib2chip (bib2chip_id int, custom_map boolean);
@@ -92,6 +96,10 @@ create table timing_location_input (
     backup boolean
 );
  
+create table timing_location_input_attributes (index_id int, tli_id int, attribute varchar, value varchar); 
+
+
+
 create table raw_timing_data (
     id int, 
     timing_loc_input_id int, 

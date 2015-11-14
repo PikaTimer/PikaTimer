@@ -65,6 +65,11 @@
             </Tab>
             <Tab text="Results">
               <content>
+                <fx:include fx:id="resultsTabPage" source="results/FXMLResults.fxml" /> 
+              </content>
+            </Tab>
+            <Tab text="Options">
+              <content>
                 <AnchorPane minHeight="0.0" minWidth="0.0" />
               </content>
             </Tab>

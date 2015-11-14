@@ -9,7 +9,7 @@
 <?import javafx.scene.control.cell.*?>
 <?import javafx.scene.layout.*?>
 
-<GridPane fx:id="timingGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="528.0" prefWidth="678.0" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingController">
+<GridPane fx:id="timingGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="515.0" prefWidth="754.0" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingController">
    <columnConstraints>
       <ColumnConstraints fillWidth="false" hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="250.0" />
       <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="400.0" prefWidth="400.0" />
@@ -51,10 +51,10 @@
                     <columns>
                       <TableColumn fx:id="bibColumn" prefWidth="52.0" text="Bib" />
                       <TableColumn fx:id="timeColumn" prefWidth="79.0" text="Time" />
-                        <TableColumn fx:id="nameColumn" prefWidth="85.0" text="Name" />
-                        <TableColumn fx:id="inputColumn" prefWidth="90.0" text="Input" />
-                        <TableColumn fx:id="backupColumn" prefWidth="50.0" text="Backup" />
-                        <TableColumn fx:id="ignoreColumn" editable="true" prefWidth="43.0" text="Ignore" />
+                        <TableColumn fx:id="nameColumn" prefWidth="144.0" text="Name" />
+                        <TableColumn fx:id="inputColumn" prefWidth="70.0" text="Input" />
+                        <TableColumn fx:id="backupColumn" prefWidth="48.0" text="Backup" />
+                        <TableColumn fx:id="ignoreColumn" editable="true" prefWidth="60.0" text="Ignore" />
                     </columns>
                     <sortOrder> 
                         <fx:reference source="timeColumn" />
@@ -133,14 +133,14 @@
             </HBox>
             <HBox alignment="CENTER_LEFT" prefWidth="200.0" spacing="5.0" VBox.vgrow="NEVER">
                <children>
-                  <CheckBox fx:id="filterTimesCheckBox" mnemonicParsing="false" text="Filter Times" HBox.hgrow="NEVER" />
+                  <Label text="Filter Times" />
                   <Label text="Start" HBox.hgrow="NEVER">
                      <HBox.margin>
                         <Insets left="10.0" />
                      </HBox.margin></Label>
-                  <TextField fx:id="startTimeCheckBox" prefHeight="25.0" prefWidth="72.0" promptText="HH:MM:SS" />
+                  <TextField fx:id="filterStartTextField" prefHeight="25.0" prefWidth="72.0" promptText="HH:MM:SS" />
                   <Label text="End" />
-                  <TextField fx:id="endTimeCheckBox" prefHeight="25.0" prefWidth="73.0" promptText="HH:MM:SS" />
+                  <TextField fx:id="filterEndTextField" prefHeight="25.0" prefWidth="73.0" promptText="HH:MM:SS" />
                   <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
                   <Button mnemonicParsing="false" onAction="#clearAllTimes" text="Clear All" />
                </children>
