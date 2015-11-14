@@ -33,7 +33,7 @@ DONE -- Setup split locations
 DONE -- Split -> timing location map
 DONE -- Setup start waves
 DONE -- Update split distance units when main race unit is updated
-Auto Sort splits by number
+Auto Sort splits by order number
 Setup AG's
 Setup Award Depth 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
@@ -153,12 +153,19 @@ Add/delete fixed times (overrides)
 
 
 Results:
-Background thread to watch the resultsQueue<Bib String> for new bibs to process
-Read list of cooked times from cookedTimeBibMap<String,CookedTimeData>
-    --Line up with splits for that runner's race
-    --process, place into results tables, shift/mask other results as warranted
-    --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
+DONE: Background thread to watch the resultsQueue<Bib String> for new bibs to process
+DONE: Read list of cooked times from cookedTimeBibMap<String,CookedTimeData>
+DONE:     --Line up with splits for that runner's race
+DONE:     --process, place into results tables, shift/mask other results as warranted
+     --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
+Wire in a "min time to next split" option to replace hardcoded 10 minutes. 
 Show results in filterable / sortable view
+cleanup the spacing on the view. 
+Reprocess when a wave start time changes
+Reprocess when times are deleted
+Sort with blanks at the end
+Default the sorting to finish, finish - 1, finish -2, etc, etc)
+
 Figure out how to deal with relay teams
 
 Reports:
