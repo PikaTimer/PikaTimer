@@ -148,12 +148,14 @@ public class RaceDAO {
         return waveList; 
     } 
     
-    public void removeRace(Race tl) {
+    public void removeRace(Race r) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        s.delete(tl);
+        s.delete(r);
         s.getTransaction().commit(); 
-        raceList.remove(tl);
+        raceList.remove(r);
+        waveList.removeAll(r.getWaves());
+        r.getWaves().forEach(w -> waveMap.remove(w.getID()));
     }      
     
 

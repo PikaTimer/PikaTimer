@@ -230,7 +230,7 @@ public class FXMLParticipantController  {
             });
         });
         // 3. Wrap the FilteredList in a SortedList. 
-        SortedList<Participant> sortedParticipantsList = new SortedList<>(filteredParticipantsList);
+        SortedList<Participant> sortedParticipantsList = new SortedList(filteredParticipantsList);
 
         // 4. Bind the SortedList comparator to the TableView comparator.
         sortedParticipantsList.comparatorProperty().bind(tableView.comparatorProperty());

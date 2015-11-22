@@ -1,3 +1,15 @@
+Overall Focus: 
+Overrides (fill in first, then adjust from there)
+Backup times (only use if nothing else exists, can be tricky with splits)
+Mandatory split? (if it is mandatory, bail if no data found)
+Create a DurationTextField / LocalTimeTextField that "does the right thing"
+Create a DurationCell (or whatever) for inline edits of durations)
+
+
+
+
+
+
 Overall:
 Upgrade H2 
 Upgrade Hibernate to 5.x
@@ -21,7 +33,13 @@ Logging
 Internationalization? (Spanish, English, French, German, British, US, etc)
 
 
+
 Races:
+Default start time to 8am? 
+Don't permit blank start time or handle it better (i.e., banner warning)
+Don't permit blank wave start times / default to race start time or 1st wave start time
+Watch TimingLocation list and show if more than the default
+Fix table size for splits and waves
 DONE -- Add Races
 DONE -- If only one race, race name = event name (hide the race name)
 DONE -- Specify Distance for race
@@ -54,7 +72,7 @@ Prevent removal of Timing Locations that are mapped to splits (or cascade)
 Prevent removal of start/finish split
 Auto-update finish split distance/cutoff
 Show bib range if there are multiple races and wave starts is not checked
-Ability to Flag as a relay race
+Ability to Flag a race as a relay race
 
 Participants:
 DONE -- Switch wave attribute mapping to a "getWaveByID" type of system to avoid hibernate fetching hell
@@ -97,7 +115,7 @@ Link to Relay Team? (or do we just set "Relay Team Race" as  a race attribute?)
 Inline Edit of the cells?
 Mass bib assignment 
 Show race/wave as column
-Only store wave id and then programmatically do the linking rather than letting hibernate mess it up
+DONE -- Only store wave id and then programmatically do the linking rather than letting hibernate mess it up
 sync from/to fusesport / active.com / runsignup / other
 
 Relay Teams? Figure this one out!
@@ -110,7 +128,19 @@ Team category setup (gender, mixed gender, custom data field setting, etc)
 Timing:
 DONE: Setup bib -> chip map
 Add intermediate dialog for bib -> chip setup
+  -- show # of mappings
+  -- clear option
 
+Overrides 
+  -- Set per bib/split/time
+  -- merge first when processing a bib
+  -- then use those to filter the times
+  -- small window below timing locations on timing page
+
+Ignore times option
+
+Backup Times option
+  -- keep processing if found, overwrite if a non-backup time is found. 
 
 DONE: Make timestamp a Duration (vs a LocalDateTime) from the start of the day of the event
 
@@ -132,7 +162,7 @@ Backup flag for a given reader at a split
 DONE: Multiple readers per timing location
 DONE: Import times from file
 DONE: Discard duplicates
-If Start, Auto detect gun times based on triggers in input files and assign to the race/wave
+Option to assign any time to the race/wave start time via right mouse click
 OBE: Use rawTimeDataQueue to batch process adding new raw times to the db
 
 DONE: Continually import times from file (tail in a separate task) to a timing point
@@ -147,10 +177,11 @@ RFID Direct:
     --Chip sequence gap detection that triggers an automatic rewind for direct reads
 
 
-fix column widths
+Done: (for now) fix column widths
+
 
 Add/delete fixed times (overrides) 
-
+    -- small tableview under timing locations?
 
 Results:
 DONE: Background thread to watch the resultsQueue<Bib String> for new bibs to process
@@ -160,16 +191,27 @@ DONE:     --process, place into results tables, shift/mask other results as warr
      --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 Wire in a "min time to next split" option to replace hardcoded 10 minutes. 
 Show results in filterable / sortable view
-cleanup the spacing on the view. 
-Reprocess when a wave start time changes
-Reprocess when times are deleted
-Sort with blanks at the end
+cleanup the spacing on the tableview, wider names.
+Ability to show/hide splits on TableView 
+Auto-Reprocess when a wave start time changes
+Auto-Reprocess when times are deleted
+Sort with blanks at the end, not front (new AlphanumericSorter)
 Default the sorting to finish, finish - 1, finish -2, etc, etc)
+Ability to select multiple and DQ, un-DQ them (with a note)
+Show Gender/AG
 
 Figure out how to deal with relay teams
 
 Reports:
-Publish to static web site
+Calculate 
+Basic text and html output
+Mobile Friendly html output (sortable, searchable, etc)
+Banner Text for the page
+Auto FTP to a location every X minutes
+Auto-print of text with each new page or after X number of runners
+Hide/Show DQ's on results page (per person flag?)
+Course Record noting
+
 Publish to responsive / html 5 based web site
 Publish to 3rd party results web site / XXXXX.com? 
 
@@ -188,6 +230,11 @@ Award Depth options: Fixed depth, variable, top X % with a cap
 Ordered list (overall, masters, AG) with per group option to pull winners from
 downstream awards. (double dipping yes, no, maybe)
 Team awards
+
+
+Options tab:
+SCP/FTP/Active.com/FuseSport Account info profiles
+Gender Display (Men/Women, Male/Female, custom)
 
 -------------------------------------
 Series Manager (separate App?)

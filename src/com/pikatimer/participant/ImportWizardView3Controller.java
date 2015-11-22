@@ -46,7 +46,7 @@ public class ImportWizardView3Controller {
     
     @PostConstruct
     public void init() throws FlowException {
-        System.out.println("ImportWizardView2Controller.initialize()");
+        System.out.println("ImportWizardView3Controller.initialize()");
         ImportWizardData model = context.getRegisteredObject(ImportWizardData.class);
         // Take the csv file name and attribute map and start the import
         
@@ -97,14 +97,16 @@ public class ImportWizardView3Controller {
                             }
                         }
                         Participant newPerson = new Participant(p); 
+                        
                         if(model.getWaveAssignByBib()) {
                             newPerson.setWaves(getWaveByBib(p.get("bib")));
                         } else if (model.getWaveAssignByAttribute()) {
                            // todo
                         } else {
+                            
                             newPerson.addWave(model.getAssignedWave()); 
                         }
-                        
+                        //System.out.println("Adding ...");
                         //TODO: merge vs add
                         //TODO: Cleanup Name Capitalization (if selected)
                         //TODO: City / State Title Case (if selected)
@@ -117,13 +119,15 @@ public class ImportWizardView3Controller {
                         updateMessage("Adding " + newPerson.getFirstName() + " " + newPerson.getLastName() );
                         
                     }
-                } catch (SQLException ex) {
+                } catch (Exception ex) {
                     System.out.println("Something bad happened... ");
                     Logger.getLogger(ImportWizardView3Controller.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 updateMessage("Saving...");
+                
                 // TODO: pass the task object down to the DAO so that it can run updateProgress
                 participantDAO.addParticipant(participantsList);
+                
                 updateMessage("Done! Added " + numAdded + " participants.");
                 
                 return null; 

@@ -91,6 +91,7 @@ public class Bib2ChipMap {
             //System.out.println("Using a mapping");
 
             if (chip2bibMap.containsKey(Chip)) return chip2bibMap.get(Chip);
+            else if ("0".equals(Chip)) return Chip; // special chip of "0" 
             return "Unmapped " + Chip;
         } else {
             //System.out.println("Not using a mapping" + customMapProperty.getValue().toString());

@@ -4,6 +4,7 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.timing.TimingDAO;
@@ -200,12 +201,13 @@ public class FXMLRaceDetailsController {
         waveStartTimeTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());     
         waveStartTimeTableColumn.setOnEditCommit((CellEditEvent<Wave, String> t) -> {
             Wave w = (Wave) t.getTableView().getItems().get(t.getTablePosition().getRow());
-            System.out.println("raceStartTimeTextField out focus");
+            System.out.println("waveStartTimeTextField out focus");
                 try {
                     if (!t.getNewValue().isEmpty()) {
                         LocalTime.parse(t.getNewValue(), DateTimeFormatter.ISO_LOCAL_TIME );
                         w.setWaveStart(t.getNewValue());
                         raceDAO.updateWave(w);
+                        ResultsDAO.getInstance().reprocessAll(w);
                     }
                 } catch (Exception e) {
                     System.out.println("Bad Race Wave Start Time (newValue: " + t.getNewValue() + ")");
@@ -546,6 +548,7 @@ public class FXMLRaceDetailsController {
         //selectedRace.setRaceStart(raceStartTimeTextField.getText());
         //raceDAO.updateRace(selectedRace);
         raceDAO.updateWave(raceWaves.get(0));
+        ResultsDAO.getInstance().reprocessAll(raceWaves.get(0));
     }
     
     public void updateRaceCutoffTime(ActionEvent fxevent){

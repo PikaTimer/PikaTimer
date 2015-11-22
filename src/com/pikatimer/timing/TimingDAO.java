@@ -24,6 +24,7 @@ import javafx.application.Platform;
 //import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -36,14 +37,19 @@ public class TimingDAO {
         private static final ObservableList<TimingLocation> timingLocationList =FXCollections.observableArrayList(TimingLocation.extractor());
         private static final BlockingQueue<RawTimeData> rawTimeQueue = new ArrayBlockingQueue(100000);
         private static final BlockingQueue<CookedTimeData> cookedTimeQueue = new ArrayBlockingQueue(100000);
+        private static final ResultsDAO resultsDAO = ResultsDAO.getInstance();
         private static final BlockingQueue<String> resultsQueue = ResultsDAO.getInstance().getResultsQueue();
         
         private static ObservableList<CookedTimeData> cookedTimeList;
         private static final Map<String,List<CookedTimeData>> cookedTimeBibMap = new ConcurrentHashMap();
         private Bib2ChipMap bib2ChipMap;
+        
+        private static ObservableList<TimeOverride> overrideList;
+        private  final Map<String,List<TimeOverride>> overrideMap = new ConcurrentHashMap(); 
 
     public List<CookedTimeData> getCookedTimesByBib(String bib) {
         return cookedTimeBibMap.get(bib); 
+        
     }
         
         
@@ -238,6 +244,7 @@ public class TimingDAO {
                     });
 
                     cookedTimeBibMap.clear();
+                    resultsDAO.reprocessAll();
                     return null;
                 }
         };
@@ -266,6 +273,7 @@ public class TimingDAO {
         });
         toRemoveList.stream().forEach(c -> {
             if (!cookedTimeBibMap.containsKey(c.getBib())) cookedTimeBibMap.get(c.getBib()).remove(c);
+            resultsQueue.add(c.getBib());
         });
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
@@ -558,6 +566,94 @@ public class TimingDAO {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.update(b);
+        s.getTransaction().commit();
+    }
+    
+    
+    
+    
+    
+    public ObservableList<TimeOverride> getOverrides() {
+        
+        // if the cooked time list is null, then let's create one,
+        // fetch fetch existing datapoints from the DB,
+        // and add them to the cookedTimesList;
+        
+        if (overrideList == null) {
+            overrideList =FXCollections.observableArrayList();
+            
+            Task fetchOverrideFromDB = new Task<Void>() {
+                
+                @Override public Void call() {
+                   final List<TimeOverride> dbOverrides = new ArrayList(); 
+                   
+                   Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+                   s.beginTransaction();
+                   System.out.println("Runing the getOverrides querry");
+
+                    try {  
+                        dbOverrides.addAll(s.createQuery("from TimeOverride").list());
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    } 
+                    s.getTransaction().commit();  
+                    
+                    Platform.runLater(() -> {
+                        overrideList.addAll(dbOverrides);
+                    });
+                    dbOverrides.stream().forEach(c -> {
+                        if (!overrideMap.containsKey(c.getBib())) overrideMap.put(c.getBib(), new ArrayList());
+                        overrideMap.get(c.getBib()).add(c);
+                    });
+                    
+                    return null; 
+                }
+            }; 
+            new Thread(fetchOverrideFromDB).start();
+            
+            
+        }
+    
+        return overrideList;
+        
+        
+    }
+    
+    public void saveOverride(TimeOverride o) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.saveOrUpdate(o);
+        s.getTransaction().commit();
+        Platform.runLater(() -> {
+            overrideList.add(o);
+        });
+        overrideMap.get(o.getBib()).add(o);
+    }
+    
+    public void deleteOverride(TimeOverride o) {
+        Platform.runLater(() -> {
+            overrideList.remove(o);
+        });
+        overrideMap.get(o.getBib()).remove(o);
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(o);
+        s.getTransaction().commit();
+    }
+    
+    public void clearAllOverrides(){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("Deleting all overrides...");
+        try {  
+            s.createQuery("delete from TimeOverride").executeUpdate();
+            Platform.runLater(() -> {
+                overrideList.clear();
+            });
+            overrideMap.clear();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } 
         s.getTransaction().commit();
     }
 }

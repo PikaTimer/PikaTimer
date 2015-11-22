@@ -81,6 +81,8 @@ public class FXMLTimingController {
     @FXML private TableColumn ignoreColumn;
     @FXML private CheckBox customChipBibCheckBox;
     
+    
+    
     private ObservableList<CookedTimeData> cookedTimeList;
     private ObservableList<TimingLocation> timingLocationList;
     private TimingLocation selectedTimingLocation;
@@ -212,6 +214,7 @@ public class FXMLTimingController {
         bibColumn.setComparator(new AlphanumericComparator());
         timeColumn.setCellValueFactory(new PropertyValueFactory<>("timestampString"));
         timeColumn.setComparator(new AlphanumericComparator());
+        
         nameColumn.setCellValueFactory(cellData -> {
             Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
             if (p == null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getBib());
@@ -235,8 +238,13 @@ public class FXMLTimingController {
         // 6. Add sorted (and filtered) data to the table.
         timeTableView.setItems(sortedTimeList);
         
-        // Set the bib number to be an alphanumeric sort
+        // set the default sort order to the finish time
+        timeColumn.setSortType(TableColumn.SortType.DESCENDING);
+        timeTableView.getSortOrder().clear();
+        timeTableView.getSortOrder().add(timeColumn);
         
+        // Set the bib number to be an alphanumeric sort
+        bibColumn.setComparator(new AlphanumericComparator());
         
         
         listSizeLabel.textProperty().bind(Bindings.size(cookedTimeList).asString());
@@ -444,6 +452,35 @@ public class FXMLTimingController {
         }
         ((FXMLTimingLocationInputController)tlLoader.getController()).setTimingLocationInput(i); 
         //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
+    }
+    
+    public void addOverride(ActionEvent fxevent){
+        
+    }
+    public void removeOverride(ActionEvent fxevent){
+        
+    }
+    public void clearAllOverrides(ActionEvent fxevent){
+        //TODO: Prompt and then remove all times associated with that timing location 
+        // _or_ all timing locations
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Clear Overrides...");
+        alert.setHeaderText("Delete Overrides:");
+        alert.setContentText("Do you want to delete all overrides?.");
+
+        //ButtonType allButtonType = new ButtonType("All");
+        
+        ButtonType deleteButtonType = new ButtonType("Delete",ButtonData.YES);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(cancelButtonType, deleteButtonType );
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == deleteButtonType) {
+            // delete all
+            timingDAO.clearAllOverrides(); 
+        }
+ 
     }
     
     public void clearAllTimes(ActionEvent fxevent){

@@ -13,6 +13,7 @@ import com.pikatimer.timing.Bib2ChipMap;
 import com.pikatimer.timing.CookedTimeData;
 import com.pikatimer.timing.RawTimeData;
 import com.pikatimer.timing.Split;
+import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.timing.TimingLocationInput;
 import org.hibernate.SessionFactory;
@@ -71,6 +72,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(CookedTimeData.class);
         cfg.addAnnotatedClass(Bib2ChipMap.class);
         cfg.addAnnotatedClass(Result.class);
+        cfg.addAnnotatedClass(TimeOverride.class);
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");

@@ -49,7 +49,7 @@
                   </HBox>
                   <TableView fx:id="timeTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                     <columns>
-                      <TableColumn fx:id="bibColumn" prefWidth="52.0" text="Bib" />
+                      <TableColumn fx:id="bibColumn" prefWidth="50.0" text="Bib" />
                       <TableColumn fx:id="timeColumn" prefWidth="79.0" text="Time" />
                         <TableColumn fx:id="nameColumn" prefWidth="144.0" text="Name" />
                         <TableColumn fx:id="inputColumn" prefWidth="70.0" text="Input" />
@@ -67,10 +67,15 @@
             <Insets />
          </GridPane.margin>
       </SplitPane>
-      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.rowSpan="2" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowSpan="2147483647" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
          <children>
             <VBox fx:id="timingVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
                <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Timing Locations" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
                   <ListView fx:id="timingLocListView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
                   <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
@@ -83,7 +88,44 @@
                         <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                      </padding>
                   </HBox>
-                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0">
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Overrides" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <TableView fx:id="overrideTableView">
+                    <columns>
+                      <TableColumn fx:id="overrideBibTableColumn" prefWidth="50.0" text="Bib" />
+                      <TableColumn fx:id="overrideSplitTableColumn" text="Split" />
+                        <TableColumn fx:id="overrideTimeTableColumn" text="Time" />
+                        <TableColumn maxWidth="45.0" minWidth="24.0" prefWidth="33.0" text="A/R" />
+                    </columns>
+                  </TableView>
+                  <HBox alignment="CENTER_RIGHT" spacing="5.0">
+                     <children>
+                        <Button fx:id="overrideClearAllButton" mnemonicParsing="false" onAction="#clearAllOverrides" text="Clear All" />
+                        <Pane HBox.hgrow="ALWAYS" />
+                        <Button fx:id="overrideAddButton" mnemonicParsing="false" onAction="#addOverride" text="Add" />
+                        <Button fx:id="overrideRemoveButton" mnemonicParsing="false" onAction="#removeOverride" text="Remove" />
+                     </children>
+                     <padding>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                     </padding>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Chip -&gt; Bib Mapping" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
                      <children>
                         <CheckBox fx:id="customChipBibCheckBox" mnemonicParsing="false" text="Custom Chip -&gt; Bib">
                            <HBox.margin>
@@ -93,32 +135,17 @@
                         <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
                         <Button fx:id="customChipMapButton" mnemonicParsing="false" onAction="#setupCustomChipMap" text="Setup" />
                      </children>
-                     <VBox.margin>
-                        <Insets />
-                     </VBox.margin>
                      <padding>
-                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
                      </padding>
                   </HBox>
                </children>
             </VBox>
          </children>
          <GridPane.margin>
-            <Insets />
+            <Insets bottom="5.0" />
          </GridPane.margin>
       </VBox>
-      <HBox>
-         <children>
-            <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Timing Locations" textAlignment="CENTER" GridPane.vgrow="NEVER">
-               <font>
-                  <Font size="18.0" />
-               </font>
-               <GridPane.margin>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </GridPane.margin>
-            </Label>
-         </children>
-      </HBox>
       <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
          <children>
             <HBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">

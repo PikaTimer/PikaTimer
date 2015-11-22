@@ -4,14 +4,19 @@
  */
 package com.pikatimer.results;
 
-import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import javafx.application.Platform;
+import javafx.beans.Observable;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.util.Callback;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -38,9 +43,15 @@ public class Result {
     private Integer id;
     private Integer raceID ; 
     private Duration startDuration;
+    private final ObjectProperty<Duration> startTimeProperty; 
+    private final ObjectProperty<Duration> startGunTimeProperty;
     private Duration startWaveStartDuration;
     private Duration finishDuration;
-    private Map<Integer,Long> splitMap = new HashMap<>();
+    private final ObjectProperty<Duration> finishTimeProperty;
+    private final ObjectProperty<Duration> finishGunTimeProperty;
+    private Map<Integer,Long> splitMap = new HashMap();
+    private Map<Integer,ObjectProperty<Duration>> splitPropertyMap = new HashMap<>();
+    private final IntegerProperty revision = new SimpleIntegerProperty(1); 
     
     // Bib String
     // Race id
@@ -50,13 +61,27 @@ public class Result {
     // race id and bib form the "key" and will never change
     
     public Result() {
-        
+        startDuration = Duration.ZERO;
+        finishDuration = Duration.ZERO;
+        startWaveStartDuration = Duration.ZERO;
+        startTimeProperty = new SimpleObjectProperty(startDuration);
+        startGunTimeProperty = new SimpleObjectProperty(startDuration);
+        finishTimeProperty = new SimpleObjectProperty(finishDuration);
+        finishGunTimeProperty = new SimpleObjectProperty(finishDuration);
     }
+    
     public void clearTimes(){
-        startDuration = null;
-        finishDuration = null;
+        startDuration = Duration.ZERO;
+        startTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+
+        startWaveStartDuration = Duration.ZERO;
+        startGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        
         splitMap = new HashMap<>();
-        startWaveStartDuration = null;
+        
+        finishDuration = Duration.ZERO;
+        finishTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        finishGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
     }
     
     @Id
@@ -87,7 +112,6 @@ public class Result {
     }
     public void setRaceID(Integer id) {
         raceID = id;
-        
     }
     
     @Column(name="partStart",nullable=true)
@@ -110,6 +134,19 @@ public class Result {
     }
     public void setStartDuration(Duration s){
         startDuration = s;
+        //revision.setValue(revision.get()+1);
+    }
+    public ObjectProperty<Duration> startTimeProperty(){
+        if (startDuration.isZero()) startTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        
+        else startTimeProperty.setValue(startDuration);
+        return finishTimeProperty; 
+    }
+    public ObjectProperty<Duration> startTimeGunTimeProperty(){
+        if (startDuration.isZero()) startGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        
+        else startGunTimeProperty.setValue(startDuration.minus(startWaveStartDuration));
+        return startGunTimeProperty; 
     }
     
     @Column(name="waveStart",nullable=true)
@@ -122,10 +159,8 @@ public class Result {
     }
     public void setWaveStart(Long c) {
         if(c != null) {
-            
             startWaveStartDuration = Duration.ofNanos(c);
             if (startDuration == null || startDuration.isZero()) startDuration = startWaveStartDuration;
-
         }
     }
     @Transient
@@ -135,6 +170,7 @@ public class Result {
     public void setStartWaveStartDuration(Duration ws) {
         startWaveStartDuration = ws;
         if (startDuration == null || startDuration.isZero()) startDuration = startWaveStartDuration;
+        //revision.setValue(revision.get()+1);
     }
     
     @Column(name="partFinish",nullable=true)
@@ -157,12 +193,24 @@ public class Result {
     }
     public void setFinishDuration(Duration f){
         finishDuration = f;
+        //revision.setValue(revision.get()+1);
     }
-    
+    public ObjectProperty<Duration> finishTimeProperty(){
+        if (finishDuration.isZero()) finishTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        
+        else finishTimeProperty.setValue(finishDuration.minus(startDuration));
+        return finishTimeProperty; 
+    }
+    public ObjectProperty<Duration> finishGunTimeProperty(){
+        if (finishDuration.isZero()) finishGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        
+        else finishGunTimeProperty.setValue(finishDuration.minus(startWaveStartDuration));
+        return finishGunTimeProperty; 
+    }
     
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="split_id", insertable=false,updatable=false)
-    @Column(name="split_time")
+    @Column(name="split_time",nullable=false)
     @CollectionTable(name="split_results", joinColumns=@JoinColumn(name="result_id"))
     public Map<Integer,Long> getSplitMap(){
         return splitMap;
@@ -185,8 +233,25 @@ public class Result {
         } else {
             splitMap.put(splitID, t.toNanos());
         }
+        //revision.setValue(revision.get()+1);
     }
     
+    public ObjectProperty<Duration> splitTimeByIDProperty(Integer splitID) {
+        if (splitPropertyMap.containsKey(splitID)) {
+            return splitPropertyMap.get(splitID);
+        } 
+        return null;
+    }
+    
+    public void setUpdated(){
+        Platform.runLater(() -> {
+            revision.setValue(revision.get()+1);
+        });
+    }
+    
+    public static Callback<Result, Observable[]> extractor() {
+        return (Result r) -> new Observable[]{r.revision};
+    }
     
     @Transient
     public Boolean isEmpty(){

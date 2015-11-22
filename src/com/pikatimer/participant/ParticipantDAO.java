@@ -4,6 +4,7 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.results.ResultsDAO;
 import java.util.List; 
 import com.pikatimer.util.HibernateUtil;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ public class ParticipantDAO {
     private static final Map<String,Participant> Bib2ParticipantMap = new HashMap<>();
     private static final Map<Integer,Participant> ID2ParticipantMap = new HashMap<>(); 
     private static final Map<Participant,String> Participant2BibMap = new HashMap<>();
+    private static final ResultsDAO resultsDAO = ResultsDAO.getInstance();
     //Semaphore semaphore = new Semaphore(1);
     
     /**
@@ -58,8 +60,10 @@ public class ParticipantDAO {
         Participant2BibMap.put(p, p.getBib()); 
         Bib2ParticipantMap.put(p.getBib(),p); 
         ID2ParticipantMap.put(p.getID(),p);
+        resultsDAO.getResultsQueue().add(p.getBib()); 
 
     }
+    
     public void addParticipant(ObservableList newParticipantList) {
         int max = newParticipantList.size();
         int i=1;
@@ -79,6 +83,7 @@ public class ParticipantDAO {
             Participant2BibMap.put(p, p.getBib()); 
             Bib2ParticipantMap.put(p.getBib(),p); 
             ID2ParticipantMap.put(p.getID(),p);
+            resultsDAO.getResultsQueue().add(p.getBib()); 
 
         }
         s.getTransaction().commit(); 
@@ -145,6 +150,7 @@ public class ParticipantDAO {
         s.beginTransaction();
         s.delete(p);
         s.getTransaction().commit(); 
+        resultsDAO.getResultsQueue().add(p.getBib()); 
     }      
     
     public void clearAll() {
@@ -167,7 +173,7 @@ public class ParticipantDAO {
                     Participant2BibMap.remove(p);
                     Bib2ParticipantMap.remove(p.getBib());
                     ID2ParticipantMap.remove(p.getID());
-                    
+                    resultsDAO.getResultsQueue().add(p.getBib()); 
                     s.delete(p); 
                     
                     if ( ++count % 20 == 0 ) {
@@ -205,7 +211,7 @@ public class ParticipantDAO {
             Participant2BibMap.remove(p);
             Bib2ParticipantMap.remove(p.getBib());
             ID2ParticipantMap.remove(p.getID()); 
-            
+            resultsDAO.getResultsQueue().add(p.getBib()); 
             s.delete(p); 
 
             if ( ++count % 20 == 0 ) {
@@ -232,9 +238,11 @@ public class ParticipantDAO {
             // bib number changed
             System.out.println("bib Number Change... "); 
             Bib2ParticipantMap.remove(Participant2BibMap.get(p));
-            Participant2BibMap.replace(p,p.getBib()); 
             Bib2ParticipantMap.put(p.getBib(), p);
+            
+            Participant2BibMap.replace(p,p.getBib()); 
         }
+        resultsDAO.getResultsQueue().add(p.getBib()); 
      } 
     
     public Participant getParticipantByBib(String b) {

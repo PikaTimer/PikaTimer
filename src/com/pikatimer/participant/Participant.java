@@ -9,6 +9,7 @@ import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,10 +61,11 @@ public class Participant {
     private final StringProperty countryProperty= new SimpleStringProperty();
     private LocalDate birthdayProperty; 
     private final ObservableList<Wave> waves = FXCollections.observableArrayList();   
-    private Set<Integer> waveSet; 
+    private Set<Integer> waveIDSet = new HashSet(); 
    
     public Participant() {
         this("","");
+        
     }
  
     public Participant(String firstName, String lastName) {
@@ -78,11 +80,11 @@ public class Participant {
     public static ObservableMap getAvailableAttributes() {
         ObservableMap<String,String> attribMap = FXCollections.observableHashMap();
         attribMap.put("bib", "Bib");
-        attribMap.put("firstName", "First Name");
-        attribMap.put("middleName", "Middle Name");
-        attribMap.put("lastName", "Last Name");
+        attribMap.put("first", "First Name");
+        attribMap.put("middle", "Middle Name");
+        attribMap.put("last", "Last Name");
         attribMap.put("age", "Age");
-        attribMap.put("sex", "Sex");
+        attribMap.put("sex-gender", "Sex");
         attribMap.put("city", "City");
         attribMap.put("state", "State");
         attribMap.put("country", "Country");
@@ -99,16 +101,16 @@ public class Participant {
                 //System.out.println("processing " + entry.getKey() );
              switch(entry.getKey()) {
                  case "bib": this.setBib(entry.getValue()); break; 
-                 case "firstName": this.setFirstName(entry.getValue()); break;
-                 case "middleName": this.setMiddleName(entry.getValue()); break;
-                 case "lastName": this.setLastName(entry.getValue()); break;
-                 //case "middleName": this.setLastName(entry.getValue()); break;
+                 case "first": this.setFirstName(entry.getValue()); break;
+                 case "middle": this.setMiddleName(entry.getValue()); break;
+                 case "last": this.setLastName(entry.getValue()); break;
+                 
                      
                  // TODO: catch bad integers 
                  case "age": this.setAge(Integer.parseUnsignedInt(entry.getValue())); break; 
                      
                  // TODO: map to selected sex translator
-                 case "sex": this.setSex(entry.getValue()); break; 
+                 case "sex-gender": this.setSex(entry.getValue()); break; 
                      
                  case "city": this.setCity(entry.getValue()); break; 
                  case "state": this.setState(entry.getValue()); break; 
@@ -284,55 +286,50 @@ public class Participant {
     }
     
     
-    //create table part2wave (participant_id int, wave_id int); 
-//    @ManyToMany(fetch = FetchType.LAZY)
-//    @JoinTable(name = "part2wave", joinColumns = { 
-//                    @JoinColumn(name = "PARTICIPANT_ID") }, 
-//                    inverseJoinColumns = { @JoinColumn(name = "WAVE_ID") })
-//    @Fetch(FetchMode.SELECT)
+
     @ElementCollection(fetch = FetchType.EAGER)
     @Column(name="wave_id", nullable=false)
     @CollectionTable(name="part2wave", joinColumns=@JoinColumn(name="participant_id"))
 //    @OrderColumn(name = "index_id")
     public Set<Integer> getWaveIDs() {
-        //System.out.println("getWaveIDs called with " + waveSet.size());
-
-        return waveSet;  
+        return waveIDSet;  
     }
     public void setWaveIDs(Set<Integer> w) {
-//        if (w != null) { 
-//            System.out.println("SetWaves(Set<Integer>) called with " + w.size());
-//        } else {
-//             System.out.println("SetWaves(Set<Integer>) called with null value");
-//        }
-        waveSet = w; 
+        waveIDSet = w; 
         
         waves.clear();
-        waveSet.stream().forEach(id -> {
+        waveIDSet.stream().forEach(id -> {
             waves.add(RaceDAO.getInstance().getWaveByID(id)); 
         });
     }
     
     public void setWaves(List<Wave> w) {
-        //System.out.println("SetWaves(List) called with " + w.size());
+        System.out.println("SetWaves(List) called with " + w.size());
         waves.setAll(w);
-        waveSet.addAll(waveSet);
+        waveIDSet = new HashSet();
+        waves.stream().forEach(n -> {waveIDSet.add(n.getID());});
     }
     public void setWaves(Set<Wave> w){
-        //System.out.println("SetWaves(Set) called with " + w.size());
+        System.out.println("SetWaves(Set) called with " + w.size());
         waves.setAll(w);
-        waveSet.clear();
-        waves.stream().forEach(n -> {waveSet.add(n.getID());});
+        waveIDSet = new HashSet();
+        waves.stream().forEach(n -> {waveIDSet.add(n.getID());});
     }
     public void setWaves(Wave w) {
+        System.out.println("Participant.setWaves(Wave w)");
         waves.setAll(w);
         
-        waveSet.clear();
-        waveSet.add(w.getID()); 
+        waveIDSet = new HashSet();
+        waveIDSet.add(w.getID()); 
     }
     public void addWave(Wave w) {
-        waves.add(w); 
-        waveSet.add(w.getID()); 
+        //System.out.println("Participant.addWave(Wave w)");
+        if(w == null) System.out.println("Wave is NULL!!!");
+        else { 
+            //System.out.println("Participant.addWave(Wave w) " + w.getID());
+            waves.add(w); 
+            waveIDSet.add(w.getID()); 
+        }
     }
     public ObservableList<Wave> wavesProperty() {
         
@@ -344,15 +341,7 @@ public class Participant {
     public int hashCode() {
         int hash = 5;
         hash = 89 * hash + Objects.hashCode(this.uuidProperty.getValue());
-//        hash = 89 * hash + Objects.hashCode(this.firstNameProperty);
-//        hash = 89 * hash + Objects.hashCode(this.lastNameProperty);
-//        hash = 89 * hash + Objects.hashCode(this.emailProperty);
-//        hash = 89 * hash + Objects.hashCode(this.bibProperty);
-//        hash = 89 * hash + Objects.hashCode(this.ageProperty);
-//        hash = 89 * hash + Objects.hashCode(this.sexProperty);
-//        hash = 89 * hash + Objects.hashCode(this.cityProperty);
-//        hash = 89 * hash + Objects.hashCode(this.countryProperty);
-//        hash = 89 * hash + Objects.hashCode(this.birthdayProperty);
+
         return hash;
     }
 
@@ -368,36 +357,7 @@ public class Participant {
         if (!Objects.equals(this.uuidProperty.getValue(),other.uuidProperty.getValue())) {
             return false; 
         }
-//        if (!Objects.equals(this.firstNameProperty.getValue(), other.firstNameProperty.getValue())) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.lastNameProperty.getValue(), other.lastNameProperty.getValue())) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.emailProperty.getValue(), other.emailProperty.getValue())) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.bibProperty.getValue(), other.bibProperty.getValue())) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.ageProperty.getValue(), other.ageProperty.getValue())) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.sexProperty.getValue(), other.sexProperty)) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.cityProperty.getValue(), other.cityProperty)) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.stateProperty.getValue(), other.stateProperty.getValue())) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.countryProperty.getValue(), other.countryProperty.getValue())) {
-//            return false;
-//        }
-//        if (!Objects.equals(this.birthdayProperty, other.birthdayProperty)) {
-//            return false;
-//        }
+
         return true;
     }
 

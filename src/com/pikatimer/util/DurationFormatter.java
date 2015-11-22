@@ -18,12 +18,13 @@ public class DurationFormatter {
         //System.out.println("durationToString start with " + d.toNanos() + " and " + p.toString() + " or " + d.toString());
         //String result = d.toString(); 
         //result = d.toString().replace("PT", "").replace("H",":").replace("M",":"); 
+        if (d == null || d.isZero() || d.equals(Duration.ofNanos(Long.MAX_VALUE))) return "";
         Long s = d.getSeconds(); 
         Long H = s/3600; 
         Long M = (s%3600)/60;
         s = s -(M*60 + H * 3600); 
         Integer t = d.getNano(); 
-        if (d.toNanos() == 0) return ""; 
+        //if (d.toNanos() == 0) return ""; 
         BigDecimal S = new BigDecimal("0." + t.toString()).setScale(p, rm);
         //System.out.println("H:" + H.toString() + " M:" + M.toString() + " s:" + s.toString() + " S:" + S.toPlainString());
 
