@@ -10,6 +10,7 @@ import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.timing.CookedTimeData;
 import com.pikatimer.timing.Split;
+import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.HibernateUtil;
 import java.time.Duration;
@@ -21,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -102,7 +104,7 @@ public class ResultsDAO {
                             //raceResultsMap.get(r.getRaceID()).remove(r);
                             if(!r.isEmpty()){
                                 raceResultsMap.get(r.getRaceID()).add(r);
-                                System.out.println("ResultsDAO read from DB added " + r.getBib() + " from race " + r.getRaceID() + " new total " + raceResultsMap.get(r.getRaceID()).size() );
+                                //System.out.println("ResultsDAO read from DB added " + r.getBib() + " from race " + r.getRaceID() + " new total " + raceResultsMap.get(r.getRaceID()).size() );
                             }
                         });
 
@@ -231,12 +233,39 @@ public class ResultsDAO {
         
         Participant p = participantDAO.getParticipantByBib(bib);
         if (p == null) return;
-        System.out.println("Processing " + p.fullNameProperty());
+        System.out.println("Processing " + p.fullNameProperty().getValueSafe());
         
         Set<Integer> waves = p.getWaveIDs();
         if (waves.isEmpty()) return;
         
-        if (timingDAO.getCookedTimesByBib(bib) == null) return;
+        
+        
+        Optional<List<TimeOverride>> bibOverrides = timingDAO.getOverridesByBib(bib);
+        if (timingDAO.getCookedTimesByBib(bib) == null && ! bibOverrides.isPresent()) {
+            return;
+        }
+        
+        Map<Integer,Duration> overrideMap = new HashMap();
+        if (bibOverrides.isPresent()) {
+            bibOverrides.get().forEach(to -> {
+                if (!to.getRelative()) {
+                    overrideMap.put(to.getSplitId(), to.getTimestamp());
+                    System.out.println("Override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
+                } else {
+                    // we have to convert the relative -> actual time
+                    System.out.println("Relative override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
+
+                    overrideMap.put(to.getSplitId(), to.getTimestamp().negated());
+//                    Integer raceID = raceDAO.getSplitByID(to.getSplitId()).getRace().getID();
+//                    p.wavesProperty().forEach(w -> {
+//                        if (Objects.equals(w.getRace().getID(), raceID) ) {
+//                            overrideMap.put(to.getSplitId(), Duration.between(LocalTime.MIDNIGHT, w.waveStartProperty()).plus(to.getTimestamp()));
+//                            System.out.println("Override found for splitID of " + to.getSplitId() + " for " + overrideMap.get(to.getSplitId()) + " adjusted from " + to.getTimestamp());
+//                        }
+//                    });
+                }
+            });
+        }
         
         List<CookedTimeData> timesList = new ArrayList(timingDAO.getCookedTimesByBib(bib));
         timesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
@@ -245,6 +274,8 @@ public class ResultsDAO {
         
         waves.forEach(i -> {
             System.out.println("Processing waveID " + i); 
+            
+            Boolean hasOverrides = false;
             
             Result r = resultsMap.get(bib).get(i);
             
@@ -267,15 +298,105 @@ public class ResultsDAO {
             Iterator<CookedTimeData> times = timesList.iterator();
             Split[] splitArray = splits.toArray(new Split[splits.size()]); 
             Integer splitIndex = 0;
+            
+            Duration[] overrides = new Duration[splits.size()];
+            for (int o = 0; o  < splits.size(); o++) {
+                overrides[o] = overrideMap.get(splitArray[o].getID());
+                if (overrides[o] != null) {
+                    System.out.println("Found an override for split " + o + " of time " + overrides[o].toString());
+                    hasOverrides = true;
+                }
+            }
+            
+            // do we have an override for the start?
+            Boolean startTimeFound = false;
+            if (hasOverrides && overrides[0] != null) {
+                waveStart = overrides[0];
+                r.setStartDuration(waveStart);
+                r.setStartWaveStartDuration(waveStart);
+                System.out.println("Found start time override of " + overrides[0].toString());
+                
+                // Adjust all relative overrides to actual
+                for (int o = 1; o < splits.size(); o++) {
+                    if (overrides[o] != null && overrides[o].isNegative()) {
+                        overrides[o] = waveStart.plus(overrides[o].negated());
+                    }
+                }
+                
+                startTimeFound = true;
+
+                splitIndex = 1; 
+            }
+            
+            // pre-fill any intermediate splits
+//            if (hasOverrides) {
+//                for (int o = 1; o < splits.size()-1; o++) {
+//                    if (overrides[o] != null) {
+//                        System.out.println("Found split time override of " + overrides[o].toString() + " for the " + o + " split");
+//                        r.setSplitTime(o+1, overrides[o]);
+//                    }
+//                }
+//            }
+            
+            // Finish overrides get taken care of after the main while loop.... 
+            
             CookedTimeData ctd = null;
             if (times.hasNext()) ctd = times.next();
             
+            
+            
             while(ctd != null) {
                 //System.out.println("ResultsDAO.processBib: Looking at: " + r.getBib() + " " + ctd.getTimestamp());
-                if (ctd.getTimestamp().compareTo(waveStart) < 0 ) {
+                
+                // is there an override time for a future split that is before 
+                // the time in the ctd? If so, advance to the split after that 
+                // and consume the times
+                if (hasOverrides) {
+                    
+                    if (!startTimeFound && splitIndex > 0) {
+                        // Adjust all relative overrides to actual
+                        
+                        for (int o = 1; o < splits.size(); o++) {
+                            if (overrides[o] != null && overrides[o].isNegative()) {
+                                overrides[o] = r.getStartDuration().plus(overrides[o].negated());
+                            }
+                        }
+                        startTimeFound = true;
+                    }
+                    
+                    for (int ot = splitIndex; ot < splits.size(); ot++) {
+                        if (overrides[ot] != null && !overrides[ot].isNegative() && overrides[ot].minusMinutes(10).compareTo(ctd.getTimestamp()) < 0) {
+                            splitIndex= ot;
+                            r.setSplitTime(splitArray[splitIndex].getPosition(), overrides[splitIndex]);
+                            System.out.println("Found an override for " + splitIndex + " that is too close to the current times");
+
+                            // TODO: Fix this 
+                            Duration splitMax = overrides[ot].plusMinutes(10); 
+
+                            // now consume the rest of the hits at this split until we 
+                            // hit the max
+                            do { 
+                                System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
+                                if (times.hasNext()) ctd = times.next();
+                                else ctd = null;
+                            } while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 );
+                            splitIndex++;
+                            System.out.println("splitIndex now set to " + splitIndex);
+                        }
+                    }
+                } 
+                
+                
+                if (ctd == null || splitIndex >= splits.size()) {
+                    break; // we ate all of the cooked times
+                } else if (hasOverrides && overrides[splitIndex] != null) {
+                    System.out.println("We have an override for " + splitIndex + " incrementing and moving on.");
+                    r.setSplitTime(splitArray[splitIndex].getPosition(), overrides[splitIndex]);
+                    splitIndex++; // we pre-filled the split times earlier
+                } else if (ctd.getTimestamp().compareTo(waveStart) < 0 ) {
                     if (times.hasNext()) ctd = times.next();
                     else ctd = null;
-                    //System.out.println("ResultsDAO.processBib: tossing, before wave start");
+                    //System.out.println("ResultsDAO.processBib: tossing ctd's that were before the wave start");
                 } else if (Objects.equals(ctd.getTimingLocationId(), splitArray[splitIndex].getTimingLocationID())) {
                     //System.out.println("ResultsDAO.processBib: timing Location ID's match!");
 
@@ -290,6 +411,9 @@ public class ResultsDAO {
                             if (times.hasNext()) ctd = times.next();
                             else ctd = null;
                         } while (ctd != null && (ctd.getTimingLocationId() == splitArray[splitIndex].getTimingLocationID() && ctd.getTimestamp().compareTo(maxWaveStart) < 0) );
+                    
+                    
+                    
                     } else if (splitIndex == splits.size() -1 ) { // finish line
                         //System.out.println("We made it to the finish line!");
                         r.setFinishDuration(ctd.getTimestamp());
@@ -311,16 +435,41 @@ public class ResultsDAO {
                         splitIndex++;
                     }
                 } else { // walk the splitArray until we get a match
-                    //System.out.println("   Bumping the split index up from " + splitIndex);
+                    System.out.println("   Bumping the split index up from " + splitIndex);
+                    Integer orgIndex  = splitIndex;
                     while (splitIndex < splits.size() && ctd.getTimingLocationId() != splitArray[splitIndex].getTimingLocationID()) splitIndex++;
-                    //System.out.println("      to " + splitIndex);
+                    System.out.println("      to " + splitIndex);
+                    
+                    if (splitIndex == splits.size()) {
+                        System.out.println("oops, we hit the bottom, reset the splitIndex to " + orgIndex);
+                        // Ok, so the current timing location is never used again. Odds are they just sat around
+                        // there too long. Let's fix that
+                        splitIndex = orgIndex;
+                        Integer orgCTDLocation = ctd.getTimingLocationId() ;
+                        do { 
+                            if (times.hasNext()) ctd = times.next();
+                            else ctd = null;
+                        } while (ctd != null && orgCTDLocation == ctd.getTimingLocationId());
+                    }
+                    
                 }
                 
                 if (splitIndex >= splits.size()) break; // failsafe to make sure we didn't run out of splits
                 
             }
             
-            //System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+            // we processed every time so far
+            // do we have an override for the finish?
+            if (overrides[splits.size()-1] != null) {
+                
+                // Adjust all relative overrides to actual
+                if (overrides[splits.size()-1].isNegative()) {
+                    overrides[splits.size()-1] = r.getStartDuration().plus(overrides[splits.size()-1].negated());
+                }
+                System.out.println("Found finish time override of " + overrides[splits.size()-1].toString());
+                r.setFinishDuration(overrides[splits.size()-1]);
+            }
+            System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
             //resultsList.add(r); 
             //resultsMap.put(bib + " " + r.getRaceID(), r);
             

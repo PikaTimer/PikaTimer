@@ -5,6 +5,10 @@
 package com.pikatimer.timing;
 
 import java.time.Duration;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -26,12 +30,14 @@ public class TimeOverride {
     private String chip;
     private Integer splitId;
     private Duration timestamp;
-    private Boolean relativeTime; 
+    //private Boolean relativeTime; 
+    private StringProperty bibProperty = new SimpleStringProperty();
+    private BooleanProperty relativeProperty = new SimpleBooleanProperty(false);
 
     @Id
     @GenericGenerator(name="override_id" , strategy="increment")
     @GeneratedValue(generator="override_id")
-    @Column(name="ID")
+    @Column(name="override_id")
     public Integer getID() {
         return timeOverrideID; 
     }
@@ -62,11 +68,14 @@ public class TimeOverride {
     
     @Column(name="bib")
     public String getBib() {
-        return chip;
+        return bibProperty.getValueSafe();
     }
 
-    public void setBib(String chip) {
-        this.chip = chip;
+    public void setBib(String bib) {
+        bibProperty.setValue(bib);
+    }
+    public StringProperty bibProperty() {
+        return bibProperty;
     }
     
     @Column(name="split_id") 
@@ -80,11 +89,16 @@ public class TimeOverride {
     }
     
     @Column(name="relative_to_start")
-    public boolean getRelative() {
-        return relativeTime;
+    public Boolean getRelative() {
+        return relativeProperty.getValue();
+        // relativeTime;
     }
     public void setRelative(Boolean r) {
-        relativeTime = r;
+        //relativeTime = r;
+        relativeProperty.setValue(r);
+    }
+    public BooleanProperty relativeProperty(){
+        return relativeProperty;
     }
     
     

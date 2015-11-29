@@ -6,6 +6,7 @@ package com.pikatimer.timing;
 
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.RaceDAO;
 import com.pikatimer.timing.reader.PikaRFIDFileReader;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
@@ -16,17 +17,20 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.PatternSyntaxException;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -34,12 +38,16 @@ import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
@@ -48,6 +56,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
@@ -81,11 +93,16 @@ public class FXMLTimingController {
     @FXML private TableColumn ignoreColumn;
     @FXML private CheckBox customChipBibCheckBox;
     
-    
+    @FXML private TableView<TimeOverride> overrideTableView;
+    @FXML private TableColumn<TimeOverride,String> overrideBibColumn;
+    @FXML private TableColumn<TimeOverride,String> overrideTimeColumn;
+    @FXML private TableColumn<TimeOverride,String> overrideSplitColumn;
+    @FXML private TableColumn<TimeOverride,Boolean> overrideRelativeColumn;
     
     private ObservableList<CookedTimeData> cookedTimeList;
     private ObservableList<TimingLocation> timingLocationList;
     private TimingLocation selectedTimingLocation;
+    private RaceDAO raceDAO;
     private TimingDAO timingDAO; 
     private ParticipantDAO participantDAO;
     //private FXMLTimingLocationInputController timingLocationDetailsController;
@@ -100,8 +117,9 @@ public class FXMLTimingController {
     public void initialize() {
         
         selectedTimingLocation = null;
-        // TODO
         
+        
+        raceDAO=RaceDAO.getInstance();
         timingDAO=TimingDAO.getInstance();
         participantDAO=ParticipantDAO.getInstance();
         timingLocationList=timingDAO.listTimingLocations(); 
@@ -376,12 +394,39 @@ public class FXMLTimingController {
         customChipBibCheckBox.setSelected(bib2ChipMap.getUseCustomMap()); 
             
         customChipBibCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
-                if (!old_val.equals(new_val)) {
-                    System.out.println("Setting bib2ChipMap custom to " + new_val.toString());
-                    bib2ChipMap.setUseCustomMap(new_val);
-                    timingDAO.saveBib2ChipMap(bib2ChipMap);
-                }
-            });
+            if (!old_val.equals(new_val)) {
+                System.out.println("Setting bib2ChipMap custom to " + new_val.toString());
+                bib2ChipMap.setUseCustomMap(new_val);
+                timingDAO.saveBib2ChipMap(bib2ChipMap);
+            }
+        });
+        
+        
+        // Override table
+        overrideTableView.setItems(timingDAO.getOverrides());
+        overrideBibColumn.setCellValueFactory(cellData -> {
+            return cellData.getValue().bibProperty();
+        });
+        overrideBibColumn.setComparator(new AlphanumericComparator());
+                
+        overrideSplitColumn.setCellValueFactory(cellData -> {
+            Split s = raceDAO.getSplitByID(cellData.getValue().getSplitId());
+            if (s== null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getSplitId());
+            } else {
+                return s.splitNameProperty();
+            }
+        });
+        
+        overrideTimeColumn.setCellValueFactory(cellData -> {
+            return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getTimestamp(), 3));
+        });
+        
+        overrideRelativeColumn.setCellValueFactory(cellData -> {
+            return cellData.getValue().relativeProperty();
+        });
+        overrideRelativeColumn.setCellFactory(tc -> new CheckBoxTableCell());
+        
+        
     }    
     
     
@@ -452,35 +497,6 @@ public class FXMLTimingController {
         }
         ((FXMLTimingLocationInputController)tlLoader.getController()).setTimingLocationInput(i); 
         //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
-    }
-    
-    public void addOverride(ActionEvent fxevent){
-        
-    }
-    public void removeOverride(ActionEvent fxevent){
-        
-    }
-    public void clearAllOverrides(ActionEvent fxevent){
-        //TODO: Prompt and then remove all times associated with that timing location 
-        // _or_ all timing locations
-        Alert alert = new Alert(AlertType.CONFIRMATION);
-        alert.setTitle("Clear Overrides...");
-        alert.setHeaderText("Delete Overrides:");
-        alert.setContentText("Do you want to delete all overrides?.");
-
-        //ButtonType allButtonType = new ButtonType("All");
-        
-        ButtonType deleteButtonType = new ButtonType("Delete",ButtonData.YES);
-        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE);
-
-        alert.getButtonTypes().setAll(cancelButtonType, deleteButtonType );
-
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.get() == deleteButtonType) {
-            // delete all
-            timingDAO.clearAllOverrides(); 
-        }
- 
     }
     
     public void clearAllTimes(ActionEvent fxevent){
@@ -572,6 +588,192 @@ public class FXMLTimingController {
             
             
         }
+    }
+    
+    public void addOverride(ActionEvent fxevent){
+        // Open a Dialog box and ask for four things:
+        // 1) Bib
+        // 2) split (based on the bib)
+        // 3) Time
+        // 4) if that time is based on the time of day or a duration from the start
+        // 
+        // The dialog modifies a timeOverride object on the fly....
+        
+        
+        
+        BooleanProperty bibOK = new SimpleBooleanProperty(false);
+        BooleanProperty timeOK = new SimpleBooleanProperty(false);
+        BooleanProperty splitOK = new SimpleBooleanProperty(false);
+        BooleanProperty allOK = new SimpleBooleanProperty(false);
+       
+        allOK.bind(Bindings.and(bibOK, timeOK));
+        // Create the custom dialog.
+        Dialog<TimeOverride> dialog = new Dialog();
+        dialog.setTitle("Add Override");
+        dialog.setHeaderText("Add Override");
+
+        // Set the button types.
+        ButtonType createButtonType = new ButtonType("Create", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        // Create the username and password labels and fields.
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 20, 10, 10));
+        ColumnConstraints column = new ColumnConstraints(USE_COMPUTED_SIZE);
+        grid.getColumnConstraints().add(column);
+
+        TextField bibTextField = new TextField();
+        bibTextField.setPromptText("Bib");
+        bibTextField.setPrefWidth(50.0);
+        Label participantLabel = new Label();
+        ComboBox<Split> splitComboBox = new ComboBox();
+        splitComboBox.setVisibleRowCount(5);
+        bibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            Participant p = participantDAO.getParticipantByBib(newValue);
+            if (p != null) {
+                participantLabel.setText(p.fullNameProperty().getValueSafe());
+                ObservableList<Split> splitList = FXCollections.observableArrayList();
+                p.wavesProperty().forEach(w -> {
+                    splitList.addAll(w.getRace().getSplits());
+                });
+                splitComboBox.setItems(splitList);
+                splitComboBox.getSelectionModel().selectFirst();
+                bibOK.set(true);
+            } else {
+                participantLabel.setText("Unknown");
+                splitComboBox.setItems(null);
+                bibOK.set(false);
+            }
+        });
+        
+        
+        
+        
+        TextField timeTextField = new TextField();
+        timeTextField.setPromptText("HH:MM:SS.sss");
+        timeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            timeOK.setValue(false);
+
+            if (newValue.matches("([3-9]|[012]:)")) {
+                //Integer pos = raceStartTimeTextField.getCaretPosition();
+                timeTextField.setText("0" + newValue);
+                Platform.runLater(() -> {
+                    timeTextField.positionCaret(newValue.length()+2);
+                });
+            } else if (    newValue.isEmpty() || 
+                    newValue.matches("([012]|[01][0-9]|2[0-3])") || 
+                    newValue.matches("([01][0-9]|2[0-3]):[0-5]?") || 
+                    newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9]:[0-5]?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+                timeOK.setValue(false);
+            } else if(newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]*)?)?") ) { // Looks like a time, lets check
+                System.out.println("Testing Time (newValue: " + newValue + ")");
+            
+                try {
+                    if (!newValue.isEmpty()) {
+                        //LocalTime.parse(raceStartTimeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME );
+                        LocalTime.parse(timeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
+                        timeOK.setValue(true);
+                    }
+                } catch (Exception e) {
+                    timeTextField.setText(oldValue);
+                    System.out.println("Exception Bad Time (newValue: " + newValue + ")");
+                    e.printStackTrace();
+                    
+                }
+            } else {
+                timeTextField.setText(oldValue);
+                System.out.println("Bad Time (newValue: " + newValue + ")");
+            }
+                
+        });
+        
+        
+        CheckBox typeCheckBox = new CheckBox("Relative to start time");
+        typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
+        typeCheckBox.disableProperty().setValue(Boolean.TRUE);
+
+        splitComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (splitComboBox.getSelectionModel().getSelectedIndex() == 0) {
+                typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
+                typeCheckBox.disableProperty().setValue(Boolean.TRUE);
+            } else {
+                typeCheckBox.disableProperty().setValue(Boolean.FALSE);
+            }
+        });
+        
+        HBox bibLabelHBox = new HBox();
+        bibLabelHBox.setSpacing(5.0);
+        bibLabelHBox.getChildren().addAll(bibTextField,participantLabel);
+        grid.add(new Label("Bib:"), 0, 0);
+        grid.add(bibLabelHBox, 1, 0);
+        grid.add(new Label("Split:"), 0, 1);
+        grid.add(splitComboBox, 1, 1);
+        grid.add(new Label("Time:"),0,2);
+        grid.add(timeTextField,1,2);
+        //grid.add(new Label("Time Since:"),0,3);
+        grid.add(typeCheckBox,1,3);
+
+        // Disable create button unless everything is ok
+        Node createButton = dialog.getDialogPane().lookupButton(createButtonType);
+        createButton.disableProperty().bind(allOK.not());
+
+        //grid.setMinSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
+        dialog.getDialogPane().setContent(grid);
+
+        // Convert the result to a username-password-pair when the login button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == createButtonType) {
+                TimeOverride o = new TimeOverride();
+                o.setBib( bibTextField.textProperty().getValueSafe());
+                o.setSplitId(splitComboBox.getValue().getID());
+                o.setTimestamp(Duration.between(LocalTime.MIN,LocalTime.parse(timeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME)));
+                o.setRelative(typeCheckBox.isSelected());
+                return o;
+            }
+            return null;
+        });
+        // Request focus on the username field by default.
+        Platform.runLater(() -> bibTextField.requestFocus());
+
+        // Show the dialog
+        Optional<TimeOverride> result = dialog.showAndWait();
+        
+        // If we got a time, let's save it.
+        if (result.isPresent()) timingDAO.saveOverride(result.get());
+        
+        
+    }
+    
+    public void removeOverride(ActionEvent fxevent){
+        timingDAO.deleteOverride(overrideTableView.getSelectionModel().getSelectedItem());
+    }
+    
+    
+    public void clearAllOverrides(ActionEvent fxevent){
+        //TODO: Prompt and then remove all times associated with that timing location 
+        // _or_ all timing locations
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Clear Overrides...");
+        alert.setHeaderText("Delete Overrides:");
+        alert.setContentText("Do you want to delete all overrides?.");
+
+        //ButtonType allButtonType = new ButtonType("All");
+        
+        ButtonType deleteButtonType = new ButtonType("Delete",ButtonData.YES);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(cancelButtonType, deleteButtonType );
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == deleteButtonType) {
+            // delete all
+            timingDAO.clearAllOverrides(); 
+        }
+ 
     }
     
 }

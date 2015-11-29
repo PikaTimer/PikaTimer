@@ -197,13 +197,13 @@ public class FXMLResultsController  {
 
                 // 2. Set the filter Predicate whenever the filter changes.
                 resultsSearchTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-                    System.out.println("resultsSearchTextField change: " + newValue);
+                    //System.out.println("resultsSearchTextField change: " + newValue);
                     filteredParticipantsList.setPredicate(result -> {
                         // If filter text is empty, display all persons.
                         if (newValue == null || newValue.isEmpty()) {
                             return true;
                         }
-                        System.out.println("Filtered list eval for result " + result.getBib());
+                        //System.out.println("Filtered list eval for result " + result.getBib());
                         // Compare first name and last name of every person with filter text.
                         String lowerCaseFilter = "(.*)(" + newValue.toLowerCase() + ")(.*)";
 
@@ -215,12 +215,12 @@ public class FXMLResultsController  {
                             }
 
                             if ((p.fullNameProperty().getValueSafe() + " " + result.getBib() + " ").toLowerCase().matches(lowerCaseFilter)) {
-                                System.out.println(" Match: " + lowerCaseFilter + " " + p.fullNameProperty().getValueSafe() + " " + result.getBib() );
+                                //System.out.println(" Match: " + lowerCaseFilter + " " + p.fullNameProperty().getValueSafe() + " " + result.getBib() );
                                 return true; // Filter matches first/last/email/bib.
                             } 
 
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            //e.printStackTrace();
                             return true;
                         }
                         return false; // Does not match.

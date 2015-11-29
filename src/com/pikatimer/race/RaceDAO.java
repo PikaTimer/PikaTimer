@@ -23,6 +23,11 @@ public class RaceDAO {
     private static final ObservableList<Race> raceList =FXCollections.observableArrayList();
     private static final ObservableList<Wave> waveList =FXCollections.observableArrayList();
     private static final Map<Integer,Wave> waveMap = new HashMap();
+    private Map<Integer,Split> splitMap = new HashMap();
+
+    public Split getSplitByID(Integer splitID) {
+        return splitMap.get(splitID);
+    }
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -55,10 +60,11 @@ public class RaceDAO {
         s.getTransaction().commit();
         System.out.println("Adding Split id: " + w.getID() + "to" + w.getRace().getRaceName());
         updateSplitOrder(r);
+        splitMap.put(w.getID(), w);
     }
 
     
-    public void refreshRaceList() { 
+    private void refreshRaceList() { 
         List<Race> list = new ArrayList<>();
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
@@ -75,6 +81,8 @@ public class RaceDAO {
         if(!raceList.isEmpty())
             raceList.clear();
         raceList.addAll(list);
+        splitMap = new HashMap();
+        raceList.forEach(r -> r.getSplits().forEach(sp -> splitMap.put(sp.getID(),sp)));
     }     
     
     public ObservableList<Race> listRaces() { 
@@ -156,11 +164,13 @@ public class RaceDAO {
         raceList.remove(r);
         waveList.removeAll(r.getWaves());
         r.getWaves().forEach(w -> waveMap.remove(w.getID()));
+        r.getSplits().forEach(sp -> splitMap.remove(sp.getID()));
     }      
     
 
     
     public void removeSplit(Split w) {
+        splitMap.remove(w.getID());
         Race r = w.getRace(); 
         r.removeSplit(w);
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();

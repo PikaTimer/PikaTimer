@@ -238,6 +238,11 @@ public class Split {
     }
 
     @Override
+    public String toString() {
+        return splitName.getValueSafe() ;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;

@@ -45,7 +45,7 @@ public class TimingDAO {
         private Bib2ChipMap bib2ChipMap;
         
         private static ObservableList<TimeOverride> overrideList;
-        private  final Map<String,List<TimeOverride>> overrideMap = new ConcurrentHashMap(); 
+        private  Map<String,List<TimeOverride>> overrideMap = new ConcurrentHashMap(); 
 
     public List<CookedTimeData> getCookedTimesByBib(String bib) {
         return cookedTimeBibMap.get(bib); 
@@ -619,18 +619,34 @@ public class TimingDAO {
         
     }
     
+    public Optional<List<TimeOverride>> getOverridesByBib(String bib) {
+        if(overrideMap.containsKey(bib) && ! overrideMap.get(bib).isEmpty() ){
+            return Optional.of(overrideMap.get(bib));
+        } else return Optional.empty();
+        
+    }
+    
     public void saveOverride(TimeOverride o) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.saveOrUpdate(o);
         s.getTransaction().commit();
+        
+        // Just in case.... This will make sure we initialized the overrideList
+        getOverrides();
+        
         Platform.runLater(() -> {
             overrideList.add(o);
         });
+        if (!overrideMap.containsKey(o.getBib())) overrideMap.put(o.getBib(), new ArrayList());
         overrideMap.get(o.getBib()).add(o);
+        resultsQueue.add(o.getBib());
     }
     
     public void deleteOverride(TimeOverride o) {
+        // Just in case.... This will make sure we initialized the overrideList
+        getOverrides();
+        
         Platform.runLater(() -> {
             overrideList.remove(o);
         });
@@ -639,18 +655,20 @@ public class TimingDAO {
         s.beginTransaction();
         s.delete(o);
         s.getTransaction().commit();
+        resultsQueue.add(o.getBib());
     }
     
     public void clearAllOverrides(){
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         System.out.println("Deleting all overrides...");
+        overrideList.forEach(o -> resultsQueue.add(o.getBib()));
         try {  
             s.createQuery("delete from TimeOverride").executeUpdate();
             Platform.runLater(() -> {
                 overrideList.clear();
             });
-            overrideMap.clear();
+            overrideMap = new ConcurrentHashMap();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } 

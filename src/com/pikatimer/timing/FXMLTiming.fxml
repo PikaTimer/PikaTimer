@@ -99,10 +99,10 @@
                   </Label>
                   <TableView fx:id="overrideTableView">
                     <columns>
-                      <TableColumn fx:id="overrideBibTableColumn" prefWidth="50.0" text="Bib" />
-                      <TableColumn fx:id="overrideSplitTableColumn" text="Split" />
-                        <TableColumn fx:id="overrideTimeTableColumn" text="Time" />
-                        <TableColumn maxWidth="45.0" minWidth="24.0" prefWidth="33.0" text="A/R" />
+                      <TableColumn fx:id="overrideBibColumn" prefWidth="50.0" text="Bib" />
+                      <TableColumn fx:id="overrideSplitColumn" text="Split" />
+                        <TableColumn fx:id="overrideTimeColumn" text="Time" />
+                        <TableColumn fx:id="overrideRelativeColumn" maxWidth="45.0" minWidth="24.0" prefWidth="33.0" text="R" />
                     </columns>
                   </TableView>
                   <HBox alignment="CENTER_RIGHT" spacing="5.0">
