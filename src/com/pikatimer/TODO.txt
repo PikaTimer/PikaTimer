@@ -1,9 +1,20 @@
 Overall Focus: 
-Overrides (fill in first, then adjust from there)
-Backup times (only use if nothing else exists, can be tricky with splits)
-Mandatory split? (if it is mandatory, bail if no data found)
+
+-DQ flag + reason for a participant
+-Fix Result object to keep split Properties that are based on the start time
+- Wrap result object in a Platform.runLater to avoid all sorts of issues with the extractor
+-Fix result display to show wave start -> actual delta, gun time
+-Fix result display to disassemble the SortedList -> FilteredList -> List stuff 
+to avoid AOOBE in sorted List on split changes
+-Backup times flag
+-Ignore Chip Read flag (ignoring a cooked time is easy, propagating that to the raw is a bit harder)
+-Mandatory split? (if it is mandatory, bail if no data found)
+-Force participant to the 1st wave of a given race if they are seen at a given timing 
+location? (This could be trouble for post run spectators)
+
+
 Create a DurationTextField / LocalTimeTextField that "does the right thing"
-Create a DurationCell (or whatever) for inline edits of durations)
+Create a DurationCell (or whatever) for inline edits of durations.
 
 
 
@@ -11,10 +22,10 @@ Create a DurationCell (or whatever) for inline edits of durations)
 
 
 Overall:
-Upgrade H2 
+DONE: Upgrade H2 
 Upgrade Hibernate to 5.x
-Fix FXML layout resizing checks
-Add License Key enforcement
+Fix FXML layout resizing checks on race page
+Add License Key enforcement? 
 Add 'About' page w/ links to the following items:
 --gliphicons
 --h2 db
@@ -36,7 +47,7 @@ Internationalization? (Spanish, English, French, German, British, US, etc)
 
 Races:
 Default start time to 8am? 
-Don't permit blank start time or handle it better (i.e., banner warning)
+Don't permit blank start time.
 Don't permit blank wave start times / default to race start time or 1st wave start time
 Watch TimingLocation list and show if more than the default
 Fix table size for splits and waves
@@ -51,13 +62,15 @@ DONE -- Setup split locations
 DONE -- Split -> timing location map
 DONE -- Setup start waves
 DONE -- Update split distance units when main race unit is updated
-Auto Sort splits by order number
-Setup AG's
+Auto Sort splits by order number, don't permit other sorting of that list
+Setup AG's (5, 10, custom)
 Setup Award Depth 
+ - Pull from downstream awards checkbox. 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
-Ability to set min/max speeds for a segment
-Ability to drag/drop splits
+Ability to set min/max times for a segment
+Ability to drag/drop splits to reorder
 protect start/finish split from removal
+protect start/finish split distances from updates
 auto-update finish split distance
 allow for zero distance splits (transition)
 
@@ -68,9 +81,7 @@ Ability to create segment "groups" (swim, bike, run)?
 Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
 Prevent removal of waves that have assigned participants
 Prevent removal of races that have assigned participants
-Prevent removal of Timing Locations that are mapped to splits (or cascade)
-Prevent removal of start/finish split
-Auto-update finish split distance/cutoff
+Prevent removal of Timing Locations that are mapped to splits
 Show bib range if there are multiple races and wave starts is not checked
 Ability to Flag a race as a relay race
 
@@ -111,7 +122,6 @@ Wave/Race assignment based on import field
 Update/Add on enter from any valid field
 Custom fields / attributes w/ data types (string, limited select, date, time)
 Link to Team
-Link to Relay Team? (or do we just set "Relay Team Race" as  a race attribute?)
 Inline Edit of the cells?
 Mass bib assignment 
 Show race/wave as column
@@ -121,8 +131,10 @@ sync from/to fusesport / active.com / runsignup / other
 Relay Teams? Figure this one out!
 ? Relay team attribute set to the team name or team id?
 ? Same as regular teams? 
-Auto-determine relay team category based on participants (male, female, coed, etc)
+Auto-determine relay team category based on participants (male, female, coed, etc)?
 Allow team to cover multiple categories? (female + coed?)
+Allow team to cover multiple races?
+Min for score attribute?
 Team category setup (gender, mixed gender, custom data field setting, etc)
 
 Timing:
@@ -132,10 +144,13 @@ Add intermediate dialog for bib -> chip setup
   -- clear option
 
 Overrides 
-  -- Set per bib/split/time
-  -- merge first when processing a bib
-  -- then use those to filter the times
-  -- small window below timing locations on timing page
+  DONE: Set per bib/split/time
+  DONE: merge first when processing a bib
+  DONE: then use those to filter the times
+  DONE: small window below timing locations on timing page
+  -- Make the bib an autocomplete text field based on the runners
+  -- replace if bib + split already exists
+  -- cleanup split drop down for when the runner is in multiple races
 
 Ignore times option
 
@@ -174,39 +189,35 @@ Search dropdown to show only a single timing location in the TableView
 RFID Direct:
     --Continually import times from box (via tcp in a separate task) to a timing point
     --Rewind option for times read from box/outreach
-    --Chip sequence gap detection that triggers an automatic rewind for direct reads
+    --Chip sequence gap detection that triggers an automatic rewind 
 
 
 Done: (for now) fix column widths
 
 
-Add/delete fixed times (overrides) 
-    -- small tableview under timing locations?
-
 Results:
 DONE: Background thread to watch the resultsQueue<Bib String> for new bibs to process
 DONE: Read list of cooked times from cookedTimeBibMap<String,CookedTimeData>
-DONE:     --Line up with splits for that runner's race
-DONE:     --process, place into results tables, shift/mask other results as warranted
+DONE:  --Line up with splits for that runner's race
+DONE:  --process, place into results tables, shift/mask other results as warranted
      --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 Wire in a "min time to next split" option to replace hardcoded 10 minutes. 
-Show results in filterable / sortable view
+DONE: Show results in filterable / sortable view
 cleanup the spacing on the tableview, wider names.
 Ability to show/hide splits on TableView 
-Auto-Reprocess when a wave start time changes
+DONE: Auto-Reprocess when a wave start time changes
 Auto-Reprocess when times are deleted
-Sort with blanks at the end, not front (new AlphanumericSorter)
+DONE: Sort with blanks at the end, not front (new AlphanumericSorter)
 Default the sorting to finish, finish - 1, finish -2, etc, etc)
 Ability to select multiple and DQ, un-DQ them (with a note)
 Show Gender/AG
 
-Figure out how to deal with relay teams
 
 Reports:
-Calculate 
+Read results, sort by finish, then splits in reverse order.
 Basic text and html output
 Mobile Friendly html output (sortable, searchable, etc)
-Banner Text for the page
+Optional banner Text for the page
 Auto FTP to a location every X minutes
 Auto-print of text with each new page or after X number of runners
 Hide/Show DQ's on results page (per person flag?)
