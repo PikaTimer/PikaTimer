@@ -1,23 +1,17 @@
 Overall Focus: 
-
+Create a DurationTextField / LocalTimeTextField that "does the right thing"
+Create a DurationCell (or whatever) for inline edits of durations?
 -DQ flag + reason for a participant
--Fix Result object to keep split Properties that are based on the start time
-- Wrap result object in a Platform.runLater to avoid all sorts of issues with the extractor
+-Fix Result object to calculate and keep split Properties that are based on the start time
+-Wrap result object in a Platform.runLater to avoid all sorts of issues with the extractor
 -Fix result display to show wave start -> actual delta, gun time
--Fix result display to disassemble the SortedList -> FilteredList -> List stuff 
+-Fix result display to disassemble the old SortedList -> FilteredList -> List stuff 
 to avoid AOOBE in sorted List on split changes
 -Backup times flag
 -Ignore Chip Read flag (ignoring a cooked time is easy, propagating that to the raw is a bit harder)
 -Mandatory split? (if it is mandatory, bail if no data found)
 -Force participant to the 1st wave of a given race if they are seen at a given timing 
-location? (This could be trouble for post run spectators)
-
-
-Create a DurationTextField / LocalTimeTextField that "does the right thing"
-Create a DurationCell (or whatever) for inline edits of durations.
-
-
-
+location? (Good for start lines and really remote locations, but it could be trouble for post run spectators.)
 
 
 
@@ -51,17 +45,7 @@ Don't permit blank start time.
 Don't permit blank wave start times / default to race start time or 1st wave start time
 Watch TimingLocation list and show if more than the default
 Fix table size for splits and waves
-DONE -- Add Races
-DONE -- If only one race, race name = event name (hide the race name)
-DONE -- Specify Distance for race
-DONE -- Specify an optional cutoff time for the race
-DONE -- Calculate the pace needed to make the cutoff 
-DONE -- Setup wave starts (assigned by bib for now, AG/Other later) with a minimum of 1 per race
-DONE -- Setup wave <-> participant map
-DONE -- Setup split locations
-DONE -- Split -> timing location map
-DONE -- Setup start waves
-DONE -- Update split distance units when main race unit is updated
+
 Auto Sort splits by order number, don't permit other sorting of that list
 Setup AG's (5, 10, custom)
 Setup Award Depth 
@@ -86,38 +70,15 @@ Show bib range if there are multiple races and wave starts is not checked
 Ability to Flag a race as a relay race
 
 Participants:
-DONE -- Switch wave attribute mapping to a "getWaveByID" type of system to avoid hibernate fetching hell
-DONE -- Fix participants structure
-DONE   -- store wave ID and not the wave
-DONE   -- background task to read from db
   -- limit to one wave or multiple per checkbox on the event setup
-  DONE: take over control of the ID so that it is set by us and not hibernate (set to uuid if not set on first get?)
   -- store the team id
-  DONE: middle initial / name
-
   -- textfield auto complete for city/state 
   -- textfield for teams pre-populated / with auto complete
-
-DONE -- Delete a row/rows via a context menu
-DONE -- Select which columns to show (bib, first, last, age, city, race, etc)
-DONE -- Alphanumeric sort of the bib numbers 
-DONE -- Edit an existing entry
-DONE -- Migrate to SimpleStringProperties for better TableView updates
-DONE -- Set focus to the first field after adding/modifying an entry
-DONE -- double click to edit a row
-DONE -- swap bibs menu option if two and only two rows are selected
-DONE -- Move the participantsList management into the ParticipantDAO
-DONE -- import from csv
-DONE -- ability to assign the runner to a wave of one or more races
-DONE (I hope) --  Fix deadlock with mass write/delete
-DONE -- Middle Name/Initial
 Clean up import from csv (field formatting, etc)
-export to csv
+Export to csv
 Validate csv file before continuing. 
 Error check the fields (age, city, state, bib, etc). 
 Prevent duplicate bib number assignment
-DONE -- Wave(Race) Assignment 
-DONE -- Automatic Wave (Race) Assignment based on bib #
 Wave/Race assignment based on import field
 Update/Add on enter from any valid field
 Custom fields / attributes w/ data types (string, limited select, date, time)
@@ -125,7 +86,8 @@ Link to Team
 Inline Edit of the cells?
 Mass bib assignment 
 Show race/wave as column
-DONE -- Only store wave id and then programmatically do the linking rather than letting hibernate mess it up
+Used first/last name edit fields as filters for the list
+Flag bib if already in use, disable "add" option, only edit
 sync from/to fusesport / active.com / runsignup / other
 
 Relay Teams? Figure this one out!
@@ -138,51 +100,27 @@ Min for score attribute?
 Team category setup (gender, mixed gender, custom data field setting, etc)
 
 Timing:
-DONE: Setup bib -> chip map
 Add intermediate dialog for bib -> chip setup
   -- show # of mappings
   -- clear option
+Ignore chip reads times option
 
 Overrides 
-  DONE: Set per bib/split/time
-  DONE: merge first when processing a bib
-  DONE: then use those to filter the times
-  DONE: small window below timing locations on timing page
   -- Make the bib an autocomplete text field based on the runners
   -- replace if bib + split already exists
   -- cleanup split drop down for when the runner is in multiple races
 
-Ignore times option
 
 Backup Times option
   -- keep processing if found, overwrite if a non-backup time is found. 
 
-DONE: Make timestamp a Duration (vs a LocalDateTime) from the start of the day of the event
-
-DONE: Raw vs cooked tables. 
-DONE:   -- import to raw and save in db
-DONE:   -- run any time shifts, cuts, chip -> bib map
-DONE:   -- then insert into cooked and place into results queue
-DONE:   -- reprocess raw if parameters for the timing location change
-DONE:       -- time skew
-            -- bib -> chip
-DONE:       -- min/max times
-
-DONE: Clear All Times Option
-DONE: Clear all times for a given timing location Option
-DONE: Clear all times for a given timing location reader option
 Clear all times for the timing location input when the user selects a new reader
 Clear all times for a location when the location is deleted
 Backup flag for a given reader at a split
-DONE: Multiple readers per timing location
-DONE: Import times from file
-DONE: Discard duplicates
-Option to assign any time to the race/wave start time via right mouse click
-OBE: Use rawTimeDataQueue to batch process adding new raw times to the db
 
-DONE: Continually import times from file (tail in a separate task) to a timing point
-DONE: Time shift (+/- a fixed offset to adjust for clock errors on the timing box) 
-DONE: Show most recent data read for a reader / timing location
+Option to assign any time to the race/wave start time via right mouse click
+
+
 Search dropdown to show only a single timing location in the TableView
 
 
@@ -196,18 +134,12 @@ Done: (for now) fix column widths
 
 
 Results:
-DONE: Background thread to watch the resultsQueue<Bib String> for new bibs to process
-DONE: Read list of cooked times from cookedTimeBibMap<String,CookedTimeData>
-DONE:  --Line up with splits for that runner's race
-DONE:  --process, place into results tables, shift/mask other results as warranted
+
      --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 Wire in a "min time to next split" option to replace hardcoded 10 minutes. 
-DONE: Show results in filterable / sortable view
 cleanup the spacing on the tableview, wider names.
 Ability to show/hide splits on TableView 
-DONE: Auto-Reprocess when a wave start time changes
 Auto-Reprocess when times are deleted
-DONE: Sort with blanks at the end, not front (new AlphanumericSorter)
 Default the sorting to finish, finish - 1, finish -2, etc, etc)
 Ability to select multiple and DQ, un-DQ them (with a note)
 Show Gender/AG

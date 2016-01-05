@@ -190,6 +190,7 @@ public class ResultsDAO {
                 }
             };
             Thread processNewResultThread = new Thread(processNewResult);
+            processNewResultThread.setName("Thread-ProcessNewResultThread");
             processNewResultThread.setDaemon(true);
             processNewResultThread.start();
             
@@ -361,7 +362,7 @@ public class ResultsDAO {
                         if (overrides[ot] != null && !overrides[ot].isNegative() && overrides[ot].minusMinutes(10).compareTo(ctd.getTimestamp()) < 0) {
                             splitIndex= ot;
                             r.setSplitTime(splitArray[splitIndex].getPosition(), overrides[splitIndex]);
-                            System.out.println("Found an override for " + splitIndex + " that is too close to the current times");
+                            //System.out.println("Found an override for " + splitIndex + " that is too close to the current times");
 
                             // TODO: Fix this 
                             Duration splitMax = overrides[ot].plusMinutes(10); 
@@ -431,7 +432,7 @@ public class ResultsDAO {
                     //System.out.println("   Bumping the split index up from " + splitIndex);
                     Integer orgIndex  = splitIndex;
                     while (splitIndex < splits.size() && ctd.getTimingLocationId() != splitArray[splitIndex].getTimingLocationID()) splitIndex++;
-                    System.out.println("      to " + splitIndex);
+                    //System.out.println("      to " + splitIndex);
                     
                     if (splitIndex == splits.size()) {
                         //System.out.println("oops, we hit the bottom, reset the splitIndex to " + orgIndex);

@@ -168,7 +168,7 @@ public class TimingDAO {
                         try {
                             pending.add(cookedTimeQueue.take());
                         
-                            cookedTimeQueue.drainTo(pending,99);  // 100 total
+                            cookedTimeQueue.drainTo(pending,199);  // 200 total
                             
                             System.out.println("ProcessNewCooked Thread: Processing: " + pending.size());
 
@@ -198,7 +198,7 @@ public class TimingDAO {
                                 resultsQueue.add(c.getBib());
                             });
                             
-                            Thread.sleep(100); // This will limit us to being able to process about 1000 times / second
+                            Thread.sleep(100); // This will limit us to being able to process about 2000 times / second
                         } catch (InterruptedException ex) {
                             Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -207,10 +207,9 @@ public class TimingDAO {
                 }
             };
             Thread processNewCookedThread = new Thread(processNewCooked);
+            processNewCookedThread.setName("Thread-ProcessNewCookedThread");
             processNewCookedThread.setDaemon(true);
             processNewCookedThread.start();
-            
-     
         }
     
         return cookedTimeList;
@@ -248,8 +247,9 @@ public class TimingDAO {
                     return null;
                 }
         };
-        Thread processNewCookedThread = new Thread(clearTimes);
-        processNewCookedThread.start();
+        Thread clearAllCookedThread = new Thread(clearTimes);
+        clearAllCookedThread.setName("Thread-clearAllCookedThread");
+        clearAllCookedThread.start();
                     
     }
     

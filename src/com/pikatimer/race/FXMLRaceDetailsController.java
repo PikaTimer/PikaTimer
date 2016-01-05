@@ -8,6 +8,7 @@ import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.timing.TimingDAO;
+import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
@@ -197,6 +198,7 @@ public class FXMLRaceDetailsController {
             w.setWaveName(t.getNewValue());
             raceDAO.updateWave(w);
         });
+        waveNameTableColumn.setComparator(new AlphanumericComparator());
         
         waveStartTimeTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());     
         waveStartTimeTableColumn.setOnEditCommit((CellEditEvent<Wave, String> t) -> {
@@ -252,12 +254,18 @@ public class FXMLRaceDetailsController {
             w.setWaveAssignmentStart(t.getNewValue());
             raceDAO.updateWave(w);
         });
+        waveAssignmentStartTableColumn.setComparator(new AlphanumericComparator());
+
+        
         waveAssignmentEndTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         waveAssignmentEndTableColumn.setOnEditCommit((CellEditEvent<Wave, String> t) -> {
             Wave w = (Wave) t.getTableView().getItems().get(t.getTablePosition().getRow());
             w.setWaveAssignmentEnd(t.getNewValue());
             raceDAO.updateWave(w);
         });
+        waveAssignmentEndTableColumn.setComparator(new AlphanumericComparator());
+        
+        
         
         
         // Use this if you whant keystroke by keystroke monitoring.... Reject any non digit attempts
@@ -299,12 +307,14 @@ public class FXMLRaceDetailsController {
             w.setSplitName(t.getNewValue());
             raceDAO.updateSplit(w);
         });
+        
         splitLocationTableColumn.setCellFactory(ComboBoxTableCell.<Split, TimingLocation>forTableColumn(TimingDAO.getInstance().listTimingLocations()));
         splitLocationTableColumn.setOnEditCommit((CellEditEvent<Split, TimingLocation> t) -> {
             Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
             s.setTimingLocation(t.getNewValue());
             raceDAO.updateSplit(s);
         });
+        
         splitDistanceTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         splitDistanceTableColumn.setOnEditCommit((CellEditEvent<Split, String> t) -> {
             BigDecimal dist;
@@ -318,6 +328,8 @@ public class FXMLRaceDetailsController {
                 s.setSplitDistance(s.getSplitDistance());
             }
         });
+        splitDistanceTableColumn.setComparator(new AlphanumericComparator());
+        
         Label splitCutoffTableColumnLabel = new Label("Cutoff");
         splitCutoffTableColumnLabel.setTooltip(new Tooltip("Optional Cutoff time in HH:MM"));
         splitCutoffTableColumn.setGraphic(splitCutoffTableColumnLabel);

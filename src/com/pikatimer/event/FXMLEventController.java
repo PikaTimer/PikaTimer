@@ -69,7 +69,9 @@ public class FXMLEventController  {
     private FXMLRaceDetailsController raceDetailsController;
     private RaceDAO raceDAO;
     
-    @FXML private Pane raceDetailsPane;
+    //@FXML private Pane raceDetailsPane;
+    @FXML private VBox raceDetailsVBox;
+    
     /**
      * Initializes the controller class.
      */
@@ -234,10 +236,10 @@ public class FXMLEventController  {
         
         // load up the raceDetailsPane
         // Save the FXMLLoader so that we can send it notes when things change in the races box
-        raceDetailsPane.getChildren().clear();
+        raceDetailsVBox.getChildren().clear();
             try {
                 raceDetailsLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/race/FXMLRaceDetails.fxml"));
-                raceDetailsPane.getChildren().add(raceDetailsLoader.load());
+                raceDetailsVBox.getChildren().add(raceDetailsLoader.load());
             } catch (IOException ex) {
                 Logger.getLogger(FXMLEventController.class.getName()).log(Level.SEVERE, null, ex);
                 ex.printStackTrace();
@@ -250,7 +252,7 @@ public class FXMLEventController  {
          //raceDetailsController.selectRace(r);
             
          //if there are no races selected in the race table then disable the entire right hand side
-         raceDetailsPane.disableProperty().bind(raceTableView.getSelectionModel().selectedItemProperty().isNull());
+         raceDetailsVBox.disableProperty().bind(raceTableView.getSelectionModel().selectedItemProperty().isNull());
          raceTableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Cha‌​nge<? extends Race> c) -> { 
              raceTableView.getSelectionModel().getSelectedItems().forEach(System.out::println); 
              ObservableList<Race> selectedRaces = raceTableView.getSelectionModel().getSelectedItems();

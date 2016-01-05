@@ -77,7 +77,7 @@ public class HibernateUtil {
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");
         cfg.setProperty("hibernate.connection.password", "");
-        cfg.setProperty("hibernate.show_sql", "true");
+        //cfg.setProperty("hibernate.show_sql", "true");
         cfg.setProperty("hibernate.jdbc.batch_size","100"); 
         
         cfg.setProperty("hibernate.enable_lazy_load_no_trans", "true");
