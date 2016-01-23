@@ -43,9 +43,7 @@ public class RaceAwards {
     private Race race;
 
     public RaceAwards() {
-        //this.self = this; 
-        
-        
+    
     }
     
     @Id

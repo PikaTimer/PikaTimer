@@ -22,8 +22,7 @@ create table race (
     race_bib_start varchar,
     race_bib_end varchar,
     race_cutoff bigint,
-    race_relay boolean,
-    age_group_increment int
+    race_relay boolean
 ); 
 
 create table race_waves (
@@ -41,11 +40,18 @@ create table race_awards (
     race_id int
 );
 
-create table RACE_AWARDS_ATTRIBUTES (
+create table race_awards_attributes (
     race_id int, 
     index_id int, 
     attribute varchar, 
     value varchar
+);
+
+create table race_age_groups (
+    race_id int,
+    ag_increment int,
+    masters_start int,
+    ag_start int
 );
 
 create table race_participants (
