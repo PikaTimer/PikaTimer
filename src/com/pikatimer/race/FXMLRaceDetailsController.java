@@ -694,6 +694,8 @@ public class FXMLRaceDetailsController {
         agStart.setTooltip(new Tooltip("Sets the max age for the first age group. i.e. 1 -> X"));  
         agStart.setTextFormatter(AGSformatter);
         agStart.setText(ageGroups.getAGStart().toString());
+        
+        
         grid.add(new Label("Start Age"), 0, 0);
         grid.add(agStart, 1, 0);
         
@@ -716,6 +718,39 @@ public class FXMLRaceDetailsController {
         agMasters.setText(ageGroups.getMasters().toString());
         grid.add(new Label("Masters"), 0, 2);
         grid.add(agMasters, 1, 2);
+        
+        agStart.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                //System.out.println("agStart out of focus...");
+                Integer st = Integer.parseUnsignedInt(agStart.getText());
+                Integer inc = agIncChoiceBox.getSelectionModel().getSelectedItem();
+                
+                if (st < (inc - 1)) {
+                    st = inc - 1;
+                    agStart.setText(st.toString());
+                } else if ((st+1)%inc != 0) { // oops, the start is not a good value
+                    st = ((st/inc)*inc)-1;
+                    agStart.setText(st.toString()); // now it should be ;-)
+                }
+            }
+        });
+        
+        agIncChoiceBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                //System.out.println("agIncChoiceBox out of focus...");
+                Integer st = Integer.parseUnsignedInt(agStart.getText());
+                Integer inc = agIncChoiceBox.getSelectionModel().getSelectedItem();
+               
+                if (st < (inc - 1)) {
+                    st = inc - 1;
+                    agStart.setText(st.toString());
+                } else if ((st+1)%inc != 0) { // oops, the start is not a good value
+                    st = ((st/inc)*inc)-1;
+                    agStart.setText(st.toString()); // now it should be ;-)
+                }
+            }
+        });
+        
         
         dialog.getDialogPane().setContent(grid);
 
