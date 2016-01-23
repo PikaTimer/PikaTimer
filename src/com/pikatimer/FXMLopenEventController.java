@@ -26,6 +26,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
 
 /**
  * FXML Controller class
@@ -88,31 +89,34 @@ public class FXMLopenEventController {
 
                 @Override public Void call() {
                     
-                    // Create the Flyway instance
-                    Flyway flyway = new Flyway();
-                    //LoadingProgressBar.setProgress(0.10F);
-                    //System.out.println("Progress: " + LoadingProgressBar.getProgress());
-                    jdbcURL = "jdbc:h2:file:" + dbFile.getAbsolutePath().replace(".mv.db", "");
-                    jdbcURL += ";TRACE_LEVEL_FILE=0;TRACE_LEVEL_SYSTEM_OUT=0;CACHE_SIZE=131072"; // disable trace options
-                    Pikatimer.setJdbcUrl(jdbcURL);
-                    //LoadingProgressBar.setProgress(0.15F);
-                    flyway.setDataSource(jdbcURL , "sa", null);
-                    //LoadingProgressBar.setProgress(0.2F);
+                    //FXMLLoader loader = null;
+                    try {
+                        // Create the Flyway instance
+                        Flyway flyway = new Flyway();
+                        //LoadingProgressBar.setProgress(0.10F);
+                        //System.out.println("Progress: " + LoadingProgressBar.getProgress());
+                        jdbcURL = "jdbc:h2:file:" + dbFile.getAbsolutePath().replace(".mv.db", "");
+                        jdbcURL += ";TRACE_LEVEL_FILE=0;TRACE_LEVEL_SYSTEM_OUT=0;CACHE_SIZE=131072"; // disable trace options
+                        Pikatimer.setJdbcUrl(jdbcURL);
+                        //LoadingProgressBar.setProgress(0.15F);
+                        flyway.setDataSource(jdbcURL, "sa", null);
+                        //LoadingProgressBar.setProgress(0.2F);
 
-                    // Upgrade the schema (if out of date)
-                    flyway.migrate();
-                    //LoadingProgressBar.setProgress(0.25F);
-                    //System.out.println("Progress: " + LoadingProgressBar.getProgress());
-                    // Get Hibernate up and running and populate the event object.... 
-                    EventDAO eDAO = new EventDAO(); 
-                    //LoadingProgressBar.setProgress(0.35);
-                    eDAO.getEvent(); 
-                    //LoadingProgressBar.setProgress(0.40);
-                    //System.out.println("Progress: " + LoadingProgressBar.getProgress());
-
+                        // Upgrade the schema (if out of date)
+                        flyway.migrate();
+                        //LoadingProgressBar.setProgress(0.25F);
+                        //System.out.println("Progress: " + LoadingProgressBar.getProgress());
+                        // Get Hibernate up and running and populate the event object.... 
+                        EventDAO eDAO = new EventDAO();
+                        //LoadingProgressBar.setProgress(0.35);
+                        eDAO.getEvent();
+                        //LoadingProgressBar.setProgress(0.40);
+                        //System.out.println("Progress: " + LoadingProgressBar.getProgress());
 
                         // Setup the main screen
-                    final FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLpika.fxml"));    
+                        FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLpika.fxml"));
+                    
+   
                     
                     Platform.runLater(() -> {
                         Pane myPane;
@@ -124,11 +128,17 @@ public class FXMLopenEventController {
                             primaryStage.setScene(myScene);
                             //LoadingProgressBar.setProgress(0.95);
                             primaryStage.show();
-                        } catch (IOException ex) {
+                        } catch (Exception ex) {
                             System.out.println("OOPS! " + getClass().getResource("FXMLpika.fxml"));
                             ex.printStackTrace();
                         }
                     });
+                    
+                    } catch (Exception ex) {
+                        System.out.println("OOPS!");
+                        ex.printStackTrace();
+                    }
+                    
                     return null;
                 }
             };
