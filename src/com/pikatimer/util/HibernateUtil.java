@@ -6,6 +6,7 @@ package com.pikatimer.util;
 
 import com.pikatimer.Pikatimer;
 import com.pikatimer.participant.Participant;
+import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.Wave;
@@ -66,6 +67,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(Participant.class);
         cfg.addAnnotatedClass(Race.class);
         cfg.addAnnotatedClass(RaceAwards.class);
+        cfg.addAnnotatedClass(AgeGroups.class);
         cfg.addAnnotatedClass(Split.class);
         cfg.addAnnotatedClass(TimingLocation.class);
         cfg.addAnnotatedClass(TimingLocationInput.class);

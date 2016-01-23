@@ -661,8 +661,91 @@ public class FXMLRaceDetailsController {
     }
     
     public void setupAgeGroups(ActionEvent fxevent){
-        Alert alert = new Alert(AlertType.WARNING, "Age Group setup detection is not yet implemented.");
-        alert.showAndWait();
+        final AgeGroups ageGroups;
+        if (selectedRace.getAgeGroups() == null) {
+            ageGroups = new AgeGroups();
+        } else {
+            ageGroups = selectedRace.getAgeGroups();
+        }
+        
+        
+        // Create the custom dialog.
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Race AG Setup");
+        dialog.setHeaderText("Race Age Group Setup");
+
+        // Set the button types.
+        //ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Create the grid for the labels and fields.
+        GridPane grid = new GridPane();
+        grid.setHgap(5);
+        grid.setVgap(5);
+        grid.setPadding(new Insets(5, 5, 5, 5));
+        
+        // AG Start (the 1 -> X part)
+        TextField agStart = new TextField();
+        TextFormatter<String> AGSformatter = new TextFormatter<>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        agStart.setPrefWidth(33);
+        agStart.setTooltip(new Tooltip("Sets the max age for the first age group. i.e. 1 -> X"));  
+        agStart.setTextFormatter(AGSformatter);
+        agStart.setText(ageGroups.getAGStart().toString());
+        grid.add(new Label("Start Age"), 0, 0);
+        grid.add(agStart, 1, 0);
+        
+        // Increment
+        ChoiceBox<Integer> agIncChoiceBox = new ChoiceBox(FXCollections.observableArrayList(5, 10));
+        agIncChoiceBox.getSelectionModel().select(ageGroups.getAGIncrement());
+        grid.add(new Label("Increment"), 0, 1);
+        grid.add(agIncChoiceBox, 1, 1);
+        
+        
+        // Masters
+        TextField agMasters = new TextField();
+        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        agMasters.setPrefWidth(33);
+        agMasters.setTooltip(new Tooltip("Sets the starting age for the Masters categories."));  
+        agMasters.setTextFormatter(AGMformatter);
+        agMasters.setText(ageGroups.getMasters().toString());
+        grid.add(new Label("Masters"), 0, 2);
+        grid.add(agMasters, 1, 2);
+        
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the username field by default.
+        //Platform.runLater(() -> username.requestFocus());
+
+        // Convert the result to a username-password-pair when the login button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                ageGroups.setAGIncrement(agIncChoiceBox.getSelectionModel().getSelectedItem());
+                ageGroups.setMasters(Integer.parseUnsignedInt(agMasters.getText()));
+                ageGroups.setAGStart(Integer.parseUnsignedInt(agStart.getText()));
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+
+        Optional<Boolean> result = dialog.showAndWait();
+
+        result.ifPresent(dialogOK -> {
+            if (dialogOK) {
+                //save it
+                if (selectedRace.getAgeGroups() == null) {
+                    selectedRace.setAgeGroups(ageGroups);
+                }               
+                raceDAO.updateRace(selectedRace);
+                //raceDAO.updateAwards(awards);
+            }
+            //System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue());
+        });
     }
     
     public void setupAwards(ActionEvent fxevent){

@@ -60,6 +60,7 @@ public class Race {
    private final Race self; 
    
    private RaceAwards awards; 
+   private AgeGroups ageGroups;
            
     public Race() {
         this.self = this; 
@@ -286,6 +287,17 @@ public class Race {
         awards = a;
         // make sure awards is linked back to us
         if (awards != null && awards.getRace() != this) awards.setRace(this);
+    }
+    
+    @OneToOne(cascade=CascadeType.ALL)  
+    @PrimaryKeyJoinColumn
+    public AgeGroups getAgeGroups() {
+        return ageGroups;
+    }
+    public void setAgeGroups(AgeGroups a) {
+        ageGroups = a;
+        // make sure awards is linked back to us
+        if (ageGroups != null && ageGroups.getRace() != this) ageGroups.setRace(this);
     }
 
 
