@@ -688,27 +688,102 @@ public class FXMLRaceDetailsController {
         grid.setHgap(5);
         grid.setVgap(5);
         grid.setPadding(new Insets(5, 5, 5, 5));
+        
+        grid.add(new Label("Male"),1,0);
+        grid.add(new Label("Female"), 2, 0);
+        grid.add(new Label("Pull?"),3,0);
 
+        
+        // Overall Awards
         TextField overallMale = new TextField();
-        TextFormatter<String> OMformatter = new TextFormatter<String>( change -> {
+        TextFormatter<String> OMformatter = new TextFormatter<>( change -> {
             change.setText(change.getText().replaceAll("[^0-9]", ""));
             return change; 
         });
+        overallMale.setPrefWidth(33);
         
         overallMale.setTextFormatter(OMformatter);
-        overallMale.setText(awards.getOverallMale().toString());
+        overallMale.setText(awards.getDepth("OverallMale").toString());
         
         TextField overallFemale = new TextField();
-        TextFormatter<String> OFformatter = new TextFormatter<String>( change -> {
+        TextFormatter<String> OFformatter = new TextFormatter<>( change -> {
             change.setText(change.getText().replaceAll("[^0-9]", ""));
             return change; 
         });
+        overallFemale.setPrefWidth(33);
         overallFemale.setTextFormatter(OFformatter);
-        overallFemale.setText(awards.getOverallFemale().toString());
+        overallFemale.setText(awards.getDepth("OverallFemale").toString());
+        
+        CheckBox overallPull = new CheckBox();
+        overallPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
+        overallPull.setSelected(awards.getPull("Overall"));
+        
 
-        grid.add(new Label("Overall:"), 0, 0);
-        grid.add(overallMale, 1, 0);
-        grid.add(overallFemale, 2, 0);
+        grid.add(new Label("Overall:"), 0, 1);
+        grid.add(overallMale, 1, 1);
+        grid.add(overallFemale, 2, 1);
+        grid.add(overallPull,3,1);
+        
+        // Masters
+        TextField mastersMale = new TextField();
+        TextFormatter<String> MMformatter = new TextFormatter<>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        mastersMale.setPrefWidth(33);
+        
+        mastersMale.setTextFormatter(MMformatter);
+        mastersMale.setText(awards.getDepth("MastersMale").toString());
+        
+        TextField mastersFemale = new TextField();
+        TextFormatter<String> MFformatter = new TextFormatter<>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        mastersFemale.setPrefWidth(33);
+        mastersFemale.setTextFormatter(MFformatter);
+        mastersFemale.setText(awards.getDepth("MastersFemale").toString());
+        
+        CheckBox mastersPull = new CheckBox();
+        mastersPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
+        mastersPull.setSelected(awards.getPull("Masters"));
+        
+
+        grid.add(new Label("Masters:"), 0, 2);
+        grid.add(mastersMale, 1, 2);
+        grid.add(mastersFemale, 2, 2);
+        grid.add(mastersPull,3,2);
+        
+        // AG Awards
+        TextField agMale = new TextField();
+        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        agMale.setPrefWidth(33);
+        
+        agMale.setTextFormatter(AGMformatter);
+        agMale.setText(awards.getDepth("AGMale").toString());
+        
+        TextField agFemale = new TextField();
+        TextFormatter<String> AGFformatter = new TextFormatter<>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        agFemale.setPrefWidth(33);
+        agFemale.setTextFormatter(AGFformatter);
+        agFemale.setText(awards.getDepth("AGFemale").toString());
+        
+        CheckBox agPull = new CheckBox();
+        agPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
+        agPull.setSelected(awards.getPull("AG"));
+        
+
+        grid.add(new Label("AG:"), 0, 3);
+        grid.add(agMale, 1, 3);
+        grid.add(agFemale, 2, 3);
+        grid.add(agPull,3,3);
+        
         
 
         dialog.getDialogPane().setContent(grid);
@@ -719,8 +794,17 @@ public class FXMLRaceDetailsController {
         // Convert the result to a username-password-pair when the login button is clicked.
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
-                awards.setOverallMale(Integer.parseUnsignedInt(overallMale.getText()));
-                awards.setOverallFemale(Integer.parseUnsignedInt(overallFemale.getText()));
+                awards.setDepth("OverallMale",Integer.parseUnsignedInt(overallMale.getText()));
+                awards.setDepth("OverallFemale",Integer.parseUnsignedInt(overallFemale.getText()));
+                awards.setPull("Overall",overallPull.isSelected());
+                
+                awards.setDepth("MastersMale",Integer.parseUnsignedInt(mastersMale.getText()));
+                awards.setDepth("MastersFemale",Integer.parseUnsignedInt(mastersFemale.getText()));
+                awards.setPull("Masters",mastersPull.isSelected());
+                
+                awards.setDepth("AGMale",Integer.parseUnsignedInt(mastersMale.getText()));
+                awards.setDepth("AGFemale",Integer.parseUnsignedInt(mastersFemale.getText()));
+                awards.setPull("AG",mastersPull.isSelected());
                 
                 return Boolean.TRUE;
             }

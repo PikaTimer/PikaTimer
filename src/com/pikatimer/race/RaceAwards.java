@@ -37,10 +37,9 @@ import org.hibernate.annotations.Parameter;
 public class RaceAwards {
     private Integer raceID;
     private Map<String,String> attributes = new HashMap();
-    
-    private Integer overallMale;
-    private Integer overallFemale;
-    private Boolean overallDoubleDip;
+    private Map<String,Integer> intAttributes = new HashMap();
+    private Map<String,Boolean> boolAttributes = new HashMap();
+
     private Race race;
 
     public RaceAwards() {
@@ -82,51 +81,47 @@ public class RaceAwards {
     public Map<String, String> getAttributes() {
         return attributes;
     }
-    public void setAttributes(Map<String,String> award_attributes) {
-        attributes = award_attributes;
-
+    public void setAttributes(Map<String,String> m) {
+        attributes = m;
     } 
     
+
     //Overall
     //male
-    @Transient
-    public Integer getOverallMale() {
-        if (overallMale == null) {
-            if (attributes.containsKey("OverallMale")) {
-                overallMale = Integer.parseUnsignedInt(attributes.get("OverallMale"));
+    public Integer getDepth(String key) {
+        if (!intAttributes.containsKey(key)) {
+            if (attributes.containsKey(key)) {
+                intAttributes.put(key,Integer.parseUnsignedInt(attributes.get(key)));
             } else {
-                overallMale = 0;
+                intAttributes.put(key, 0);
             }
         }
-        return overallMale;
+        return intAttributes.get(key);
     }
-    public void setOverallMale(Integer n) {
-        overallMale = n;
-        attributes.put("OverallMale", n.toString());
+    public void setDepth(String key, Integer n) {
+        intAttributes.put(key,n);
+        attributes.put(key, n.toString());
     }
     
-    //female
-    @Transient
-    public Integer getOverallFemale() {
-        if (overallFemale == null) {
-            if (attributes.containsKey("OverallFemale")) {
-                overallFemale = Integer.parseUnsignedInt(attributes.get("OverallFemale"));
+    
+    //Pull?
+     public Boolean getPull(String key) {
+        if (!boolAttributes.containsKey(key)) {
+            if (attributes.containsKey(key)) {
+                boolAttributes.put(key,Boolean.parseBoolean(attributes.get(key)));
             } else {
-                overallFemale = 0;
+                boolAttributes.put(key, Boolean.TRUE);
             }
         }
-        return overallFemale;
+        return boolAttributes.get(key);
     }
-    public void setOverallFemale(Integer n) {
-        overallFemale = n;
-        attributes.put("OverallFemale", n.toString());
+    public void setPull(String key, Boolean n) {
+        boolAttributes.put(key,n);
+        attributes.put(key, n.toString());
     }
-    
     
     //Masters
-    //double dip?
-    //male
-    //female
+    
     
     //AG
     //double dip?
