@@ -56,6 +56,7 @@ public class Race {
    private final ObservableList<Wave> raceWaves; 
    private List<Wave> raceWavesList;
    private final ObservableList<Split> raceSplits; 
+   private List<Split> raceSplitList;
    private final Race self; 
    
    private RaceAwards awards; 
@@ -242,8 +243,8 @@ public class Race {
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
     @OrderBy("split_seq_number")
     public List<Split> getSplits() {
-        //return raceSplits.sorted(); 
-        return raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
+        return raceSplitList;
+        //return raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
     }
     public void setSplits(List<Split> splits) {
 //        System.out.println("Race.setSplits(list) called for " + raceName + " with " + splits.size() + " splits"); 
@@ -253,6 +254,7 @@ public class Race {
 //            .sorted((e1, e2) -> Integer.compare(e1.getPosition(),
 //                    e2.getPosition()))
 //            .forEach(e -> System.out.println(e.getSplitName()));
+        raceSplitList = splits;
         if (splits != null) raceSplits.setAll(splits);
 //        System.out.println("Race.setSplits(list) " + raceName + " now has " + raceSplits.size() + " splits");
     }
@@ -267,9 +269,12 @@ public class Race {
         } else {
             raceSplits.add(raceSplits.size()-1, s);
         }
+        raceSplitList = raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
     }
     public void removeSplit(Split s) {
         raceSplits.remove(s); 
+        raceSplitList = raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
+
     }
     
     @OneToOne(cascade=CascadeType.ALL)  
