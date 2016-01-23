@@ -19,11 +19,11 @@ create table race (
     race_name varchar, 
     race_distance numeric,
     race_dist_unit varchar,
-    --race_start_time varchar,
     race_bib_start varchar,
     race_bib_end varchar,
     race_cutoff bigint,
-    race_relay boolean
+    race_relay boolean,
+    age_group_increment int
 ); 
 
 create table race_waves (
@@ -36,6 +36,17 @@ create table race_waves (
     wave_assignment_attr1 varchar, 
     wave_assignment_attr2 varchar
 ); 
+
+create table race_awards (
+    race_id int
+);
+
+create table RACE_AWARDS_ATTRIBUTES (
+    race_id int, 
+    index_id int, 
+    attribute varchar, 
+    value varchar
+);
 
 create table race_participants (
     race_id int, 
@@ -84,7 +95,7 @@ create table timing_location (
 create table bib2chip (bib2chip_id int, custom_map boolean);
 create table bib2chipmap (bib2chip_id int, bib varchar, chip varchar unique);
 
-create table part2wave (participant_id int, wave_id int); 
+create table part2wave (index_id int, participant_id int, wave_id int); 
 
 create table timing_location_input (
     id int primary key,
@@ -97,8 +108,6 @@ create table timing_location_input (
 );
  
 create table timing_location_input_attributes (index_id int, tli_id int, attribute varchar, value varchar); 
-
-
 
 create table raw_timing_data (
     id int, 
@@ -119,6 +128,27 @@ create table cooked_timing_data (
     ignore_time boolean
 );
 
-create table results (race_id int, participant_id int, split_id int, time bigint); 
+create table results (
+    result_id int, 
+    race_id int,
+    bib varchar, 
+    waveStart bigint,
+    partStart bigint,
+    partFinish bigint
+);
+
+create table split_results (
+    result_id int,
+    split_id int,
+    split_time bigint
+);
+
+create table overrides (
+    override_id int, 
+    bib varchar, 
+    split_id int, 
+    override_time bigint, 
+    relative_to_start boolean
+); 
 
 commit;

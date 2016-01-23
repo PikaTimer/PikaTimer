@@ -168,9 +168,9 @@
             </HBox>
             <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="1" GridPane.valignment="CENTER" VBox.vgrow="NEVER">
                <children>
-                  <Button mnemonicParsing="false" text="Course Records" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button mnemonicParsing="false" text="Age Group Setup" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button mnemonicParsing="false" text="Award Setup" />
+                  <Button fx:id="courseRecordsButton" mnemonicParsing="false" onAction="#setupCourseRecords" text="Course Records" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Button fx:id="ageGroupSetupButton" mnemonicParsing="false" onAction="#setupAgeGroups" text="Age Group Setup" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Button fx:id="awardSetupButton" mnemonicParsing="false" onAction="#setupAwards" text="Award Setup" />
                </children>
                <padding>
                   <Insets top="25.0" />

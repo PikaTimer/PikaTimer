@@ -28,7 +28,9 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
@@ -55,6 +57,8 @@ public class Race {
    private List<Wave> raceWavesList;
    private final ObservableList<Split> raceSplits; 
    private final Race self; 
+   
+   private RaceAwards awards; 
            
     public Race() {
         this.self = this; 
@@ -268,6 +272,16 @@ public class Race {
         raceSplits.remove(s); 
     }
     
+    @OneToOne(cascade=CascadeType.ALL)  
+    @PrimaryKeyJoinColumn
+    public RaceAwards getAwards() {
+        return awards;
+    }
+    public void setAwards(RaceAwards a) {
+        awards = a;
+        // make sure awards is linked back to us
+        if (awards != null && awards.getRace() != this) awards.setRace(this);
+    }
 
 
     @Override

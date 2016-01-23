@@ -213,6 +213,13 @@ public class RaceDAO {
         s.update(tl);
         s.getTransaction().commit();
      }
+    
+    public void updateAwards(RaceAwards a){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        s.saveOrUpdate(a);
+        s.getTransaction().commit();
+    }
 
     
     public void updateSplit (Split sp) {

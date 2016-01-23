@@ -17,6 +17,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Optional;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
@@ -25,17 +26,24 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -76,6 +84,9 @@ public class FXMLRaceDetailsController {
     @FXML private TextField raceStartTimeTextField; 
     @FXML private VBox splitsVBox;
     @FXML private CheckBox splitsCheckBox; 
+    @FXML private Button awardSetupButton;
+    @FXML private Button ageGroupSetupButton;
+    @FXML private Button courseRecordsButton;
 
     
     Race selectedRace; 
@@ -644,4 +655,90 @@ public class FXMLRaceDetailsController {
 
     }
     
+    public void setupCourseRecords(ActionEvent fxevent){
+        Alert alert = new Alert(AlertType.WARNING, "Course record detection is not yet implemented.");
+        alert.showAndWait();
+    }
+    
+    public void setupAgeGroups(ActionEvent fxevent){
+        Alert alert = new Alert(AlertType.WARNING, "Age Group setup detection is not yet implemented.");
+        alert.showAndWait();
+    }
+    
+    public void setupAwards(ActionEvent fxevent){
+        final RaceAwards awards;
+        if (selectedRace.getAwards() == null) {
+            awards = new RaceAwards();
+        } else {
+            awards = selectedRace.getAwards();
+        }
+        
+        
+        // Create the custom dialog.
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Race Award Setup");
+        dialog.setHeaderText("Race Award Depth Setup");
+
+        // Set the button types.
+        //ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Create the grid for the labels and fields.
+        GridPane grid = new GridPane();
+        grid.setHgap(5);
+        grid.setVgap(5);
+        grid.setPadding(new Insets(5, 5, 5, 5));
+
+        TextField overallMale = new TextField();
+        TextFormatter<String> OMformatter = new TextFormatter<String>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        
+        overallMale.setTextFormatter(OMformatter);
+        overallMale.setText(awards.getOverallMale().toString());
+        
+        TextField overallFemale = new TextField();
+        TextFormatter<String> OFformatter = new TextFormatter<String>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        overallFemale.setTextFormatter(OFformatter);
+        overallFemale.setText(awards.getOverallFemale().toString());
+
+        grid.add(new Label("Overall:"), 0, 0);
+        grid.add(overallMale, 1, 0);
+        grid.add(overallFemale, 2, 0);
+        
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the username field by default.
+        //Platform.runLater(() -> username.requestFocus());
+
+        // Convert the result to a username-password-pair when the login button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                awards.setOverallMale(Integer.parseUnsignedInt(overallMale.getText()));
+                awards.setOverallFemale(Integer.parseUnsignedInt(overallFemale.getText()));
+                
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+
+        Optional<Boolean> result = dialog.showAndWait();
+
+        result.ifPresent(dialogOK -> {
+            if (dialogOK) {
+                //save it
+                if (selectedRace.getAwards() == null) {
+                    selectedRace.setAwards(awards);
+                }               
+                raceDAO.updateRace(selectedRace);
+                //raceDAO.updateAwards(awards);
+            }
+            //System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue());
+        });
+    }
 }
