@@ -16,7 +16,6 @@ location? (Good for start lines and really remote locations, but it could be tro
 
 
 Overall:
-DONE: Upgrade H2 
 Upgrade Hibernate to 5.x
 Fix FXML layout resizing checks on race page
 Add License Key enforcement? 

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -58,7 +59,8 @@ public class Wave {
     private final StringProperty waveAssignmentEnd; 
     private final IntegerProperty wavePosition;
     private final ObservableList<Participant> participants; 
-    
+    private final StringProperty waveDisplayName = new SimpleStringProperty();
+    private StringBinding waveDNBinding;
     
 
     public Wave(Race r){
@@ -222,6 +224,42 @@ public class Wave {
     public ObservableList<Participant> participantsProperty() {
     return participants;
     }*/
+    
+    public StringProperty waveDisplayNameProperty(){
+        // setup the bindings for the waveDisplayName
+        System.out.println("Wave:waveDisplayNameProperty() called");
+
+        if (waveDNBinding==null && race != null && RaceDAO.getInstance().listRaces().size() > 0) {
+            System.out.println("Null WaveDNBinding");
+
+
+            StringBinding waveDNBinding = new StringBinding() {
+                    {
+                        super.bind(race.wavesProperty(),RaceDAO.getInstance().listRaces(),waveName,race.raceNameProperty());
+                    }
+
+                    @Override
+                    protected String computeValue(){
+                        System.out.println("WaveDNBinding.computeValue() called");
+
+                        if (race.wavesProperty().size() == 1 ) {
+                            System.out.println("WaveDNBinding.computeValue() returning " + race.getRaceName());
+                            return race.getRaceName();
+                        } else if (RaceDAO.getInstance().listRaces().size() == 1 ) {
+                            System.out.println("WaveDNBinding.computeValue() returning " + waveName.getValueSafe());
+                            return waveName.getValueSafe();
+                        } else {
+                            System.out.println("WaveDNBinding.computeValue() returning " + race.getRaceName() + " " + waveName.getValueSafe());
+                            return race.getRaceName() + " " + waveName.getValueSafe();
+                        } 
+                    }
+            };
+
+            waveDisplayName.bind(waveDNBinding);
+        }
+
+        return waveDisplayName;
+    }
 
     
     @Override

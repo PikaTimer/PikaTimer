@@ -68,10 +68,8 @@ public class FXMLopenEventController {
     @FXML
     protected void openDB(File dbFile) {
         
-        // TODO
-        // None of the progress bar stuff works. 
-        // move the stuff to a Task so that the main visual thread can get
-        // updated. 
+        PikaPreferences.getInstance().setRecentFile(dbFile); // stash this for future use
+        
         OpenHBox.setVisible(false);
         OpenHBox.setManaged(false);
 

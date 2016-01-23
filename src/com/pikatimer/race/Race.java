@@ -52,6 +52,7 @@ public class Race {
    private final BooleanProperty relayRace; 
    private final StringProperty raceDistanceProperty; 
    private final ObservableList<Wave> raceWaves; 
+   private List<Wave> raceWavesList;
    private final ObservableList<Split> raceSplits; 
    private final Race self; 
            
@@ -209,21 +210,29 @@ public class Race {
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
     public List<Wave> getWaves() {
-        return raceWaves.sorted(); 
+        return raceWavesList;
     }
     public void setWaves(List<Wave> waves) {
-        //System.out.println("Race.setWaves(list) called for " + raceName + " with " + waves.size() + " waves"); 
-        raceWaves.setAll(waves);
-        //System.out.println("Race.setWaves(list) " + raceName + " now has " + raceWaves.size() + " waves");
+        raceWavesList = waves; 
+        if (waves == null) {
+            System.out.println("Race.setWaves(list) called for " + raceName.getValueSafe() + "(" + IDProperty.toString() + ")" + " with null waves");
+        } else {
+            System.out.println("Race.setWaves(list) called for " + raceName.getValueSafe() + "(" + IDProperty.toString() + ")" + " with " + waves.size() + " waves");
+        } 
+        
+        if (waves != null) raceWaves.setAll(waves);
+        System.out.println("Race.setWaves(list) " + raceName.getValueSafe() + "(" + IDProperty.toString() + ")" + " now has " + raceWaves.size() + " waves");
     }
     public ObservableList<Wave> wavesProperty() {
         return raceWaves; 
     }
     public void addWave(Wave w) {
         raceWaves.add(w);
+        raceWavesList = raceWaves.sorted();
     }
     public void removeWave(Wave w) {
         raceWaves.remove(w); 
+        raceWavesList = raceWaves.sorted();
     }
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)

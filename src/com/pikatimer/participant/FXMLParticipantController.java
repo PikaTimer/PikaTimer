@@ -9,6 +9,7 @@ import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
 import com.pikatimer.util.AlphanumericComparator;
+import com.pikatimer.util.WaveStringConverter;
 import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.FlowHandler;
@@ -261,7 +262,7 @@ public class FXMLParticipantController  {
             //});
         });
         
-        
+        waveComboBox.setConverter(new WaveStringConverter());
         // DOES NOT WORK :-( 
         waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             System.out.println("PartController::waveComboBox(focusedListener) fired...");
