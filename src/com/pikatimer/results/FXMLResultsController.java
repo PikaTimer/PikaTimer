@@ -18,6 +18,7 @@ package com.pikatimer.results;
 
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.util.AlphanumericComparator;
@@ -27,24 +28,32 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.PatternSyntaxException;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import org.controlsfx.control.ToggleSwitch;
 
 
 /**
@@ -54,9 +63,35 @@ import javafx.scene.layout.GridPane;
  */
 public class FXMLResultsController  {
     
+    //@FXML ChoiceBox<Race> raceChoiceBox;
+    @FXML ComboBox<Race> raceComboBox; 
+    @FXML Label selectedRaceLabel;
+    
     @FXML TextField resultsSearchTextField;
     @FXML GridPane resultsGridPane;
-    @FXML ChoiceBox<Race> raceChoiceBox;
+    
+    @FXML VBox outputDetailsVBox;
+    
+    @FXML ChoiceBox<Integer> agIncrementChoiceBox;
+    @FXML TextField agStartTextField;
+    @FXML TextField agMastersStartTextField;
+    
+    @FXML ChoiceBox awardOverallPullChoiceBox;
+    @FXML ChoiceBox awardMastersPullChoiceBox;
+    @FXML ChoiceBox awardAGPullChoiceBox;
+    
+    @FXML ChoiceBox awardOverallChipChoiceBox;
+    @FXML ChoiceBox awardMastersChipChoiceBox;
+    @FXML ChoiceBox awardAGChipChoiceBox;
+   
+    @FXML TextField awardOverallMaleDepthTextField;
+    @FXML TextField awardOverallFemaleDepthTextField; 
+    @FXML TextField awardMastersMaleDepthTextField;
+    @FXML TextField awardMastersFemaleDepthTextField;    
+    @FXML TextField awardAGMaleDepthTextField;
+    @FXML TextField awardAGFemaleDepthTextField;
+
+    @FXML ToggleSwitch autoUpdateToggleSwitch;
     
     final Map<Race,TableView> raceTableViewMap = new ConcurrentHashMap();
     final RaceDAO raceDAO = RaceDAO.getInstance();
@@ -68,20 +103,32 @@ public class FXMLResultsController  {
      */
     public void initialize() {
         // TODO
-        raceChoiceBox.setItems(raceDAO.listRaces());
-        
-        
-        raceChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
+        raceComboBox.setItems(raceDAO.listRaces());
+        raceComboBox.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
+        selectedRaceLabel.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
+
+        initializeRaceAGSettings();
+                
+        raceComboBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
             // flip the table
-            System.out.println("raceChoiceBox listener fired: now with number2 set to " + number2.intValue());
+            //System.out.println("raceChoiceBox listener fired: now with number2 set to " + number2.intValue());
             
             if (number2.intValue() == -1 )  {
-                raceChoiceBox.getSelectionModel().clearAndSelect(0);
+                raceComboBox.getSelectionModel().clearAndSelect(0);
                 return;
             } 
             
             
-            Race r = raceChoiceBox.getItems().get(number2.intValue());
+            Race r = raceComboBox.getItems().get(number2.intValue());
+            
+            // Populate the AG settings
+            populateRaceAGSettings(r);
+            // Populate the Awards Settings
+            populateAwardsSettings(r);
+            // Populate the Output Settings
+            populateOutputSettings(r);
+            
+            // Populate the results TableView
             if( ! raceTableViewMap.containsKey(r)) {
                 rebuildResultsTableView(r);
             }
@@ -92,14 +139,14 @@ public class FXMLResultsController  {
                     System.out.println("The list of splits has changed...");
                     TableView oldTableView = raceTableViewMap.get(r);
                     rebuildResultsTableView(r);
-                    if (raceChoiceBox.getSelectionModel().getSelectedItem().equals(r)) {
+                    if (raceComboBox.getSelectionModel().getSelectedItem().equals(r)) {
                         resultsGridPane.getChildren().remove(oldTableView);
                         resultsGridPane.add(raceTableViewMap.get(r), 0, 1);
                     }
                 }
             });
             if (number.intValue() > 0) {
-                Race old = raceChoiceBox.getItems().get(number.intValue());
+                Race old = raceComboBox.getItems().get(number.intValue());
                 resultsGridPane.getChildren().remove(raceTableViewMap.get(old));
             }
             resultsGridPane.getChildren().remove(raceTableViewMap.get(r));
@@ -107,7 +154,8 @@ public class FXMLResultsController  {
             
         });
         
-        raceChoiceBox.getSelectionModel().clearAndSelect(0);
+        raceComboBox.getSelectionModel().clearAndSelect(0);
+        
 
     }    
     
@@ -250,6 +298,121 @@ public class FXMLResultsController  {
                 
                 // save it
                 raceTableViewMap.put(r, table);
+    }
+
+    private void populateRaceAGSettings(Race r) {
+        System.out.println("populateRaceAGSettings() called...");
+        
+        AgeGroups ageGroups;
+        if (r.getAgeGroups() == null) {
+            ageGroups = new AgeGroups();
+            r.setAgeGroups(ageGroups);
+            raceDAO.updateRace(r);
+        } else {
+            ageGroups = r.getAgeGroups();
+        }
+
+        agStartTextField.setText(ageGroups.getAGStart().toString());
+        agIncrementChoiceBox.getSelectionModel().select(ageGroups.getAGIncrement());
+        agMastersStartTextField.setText(ageGroups.getMasters().toString());
+
+
+    }
+
+            
+    private void initializeRaceAGSettings() {
+        //@FXML ChoiceBox agIncrementChoiceBox;
+        //@FXML TextField agStartTextField;
+        //@FXML TextField agMastersStartTextField;
+        System.out.println("initizlizeRaceAGSettings() called...");
+
+    
+              
+        TextFormatter<String> AGSformatter = new TextFormatter<>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        agStartTextField.setTooltip(new Tooltip("Sets the max age for the first age group. i.e. 1 -> X"));  
+        agStartTextField.setTextFormatter(AGSformatter);
+        
+        
+        agIncrementChoiceBox.setItems(FXCollections.observableArrayList(5, 10));
+        
+        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
+            change.setText(change.getText().replaceAll("[^0-9]", ""));
+            return change; 
+        });
+        agMastersStartTextField.setTooltip(new Tooltip("Sets the starting age for the Masters categories."));  
+        agMastersStartTextField.setTextFormatter(AGMformatter);
+        
+        agStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            Race r = raceComboBox.getSelectionModel().getSelectedItem();
+
+            if (!newPropertyValue) {
+                //System.out.println("agStart out of focus...");
+                Integer st = Integer.parseUnsignedInt(agStartTextField.getText());
+                Integer inc = agIncrementChoiceBox.getSelectionModel().getSelectedItem();
+                
+                // If no change, bail
+                if (st.equals(r.getAgeGroups().getAGStart())) return; 
+                
+                if (st < (inc - 1)) {
+                    st = inc - 1;
+                    agStartTextField.setText(st.toString());
+                } else if ((st+1)%inc != 0) { // oops, the start is not a good value
+                    st = ((st/inc)*inc)-1;
+                    agStartTextField.setText(st.toString()); // now it should be ;-)
+                }
+                r.getAgeGroups().setAGStart(st);
+                raceDAO.updateRace(r);
+
+            }
+        });
+        
+        agIncrementChoiceBox.setOnAction((event) -> {
+            Race r = raceComboBox.getSelectionModel().getSelectedItem();
+        
+            Integer st = Integer.parseUnsignedInt(agStartTextField.getText());
+            Integer inc = agIncrementChoiceBox.getSelectionModel().getSelectedItem();
+
+            // If no change, bail
+            if (inc.equals(r.getAgeGroups().getAGIncrement())) return; 
+
+            if (st < (inc - 1)) {
+                st = inc - 1;
+                agStartTextField.setText(st.toString());
+            } else if ((st+1)%inc != 0) { // oops, the start is not a good value
+                st = ((st/inc)*inc)-1;
+                agStartTextField.setText(st.toString()); // now it should be ;-)
+            }
+            r.getAgeGroups().setAGStart(st);
+            r.getAgeGroups().setAGIncrement(inc);
+            raceDAO.updateRace(r);
+        });
+        
+        agMastersStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            Race r = raceComboBox.getSelectionModel().getSelectedItem();
+
+            if (!newPropertyValue) {
+                //System.out.println("agStart out of focus...");
+                Integer m = Integer.parseUnsignedInt(agMastersStartTextField.getText());
+                
+                // If no change, bail
+                if ( ! m.equals(r.getAgeGroups().getMasters())){
+                    r.getAgeGroups().setMasters(m);
+                    raceDAO.updateRace(r);
+                }
+            }
+        });
+        
+    }
+
+    private void populateAwardsSettings(Race r) {
+        
+    }
+
+    private void populateOutputSettings(Race r) {
+        
     }
     
 }
