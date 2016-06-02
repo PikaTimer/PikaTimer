@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
 Copyright (C) 2016 John Garner
 
@@ -185,8 +186,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="1" GridPane.valignment="CENTER" VBox.vgrow="NEVER">
                <children>
                   <Button fx:id="courseRecordsButton" mnemonicParsing="false" onAction="#setupCourseRecords" text="Course Records" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button fx:id="ageGroupSetupButton" mnemonicParsing="false" onAction="#setupAgeGroups" text="Age Group Setup" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button fx:id="awardSetupButton" mnemonicParsing="false" onAction="#setupAwards" text="Award Setup" />
                </children>
                <padding>
                   <Insets top="25.0" />

@@ -96,8 +96,7 @@ public class FXMLRaceDetailsController {
     @FXML private TextField raceStartTimeTextField; 
     @FXML private VBox splitsVBox;
     @FXML private CheckBox splitsCheckBox; 
-    @FXML private Button awardSetupButton;
-    @FXML private Button ageGroupSetupButton;
+    
     @FXML private Button courseRecordsButton;
 
     
@@ -672,287 +671,287 @@ public class FXMLRaceDetailsController {
         alert.showAndWait();
     }
     
-    public void setupAgeGroups(ActionEvent fxevent){
-        final AgeGroups ageGroups;
-        if (selectedRace.getAgeGroups() == null) {
-            ageGroups = new AgeGroups();
-        } else {
-            ageGroups = selectedRace.getAgeGroups();
-        }
-        
-        
-        // Create the custom dialog.
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("Race AG Setup");
-        dialog.setHeaderText("Race Age Group Setup");
-
-        // Set the button types.
-        //ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        // Create the grid for the labels and fields.
-        GridPane grid = new GridPane();
-        grid.setHgap(5);
-        grid.setVgap(5);
-        grid.setPadding(new Insets(5, 5, 5, 5));
-        
-        // AG Start (the 1 -> X part)
-        TextField agStart = new TextField();
-        TextFormatter<String> AGSformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        agStart.setPrefWidth(33);
-        agStart.setTooltip(new Tooltip("Sets the max age for the first age group. i.e. 1 -> X"));  
-        agStart.setTextFormatter(AGSformatter);
-        agStart.setText(ageGroups.getAGStart().toString());
-        
-        
-        grid.add(new Label("Start Age"), 0, 0);
-        grid.add(agStart, 1, 0);
-        
-        // Increment
-        ChoiceBox<Integer> agIncChoiceBox = new ChoiceBox(FXCollections.observableArrayList(5, 10));
-        agIncChoiceBox.getSelectionModel().select(ageGroups.getAGIncrement());
-        grid.add(new Label("Increment"), 0, 1);
-        grid.add(agIncChoiceBox, 1, 1);
-        
-        
-        // Masters
-        TextField agMasters = new TextField();
-        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        agMasters.setPrefWidth(33);
-        agMasters.setTooltip(new Tooltip("Sets the starting age for the Masters categories."));  
-        agMasters.setTextFormatter(AGMformatter);
-        agMasters.setText(ageGroups.getMasters().toString());
-        grid.add(new Label("Masters"), 0, 2);
-        grid.add(agMasters, 1, 2);
-        
-        agStart.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            if (!newPropertyValue) {
-                //System.out.println("agStart out of focus...");
-                Integer st = Integer.parseUnsignedInt(agStart.getText());
-                Integer inc = agIncChoiceBox.getSelectionModel().getSelectedItem();
-                
-                if (st < (inc - 1)) {
-                    st = inc - 1;
-                    agStart.setText(st.toString());
-                } else if ((st+1)%inc != 0) { // oops, the start is not a good value
-                    st = ((st/inc)*inc)-1;
-                    agStart.setText(st.toString()); // now it should be ;-)
-                }
-            }
-        });
-        
-        agIncChoiceBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            if (!newPropertyValue) {
-                //System.out.println("agIncChoiceBox out of focus...");
-                Integer st = Integer.parseUnsignedInt(agStart.getText());
-                Integer inc = agIncChoiceBox.getSelectionModel().getSelectedItem();
-               
-                if (st < (inc - 1)) {
-                    st = inc - 1;
-                    agStart.setText(st.toString());
-                } else if ((st+1)%inc != 0) { // oops, the start is not a good value
-                    st = ((st/inc)*inc)-1;
-                    agStart.setText(st.toString()); // now it should be ;-)
-                }
-            }
-        });
-        
-        
-        dialog.getDialogPane().setContent(grid);
-
-        // Request focus on the username field by default.
-        //Platform.runLater(() -> username.requestFocus());
-
-        // Convert the result to a username-password-pair when the login button is clicked.
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == ButtonType.OK) {
-                ageGroups.setAGIncrement(agIncChoiceBox.getSelectionModel().getSelectedItem());
-                ageGroups.setMasters(Integer.parseUnsignedInt(agMasters.getText()));
-                ageGroups.setAGStart(Integer.parseUnsignedInt(agStart.getText()));
-                return Boolean.TRUE;
-            }
-            return null;
-        });
-
-        Optional<Boolean> result = dialog.showAndWait();
-
-        result.ifPresent(dialogOK -> {
-            if (dialogOK) {
-                //save it
-                if (selectedRace.getAgeGroups() == null) {
-                    selectedRace.setAgeGroups(ageGroups);
-                }               
-                raceDAO.updateRace(selectedRace);
-                //raceDAO.updateAwards(awards);
-            }
-            //System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue());
-        });
-    }
+//    public void setupAgeGroups(ActionEvent fxevent){
+//        final AgeGroups ageGroups;
+//        if (selectedRace.getAgeGroups() == null) {
+//            ageGroups = new AgeGroups();
+//        } else {
+//            ageGroups = selectedRace.getAgeGroups();
+//        }
+//        
+//        
+//        // Create the custom dialog.
+//        Dialog<Boolean> dialog = new Dialog<>();
+//        dialog.setTitle("Race AG Setup");
+//        dialog.setHeaderText("Race Age Group Setup");
+//
+//        // Set the button types.
+//        //ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+//        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+//
+//        // Create the grid for the labels and fields.
+//        GridPane grid = new GridPane();
+//        grid.setHgap(5);
+//        grid.setVgap(5);
+//        grid.setPadding(new Insets(5, 5, 5, 5));
+//        
+//        // AG Start (the 1 -> X part)
+//        TextField agStart = new TextField();
+//        TextFormatter<String> AGSformatter = new TextFormatter<>( change -> {
+//            change.setText(change.getText().replaceAll("[^0-9]", ""));
+//            return change; 
+//        });
+//        agStart.setPrefWidth(33);
+//        agStart.setTooltip(new Tooltip("Sets the max age for the first age group. i.e. 1 -> X"));  
+//        agStart.setTextFormatter(AGSformatter);
+//        agStart.setText(ageGroups.getAGStart().toString());
+//        
+//        
+//        grid.add(new Label("Start Age"), 0, 0);
+//        grid.add(agStart, 1, 0);
+//        
+//        // Increment
+//        ChoiceBox<Integer> agIncChoiceBox = new ChoiceBox(FXCollections.observableArrayList(5, 10));
+//        agIncChoiceBox.getSelectionModel().select(ageGroups.getAGIncrement());
+//        grid.add(new Label("Increment"), 0, 1);
+//        grid.add(agIncChoiceBox, 1, 1);
+//        
+//        
+//        // Masters
+//        TextField agMasters = new TextField();
+//        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
+//            change.setText(change.getText().replaceAll("[^0-9]", ""));
+//            return change; 
+//        });
+//        agMasters.setPrefWidth(33);
+//        agMasters.setTooltip(new Tooltip("Sets the starting age for the Masters categories."));  
+//        agMasters.setTextFormatter(AGMformatter);
+//        agMasters.setText(ageGroups.getMasters().toString());
+//        grid.add(new Label("Masters"), 0, 2);
+//        grid.add(agMasters, 1, 2);
+//        
+//        agStart.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+//            if (!newPropertyValue) {
+//                //System.out.println("agStart out of focus...");
+//                Integer st = Integer.parseUnsignedInt(agStart.getText());
+//                Integer inc = agIncChoiceBox.getSelectionModel().getSelectedItem();
+//                
+//                if (st < (inc - 1)) {
+//                    st = inc - 1;
+//                    agStart.setText(st.toString());
+//                } else if ((st+1)%inc != 0) { // oops, the start is not a good value
+//                    st = ((st/inc)*inc)-1;
+//                    agStart.setText(st.toString()); // now it should be ;-)
+//                }
+//            }
+//        });
+//        
+//        agIncChoiceBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+//            if (!newPropertyValue) {
+//                //System.out.println("agIncChoiceBox out of focus...");
+//                Integer st = Integer.parseUnsignedInt(agStart.getText());
+//                Integer inc = agIncChoiceBox.getSelectionModel().getSelectedItem();
+//               
+//                if (st < (inc - 1)) {
+//                    st = inc - 1;
+//                    agStart.setText(st.toString());
+//                } else if ((st+1)%inc != 0) { // oops, the start is not a good value
+//                    st = ((st/inc)*inc)-1;
+//                    agStart.setText(st.toString()); // now it should be ;-)
+//                }
+//            }
+//        });
+//        
+//        
+//        dialog.getDialogPane().setContent(grid);
+//
+//        // Request focus on the username field by default.
+//        //Platform.runLater(() -> username.requestFocus());
+//
+//        // Convert the result to a username-password-pair when the login button is clicked.
+//        dialog.setResultConverter(dialogButton -> {
+//            if (dialogButton == ButtonType.OK) {
+//                ageGroups.setAGIncrement(agIncChoiceBox.getSelectionModel().getSelectedItem());
+//                ageGroups.setMasters(Integer.parseUnsignedInt(agMasters.getText()));
+//                ageGroups.setAGStart(Integer.parseUnsignedInt(agStart.getText()));
+//                return Boolean.TRUE;
+//            }
+//            return null;
+//        });
+//
+//        Optional<Boolean> result = dialog.showAndWait();
+//
+//        result.ifPresent(dialogOK -> {
+//            if (dialogOK) {
+//                //save it
+//                if (selectedRace.getAgeGroups() == null) {
+//                    selectedRace.setAgeGroups(ageGroups);
+//                }               
+//                raceDAO.updateRace(selectedRace);
+//                //raceDAO.updateAwards(awards);
+//            }
+//            //System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue());
+//        });
+//    }
     
-    public void setupAwards(ActionEvent fxevent){
-        final RaceAwards awards;
-        if (selectedRace.getAwards() == null) {
-            awards = new RaceAwards();
-        } else {
-            awards = selectedRace.getAwards();
-        }
-        
-        
-        // Create the custom dialog.
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("Race Award Setup");
-        dialog.setHeaderText("Race Award Depth Setup");
-
-        // Set the button types.
-        //ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        // Create the grid for the labels and fields.
-        GridPane grid = new GridPane();
-        grid.setHgap(5);
-        grid.setVgap(5);
-        grid.setPadding(new Insets(5, 5, 5, 5));
-        
-        grid.add(new Label("Male"),1,0);
-        grid.add(new Label("Female"), 2, 0);
-        grid.add(new Label("Pull?"),3,0);
-
-        
-        // Overall Awards
-        TextField overallMale = new TextField();
-        TextFormatter<String> OMformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        overallMale.setPrefWidth(33);
-        
-        overallMale.setTextFormatter(OMformatter);
-        overallMale.setText(awards.getDepth("OverallMale").toString());
-        
-        TextField overallFemale = new TextField();
-        TextFormatter<String> OFformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        overallFemale.setPrefWidth(33);
-        overallFemale.setTextFormatter(OFformatter);
-        overallFemale.setText(awards.getDepth("OverallFemale").toString());
-        
-        CheckBox overallPull = new CheckBox();
-        overallPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
-        overallPull.setSelected(awards.getPull("Overall"));
-        
-
-        grid.add(new Label("Overall:"), 0, 1);
-        grid.add(overallMale, 1, 1);
-        grid.add(overallFemale, 2, 1);
-        grid.add(overallPull,3,1);
-        
-        // Masters
-        TextField mastersMale = new TextField();
-        TextFormatter<String> MMformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        mastersMale.setPrefWidth(33);
-        
-        mastersMale.setTextFormatter(MMformatter);
-        mastersMale.setText(awards.getDepth("MastersMale").toString());
-        
-        TextField mastersFemale = new TextField();
-        TextFormatter<String> MFformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        mastersFemale.setPrefWidth(33);
-        mastersFemale.setTextFormatter(MFformatter);
-        mastersFemale.setText(awards.getDepth("MastersFemale").toString());
-        
-        CheckBox mastersPull = new CheckBox();
-        mastersPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
-        mastersPull.setSelected(awards.getPull("Masters"));
-        
-
-        grid.add(new Label("Masters:"), 0, 2);
-        grid.add(mastersMale, 1, 2);
-        grid.add(mastersFemale, 2, 2);
-        grid.add(mastersPull,3,2);
-        
-        // AG Awards
-        TextField agMale = new TextField();
-        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        agMale.setPrefWidth(33);
-        
-        agMale.setTextFormatter(AGMformatter);
-        agMale.setText(awards.getDepth("AGMale").toString());
-        
-        TextField agFemale = new TextField();
-        TextFormatter<String> AGFformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        agFemale.setPrefWidth(33);
-        agFemale.setTextFormatter(AGFformatter);
-        agFemale.setText(awards.getDepth("AGFemale").toString());
-        
-        CheckBox agPull = new CheckBox();
-        agPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
-        agPull.setSelected(awards.getPull("AG"));
-        
-
-        grid.add(new Label("AG:"), 0, 3);
-        grid.add(agMale, 1, 3);
-        grid.add(agFemale, 2, 3);
-        grid.add(agPull,3,3);
-        
-        
-
-        dialog.getDialogPane().setContent(grid);
-
-        // Request focus on the username field by default.
-        //Platform.runLater(() -> username.requestFocus());
-
-        // Convert the result to a username-password-pair when the login button is clicked.
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == ButtonType.OK) {
-                awards.setDepth("OverallMale",Integer.parseUnsignedInt(overallMale.getText()));
-                awards.setDepth("OverallFemale",Integer.parseUnsignedInt(overallFemale.getText()));
-                awards.setPull("Overall",overallPull.isSelected());
-                
-                awards.setDepth("MastersMale",Integer.parseUnsignedInt(mastersMale.getText()));
-                awards.setDepth("MastersFemale",Integer.parseUnsignedInt(mastersFemale.getText()));
-                awards.setPull("Masters",mastersPull.isSelected());
-                
-                awards.setDepth("AGMale",Integer.parseUnsignedInt(mastersMale.getText()));
-                awards.setDepth("AGFemale",Integer.parseUnsignedInt(mastersFemale.getText()));
-                awards.setPull("AG",mastersPull.isSelected());
-                
-                return Boolean.TRUE;
-            }
-            return null;
-        });
-
-        Optional<Boolean> result = dialog.showAndWait();
-
-        result.ifPresent(dialogOK -> {
-            if (dialogOK) {
-                //save it
-                if (selectedRace.getAwards() == null) {
-                    selectedRace.setAwards(awards);
-                }               
-                raceDAO.updateRace(selectedRace);
-                //raceDAO.updateAwards(awards);
-            }
-            //System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue());
-        });
-    }
+//    public void setupAwards(ActionEvent fxevent){
+//        final RaceAwards awards;
+//        if (selectedRace.getAwards() == null) {
+//            awards = new RaceAwards();
+//        } else {
+//            awards = selectedRace.getAwards();
+//        }
+//        
+//        
+//        // Create the custom dialog.
+//        Dialog<Boolean> dialog = new Dialog<>();
+//        dialog.setTitle("Race Award Setup");
+//        dialog.setHeaderText("Race Award Depth Setup");
+//
+//        // Set the button types.
+//        //ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+//        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+//
+//        // Create the grid for the labels and fields.
+//        GridPane grid = new GridPane();
+//        grid.setHgap(5);
+//        grid.setVgap(5);
+//        grid.setPadding(new Insets(5, 5, 5, 5));
+//        
+//        grid.add(new Label("Male"),1,0);
+//        grid.add(new Label("Female"), 2, 0);
+//        grid.add(new Label("Pull?"),3,0);
+//
+//        
+//        // Overall Awards
+//        TextField overallMale = new TextField();
+//        TextFormatter<String> OMformatter = new TextFormatter<>( change -> {
+//            change.setText(change.getText().replaceAll("[^0-9]", ""));
+//            return change; 
+//        });
+//        overallMale.setPrefWidth(33);
+//        
+//        overallMale.setTextFormatter(OMformatter);
+//        overallMale.setText(awards.getIntegerAttribute("OverallMale").toString());
+//        
+//        TextField overallFemale = new TextField();
+//        TextFormatter<String> OFformatter = new TextFormatter<>( change -> {
+//            change.setText(change.getText().replaceAll("[^0-9]", ""));
+//            return change; 
+//        });
+//        overallFemale.setPrefWidth(33);
+//        overallFemale.setTextFormatter(OFformatter);
+//        overallFemale.setText(awards.getIntegerAttribute("OverallFemale").toString());
+//        
+//        CheckBox overallPull = new CheckBox();
+//        overallPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
+//        overallPull.setSelected(awards.getBooleanAttribute("Overall"));
+//        
+//
+//        grid.add(new Label("Overall:"), 0, 1);
+//        grid.add(overallMale, 1, 1);
+//        grid.add(overallFemale, 2, 1);
+//        grid.add(overallPull,3,1);
+//        
+//        // Masters
+//        TextField mastersMale = new TextField();
+//        TextFormatter<String> MMformatter = new TextFormatter<>( change -> {
+//            change.setText(change.getText().replaceAll("[^0-9]", ""));
+//            return change; 
+//        });
+//        mastersMale.setPrefWidth(33);
+//        
+//        mastersMale.setTextFormatter(MMformatter);
+//        mastersMale.setText(awards.getDepth("MastersMale").toString());
+//        
+//        TextField mastersFemale = new TextField();
+//        TextFormatter<String> MFformatter = new TextFormatter<>( change -> {
+//            change.setText(change.getText().replaceAll("[^0-9]", ""));
+//            return change; 
+//        });
+//        mastersFemale.setPrefWidth(33);
+//        mastersFemale.setTextFormatter(MFformatter);
+//        mastersFemale.setText(awards.getDepth("MastersFemale").toString());
+//        
+//        CheckBox mastersPull = new CheckBox();
+//        mastersPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
+//        mastersPull.setSelected(awards.getPull("Masters"));
+//        
+//
+//        grid.add(new Label("Masters:"), 0, 2);
+//        grid.add(mastersMale, 1, 2);
+//        grid.add(mastersFemale, 2, 2);
+//        grid.add(mastersPull,3,2);
+//        
+//        // AG Awards
+//        TextField agMale = new TextField();
+//        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
+//            change.setText(change.getText().replaceAll("[^0-9]", ""));
+//            return change; 
+//        });
+//        agMale.setPrefWidth(33);
+//        
+//        agMale.setTextFormatter(AGMformatter);
+//        agMale.setText(awards.getDepth("AGMale").toString());
+//        
+//        TextField agFemale = new TextField();
+//        TextFormatter<String> AGFformatter = new TextFormatter<>( change -> {
+//            change.setText(change.getText().replaceAll("[^0-9]", ""));
+//            return change; 
+//        });
+//        agFemale.setPrefWidth(33);
+//        agFemale.setTextFormatter(AGFformatter);
+//        agFemale.setText(awards.getDepth("AGFemale").toString());
+//        
+//        CheckBox agPull = new CheckBox();
+//        agPull.setTooltip(new Tooltip("Select if you want to pull the winners from subsequent awards."));  
+//        agPull.setSelected(awards.getBooleanAttribute("AG"));
+//        
+//
+//        grid.add(new Label("AG:"), 0, 3);
+//        grid.add(agMale, 1, 3);
+//        grid.add(agFemale, 2, 3);
+//        grid.add(agPull,3,3);
+//        
+//        
+//
+//        dialog.getDialogPane().setContent(grid);
+//
+//        // Request focus on the username field by default.
+//        //Platform.runLater(() -> username.requestFocus());
+//
+//        // Convert the result to a username-password-pair when the login button is clicked.
+//        dialog.setResultConverter(dialogButton -> {
+//            if (dialogButton == ButtonType.OK) {
+//                awards.setDepth("OverallMale",Integer.parseUnsignedInt(overallMale.getText()));
+//                awards.setDepth("OverallFemale",Integer.parseUnsignedInt(overallFemale.getText()));
+//                awards.setBooleanAttribute("Overall",overallPull.isSelected());
+//                
+//                awards.setDepth("MastersMale",Integer.parseUnsignedInt(mastersMale.getText()));
+//                awards.setDepth("MastersFemale",Integer.parseUnsignedInt(mastersFemale.getText()));
+//                awards.setBooleanAttribute("Masters",mastersPull.isSelected());
+//                
+//                awards.setDepth("AGMale",Integer.parseUnsignedInt(mastersMale.getText()));
+//                awards.setDepth("AGFemale",Integer.parseUnsignedInt(mastersFemale.getText()));
+//                awards.setBooleanAttribute("AG",mastersPull.isSelected());
+//                
+//                return Boolean.TRUE;
+//            }
+//            return null;
+//        });
+//
+//        Optional<Boolean> result = dialog.showAndWait();
+//
+//        result.ifPresent(dialogOK -> {
+//            if (dialogOK) {
+//                //save it
+//                if (selectedRace.getAwards() == null) {
+//                    selectedRace.setAwards(awards);
+//                }               
+//                raceDAO.updateRace(selectedRace);
+//                //raceDAO.updateAwards(awards);
+//            }
+//            //System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue());
+//        });
+//    }
 }
