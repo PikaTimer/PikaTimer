@@ -137,6 +137,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      </children>
                   </HBox>
                         <TextField fx:id="emailField" onAction="#addPerson" prefWidth="150" promptText="Email" />
+                    <HBox spacing="5.0">
+                        <children>
+                            <CheckBox fx:id="dnfCheckBox" mnemonicParsing="false" text="DNF"/>
+                            <CheckBox fx:id="dqCheckBox" mnemonicParsing="false" text="DQ"/>    
+                        </children>
+                    </HBox>
+                    <HBox spacing="5.0">
+                        <children>
+                             <TextField fx:id="dnfTextField" managed="false" promptText="DNF Note" visible="false" />
+                            <TextField fx:id="dqTextField" managed="false" promptText="DQ Note" visible="false"  />
+                        </children>
+                    </HBox>
                   <HBox spacing="5.0">
                       <children>
                         <Button fx:id="formAddButton" onAction="#addPerson" text="Add" />

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Copyright (C) 2016 John Garner
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<GridPane hgap="5.0" maxWidth="1.7976931348623157E308" minHeight="100.0" minWidth="300.0" vgap="2.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultOutputController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints fillHeight="false" vgrow="NEVER" />
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <VBox alignment="CENTER_LEFT" fillWidth="false">
+         <children>
+            <HBox alignment="CENTER_LEFT" spacing="2.0">
+               <children>
+                  <Label text="Type">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <ChoiceBox fx:id="outputTypeChoiceBox" prefWidth="150.0" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <VBox GridPane.rowIndex="1">
+         <children>
+            <Label text="Options">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <VBox spacing="5.0">
+               <children>
+                  <HBox alignment="CENTER_LEFT" spacing="5.0">
+                     <children>
+                        <CheckBox fx:id="showPaceCheckBox" mnemonicParsing="false" text="Show Pace" />
+                        <ChoiceBox fx:id="paceChoiceBox" />
+                     </children>
+                  </HBox>
+                  <CheckBox fx:id="inProgressCheckBox" mnemonicParsing="false" text="In-Progress" />
+                  <HBox spacing="5.0">
+                     <children>
+                        <CheckBox fx:id="showDQCheckBox" mnemonicParsing="false" text="Show DQ's" />
+                        <CheckBox fx:id="showDNFCheckBox" mnemonicParsing="false" text="Show DNF's" />
+                     </children>
+                  </HBox>
+                  <HBox spacing="5.0">
+                     <children>
+                        <CheckBox fx:id="showSplitsCheckBox" mnemonicParsing="false" text="Show Splits" />
+                        <CheckBox fx:id="showSplitPaceCheckBox" mnemonicParsing="false" text="Show Split Pace" />
+                        <ChoiceBox fx:id="splitPaceChoiceBox" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            <FlowPane fx:id="outputOptionsFlowPane" prefWidth="200.0" />
+         </children>
+      </VBox>
+      <VBox GridPane.rowIndex="2">
+         <children>
+            <Label text="Output Paths">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <VBox fx:id="outputTargetsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
+            <HBox alignment="CENTER_RIGHT">
+               <children>
+                  <Button fx:id="outputAddButton" mnemonicParsing="false" text="Add Output" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+   <padding>
+      <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+   </padding>
+</GridPane>
