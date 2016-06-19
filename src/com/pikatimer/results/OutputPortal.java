@@ -16,8 +16,6 @@
  */
 package com.pikatimer.results;
 
-import com.pikatimer.timing.TimingInputTypes;
-import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.util.FileTransferTypes;
 import com.pikatimer.util.FileTransport;
 import static java.lang.Boolean.TRUE;
@@ -31,22 +29,28 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
 /**
  *
  * @author jcgarner
  */
+@Entity
+@DynamicUpdate
+@Table(name="output_portal")
 public class OutputPortal {
 
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
     private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
     private final StringProperty nameProperty= new SimpleStringProperty();
-    private final StringProperty protocolProperty = new SimpleStringProperty();
+    private final StringProperty protocolProperty = new SimpleStringProperty("UNSET");
     private final StringProperty serverProperty = new SimpleStringProperty();
     private final StringProperty basePathProperty = new SimpleStringProperty();
     private final StringProperty usernameProperty = new SimpleStringProperty();
@@ -54,9 +58,14 @@ public class OutputPortal {
     private final StringProperty privateKeyProperty = new SimpleStringProperty();
     private final StringProperty remoteCertProperty = new SimpleStringProperty();
     private final BooleanProperty checkCertProperty = new SimpleBooleanProperty();
+    private final StringProperty transferStatusProperty = new SimpleStringProperty();
     
     private FileTransport fileTransport;
     private FileTransferTypes outputProtocol;
+    
+    public OutputPortal(){
+        // nothing to do here for now
+    }
     
     //    id int primary key, 
     @Id
@@ -121,7 +130,7 @@ public class OutputPortal {
             //timingReader.setTimingInput(this);
             
             outputProtocol = t;
-            
+            protocolProperty.setValue(outputProtocol.toString());
         }
     }
 //    server varchar,
@@ -222,13 +231,24 @@ public class OutputPortal {
         return checkCertProperty; 
     }
     
+    public StringProperty transferStatusProperty(){
+        return transferStatusProperty;
+    }
     
+    public StringProperty protocolProperty(){
+        return protocolProperty;
+    }
     public Boolean testTransfer(){
         return TRUE;
     }
     
     public static Callback<OutputPortal, Observable[]> extractor() {
-        return (OutputPortal p) -> new Observable[]{p.nameProperty()};
+        return (OutputPortal p) -> new Observable[]{p.nameProperty(),p.transferStatusProperty(),p.protocolProperty()};
+    }
+    
+    @Override
+    public String toString(){
+        return protocolProperty.getValueSafe() + ": " + nameProperty.getValueSafe() + " " + transferStatusProperty.getValueSafe();
     }
     
     @Override

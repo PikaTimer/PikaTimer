@@ -815,7 +815,7 @@ public class FXMLResultsController  {
         // If empty, create a default local file output
         if(resultsDAO.listOutputPortals().isEmpty()) {
             OutputPortal op = new OutputPortal();
-            op.setName("Local File: " + System.getProperty("user.home"));
+            op.setName(System.getProperty("user.home"));
             op.setBasePath(System.getProperty("user.home"));
             op.setOutputProtocol(FileTransferTypes.LOCAL);
             
