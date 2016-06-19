@@ -47,9 +47,11 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
@@ -98,7 +100,13 @@ public class FXMLResultsController  {
     @FXML TextField awardAGMaleDepthTextField;
     @FXML TextField awardAGFemaleDepthTextField;
 
+    @FXML Button updateNowButton;
     @FXML ToggleSwitch autoUpdateToggleSwitch;
+    
+    @FXML ListView remoteSystemsListView;
+    @FXML Button addRemoteSystemButton;
+    @FXML Button editRemoteSystemButton;
+    @FXML Button removeRemoteSystemButton;
     
     final Map<Race,TableView> raceTableViewMap = new ConcurrentHashMap();
     final RaceDAO raceDAO = RaceDAO.getInstance();

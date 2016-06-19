@@ -16,10 +16,16 @@
  */
 package com.pikatimer.results.reports;
 
+import com.pikatimer.results.RaceReport;
+import com.pikatimer.results.ResultOutput;
+
 /**
  *
  * @author jcgarner
  */
-public class Overall {
+public class Overall implements RaceReport{
     
+    public void setOutput(ResultOutput o) {
+        
+    }
 }

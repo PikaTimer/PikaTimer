@@ -26,7 +26,7 @@ public class ResultOutput {
 //    race_id int,
     
     //Class that implements RaceReport
-//    output_type varchar
+    //    output_type varchar
     
     public ResultOutput(){
         

@@ -30,26 +30,23 @@ import java.util.Map;
  * @author jcgarner
  */
 public enum TimingInputTypes {
-    /*
- *  Copyright 2014 John Garner. All rights reserved. 
 
- */
 
-    OutreachDirect, // Minutes per Mile
-    OutreachFile, // Minutes per Kilometer
-    PCTimer, // Miles Per Hour
-    RFIDDirect, // Kilometers Per Hour
-    RFIDFile; // Meters per Second
+    OutreachDirect, 
+    OutreachFile,
+    PCTimer, 
+    RFIDDirect, 
+    RFIDFile; 
 
     
     private static final Map<TimingInputTypes, String> InputMap = createMap();
 
     private static Map<TimingInputTypes, String> createMap() {
         Map<TimingInputTypes, String> result = new HashMap<>();
-        result.put(OutreachDirect, "Outreach (Direct)");
-        result.put(OutreachFile, "Outreach (File)");
+        //result.put(OutreachDirect, "Outreach (Direct)");
+        //result.put(OutreachFile, "Outreach (File)");
         result.put(PCTimer, "PC Timer");
-        result.put(RFIDDirect, "RFID (Direct)");
+        //result.put(RFIDDirect, "RFID (Direct)");
         result.put(RFIDFile, "RFID (File)");
 
         return Collections.unmodifiableMap(result);

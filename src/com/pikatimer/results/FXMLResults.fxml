@@ -45,26 +45,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER">
+                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER">
                      <children>
                         <Label fx:id="selectedRaceLabel" text="Selected Race: " HBox.hgrow="NEVER" />
                         <ComboBox fx:id="raceComboBox" prefWidth="200.0" />
                         <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                        <ToggleSwitch fx:id="autoUpdateToggleSwitch" text="Auto-Update" HBox.hgrow="NEVER" />
+                        <Button fx:id="updateNowButton" mnemonicParsing="false" text="Update Now" />
+                        <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="110.0" text="Auto-Update" HBox.hgrow="NEVER" />
                      </children>
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </HBox>
-                  <GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="1">
+                  <GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" GridPane.rowIndex="1">
                     <columnConstraints>
                       <ColumnConstraints hgrow="NEVER" />
                         <ColumnConstraints hgrow="NEVER" />
                       <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="10.0" prefWidth="100.0" />
                     </columnConstraints>
                     <rowConstraints>
-                      <RowConstraints valignment="CENTER" vgrow="NEVER" />
+                      <RowConstraints minHeight="-Infinity" valignment="CENTER" vgrow="NEVER" />
                         <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" vgrow="SOMETIMES" />
+                        <RowConstraints maxHeight="1.7976931348623157E308" minHeight="-Infinity" vgrow="NEVER" />
+                        <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="100.0" vgrow="SOMETIMES" />
+                        <RowConstraints maxHeight="1.7976931348623157E308" minHeight="-Infinity" vgrow="NEVER" />
                     </rowConstraints>
                      <children>
                         <Label text="Age Group Setup">
@@ -77,12 +81,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Font size="16.0" />
                            </font>
                         </Label>
-                        <Label text="Output" GridPane.columnIndex="2">
+                        <Label text="Reports" GridPane.columnIndex="2">
                            <font>
                               <Font size="16.0" />
                            </font>
                         </Label>
-                        <ScrollPane fx:id="resultsOutputScrollPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                        <ScrollPane fx:id="resultsOutputScrollPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.rowSpan="4">
                            <padding>
                               <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                            </padding>
@@ -176,6 +180,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                            </padding>
                         </GridPane>
+                        <Label text="Output Destinations" GridPane.rowIndex="2">
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                        </Label>
+                        <ListView fx:id="remoteSystemsListView" editable="true" prefHeight="88.0" prefWidth="175.0" GridPane.rowIndex="3" GridPane.vgrow="SOMETIMES" />
+                        <HBox alignment="CENTER_RIGHT" spacing="5.0" GridPane.rowIndex="4">
+                           <children>
+                              <Button fx:id="editRemoteSystemButton" mnemonicParsing="false" text="Edit" />
+                              <Button fx:id="removeRemoteSystemButton" mnemonicParsing="false" text="Remove" />
+                              <Button fx:id="addRemoteSystemButton" mnemonicParsing="false" text="Add" />
+                           </children>
+                        </HBox>
                      </children>
                   </GridPane>
                </children>

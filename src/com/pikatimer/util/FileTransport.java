@@ -14,19 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.pikatimer.results.reports;
-
-import com.pikatimer.results.RaceReport;
-import com.pikatimer.results.ResultOutput;
+package com.pikatimer.util;
 
 /**
  *
  * @author jcgarner
  */
-public class AgeGroup implements RaceReport {
-
-    public void setOutput(ResultOutput o) {
-        
-    }
+public interface FileTransport {
     
 }

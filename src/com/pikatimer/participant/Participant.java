@@ -92,7 +92,7 @@ public class Participant {
         setFirstName(firstName);
         setLastName(lastName);
         // TODO: Fix this to include the middle name if it is set
-        fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", lastNameProperty));
+        fullNameProperty.bind(Bindings.concat(firstNameProperty, " ",middleNameProperty," ", lastNameProperty));
     }
     
     public static ObservableMap getAvailableAttributes() {

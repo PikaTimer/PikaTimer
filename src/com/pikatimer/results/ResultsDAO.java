@@ -60,6 +60,7 @@ public class ResultsDAO {
     private static final TimingDAO timingDAO = TimingDAO.getInstance();
     private static final ParticipantDAO participantDAO = ParticipantDAO.getInstance();
     private static final RaceDAO raceDAO = RaceDAO.getInstance();
+    private static final ObservableList<OutputPortal> outputPortalList = FXCollections.observableArrayList(OutputPortal.extractor());
         
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -430,7 +431,7 @@ public class ResultsDAO {
                         r.setSplitTime(splitArray[splitIndex].getPosition(), ctd.getTimestamp());
                         
                         // TODO: Fix this 
-                        Duration splitMax = ctd.getTimestamp().plusMinutes(10); 
+                        Duration splitMax = ctd.getTimestamp().plusMinutes(5); 
                         
                         // now consume the rest of the hits at this split until we 
                         // either hit another location or hit the max
@@ -483,4 +484,85 @@ public class ResultsDAO {
         
         //return resultsList;
     }
+    
+    
+    
+    
+    
+    
+    
+    public void addOutputPortal(OutputPortal p) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.save(p);
+        s.getTransaction().commit();
+        //Platform.runLater(() -> {
+            outputPortalList.add(p);
+        //});
+        
+    }
+    
+    public void refreshOutputPortalList() { 
+
+        List<OutputPortal> list = new ArrayList<>();
+        
+
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        System.out.println("Runing the refreshOutputPortalList Query");
+        
+        try {  
+            list=s.createQuery("from OutputPortal").list();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } 
+        s.getTransaction().commit(); 
+        
+        System.out.println("Returning the refreshOutputPortalList list");
+        if(!outputPortalList.isEmpty())
+            outputPortalList.clear();
+        outputPortalList.addAll(list);
+    }     
+    
+    public ObservableList<OutputPortal> listOutputPortals() { 
+
+        if (outputPortalList.isEmpty()) refreshOutputPortalList();
+        return outputPortalList;
+        //return list;
+    }     
+    
+    public OutputPortal getTimingLocationByUUID(String id) {
+        //System.out.println("Looking for a timingLocation with id " + id);
+        // This is ugly. Setup a map for faster lookups
+        Optional<OutputPortal> result = outputPortalList.stream()
+                    .filter(t -> Objects.equals(t.getUUID(), id))
+                    .findFirst();
+        if (result.isPresent()) {
+            //System.out.println("Found " + result.get().LocationNameProperty());
+            return result.get();
+        } 
+        
+        return null;
+    }
+
+    public void removeTimingLocation(OutputPortal op) {
+        
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(op);
+        s.getTransaction().commit(); 
+        outputPortalList.remove(op);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
