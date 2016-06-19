@@ -185,12 +185,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Font size="16.0" />
                            </font>
                         </Label>
-                        <ListView fx:id="remoteSystemsListView" editable="true" prefHeight="88.0" prefWidth="175.0" GridPane.rowIndex="3" GridPane.vgrow="SOMETIMES" />
+                        <ListView fx:id="outputDestinationsListView" editable="true" prefHeight="88.0" prefWidth="175.0" GridPane.rowIndex="3" GridPane.vgrow="SOMETIMES" />
                         <HBox alignment="CENTER_RIGHT" spacing="5.0" GridPane.rowIndex="4">
                            <children>
-                              <Button fx:id="editRemoteSystemButton" mnemonicParsing="false" text="Edit" />
-                              <Button fx:id="removeRemoteSystemButton" mnemonicParsing="false" text="Remove" />
-                              <Button fx:id="addRemoteSystemButton" mnemonicParsing="false" text="Add" />
+                              <Button fx:id="removeOutputDestinationsButton" mnemonicParsing="false" onAction="#removeOutputDestination" text="Remove" />
+                              <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                              <Button fx:id="editOutputDestinationsButton" mnemonicParsing="false" onAction="#editOutputDestination" text="Edit" />
+                              <Button fx:id="addOutputDestinationsButton" mnemonicParsing="false" onAction="#addOutputDestination" text="Add" />
                            </children>
                         </HBox>
                      </children>

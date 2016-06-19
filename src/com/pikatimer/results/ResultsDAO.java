@@ -491,10 +491,10 @@ public class ResultsDAO {
     
     
     
-    public void addOutputPortal(OutputPortal p) {
+    public void saveOutputPortal(OutputPortal p) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        s.save(p);
+        s.saveOrUpdate(p);
         s.getTransaction().commit();
         //Platform.runLater(() -> {
             outputPortalList.add(p);
@@ -531,7 +531,7 @@ public class ResultsDAO {
         //return list;
     }     
     
-    public OutputPortal getTimingLocationByUUID(String id) {
+    public OutputPortal getOutputPortalByUUID(String id) {
         //System.out.println("Looking for a timingLocation with id " + id);
         // This is ugly. Setup a map for faster lookups
         Optional<OutputPortal> result = outputPortalList.stream()
@@ -545,7 +545,7 @@ public class ResultsDAO {
         return null;
     }
 
-    public void removeTimingLocation(OutputPortal op) {
+    public void removeOutputPortal(OutputPortal op) {
         
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();

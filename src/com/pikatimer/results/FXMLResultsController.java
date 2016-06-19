@@ -25,6 +25,7 @@ import com.pikatimer.race.RaceDAO;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationComparator;
 import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.FileTransferTypes;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import java.time.Duration;
@@ -45,6 +46,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -103,10 +105,10 @@ public class FXMLResultsController  {
     @FXML Button updateNowButton;
     @FXML ToggleSwitch autoUpdateToggleSwitch;
     
-    @FXML ListView remoteSystemsListView;
-    @FXML Button addRemoteSystemButton;
-    @FXML Button editRemoteSystemButton;
-    @FXML Button removeRemoteSystemButton;
+    @FXML ListView<OutputPortal> outputDestinationsListView;
+    @FXML Button addOutputDestinationsButton;
+    @FXML Button editOutputDestinationsButton;
+    @FXML Button removeOutputDestinationsButton;
     
     final Map<Race,TableView> raceTableViewMap = new ConcurrentHashMap();
     final RaceDAO raceDAO = RaceDAO.getInstance();
@@ -128,7 +130,9 @@ public class FXMLResultsController  {
 
         initializeAgeGroupSettings();
         initializeAwardSettings();
-        initializeOutputSettings();
+        initializeRaceOutputSettings();
+        initializeOutputDestinations();
+        
                 
         raceComboBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
             // flip the table
@@ -790,7 +794,7 @@ public class FXMLResultsController  {
         populateAwardSettingsInProgress.setValue(FALSE);
     }
     
-    private void initializeOutputSettings() {
+    private void initializeRaceOutputSettings() {
         
     }
 
@@ -798,4 +802,34 @@ public class FXMLResultsController  {
         
     }
     
+    private void initializeOutputDestinations(){
+//         @FXML ListView outputDestinationsListView;
+//    @FXML Button addOutputDestinationsButton;
+//    @FXML Button editOutputDestinationsButton;
+//    @FXML Button removeOutputDestinationsButton;
+        removeOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
+        editOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
+        outputDestinationsListView.setItems(resultsDAO.listOutputPortals());
+        outputDestinationsListView.setEditable(false);
+        
+        // If empty, create a default local file output
+        if(resultsDAO.listOutputPortals().isEmpty()) {
+            OutputPortal op = new OutputPortal();
+            op.setName("Local File: " + System.getProperty("user.home"));
+            op.setBasePath(System.getProperty("user.home"));
+            op.setOutputProtocol(FileTransferTypes.LOCAL);
+            
+            resultsDAO.saveOutputPortal(op);
+        }
+        
+    }
+    public void editOutputDestination(ActionEvent fxevent){
+        
+    }
+    public void addOutputDestination(ActionEvent fxevent){
+        
+    }
+    public void removeOutputDestination(ActionEvent fxevent){
+        resultsDAO.removeOutputPortal(outputDestinationsListView.getSelectionModel().getSelectedItem());
+    }
 }
