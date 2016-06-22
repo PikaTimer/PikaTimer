@@ -180,13 +180,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                            </padding>
                         </GridPane>
-                        <Label text="Output Destinations" GridPane.rowIndex="2">
+                        <Label text="Report Destinations" GridPane.columnIndex="1" GridPane.rowIndex="2">
                            <font>
                               <Font size="16.0" />
                            </font>
                         </Label>
-                        <ListView fx:id="outputDestinationsListView" editable="true" prefHeight="88.0" prefWidth="175.0" GridPane.rowIndex="3" GridPane.vgrow="SOMETIMES" />
-                        <HBox alignment="CENTER_RIGHT" spacing="5.0" GridPane.rowIndex="4">
+                        <ListView fx:id="outputDestinationsListView" editable="true" prefHeight="88.0" prefWidth="175.0" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.vgrow="SOMETIMES" />
+                        <HBox alignment="CENTER_RIGHT" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
                            <children>
                               <Button fx:id="removeOutputDestinationsButton" mnemonicParsing="false" onAction="#removeOutputDestination" text="Remove" />
                               <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
@@ -194,6 +194,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Button fx:id="addOutputDestinationsButton" mnemonicParsing="false" onAction="#addOutputDestination" text="Add" />
                            </children>
                         </HBox>
+                        <Label text="Time Format" GridPane.rowIndex="2">
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                        </Label>
+                        <GridPane hgap="5.0" vgap="1.0" GridPane.rowIndex="3" GridPane.vgrow="NEVER">
+                          <columnConstraints>
+                            <ColumnConstraints hgrow="NEVER" />
+                            <ColumnConstraints hgrow="SOMETIMES" />
+                          </columnConstraints>
+                          <rowConstraints>
+                            <RowConstraints minHeight="10.0" vgrow="NEVER" />
+                            <RowConstraints minHeight="10.0" vgrow="NEVER" />
+                          </rowConstraints>
+                           <children>
+                              <Label text="Time Format" />
+                              <Label text="Rounding" GridPane.rowIndex="1" />
+                              <ChoiceBox fx:id="timeFormatChoiceBox" prefWidth="80.0" GridPane.columnIndex="1" />
+                              <ChoiceBox fx:id="timeRoundingChoiceBox" prefWidth="80.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                           </children>
+                        </GridPane>
                      </children>
                   </GridPane>
                </children>

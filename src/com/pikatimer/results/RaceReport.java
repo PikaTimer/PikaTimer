@@ -23,7 +23,6 @@ package com.pikatimer.results;
 
 
 
-import com.pikatimer.util.FileTransferTypes;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;

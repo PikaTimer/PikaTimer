@@ -32,6 +32,7 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,6 +40,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -47,9 +49,13 @@ import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableCell;
@@ -102,6 +108,9 @@ public class FXMLResultsController  {
 
     @FXML Button updateNowButton;
     @FXML ToggleSwitch autoUpdateToggleSwitch;
+    
+    @FXML ChoiceBox timeRoundingChoiceBox;
+    @FXML ChoiceBox timeFormatChoiceBox;
     
     @FXML ListView<OutputPortal> outputDestinationsListView;
     @FXML Button addOutputDestinationsButton;
@@ -869,13 +878,142 @@ public class FXMLResultsController  {
         }
         
     }
+    public void addOutputDestination(ActionEvent fxevent){
+        editOutputDestination(new OutputPortal());
+    }
+    
     public void editOutputDestination(ActionEvent fxevent){
+        OutputPortal sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
+        editOutputDestination(sp);
         
     }
-    public void addOutputDestination(ActionEvent fxevent){
+    
+    private void editOutputDestination(OutputPortal sp){
         
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Report Destination");
+        dialog.setHeaderText("Edit Report Destination");
+
+        // Set the button types.
+        ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Create the grid for the labels and fields.
+        GridPane grid = new GridPane();
+        grid.setHgap(5);
+        grid.setVgap(5);
+        grid.setPadding(new Insets(5, 5, 5, 5));
+
+        // Output Type 
+        ChoiceBox<FileTransferTypes> typeChoiceBox = new ChoiceBox();
+        typeChoiceBox.getItems().setAll(FileTransferTypes.values());
+        grid.add(new Label("Type"), 0, 0);
+        grid.add(typeChoiceBox, 1, 0);
+        
+        // Now we create two Grids, one for local files, one for remote
+        // We do this so we can easily show one and hide the other as the 
+        // typeChoiceBox changes
+        GridPane localGrid = new GridPane();
+        GridPane remoteGrid = new GridPane();
+        
+        grid.add(localGrid,0,1,2,1); // col 0, row 1, colspan 2, rowspan 1
+        grid.add(remoteGrid,0,1,2,1);
+        
+        typeChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
+            FileTransferTypes ftt = typeChoiceBox.getItems().get((Integer) number2);
+            if (number2.intValue() < 0) {
+                remoteGrid.managedProperty().setValue(FALSE);
+                remoteGrid.visibleProperty().setValue(FALSE);
+                localGrid.managedProperty().setValue(FALSE);
+                localGrid.visibleProperty().setValue(FALSE);
+                
+            } else if(ftt.equals(FileTransferTypes.LOCAL)) {
+                localGrid.managedProperty().setValue(TRUE);
+                localGrid.visibleProperty().setValue(TRUE);
+                
+                remoteGrid.managedProperty().setValue(FALSE);
+                remoteGrid.visibleProperty().setValue(FALSE);
+            } else {
+                remoteGrid.managedProperty().setValue(TRUE);
+                remoteGrid.visibleProperty().setValue(TRUE);
+                
+                localGrid.managedProperty().setValue(FALSE);
+                localGrid.visibleProperty().setValue(FALSE);
+                
+                dialog.getDialogPane().getScene().getWindow().sizeToScene();
+            }
+        });
+        
+        typeChoiceBox.getSelectionModel().select(sp.getOutputProtocol());
+
+        // create and populate the localGrid
+        TextField filePath = new TextField();
+        filePath.setText(sp.getBasePath());
+        localGrid.add(new Label("Directory"),0,0);
+        localGrid.add(filePath,1,0);
+        
+        // create and populate the remoteGrid
+        TextField remoteDir = new TextField();
+        remoteDir.setText(sp.getBasePath());
+        remoteGrid.add(new Label("Path"),0,0);
+        remoteGrid.add(remoteDir,1,0);
+        
+        TextField remoteServer = new TextField();
+        remoteServer.setText(sp.getServer());
+        remoteGrid.add(new Label("Server"),0,1);
+        remoteGrid.add(remoteServer,1,1);
+        
+        TextField remoteUsername = new TextField();
+        remoteUsername.setText(sp.getUsername());
+        remoteGrid.add(new Label("Username"),0,2);
+        remoteGrid.add(remoteUsername,1,2);
+        
+        TextField remotePassword = new TextField();
+        remotePassword.setText(sp.getPassword());
+        remoteGrid.add(new Label("Password"),0,3);
+        remoteGrid.add(remotePassword,1,3);
+        
+        
+//        
+//        
+        dialog.getDialogPane().setContent(grid);
+//
+//        // Request focus on the username field by default.
+//        //Platform.runLater(() -> username.requestFocus());
+//
+//        // Convert the result to a username-password-pair when the login button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton.equals(saveButtonType)) {
+                sp.setOutputProtocol(typeChoiceBox.getSelectionModel().getSelectedItem());
+                
+                if (FileTransferTypes.LOCAL.equals(sp.getOutputProtocol())) {
+                    sp.setBasePath(filePath.getText());
+                } else {
+                    sp.setBasePath(remoteDir.getText());
+                }
+                
+                sp.setServer(remoteServer.getText());
+                sp.setUsername(remoteUsername.getText());
+                sp.setPassword(remotePassword.getText());
+                
+                
+                        
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+
+        Optional<Boolean> result = dialog.showAndWait();
+        
+        result.ifPresent(dialogOK -> {
+            if (dialogOK) {
+                resultsDAO.saveOutputPortal(sp);
+            }
+        });
     }
     public void removeOutputDestination(ActionEvent fxevent){
+        // Make sure it is  not in use anywhere, then remove it.
+        
         resultsDAO.removeOutputPortal(outputDestinationsListView.getSelectionModel().getSelectedItem());
     }
 }

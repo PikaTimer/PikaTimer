@@ -248,7 +248,10 @@ public class OutputPortal {
     
     @Override
     public String toString(){
-        return protocolProperty.getValueSafe() + ": " + nameProperty.getValueSafe() + " " + transferStatusProperty.getValueSafe();
+        if (FileTransferTypes.LOCAL.equals(outputProtocol)) {
+            return protocolProperty.getValueSafe() + ": " + basePathProperty.getValueSafe();
+        }
+        return protocolProperty.getValueSafe() + ": " + serverProperty.getValueSafe() + " " + transferStatusProperty.getValueSafe();
     }
     
     @Override

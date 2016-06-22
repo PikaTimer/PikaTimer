@@ -497,7 +497,7 @@ public class ResultsDAO {
         s.saveOrUpdate(p);
         s.getTransaction().commit();
         //Platform.runLater(() -> {
-            outputPortalList.add(p);
+        if (!outputPortalList.contains(p)) outputPortalList.add(p);
         //});
         
     }

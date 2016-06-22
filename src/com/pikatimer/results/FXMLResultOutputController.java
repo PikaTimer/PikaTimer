@@ -41,11 +41,14 @@ public class FXMLResultOutputController {
     @FXML FlowPane outputOptionsFlowPane;
             
     @FXML Button outputAddButton;
+    
     /**
      * Initializes the controller class.
      */
     public void initialize() {
         // TODO
+        
+       
     }    
     
     public void setRaceReport(RaceReport r){
