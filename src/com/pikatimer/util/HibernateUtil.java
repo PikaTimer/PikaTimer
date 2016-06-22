@@ -23,6 +23,7 @@ import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.Wave;
 import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.Result;
 import com.pikatimer.timing.Bib2ChipMap;
 import com.pikatimer.timing.CookedTimeData;
@@ -91,6 +92,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(Result.class);
         cfg.addAnnotatedClass(TimeOverride.class);
         cfg.addAnnotatedClass(OutputPortal.class);
+        cfg.addAnnotatedClass(RaceReport.class);
         
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());

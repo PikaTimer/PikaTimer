@@ -50,7 +50,7 @@ public enum ReportTypes {
     }
 
     
-    public final  RaceReport getNewReader() {
+    public final  RaceReportType getNewReader() {
                 
         switch(this){
             case OVERALL:

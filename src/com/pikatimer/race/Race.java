@@ -16,6 +16,7 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.results.RaceReport;
 import com.pikatimer.timing.Split;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
@@ -69,6 +70,8 @@ public class Race {
    private List<Wave> raceWavesList;
    private final ObservableList<Split> raceSplits; 
    private List<Split> raceSplitList;
+   private List<RaceReport> raceReportsList;
+   private final ObservableList<RaceReport> raceReports;
    private final Race self; 
    
    private RaceAwards awards; 
@@ -86,6 +89,7 @@ public class Race {
         this.raceDistanceProperty = new SimpleStringProperty();
         this.raceWaves = FXCollections.observableArrayList();
         this.raceSplits = FXCollections.observableArrayList();
+        this.raceReports = FXCollections.observableArrayList();
 
         // Keep the waves updated as to their position in the list
 //        raceWaves.addListener((Change<? extends Wave> change) -> {
@@ -287,7 +291,6 @@ public class Race {
     public void removeSplit(Split s) {
         raceSplits.remove(s); 
         raceSplitList = raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
-
     }
     
     @OneToOne(cascade=CascadeType.ALL)  
@@ -310,6 +313,26 @@ public class Race {
         ageGroups = a;
         // make sure awards is linked back to us
         if (ageGroups != null && ageGroups.getRace() != this) ageGroups.setRace(this);
+    }
+    
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    public List<RaceReport> getRaceReports() {
+        return raceReportsList;
+    }
+    public void setRaceReports(List<RaceReport> rr) {
+        raceReportsList = rr; 
+        if (rr != null) raceReports.setAll(rr);
+    }
+    public ObservableList<RaceReport> raceReportsProperty() {
+        return raceReports; 
+    }
+    public void addRaceReport(RaceReport w) {
+        raceReports.add(w);
+        raceReportsList = raceReports.sorted();
+    }
+    public void removeRaceReport(RaceReport w) {
+        raceReports.remove(w); 
+        raceReportsList = raceReports.sorted();
     }
 
 

@@ -22,25 +22,23 @@ import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.RaceDAO;
+import com.pikatimer.timing.FXMLTimingController;
+import com.pikatimer.timing.FXMLTimingLocationInputController;
 import com.pikatimer.util.AlphanumericComparator;
-import com.pikatimer.util.DurationComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransferTypes;
+import java.io.IOException;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.PatternSyntaxException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -48,7 +46,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
@@ -111,6 +109,7 @@ public class FXMLResultsController  {
     @FXML Button removeOutputDestinationsButton;
     
     final Map<Race,TableView> raceTableViewMap = new ConcurrentHashMap();
+    final Map<Race,VBox> raceReportsUIMap = new ConcurrentHashMap();
     final RaceDAO raceDAO = RaceDAO.getInstance();
     final ResultsDAO resultsDAO = ResultsDAO.getInstance();
     final ParticipantDAO participantDAO = ParticipantDAO.getInstance();
@@ -130,7 +129,7 @@ public class FXMLResultsController  {
 
         initializeAgeGroupSettings();
         initializeAwardSettings();
-        initializeRaceOutputSettings();
+
         initializeOutputDestinations();
         
                 
@@ -151,7 +150,9 @@ public class FXMLResultsController  {
             // Populate the Awards Settings
             populateAwardsSettings(activeRace);
             // Populate the Output Settings
-            populateOutputSettings(activeRace);
+            populateOutputDetailsVBox(activeRace);
+            
+            
             
             // Populate the results TableView
             if( ! raceTableViewMap.containsKey(activeRace)) {
@@ -790,16 +791,61 @@ public class FXMLResultsController  {
         awardAGFemaleDepthTextField.setText(a.getIntegerAttribute("AGFemaleDepth").toString());
         
         populateAwardSettingsInProgress.setValue(FALSE);
-        
-        populateAwardSettingsInProgress.setValue(FALSE);
     }
     
-    private void initializeRaceOutputSettings() {
+    private void populateOutputDetailsVBox(Race r) {
+        //@FXML VBox outputDetailsVBox;
         
-    }
+        // 
+        
+        // Did we already build this?
+        if (! raceReportsUIMap.containsKey(r)) {
+            // No? then let's build this 
+            VBox reportDetails = new VBox();
+            raceReportsUIMap.put(r, reportDetails);
+            
+            if (r.raceReportsProperty().isEmpty()) {
+                // create the default overall and award reports
+                RaceReport overall = new RaceReport();
+                overall.setReportType(ReportTypes.OVERALL);
+                r.raceReportsProperty().add(overall);
+                
+                RaceReport award = new RaceReport();
+                award.setReportType(ReportTypes.AWARD);
+                r.raceReportsProperty().add(award);
+                
+            }
+            
+            r.raceReportsProperty().forEach(rr -> {
+                FXMLLoader tlLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/results/FXMLResultOutput.fxml"));
+                try {
+                    reportDetails.getChildren().add(tlLoader.load());
+                    System.out.println("Added new RaceReport of type " + rr.getReportType().toString());
 
-    private void populateOutputSettings(Race r) {
+
+                } catch (IOException ex) {
+                    System.out.println("Loader Exception for race reports!");
+                    ex.printStackTrace();
+                    
+                    Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                ((FXMLResultOutputController)tlLoader.getController()).setRaceReport(rr);
+            
+            });
+            
+            
+            
+            
+            
         
+            
+        }
+        // Ok, now lets clear the existing outputDetails
+        // the setAll below should take care of this... 
+        // outputDetailsVBox.getChildren().clear(); 
+        
+        // And set it to the new one
+        outputDetailsVBox.getChildren().setAll(raceReportsUIMap.get(r));
     }
     
     private void initializeOutputDestinations(){

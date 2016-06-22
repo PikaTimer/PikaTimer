@@ -48,4 +48,8 @@ public class FXMLResultOutputController {
         // TODO
     }    
     
+    public void setRaceReport(RaceReport r){
+        
+    }
+    
 }
