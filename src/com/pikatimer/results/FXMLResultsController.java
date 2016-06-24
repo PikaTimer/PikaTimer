@@ -805,8 +805,6 @@ public class FXMLResultsController  {
     private void populateOutputDetailsVBox(Race r) {
         //@FXML VBox outputDetailsVBox;
         
-        // 
-        
         // Did we already build this?
         if (! raceReportsUIMap.containsKey(r)) {
             // No? then let's build this 
@@ -841,13 +839,7 @@ public class FXMLResultsController  {
                 ((FXMLResultOutputController)tlLoader.getController()).setRaceReport(rr);
             
             });
-            
-            
-            
-            
-            
-        
-            
+
         }
         // Ok, now lets clear the existing outputDetails
         // the setAll below should take care of this... 
@@ -858,10 +850,7 @@ public class FXMLResultsController  {
     }
     
     private void initializeOutputDestinations(){
-//         @FXML ListView outputDestinationsListView;
-//    @FXML Button addOutputDestinationsButton;
-//    @FXML Button editOutputDestinationsButton;
-//    @FXML Button removeOutputDestinationsButton;
+
         removeOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
         editOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
         outputDestinationsListView.setItems(resultsDAO.listOutputPortals());
@@ -974,14 +963,8 @@ public class FXMLResultsController  {
         remoteGrid.add(remotePassword,1,3);
         
         
-//        
-//        
         dialog.getDialogPane().setContent(grid);
-//
-//        // Request focus on the username field by default.
-//        //Platform.runLater(() -> username.requestFocus());
-//
-//        // Convert the result to a username-password-pair when the login button is clicked.
+
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton.equals(saveButtonType)) {
                 sp.setOutputProtocol(typeChoiceBox.getSelectionModel().getSelectedItem());
@@ -1015,5 +998,9 @@ public class FXMLResultsController  {
         // Make sure it is  not in use anywhere, then remove it.
         
         resultsDAO.removeOutputPortal(outputDestinationsListView.getSelectionModel().getSelectedItem());
+    }
+    
+    public void addNewReport(ActionEvent fxevent){
+        
     }
 }

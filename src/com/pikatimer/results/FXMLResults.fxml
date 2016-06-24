@@ -81,11 +81,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Font size="16.0" />
                            </font>
                         </Label>
-                        <Label text="Reports" GridPane.columnIndex="2">
-                           <font>
-                              <Font size="16.0" />
-                           </font>
-                        </Label>
+                        <HBox GridPane.columnIndex="2">
+                           <children>
+                              <Label text="Reports" GridPane.columnIndex="2">
+                                 <font>
+                                    <Font size="16.0" />
+                                 </font>
+                              </Label>
+                              <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                              <Button mnemonicParsing="false" onAction="#addNewReport" text="New Report" />
+                           </children>
+                        </HBox>
                         <ScrollPane fx:id="resultsOutputScrollPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.rowSpan="4">
                            <padding>
                               <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />

@@ -58,24 +58,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </Label>
             <VBox spacing="5.0">
                <children>
+                  <CheckBox fx:id="inProgressCheckBox" mnemonicParsing="false" text="In-Progress" />
                   <HBox alignment="CENTER_LEFT" spacing="5.0">
                      <children>
                         <CheckBox fx:id="showPaceCheckBox" mnemonicParsing="false" text="Show Pace" />
-                        <ChoiceBox fx:id="paceChoiceBox" />
+                        <CheckBox fx:id="showSplitsCheckBox" mnemonicParsing="false" text="Show Splits" />
                      </children>
                   </HBox>
-                  <CheckBox fx:id="inProgressCheckBox" mnemonicParsing="false" text="In-Progress" />
                   <HBox spacing="5.0">
                      <children>
                         <CheckBox fx:id="showDQCheckBox" mnemonicParsing="false" text="Show DQ's" />
                         <CheckBox fx:id="showDNFCheckBox" mnemonicParsing="false" text="Show DNF's" />
-                     </children>
-                  </HBox>
-                  <HBox spacing="5.0">
-                     <children>
-                        <CheckBox fx:id="showSplitsCheckBox" mnemonicParsing="false" text="Show Splits" />
-                        <CheckBox fx:id="showSplitPaceCheckBox" mnemonicParsing="false" text="Show Split Pace" />
-                        <ChoiceBox fx:id="splitPaceChoiceBox" />
                      </children>
                   </HBox>
                </children>
