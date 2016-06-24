@@ -23,6 +23,7 @@ import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.Wave;
 import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.RaceOutputTarget;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.Result;
 import com.pikatimer.timing.Bib2ChipMap;
@@ -93,12 +94,13 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(TimeOverride.class);
         cfg.addAnnotatedClass(OutputPortal.class);
         cfg.addAnnotatedClass(RaceReport.class);
+        cfg.addAnnotatedClass(RaceOutputTarget.class);
         
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");
         cfg.setProperty("hibernate.connection.password", "");
-        cfg.setProperty("hibernate.show_sql", "false");
+        cfg.setProperty("hibernate.show_sql", "true");
         cfg.setProperty("hibernate.jdbc.batch_size","100"); 
         
         cfg.setProperty("hibernate.enable_lazy_load_no_trans", "true");

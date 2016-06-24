@@ -25,6 +25,8 @@ import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.HibernateUtil;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -42,6 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -61,6 +65,8 @@ public class ResultsDAO {
     private static final ParticipantDAO participantDAO = ParticipantDAO.getInstance();
     private static final RaceDAO raceDAO = RaceDAO.getInstance();
     private static final ObservableList<OutputPortal> outputPortalList = FXCollections.observableArrayList(OutputPortal.extractor());
+    
+    private static final BooleanProperty outputPortalListInitialized = new SimpleBooleanProperty(FALSE);
         
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -488,8 +494,19 @@ public class ResultsDAO {
     
     
     
-    
-    
+    public void saveRaceReport(RaceReport rr){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.saveOrUpdate(rr);
+        s.getTransaction().commit();
+    }
+            
+    public void removeRaceReport(RaceReport rr){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(rr);
+        s.getTransaction().commit(); 
+    }
     
     public void saveOutputPortal(OutputPortal p) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
@@ -503,30 +520,30 @@ public class ResultsDAO {
     }
     
     public void refreshOutputPortalList() { 
-
         List<OutputPortal> list = new ArrayList<>();
-        
+
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         System.out.println("Runing the refreshOutputPortalList Query");
-        
+
         try {  
             list=s.createQuery("from OutputPortal").list();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } 
         s.getTransaction().commit(); 
-        
+
         System.out.println("Returning the refreshOutputPortalList list");
-        if(!outputPortalList.isEmpty())
-            outputPortalList.clear();
-        outputPortalList.addAll(list);
+        outputPortalList.addAll(list);   
+
+        outputPortalListInitialized.setValue(TRUE);
+
     }     
     
     public ObservableList<OutputPortal> listOutputPortals() { 
 
-        if (outputPortalList.isEmpty()) refreshOutputPortalList();
+        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
         return outputPortalList;
         //return list;
     }     
@@ -534,8 +551,24 @@ public class ResultsDAO {
     public OutputPortal getOutputPortalByUUID(String id) {
         //System.out.println("Looking for a timingLocation with id " + id);
         // This is ugly. Setup a map for faster lookups
+        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
         Optional<OutputPortal> result = outputPortalList.stream()
                     .filter(t -> Objects.equals(t.getUUID(), id))
+                    .findFirst();
+        if (result.isPresent()) {
+            //System.out.println("Found " + result.get().LocationNameProperty());
+            return result.get();
+        } 
+        
+        return null;
+    }
+    
+    public OutputPortal getOutputPortalByID(Integer id) {
+        //System.out.println("Looking for a timingLocation with id " + id);
+        // This is ugly. Setup a map for faster lookups
+        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
+        Optional<OutputPortal> result = outputPortalList.stream()
+                    .filter(t -> Objects.equals(t.getID(), id))
                     .findFirst();
         if (result.isPresent()) {
             //System.out.println("Found " + result.get().LocationNameProperty());
@@ -556,6 +589,19 @@ public class ResultsDAO {
     
     
     
+    void saveRaceReportOutputTarget(RaceOutputTarget t) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.saveOrUpdate(t);
+        s.getTransaction().commit(); 
+    }
+
+    void removeRaceReportOutputTarget(RaceOutputTarget t) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(t);
+        s.getTransaction().commit(); 
+    }
     
     
     

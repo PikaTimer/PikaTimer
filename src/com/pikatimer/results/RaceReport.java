@@ -23,16 +23,25 @@ package com.pikatimer.results;
 
 
 
+import com.pikatimer.race.Race;
+import java.util.List;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
@@ -46,7 +55,12 @@ public class RaceReport {
     private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
     private final IntegerProperty raceProperty= new SimpleIntegerProperty();
     private final StringProperty reportTypeProperty = new SimpleStringProperty("UNSET");
+    
+    private List<RaceOutputTarget> raceOutputTargetList;
+    private final ObservableList<RaceOutputTarget> raceOutputTargets = FXCollections.observableArrayList();
+    
     private ReportTypes reportType;
+    private Race race;
     
     public RaceReport(){
         
@@ -80,19 +94,13 @@ public class RaceReport {
         return uuidProperty; 
     }
     
-
-//    race_id int,
-    @Column(name="race_id")
-    public Integer getRace() {
-       // System.out.println("Participant UUID is " + uuidProperty.get());
-        return raceProperty.getValue(); 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "RACE_ID",nullable=false)
+    public Race getRace() {
+        return race;
     }
-    public void setRace(Integer  n) {
-        raceProperty.setValue(n);
-        //System.out.println("Participant UUID is now " + uuidProperty.get());
-    }
-    public IntegerProperty nameProperty() {
-        return raceProperty; 
+    public void setRace(Race r) {
+        race=r;
     }
     
 //    output_type varchar,
@@ -110,5 +118,31 @@ public class RaceReport {
         }
     }
     
+    @OneToMany(mappedBy="raceReport",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    public List<RaceOutputTarget> getRaceOutputTargets() {
+        return raceOutputTargetList;
+    }
+    public void setRaceOutputTargets(List<RaceOutputTarget> rr) {
+        raceOutputTargetList = rr;
+        if (rr == null) {
+            System.out.println("RaceReport.setRaceOutputTarget(list) called with null list");
+        } else {
+            System.out.println("RaceReport.setRaceOutputTargets(list) " + "( " + IDProperty.getValue().toString() + ")" + " now has " + raceOutputTargetList.size() + " Output Destinations");
+        }
+        raceOutputTargets.setAll(rr);
+    }
+    public ObservableList<RaceOutputTarget> outputTargets() {
+        return raceOutputTargets;
+    }
+    public void addRaceOutputTarget(RaceOutputTarget t) {
+        raceOutputTargets.add(t);
+        t.setRaceReport(this);
+        raceOutputTargetList = raceOutputTargets.sorted();
+        //raceReportsList = raceReports.sorted();
+    }
+    public void removeRaceOutputTarget(RaceOutputTarget w) {
+        raceOutputTargets.remove(w);
+        raceOutputTargetList = raceOutputTargets.sorted();
+    }
     
 }

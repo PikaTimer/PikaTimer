@@ -17,17 +17,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<?import javafx.scene.text.*?>
-<?import javafx.geometry.*?>
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<GridPane hgap="5.0" maxWidth="1.7976931348623157E308" minHeight="100.0" minWidth="300.0" vgap="2.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultOutputController">
+<GridPane fx:id="baseGridPane" hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultOutputController">
    <columnConstraints>
-      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+      <ColumnConstraints hgrow="NEVER" minWidth="10.0" />
+      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
    </columnConstraints>
    <rowConstraints>
       <RowConstraints fillHeight="false" vgrow="NEVER" />
@@ -76,21 +83,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <FlowPane fx:id="outputOptionsFlowPane" prefWidth="200.0" />
          </children>
       </VBox>
-      <VBox GridPane.rowIndex="2">
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1">
          <children>
             <Label text="Output Paths">
                <font>
                   <Font size="14.0" />
                </font>
             </Label>
-            <VBox fx:id="outputTargetsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
-            <HBox alignment="CENTER_RIGHT">
+            <VBox fx:id="outputTargetsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="10.0" prefWidth="400.0" GridPane.rowIndex="2" />
+            <HBox alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308">
                <children>
-                  <Button fx:id="outputAddButton" mnemonicParsing="false" text="Add Output" />
+                  <Button fx:id="outputAddButton" mnemonicParsing="false" onAction="#addRaceReportOututTarget" text="Add Output" />
                </children>
             </HBox>
          </children>
       </VBox>
+      <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#removeRaceReport" text="Delete Report" GridPane.columnIndex="1" GridPane.halignment="RIGHT" />
+      <Separator prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="2" />
    </children>
    <padding>
       <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />

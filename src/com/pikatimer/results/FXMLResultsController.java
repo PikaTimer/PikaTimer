@@ -22,8 +22,6 @@ import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.RaceDAO;
-import com.pikatimer.timing.FXMLTimingController;
-import com.pikatimer.timing.FXMLTimingLocationInputController;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransferTypes;
@@ -40,7 +38,6 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -813,13 +810,21 @@ public class FXMLResultsController  {
             
             if (r.raceReportsProperty().isEmpty()) {
                 // create the default overall and award reports
+                
+                System.out.println("Adding default Ooverall and Award race reports");
                 RaceReport overall = new RaceReport();
                 overall.setReportType(ReportTypes.OVERALL);
-                r.raceReportsProperty().add(overall);
+                r.addRaceReport(overall);
+                resultsDAO.saveRaceReport(overall);
+
                 
                 RaceReport award = new RaceReport();
                 award.setReportType(ReportTypes.AWARD);
-                r.raceReportsProperty().add(award);
+                r.addRaceReport(award);
+                resultsDAO.saveRaceReport(award);
+
+                
+                raceDAO.updateRace(r);
                 
             }
             
@@ -834,7 +839,7 @@ public class FXMLResultsController  {
                     System.out.println("Loader Exception for race reports!");
                     ex.printStackTrace();
                     
-                    Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(FXMLResultOutputController.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 ((FXMLResultOutputController)tlLoader.getController()).setRaceReport(rr);
             
@@ -1001,6 +1006,37 @@ public class FXMLResultsController  {
     }
     
     public void addNewReport(ActionEvent fxevent){
+        System.out.println("addNewReport called");
+        
+        Race r = activeRace; 
+        
+        if (! raceReportsUIMap.containsKey(r)) {
+        } else {
+            System.out.println("Adding default Ooverall and Award race reports");
+            RaceReport newRR = new RaceReport();
+            newRR.setReportType(ReportTypes.OVERALL);
+            r.addRaceReport(newRR);
+
+            resultsDAO.saveRaceReport(newRR);
+
+            FXMLLoader tlLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/results/FXMLResultOutput.fxml"));
+            try {
+                raceReportsUIMap.get(r).getChildren().add(tlLoader.load());
+                System.out.println("Added new RaceReport of type " + newRR.getReportType().toString());
+
+
+            } catch (IOException ex) {
+                System.out.println("Loader Exception for race reports!");
+                ex.printStackTrace();
+
+                Logger.getLogger(FXMLResultOutputController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            ((FXMLResultOutputController)tlLoader.getController()).setRaceReport(newRR);
+
+        }
+            
+            
+
         
     }
 }

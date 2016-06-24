@@ -320,18 +320,24 @@ public class Race {
         return raceReportsList;
     }
     public void setRaceReports(List<RaceReport> rr) {
-        raceReportsList = rr; 
+        raceReportsList = rr;
+        if (rr == null) System.out.println("Race.setRaceReports(list) called with null list");
         if (rr != null) raceReports.setAll(rr);
+        System.out.println("Race.setRaceReports(list) " + raceName.getValueSafe() + "( " + IDProperty.getValue().toString() + ")" + " now has " + raceReports.size() + " Reports");
+
     }
     public ObservableList<RaceReport> raceReportsProperty() {
         return raceReports; 
     }
     public void addRaceReport(RaceReport w) {
         raceReports.add(w);
+        w.setRace(this);
+        //raceReportsList.add(w);
         raceReportsList = raceReports.sorted();
     }
     public void removeRaceReport(RaceReport w) {
         raceReports.remove(w); 
+        //raceReportsList.remove(w);
         raceReportsList = raceReports.sorted();
     }
 
