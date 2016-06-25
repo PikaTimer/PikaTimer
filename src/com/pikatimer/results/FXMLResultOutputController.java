@@ -30,6 +30,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
@@ -120,7 +121,7 @@ public class FXMLResultOutputController {
     
     private void showRaceReportOutputTarget(RaceOutputTarget t){
         HBox rotHBox = new HBox();
-        ChoiceBox<OutputPortal> destinationChoiceBox = new ChoiceBox();
+        ComboBox<OutputPortal> destinationChoiceBox = new ComboBox();
         
         //destinationChoiceBox.getItems().setAll(resultsDAO.listOutputPortals());
         

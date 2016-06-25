@@ -243,7 +243,7 @@ public class OutputPortal {
     }
     
     public static Callback<OutputPortal, Observable[]> extractor() {
-        return (OutputPortal p) -> new Observable[]{p.nameProperty(),p.transferStatusProperty(),p.protocolProperty()};
+        return (OutputPortal p) -> new Observable[]{p.nameProperty(),p.transferStatusProperty(),p.protocolProperty(),p.basePathProperty()};
     }
     
     @Override
