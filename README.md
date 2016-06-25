@@ -3,7 +3,7 @@ PikaTimer: An OpenSource race timing application
 
 PikaTimer is a JavaFX based race timing application. Named after the American Pika that is often found at high altitudes where the need for simple, easy to use race timing application was born. Because at 14,000 ft, you want things to be simple.
 
-It will be released under the GPLv3 Open Source license (just as soon as I get around to updating all of the copyrigt notices)
+The entire system is released under the GPLv3 Open Source license
 
 Initial support will be for RFID Timing System based readers (http://rfidtiming.com/), but there is nothing preventing the system from being able to read from from other timing systems in the future.
 
@@ -16,7 +16,7 @@ Current Features:
 * Time overrides for a participant on a per split basis
 * Participants may be entered into multiple Events
 * Regular expression based search for participants and raw results
-* Ability to "skew" the time for any given timing input (adjust the clock +/- a given number of seconds to accout for setup errors)
+* Ability to "skew" the time for any given timing input (adjust the clock +/- a given number of seconds to account for setup errors)
 * Limited support for races that are longer than a single day (the back end supports it, the UI is a bit wonky)
 * 5 or 10 year Age group setup
 * Alphanumeric bib support
@@ -24,22 +24,26 @@ Current Features:
 * Built in database engine (H2) that stores the entire event in a single file (easy for backups, copying, archiving, etc)
 
 Short List of pending features:
-* Ouput CSV / HTML5 / Static HTML results as participants finish or cross a timing location
-* Automaticly post the results to a web server via ftp/sftp/scp/ftps
+* Output CSV / HTML5 / Static HTML results as participants finish or cross a timing location
+* Automatically post the results to a web server via ftp/sftp/scp/ftps
 * Windows / Linux / MacOS native installation apps
 * Output awards file based on gun or chip time for Overall / Masters / AG
+* DQ / DNF flags for runners and the ability to exclude them on results
 
 Long Term Features:
 * Arbitrary participant attributes an the ability to produce reports based on them
 * Arbitrary age groups
+* Arbitrary awards categories based on any participant attribute
+* Ability to flag a timing input as a "backup" that is only used when there are no other reads
+* Ability to ignore individual chip reads
 * Non-binary gender/sex attribute
 * Team Reports / Awards
 * Ability to support relay races
 * Race series support (May be another app that looks to multiple PikaTimer races)
-* Built in web server for satelite systems to enter / view data (race day registration, announcer stations, results lookup stations, etc)
+* Built in web server for satellite systems to enter / view data (race day registration, announcer stations, results lookup stations, etc)
 * Post results to social media (twitter, Facebook, etc)
 * Sync registrants from Active / RunSignUp / FuseSport / etc
-* Result "embelishments" (Course Records, Boston Qualifying time notifications, etc).
+* Result "embellishments" (Course Records, Boston Qualifying time notifications, etc).
 
 Built on top of:
 * Java / JavaFX -- http://java.com
