@@ -24,7 +24,9 @@ package com.pikatimer.results;
 
 
 import com.pikatimer.race.Race;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -32,7 +34,9 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -41,7 +45,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
@@ -61,6 +67,10 @@ public class RaceReport {
     
     private ReportTypes reportType;
     private Race race;
+    
+    private Map<String,String> attributes = new HashMap();
+    private Map<String,Integer> intAttributes = new HashMap();
+    private Map<String,Boolean> boolAttributes = new HashMap();
     
     public RaceReport(){
         
@@ -128,8 +138,8 @@ public class RaceReport {
             System.out.println("RaceReport.setRaceOutputTarget(list) called with null list");
         } else {
             System.out.println("RaceReport.setRaceOutputTargets(list) " + "( " + IDProperty.getValue().toString() + ")" + " now has " + raceOutputTargetList.size() + " Output Destinations");
+            raceOutputTargets.setAll(rr);
         }
-        raceOutputTargets.setAll(rr);
     }
     public ObservableList<RaceOutputTarget> outputTargets() {
         return raceOutputTargets;
@@ -143,6 +153,72 @@ public class RaceReport {
     public void removeRaceOutputTarget(RaceOutputTarget w) {
         raceOutputTargets.remove(w);
         raceOutputTargetList = raceOutputTargets.sorted();
+    }
+    
+    // The map of attributes -> values
+    // easier than a really wide table of attributes since this thing will just 
+    // grow once we add in custom stuff
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name="attribute", insertable=false,updatable=false)
+    @Column(name="value")
+    @CollectionTable(name="race_output_attributes", joinColumns=@JoinColumn(name="output_id"))
+    @OrderColumn(name = "id")
+    private Map<String, String> getAttributes() {
+        return attributes;
+    }
+    private void setAttributes(Map<String,String> m) {
+        attributes = m;
+    } 
+    
+
+    //Overall
+    //male
+    public Integer getIntegerAttribute(String key) {
+        if (!intAttributes.containsKey(key)) {
+            if (attributes.containsKey(key)) {
+                intAttributes.put(key,Integer.parseUnsignedInt(attributes.get(key)));
+            } else {
+                System.out.println("RaceAwards.getIntegerAtrribute key of " + key + " is NULL!");
+                return null;
+            }
+        }
+        return intAttributes.get(key);
+    }
+    public void setIntegerAttribute(String key, Integer n) {
+        intAttributes.put(key,n);
+        attributes.put(key, n.toString());
+    }
+    
+    
+    //Pull, Gun, etc
+     public Boolean getBooleanAttribute(String key) {
+        if (!boolAttributes.containsKey(key)) {
+            if (attributes.containsKey(key)) {
+                boolAttributes.put(key,Boolean.parseBoolean(attributes.get(key)));
+            } else {
+                System.out.println("RaceAwards.getBooleanAtrribute key of " + key + " is NULL!");
+                return null;
+            }
+        }
+        return boolAttributes.get(key);
+    }
+    public void setBooleanAttribute(String key, Boolean n) {
+        boolAttributes.put(key,n);
+        attributes.put(key, n.toString());
+    }
+    
+    public String getStringAttribute(String key) {
+        if (!attributes.containsKey(key)) {
+            return null;
+        }
+        return attributes.get(key);
+    }
+    public void setStringAttribute(String key, String v) {
+        attributes.put(key, v);
+    }
+    
+    public void processResult(List<ProcessedResult> r){
+        // do something
     }
     
 }

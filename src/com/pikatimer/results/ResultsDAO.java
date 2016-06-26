@@ -18,12 +18,14 @@ package com.pikatimer.results;
 
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.timing.CookedTimeData;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.timing.TimingDAO;
+import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.HibernateUtil;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -589,14 +591,14 @@ public class ResultsDAO {
     
     
     
-    void saveRaceReportOutputTarget(RaceOutputTarget t) {
+    public void saveRaceReportOutputTarget(RaceOutputTarget t) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.saveOrUpdate(t);
         s.getTransaction().commit(); 
     }
 
-    void removeRaceReportOutputTarget(RaceOutputTarget t) {
+    public void removeRaceReportOutputTarget(RaceOutputTarget t) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.delete(t);
@@ -605,9 +607,82 @@ public class ResultsDAO {
     
     
     
+    public void processAllReports(){
+        raceDAO.listRaces().forEach(r -> {processReports(r);});
+    }
     
-    
-    
+    public void processReports(Race r){
+        List<ProcessedResult> results = new ArrayList();
+        
+        
+        // get the current results list
+        getResults(r.getID()).forEach(res -> {
+            ProcessedResult pr = new ProcessedResult();
+            
+            // Link in the participant
+            pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
+            // Set the AG code (e.g. M30-34) (age and gender are set automagically)
+            pr.setAge(pr.getParticipant().getAge());
+            pr.setAGCode(r.getAgeGroups().ageToAGString(pr.getAge()));
+            
+            // set the start and wave start times
+            Duration chipStartTime = res.getStartDuration();
+            Duration waveStartTime = res.getStartWaveStartDuration();
+            
+            // Set the start duration
+            pr.setChipStartTime(chipStartTime);
+            pr.setWaveStartTime(waveStartTime);
+            
+            // Set the finish times
+            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
+            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
+            
+            // Set the splits
+            if(r.getSplits().size() > 2) {
+                
+            }
+            
+            results.add(pr);
+        });
+        
+        // sort it by finish, then last completed split
+        results.sort(null); // ProcessedResult iplements the Comparable interface
+        
+        // calculate placement in Overall, Gender, AG
+        Map<String,Integer> placementCounter = new HashMap();
+        placementCounter.put("overall", 1);
+        placementCounter.put("M",1);
+        placementCounter.put("F",1);
+        
+        results.forEach(pr -> {
+            pr.setOverall(placementCounter.get("overall"));
+            placementCounter.put("overall", pr.getOverall()+1);
+            
+            pr.setSexPlace(placementCounter.get(pr.getSex()));
+            placementCounter.put(pr.getSex(), pr.getSexPlace()+1);
+            
+            placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
+            pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
+            placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace()+1);
+            
+            System.out.println("Results: " + r.getRaceName() + ": "
+                    + pr.getParticipant().fullNameProperty().getValueSafe() 
+                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
+                    + DurationFormatter.durationToString(pr.getChipFinish())
+                    + " O:" + pr.getOverall() + " S:" + pr.getSexPlace() 
+                    + " AG:" + pr.getAGPlace()
+            );
+        
+        });
+        
+        
+        // for each report, feed it the results list
+        r.getRaceReports().forEach(rr ->{
+            rr.processResult(results);
+        });
+        
+        
+    }
     
     
     

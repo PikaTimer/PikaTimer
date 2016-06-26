@@ -23,6 +23,8 @@ import static java.lang.Boolean.TRUE;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -36,6 +38,7 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.controlsfx.control.ToggleSwitch;
 
 
 /**
@@ -47,11 +50,15 @@ public class FXMLResultOutputController {
 
     @FXML GridPane baseGridPane;
     @FXML ChoiceBox<ReportTypes> outputTypeChoiceBox;
+    
+    @FXML ToggleSwitch reportEnabledToggleSwitch;
             
     @FXML CheckBox inProgressCheckBox;
     @FXML CheckBox showDQCheckBox;
     @FXML CheckBox showDNFCheckBox;
+    @FXML CheckBox showPaceCheckBox;
     @FXML CheckBox showSplitsCheckBox;
+    @FXML CheckBox showGunTimeCheckBox;
     
     @FXML VBox outputTargetsVBox;
     @FXML FlowPane outputOptionsFlowPane;
@@ -70,7 +77,7 @@ public class FXMLResultOutputController {
     public void initialize() {
         // TODO
         outputTypeChoiceBox.getItems().setAll(ReportTypes.values());
-       
+       outputTargetsVBox.setFillWidth(true);
     }    
     
     public void setRaceReport(RaceReport r){
@@ -96,6 +103,66 @@ public class FXMLResultOutputController {
         
         // Pull the key-value map from the race report and populate everything
         
+        //@FXML ToggleSwitch reportEnabledToggleSwitch;
+        if (r.getBooleanAttribute("enabled") == null) r.setBooleanAttribute("enabled", true);
+        reportEnabledToggleSwitch.selectedProperty().setValue(r.getBooleanAttribute("enabled"));
+        reportEnabledToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("inProgress", new_val);
+            resultsDAO.saveRaceReport(r);
+        });         
+        
+//        @FXML CheckBox inProgressCheckBox;
+        if (r.getBooleanAttribute("inProgress") == null) r.setBooleanAttribute("inProgress", false);
+        inProgressCheckBox.selectedProperty().setValue(r.getBooleanAttribute("inProgress"));
+        inProgressCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("inProgress", new_val);
+            resultsDAO.saveRaceReport(r);
+        });  
+        
+//        @FXML CheckBox showDQCheckBox;
+        if (r.getBooleanAttribute("showDQ") == null) r.setBooleanAttribute("showDQ", false);
+        showDQCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showDQ"));
+        showDQCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showDQ", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+//        @FXML CheckBox showDNFCheckBox;
+        if (r.getBooleanAttribute("showDNF") == null) r.setBooleanAttribute("showDNF", false);
+        showDNFCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showDNF"));
+        showDNFCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showDNF", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+//        @FXML CheckBox showPaceCheckBox;
+        if (r.getBooleanAttribute("showPace") == null) r.setBooleanAttribute("showPace", true);
+        showPaceCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showPace"));
+        showPaceCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showPace", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+//        @FXML CheckBox showSplitsCheckBox;
+        if (r.getBooleanAttribute("showSplits") == null) r.setBooleanAttribute("showSplits", true);
+        showSplitsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSplits"));
+        showSplitsCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showSplits", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        showSplitsCheckBox.visibleProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
+        showSplitsCheckBox.managedProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
+        
+//        @FXML CheckBox showGunTimeCheckBox;
+        if (r.getBooleanAttribute("showGun") == null) r.setBooleanAttribute("showGun", false);
+        showGunTimeCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showGun"));
+        showGunTimeCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showGun", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+        // Just in case we added any defaults 
+        resultsDAO.saveRaceReport(r);
     }
     
     public void removeRaceReport(ActionEvent fxevent){
@@ -139,12 +206,22 @@ public class FXMLResultOutputController {
         });
         
         destinationChoiceBox.getSelectionModel().select(t.outputDestination());
+        destinationChoiceBox.setPrefWidth(150);
+        destinationChoiceBox.setMaxWidth(150);
         
         // TextField for the filename
         TextField filename = new TextField();
         filename.setText(t.getOutputFilename());
+        filename.setPrefWidth(200);
+        filename.setMaxWidth(400);
         
-        // Remove Button
+        filename.textProperty().addListener((observable, oldValue, newValue) -> {
+            t.setOutputFilename(newValue);
+            resultsDAO.saveRaceReportOutputTarget(t);    
+        });
+        
+        // Remove 
+        
         Button remove = new Button("Remove");
         remove.setOnAction((ActionEvent e) -> {
             removeRaceReportOutputTarget(t);

@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import org.controlsfx.control.ToggleSwitch?>
 
 <GridPane fx:id="baseGridPane" hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultOutputController">
    <columnConstraints>
@@ -65,16 +66,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </Label>
             <VBox spacing="5.0">
                <children>
-                  <CheckBox fx:id="inProgressCheckBox" mnemonicParsing="false" text="In-Progress" />
+                  <HBox spacing="5.0">
+                     <children>
+                        <CheckBox fx:id="inProgressCheckBox" mnemonicParsing="false" prefWidth="85.0" text="In-Progress" />
+                        <CheckBox fx:id="showGunTimeCheckBox" mnemonicParsing="false" text="Show Gun Time" />
+                     </children>
+                  </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="5.0">
                      <children>
-                        <CheckBox fx:id="showPaceCheckBox" mnemonicParsing="false" text="Show Pace" />
+                        <CheckBox fx:id="showPaceCheckBox" mnemonicParsing="false" prefWidth="85.0" text="Show Pace" />
                         <CheckBox fx:id="showSplitsCheckBox" mnemonicParsing="false" text="Show Splits" />
                      </children>
                   </HBox>
                   <HBox spacing="5.0">
                      <children>
-                        <CheckBox fx:id="showDQCheckBox" mnemonicParsing="false" text="Show DQ's" />
+                        <CheckBox fx:id="showDQCheckBox" mnemonicParsing="false" prefWidth="85.0" text="Show DQ's" />
                         <CheckBox fx:id="showDNFCheckBox" mnemonicParsing="false" text="Show DNF's" />
                      </children>
                   </HBox>
@@ -83,14 +89,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <FlowPane fx:id="outputOptionsFlowPane" prefWidth="200.0" />
          </children>
       </VBox>
-      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1">
+      <VBox fillWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1">
          <children>
             <Label text="Output Paths">
                <font>
                   <Font size="14.0" />
                </font>
             </Label>
-            <VBox fx:id="outputTargetsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="10.0" prefWidth="400.0" GridPane.rowIndex="2" />
+            <VBox fx:id="outputTargetsVBox" fillWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="10.0" prefWidth="350.0" GridPane.rowIndex="2" />
             <HBox alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308">
                <children>
                   <Button fx:id="outputAddButton" mnemonicParsing="false" onAction="#addRaceReportOututTarget" text="Add Output" />
@@ -98,7 +104,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </HBox>
          </children>
       </VBox>
-      <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#removeRaceReport" text="Delete Report" GridPane.columnIndex="1" GridPane.halignment="RIGHT" />
+      <HBox alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.halignment="RIGHT">
+         <children>
+            <ToggleSwitch fx:id="reportEnabledToggleSwitch" minHeight="-Infinity" minWidth="-Infinity" prefHeight="17.0" prefWidth="110.0" text="Enable Report" />
+            <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+            <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#removeRaceReport" text="Delete Report" />
+         </children>
+      </HBox>
       <Separator prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="2" />
    </children>
    <padding>

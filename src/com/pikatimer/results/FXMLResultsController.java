@@ -133,12 +133,17 @@ public class FXMLResultsController  {
         raceComboBox.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
         selectedRaceLabel.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
 
+        outputDetailsVBox.setFillWidth(true);
+                
         initializeAgeGroupSettings();
         initializeAwardSettings();
 
         initializeOutputDestinations();
         
-                
+        updateNowButton.setOnAction((ActionEvent e) -> {
+            resultsDAO.processAllReports();
+        });
+        
         raceComboBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
             // flip the table
             //System.out.println("raceChoiceBox listener fired: now with number2 set to " + number2.intValue());
