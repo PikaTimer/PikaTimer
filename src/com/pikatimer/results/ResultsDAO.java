@@ -619,6 +619,12 @@ public class ResultsDAO {
         getResults(r.getID()).forEach(res -> {
             ProcessedResult pr = new ProcessedResult();
             
+            // If there is no participant, then bail. 
+            // TODO: Maybe add an option to create a participant on the fly, but
+            // this could gete messy with all of the random RFID chips out there.
+            // Either way, this would be handled on the timing tab, not here. 
+            if(participantDAO.getParticipantByBib(res.getBib()) == null) return; 
+            
             // Link in the participant
             pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
             // Set the AG code (e.g. M30-34) (age and gender are set automagically)
@@ -634,8 +640,10 @@ public class ResultsDAO {
             pr.setWaveStartTime(waveStartTime);
             
             // Set the finish times
-            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
-            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
+            if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
+                pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
+                pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
+            }
             
             // Set the splits
             if(r.getSplits().size() > 2) {

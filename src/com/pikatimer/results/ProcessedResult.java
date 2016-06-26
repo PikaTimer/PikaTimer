@@ -128,19 +128,30 @@ class ProcessedResult implements Comparable<ProcessedResult>{
     }
     
     
+    @Override
     public int compareTo(ProcessedResult other) {
         
         // Compare based on the following:
-        // chipFinishTime -> split results -> start time -> full name (why not)
+        // dQ/DNF -> chipFinishTime -> split results -> start time -> full name (why not)
+        
+        // is somebody a DQ or DNF?
+        if (participant.getDQ() && ! other.getParticipant().getDQ()) return 1;
+        if (! participant.getDQ() && other.getParticipant().getDQ()) return -1;
+        if (participant.getDNF() && ! other.getParticipant().getDNF()) return 1;
+        if (! participant.getDNF() && other.getParticipant().getDNF()) return -1;
+        
+        // At this point, either both are DNF/DQ's or they both are not. 
+        // Sort as if they are not. 
+
         
         // Step 1: check the finish time
         if (chipFinishTime != null && other.chipFinishTime != null) { 
             // both have finish times
             return chipFinishTime.compareTo(other.chipFinishTime);
         } else if (chipFinishTime == null) { // we dont have a finish yet, but they do
-            return -1;
+            return 1;
         } else if (other.chipFinishTime == null) {
-            return 1; 
+            return -1; 
         }
         
         // check the splits in reverse order
@@ -149,10 +160,10 @@ class ProcessedResult implements Comparable<ProcessedResult>{
             
         } else if (splitTimes.keySet().isEmpty()) {
             //We don't, they do... 
-            return -1;
+            return 1;
         } else if (splitTimes.keySet().isEmpty()) {
             // we do, they don't 
-            return 1;
+            return -1;
         }
         
         
