@@ -16,7 +16,9 @@
  */
 package com.pikatimer.util;
 
+import static java.lang.Boolean.FALSE;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,8 +97,14 @@ public enum Pace {
                 dist = dist.divide(new BigDecimal(5280));
                 break;
         }
-        
-        return dist.setScale(3, BigDecimal.ROUND_HALF_UP).toString();
+         dist = dist.multiply(new BigDecimal(5280));
+        // we now have the distance in feet...
+        String pace = "XX:XX"; 
+        switch(p){
+            case MPM:
+                pace = DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(5280L), 0, FALSE, RoundingMode.DOWN); 
+        }
+        return pace + "/mi";
 
     }
     

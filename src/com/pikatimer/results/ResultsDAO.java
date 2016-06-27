@@ -533,10 +533,11 @@ public class ResultsDAO {
             list=s.createQuery("from OutputPortal").list();
         } catch (Exception e) {
             System.out.println(e.getMessage());
+            e.printStackTrace();
         } 
         s.getTransaction().commit(); 
 
-        System.out.println("Returning the refreshOutputPortalList list");
+        System.out.println("Returning the refreshOutputPortalList list: " + list.size());
         outputPortalList.addAll(list);   
 
         outputPortalListInitialized.setValue(TRUE);
@@ -673,19 +674,19 @@ public class ResultsDAO {
             pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
             placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace()+1);
             
-            System.out.println("Results: " + r.getRaceName() + ": "
-                    + pr.getParticipant().fullNameProperty().getValueSafe() 
-                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
-                    + DurationFormatter.durationToString(pr.getChipFinish())
-                    + " O:" + pr.getOverall() + " S:" + pr.getSexPlace() 
-                    + " AG:" + pr.getAGPlace()
-            );
+//            System.out.println("Results: " + r.getRaceName() + ": "
+//                    + pr.getParticipant().fullNameProperty().getValueSafe() 
+//                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
+//                    + DurationFormatter.durationToString(pr.getChipFinish())
+//                    + " O:" + pr.getOverall() + " S:" + pr.getSexPlace() 
+//                    + " AG:" + pr.getAGPlace()
+//            );
         
         });
         
         
         // for each report, feed it the results list
-        r.getRaceReports().forEach(rr ->{
+        r.raceReportsProperty().forEach(rr ->{
             rr.processResult(results);
         });
         

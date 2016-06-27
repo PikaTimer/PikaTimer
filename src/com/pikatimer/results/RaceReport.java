@@ -72,6 +72,9 @@ public class RaceReport {
     private Map<String,Integer> intAttributes = new HashMap();
     private Map<String,Boolean> boolAttributes = new HashMap();
     
+    private RaceReportType raceReportType;
+    
+    
     public RaceReport(){
         
     }
@@ -218,7 +221,23 @@ public class RaceReport {
     }
     
     public void processResult(List<ProcessedResult> r){
-        // do something
+        // If we are enabled... do something
+        System.out.println("RaceReport.procesResult() Called... ");
+        if (getBooleanAttribute("enabled") && race != null && reportType != null) {
+            if (raceReportType == null) {
+                raceReportType = reportType.getNewReader();
+                raceReportType.init(race);
+            }
+            System.out.println("RaceReport.procesResult() calling raceReportType.process()");
+            String output = raceReportType.process(r);
+            
+            // for each output portal, ship it...
+            raceOutputTargets.forEach(ot -> {
+                System.out.println("RaceReport.procesResult() calling ot.saveOutput()");
+                ot.saveOutput(output);
+            });
+            
+        }
     }
     
 }

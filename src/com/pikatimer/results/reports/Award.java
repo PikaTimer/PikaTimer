@@ -16,13 +16,26 @@
  */
 package com.pikatimer.results.reports;
 
+import com.pikatimer.race.Race;
+import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReportType;
+import java.util.List;
 
 /**
  *
  * @author jcgarner
  */
 public class Award implements RaceReportType {
+    Race race;
+
+    @Override
+    public void init(Race r) {
+        race = r;
+    }
     
+    @Override
+    public String process(List<ProcessedResult> r) {
+        return "Award Results";
+    }
     
 }

@@ -16,10 +16,17 @@
  */
 package com.pikatimer.results;
 
+import com.pikatimer.race.Race;
+import java.util.List;
+
 /**
  *
  * @author jcgarner
  */
 public interface RaceReportType {
+
+    public void init(Race race);
+
+    public String process(List<ProcessedResult> r);
     
 }

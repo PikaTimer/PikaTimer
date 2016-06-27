@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @author John Garner <segfaultcoredump@gmail.com>
  */
-class ProcessedResult implements Comparable<ProcessedResult>{
+public class ProcessedResult implements Comparable<ProcessedResult>{
     Integer overallPlace;
     Integer genderPlace;
     Integer agPlace;
@@ -54,7 +54,7 @@ class ProcessedResult implements Comparable<ProcessedResult>{
     public void setGunFinish(Duration t){
         gunFinishTime = t;
     }
-    public Duration getGunFinish(Duration t){
+    public Duration getGunFinish(){
         return gunFinishTime;
     }
     

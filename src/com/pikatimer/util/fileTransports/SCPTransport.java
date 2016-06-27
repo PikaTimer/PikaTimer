@@ -16,6 +16,7 @@
  */
 package com.pikatimer.util.fileTransports;
 
+import com.pikatimer.results.OutputPortal;
 import com.pikatimer.util.FileTransport;
 
 /**
@@ -23,5 +24,29 @@ import com.pikatimer.util.FileTransport;
  * @author jcgarner
  */
 public class SCPTransport implements FileTransport{
+    Boolean goodToGo = false;
+    String basePath;
+    OutputPortal parent;
+    
+
+    @Override
+    public boolean isOK() {
+        return goodToGo;
+    }
+
+    @Override
+    public void save(String filename, String contents) {
+        
+    }
+
+    @Override
+    public void setOutputPortal(OutputPortal op) {
+        parent=op;
+    }
+
+    @Override
+    public void refreshConfig() {
+        
+    }
     
 }

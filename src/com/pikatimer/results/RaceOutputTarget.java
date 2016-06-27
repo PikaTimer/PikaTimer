@@ -124,4 +124,16 @@ public class RaceOutputTarget {
     public StringProperty outputFilenameProperty() {
         return outputFilenameProperty;
     }
+    
+    public void saveOutput(String s){
+        System.out.println("RaceOutputTarget.saveOutput() called");
+        if (outputDestination != null && ! outputFilenameProperty.isEmpty().getValue()) 
+            outputDestination.save(outputFilenameProperty.getValue(), s);
+        
+        if (outputDestination == null) 
+            System.out.println("RaceOutputTarget.saveOutput() outputDestination is NULL!" + outputDestinationID);
+        
+        if (outputFilenameProperty.isEmpty().getValue()) 
+            System.out.println("RaceOutputTarget.saveOutput() outputFilenameProperty is empty!: " + outputFilenameProperty.getValueSafe());
+    }
 }

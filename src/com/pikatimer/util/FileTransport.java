@@ -16,10 +16,20 @@
  */
 package com.pikatimer.util;
 
+import com.pikatimer.results.OutputPortal;
+
 /**
  *
  * @author jcgarner
  */
 public interface FileTransport {
+
+    public boolean isOK();
+
+    public void save(String filename, String contents);
+
+    public void setOutputPortal(OutputPortal aThis);
+
+    public void refreshConfig();
     
 }

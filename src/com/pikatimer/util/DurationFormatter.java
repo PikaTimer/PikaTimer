@@ -58,6 +58,7 @@ public class DurationFormatter {
         if (s < 10 && s > 0) r+= ":0" + s.toString();
         if (p > 0 && s > 0) r += S.toPlainString().replace("0.", ".");
         if (p > 0 && s==0) r+=":00" + S.toPlainString().replace("0.", ".");
+        if (p == 0 && s == 0) r+=":00";
         return r;
        
     }

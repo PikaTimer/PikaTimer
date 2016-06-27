@@ -65,6 +65,7 @@ public class OutputPortal {
     
     public OutputPortal(){
         // nothing to do here for now
+        //System.out.println("OutputPortal construtor called...");
     }
     
     //    id int primary key, 
@@ -127,7 +128,7 @@ public class OutputPortal {
             }
                                
             fileTransport = t.getNewTransport();
-            //timingReader.setTimingInput(this);
+            fileTransport.setOutputPortal(this);
             
             outputProtocol = t;
             protocolProperty.setValue(outputProtocol.toString());
@@ -141,6 +142,7 @@ public class OutputPortal {
     }
     public void setServer(String  s) {
         serverProperty.setValue(s);
+        if(fileTransport != null) fileTransport.refreshConfig();
         //System.out.println("Participant UUID is now " + uuidProperty.get());
     }
     public StringProperty serverProperty() {
@@ -152,9 +154,11 @@ public class OutputPortal {
     public String getBasePath() {
        // System.out.println("Participant UUID is " + uuidProperty.get());
         return basePathProperty.getValue(); 
+        
     }
     public void setBasePath(String  s) {
         basePathProperty.setValue(s);
+        if(fileTransport != null) fileTransport.refreshConfig();
         //System.out.println("Participant UUID is now " + uuidProperty.get());
     }
     public StringProperty basePathProperty() {
@@ -169,6 +173,7 @@ public class OutputPortal {
     }
     public void setUsername(String  s) {
         usernameProperty.setValue(s);
+        if(fileTransport != null) fileTransport.refreshConfig();
         //System.out.println("Participant UUID is now " + uuidProperty.get());
     }
     public StringProperty usernameProperty() {
@@ -183,6 +188,7 @@ public class OutputPortal {
     }
     public void setPassword(String  s) {
         passwordProperty.setValue(s);
+        if(fileTransport != null) fileTransport.refreshConfig();
         //System.out.println("Participant UUID is now " + uuidProperty.get());
     }
     public StringProperty passwordProperty() {
@@ -197,6 +203,7 @@ public class OutputPortal {
     }
     public void setPrivateKey(String  s) {
         privateKeyProperty.setValue(s);
+        if(fileTransport != null) fileTransport.refreshConfig();
         //System.out.println("Participant UUID is now " + uuidProperty.get());
     }
     public StringProperty privateKeyProperty() {
@@ -211,6 +218,7 @@ public class OutputPortal {
     }
     public void setRemoteCert(String  s) {
         remoteCertProperty.setValue(s);
+        if(fileTransport != null) fileTransport.refreshConfig();
         //System.out.println("Participant UUID is now " + uuidProperty.get());
     }
     public StringProperty remoteCertProperty() {
@@ -225,6 +233,7 @@ public class OutputPortal {
     }
     public void setCheckCert(boolean  s) {
         checkCertProperty.setValue(s);
+        if(fileTransport != null) fileTransport.refreshConfig();
         //System.out.println("Participant UUID is now " + uuidProperty.get());
     }
     public BooleanProperty checkCertProperty() {
@@ -271,5 +280,13 @@ public class OutputPortal {
             return false;
         }
         return Objects.equals(this.uuidProperty.getValue(),((OutputPortal)obj).uuidProperty.getValue());
+    }
+
+    void save(String filename, String contents) {
+        System.out.println("OutputPortal.save() called for " + filename);
+        if (fileTransport != null) {
+            if (fileTransport.isOK())
+                fileTransport.save(filename,contents);
+        }
     }
 }
