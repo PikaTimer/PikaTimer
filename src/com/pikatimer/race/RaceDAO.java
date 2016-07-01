@@ -51,6 +51,7 @@ public class RaceDAO {
     }
 
     public static RaceDAO getInstance() {
+        
             return SingletonHolder.INSTANCE;
     }
     

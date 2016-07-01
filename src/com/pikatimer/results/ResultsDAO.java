@@ -615,6 +615,7 @@ public class ResultsDAO {
     public void processReports(Race r){
         List<ProcessedResult> results = new ArrayList();
         
+        Integer splitSize = r.getSplits().size();
         
         // get the current results list
         getResults(r.getID()).forEach(res -> {
@@ -640,6 +641,8 @@ public class ResultsDAO {
             pr.setChipStartTime(chipStartTime);
             pr.setWaveStartTime(waveStartTime);
             
+            //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
+            
             // Set the finish times
             if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
                 pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
@@ -648,7 +651,10 @@ public class ResultsDAO {
             
             // Set the splits
             if(r.getSplits().size() > 2) {
-                
+                for (int i = 2; i <  splitSize ; i++) {
+                    //if (res.getSplitTime(i) != null) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+                    if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+                }
             }
             
             results.add(pr);

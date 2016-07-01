@@ -27,6 +27,8 @@ public interface RaceReportType {
 
     public void init(Race race);
 
-    public String process(List<ProcessedResult> r);
+    //The List is for the results with the current standings
+    //the RaceReport is how the report generator gets its config of what to show
+    public String process(List<ProcessedResult> r, RaceReport rr);
     
 }

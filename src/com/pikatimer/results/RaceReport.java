@@ -27,6 +27,7 @@ import com.pikatimer.race.Race;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -49,6 +50,7 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -173,6 +175,10 @@ public class RaceReport {
         attributes = m;
     } 
     
+    @Transient
+    public Set<String> getKnownAttributeNames() {
+        return attributes.keySet();
+    }
 
     //Overall
     //male
@@ -229,7 +235,7 @@ public class RaceReport {
                 raceReportType.init(race);
             }
             System.out.println("RaceReport.procesResult() calling raceReportType.process()");
-            String output = raceReportType.process(r);
+            String output = raceReportType.process(r, this);
             
             // for each output portal, ship it...
             raceOutputTargets.forEach(ot -> {

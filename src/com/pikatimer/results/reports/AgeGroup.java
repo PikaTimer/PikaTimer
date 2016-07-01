@@ -18,6 +18,7 @@ package com.pikatimer.results.reports;
 
 import com.pikatimer.race.Race;
 import com.pikatimer.results.ProcessedResult;
+import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class AgeGroup implements RaceReportType {
     }
     
     @Override
-    public String process(List<ProcessedResult> r) {
+    public String process(List<ProcessedResult> r, RaceReport rr) {
         return "Age Group Results";
     }
     

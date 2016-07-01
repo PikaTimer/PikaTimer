@@ -427,10 +427,10 @@ public class FXMLParticipantController  {
         
         p.wavesProperty().stream().forEach(w -> {
             waveComboBox.getCheckModel().check(w);
-            System.out.println("Checking " + w.getID() + " " + w.toString());
+            //System.out.println("Checking " + w.getID() + " " + w.toString());
         });
         waveComboBox.getCheckModel().getCheckedItems().forEach(w -> {
-            System.out.println("Checked " + w.getID() + " " + w.toString());
+            //System.out.println("Checked " + w.getID() + " " + w.toString());
         });
         //waveComboBox.getCheckModel().check(null);
         

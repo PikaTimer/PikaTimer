@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 jcgarner
+ * Copyright (C) 2016 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +20,18 @@ import com.pikatimer.event.Event;
 import com.pikatimer.event.EventDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.results.ProcessedResult;
+import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.List;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -42,15 +47,40 @@ public class Overall implements RaceReportType{
     }
 
     @Override
-    public String process(List<ProcessedResult> prList) {
+    public String process(List<ProcessedResult> prList, RaceReport rr) {
         System.out.println("Overall.process() Called... ");
         String report = new String();
         
         
         Event event = Event.getInstance();  // fun with singletons... 
-        report += event.getEventName() + " " + race.getRaceName() + System.lineSeparator();
-        report += event.getLocalEventDate() + System.lineSeparator();
+        
+        rr.getKnownAttributeNames().forEach(s -> {System.out.println("Known Attribute: " + s);});
+
+        Boolean showDQ = rr.getBooleanAttribute("showDQ");
+        Boolean inProgress = rr.getBooleanAttribute("inProgress");
+        Boolean showSplits = rr.getBooleanAttribute("showSplits");
+        Boolean showDNF = rr.getBooleanAttribute("showDNF");
+        Boolean showPace = rr.getBooleanAttribute("showPace");
+        Boolean showGun = rr.getBooleanAttribute("showGun");
+        
+        // what is the longest name?
+        IntegerProperty fullNameLength = new SimpleIntegerProperty(10);
+        prList.forEach (pr ->{
+            if(pr.getParticipant().fullNameProperty().length().getValue() > fullNameLength.getValue()) 
+                fullNameLength.setValue(pr.getParticipant().fullNameProperty().length().getValue());
+        });
+        fullNameLength.setValue(fullNameLength.getValue() + 1);
+       
+        
+        report += StringUtils.center(event.getEventName(),80) + System.lineSeparator();
+        report += StringUtils.center(race.getRaceName(),80) + System.lineSeparator();
+        report += StringUtils.center(event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),80) + System.lineSeparator();
         report += System.lineSeparator();
+        
+        if(inProgress) {
+            report += StringUtils.center("*******In Progress*******",80) + System.lineSeparator();
+            report += System.lineSeparator();
+        }
         
         // print the headder
         report += " OA#"; // 4R chars 
@@ -59,42 +89,79 @@ public class Overall implements RaceReportType{
         report += "  BIB"; // 5R chars for the bib #
         report += " AGE"; // 4R for the age
         report += " SEX"; // 4R for the sex
-        report += " GRP  "; //6L for the AG Group
-        report += " Name                 "; // 22L chars for the name 
-        report += " City             "; // 18L for the city
-        report += "  ST"; // 4C for the state code
-        
+        report += " AG   "; //6L for the AG Group
+        report += StringUtils.rightPad(" Name",fullNameLength.get()); // based on the longest name
+        report += " City              "; // 18L for the city
+        report += " ST "; // 4C for the state code
+         
         // Insert split stuff here
+        if (showSplits) {
+            // do stuff
+            // 9 chars per split
+            for (int i = 2; i < race.splitsProperty().size(); i++) {
+                report += StringUtils.leftPad(race.splitsProperty().get(i-1).getSplitName(),9);
+            }
+        }
         
         // Chip time
-        report += "    Time "; // 9R Need to adjust for the format code
+        report += "   Finish "; // 9R Need to adjust for the format code
        
         // gun time
-        report += "    Gun  "; // 9R ibid
+        if (showGun) report += "    Gun  "; // 9R ibid
         // pace
-        report += "   Pace"; // 10R
+        if (showPace) report += "   Pace"; // 10R
         report += System.lineSeparator();
+        
+        
         
         final StringBuilder chars = new StringBuilder();
         
         prList.forEach(pr -> {
-            chars.append(StringUtils.leftPad(pr.getOverall().toString(),4));
-            chars.append(StringUtils.leftPad(pr.getSexPlace().toString(),5));
-            chars.append(StringUtils.leftPad(pr.getAGPlace().toString(),5));
+            
+            // if they are a DNF or DQ swap out the placement stats
+            Boolean hideTime = false; 
+            Boolean dnf = pr.getParticipant().getDNF();
+            Boolean dq = pr.getParticipant().getDQ();
+            if (dnf || dq) hideTime = true;
+            
+            if (!showDNF && dnf) return;
+            if (!showDQ && dq) return;
+            
+            if (inProgress && pr.getChipFinish() == null) {
+                chars.append(StringUtils.center("**Started**",14));
+                hideTime = true;
+            }
+            else if (pr.getChipFinish() == null) return; 
+            
+            else if (! dnf && ! dq) { 
+                chars.append(StringUtils.leftPad(pr.getOverall().toString(),4));
+                chars.append(StringUtils.leftPad(pr.getSexPlace().toString(),5));
+                chars.append(StringUtils.leftPad(pr.getAGPlace().toString(),5)); 
+            } else {
+                if (dnf) chars.append(StringUtils.center("***DNF***",14));
+                else chars.append(StringUtils.center("***DQ****",14));
+                    
+            }
+            
             chars.append(StringUtils.leftPad(pr.getParticipant().getBib(),5));
             chars.append(StringUtils.leftPad(pr.getAge().toString(),4));
-            chars.append(StringUtils.leftPad(pr.getSex(),4));
+            chars.append(StringUtils.center(pr.getSex(),4));
             chars.append(StringUtils.center(pr.getAGCode(),7));
-            chars.append(StringUtils.rightPad(pr.getParticipant().fullNameProperty().getValueSafe(),22));
+            chars.append(StringUtils.rightPad(pr.getParticipant().fullNameProperty().getValueSafe(),fullNameLength.get()));
             chars.append(StringUtils.rightPad(pr.getParticipant().getCity(),18));
             chars.append(StringUtils.center(pr.getParticipant().getState(),4));
 
             // Insert split stuff here 
-            
+            if (showSplits && ! hideTime) {
+            // do stuff
+                for (int i = 2; i < race.splitsProperty().size(); i++) {
+                    chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getSplit(i), 0, Boolean.FALSE, RoundingMode.DOWN), 9));
+                }
+            }
             // chip time
-            chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8));
-            chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getGunFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 9));
-            chars.append(StringUtils.leftPad(StringUtils.stripStart(Pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish(), Pace.MPM), "0"),10));
+            if (! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8));
+            if (showGun && ! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getGunFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 9));
+            if (showPace && ! hideTime) chars.append(StringUtils.leftPad(StringUtils.stripStart(Pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish(), Pace.MPM), "0"),10));
 //            System.out.println("Results: " + r.getRaceName() + ": "
 //                    + r.getParticipant().fullNameProperty().getValueSafe() 
 //                    + "(" + pr.getSex() + pr.getAGCode() + "): " 

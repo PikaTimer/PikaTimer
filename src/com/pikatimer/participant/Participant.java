@@ -360,10 +360,7 @@ public class Participant {
     public void setWaveIDs(Set<Integer> w) {
         waveIDSet = w; 
         
-        waves.clear();
-        waveIDSet.stream().forEach(id -> {
-            waves.add(RaceDAO.getInstance().getWaveByID(id)); 
-        });
+        
     }
     
     public void setWaves(List<Wave> w) {
@@ -395,7 +392,11 @@ public class Participant {
         }
     }
     public ObservableList<Wave> wavesProperty() {
-        
+        waves.clear();
+        waveIDSet.stream().forEach(id -> {
+            if (RaceDAO.getInstance().getWaveByID(id) == null) System.out.println("Null WAVE!!! " + id);
+            waves.add(RaceDAO.getInstance().getWaveByID(id)); 
+        });
         return waves; 
     }
     
