@@ -17,17 +17,11 @@
 package com.pikatimer.results;
 
 import com.pikatimer.race.RaceDAO;
-import com.pikatimer.util.FileTransferTypes;
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import javafx.beans.binding.Bindings;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;

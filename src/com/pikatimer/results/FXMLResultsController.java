@@ -837,7 +837,7 @@ public class FXMLResultsController  {
                 FXMLLoader tlLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/results/FXMLResultOutput.fxml"));
                 try {
                     reportDetails.getChildren().add(tlLoader.load());
-                    System.out.println("Added new RaceReport of type " + rr.getReportType().toString());
+                    System.out.println("Showing RaceReport of type " + rr.getReportType().toString());
 
 
                 } catch (IOException ex) {

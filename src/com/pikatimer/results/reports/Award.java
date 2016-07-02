@@ -53,9 +53,11 @@ public class Award implements RaceReportType {
     
     @Override
     public String process(List<ProcessedResult> resList, RaceReport rr) {
-        prList = new ArrayList(resList); // our own copy to screw with
-        
         System.out.println("Award.process() Called... ");
+
+        prList = new ArrayList(resList); // our own copy to screw with
+        race = rr.getRace(); 
+        
         String report = new String();
         
         Map<String,List<ProcessedResult>> agAwardMap = new HashMap();
@@ -259,7 +261,7 @@ public class Award implements RaceReportType {
         agCatList.sort(new AlphanumericComparator());       
         agCatList.forEach(ag -> {
             
-            chars.append(StringUtils.center(StringUtils.center(ag,30, "*"),80) + System.lineSeparator());
+            chars.append(StringUtils.center(StringUtils.center(ag,30, "*"),80)).append(System.lineSeparator());
             chars.append(System.lineSeparator());
             if(ag.startsWith("F")) {
                 chars.append(outputHeader());

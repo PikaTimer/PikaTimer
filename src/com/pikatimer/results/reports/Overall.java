@@ -51,6 +51,7 @@ public class Overall implements RaceReportType{
         System.out.println("Overall.process() Called... ");
         String report = new String();
         
+        race = rr.getRace();
         
         Event event = Event.getInstance();  // fun with singletons... 
         
@@ -124,16 +125,17 @@ public class Overall implements RaceReportType{
             Boolean dq = pr.getParticipant().getDQ();
             if (dnf || dq) hideTime = true;
             
+            if (pr.getChipFinish() == null && showDNF) dnf = true;
+
             if (!showDNF && dnf) return;
             if (!showDQ && dq) return;
             
             if (inProgress && pr.getChipFinish() == null) {
                 chars.append(StringUtils.center("**Started**",14));
                 hideTime = true;
-            }
-            else if (pr.getChipFinish() == null) return; 
-            
-            else if (! dnf && ! dq) { 
+            } else if (pr.getChipFinish() == null) {
+                return;
+            } else if (! dnf && ! dq) { 
                 chars.append(StringUtils.leftPad(pr.getOverall().toString(),4));
                 chars.append(StringUtils.leftPad(pr.getSexPlace().toString(),5));
                 chars.append(StringUtils.leftPad(pr.getAGPlace().toString(),5)); 
