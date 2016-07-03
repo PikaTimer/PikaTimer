@@ -99,7 +99,8 @@ public class ResultsDAO {
 
             Task processNewResult = new Task<Void>() {
 
-                @Override public Void call() {
+                @Override 
+                public Void call() {
                    final List<Result> results = new ArrayList(); 
 
                    Session s=HibernateUtil.getSessionFactory().getCurrentSession();
@@ -523,6 +524,8 @@ public class ResultsDAO {
     
     public void refreshOutputPortalList() { 
         List<OutputPortal> list = new ArrayList<>();
+        
+        outputPortalListInitialized.setValue(TRUE);
 
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
@@ -540,7 +543,7 @@ public class ResultsDAO {
         System.out.println("Returning the refreshOutputPortalList list: " + list.size());
         outputPortalList.addAll(list);   
 
-        outputPortalListInitialized.setValue(TRUE);
+        
 
     }     
     

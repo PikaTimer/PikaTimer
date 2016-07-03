@@ -121,11 +121,7 @@ public class OutputPortal {
         
         if (t != null && (outputProtocol == null || ! outputProtocol.equals(t)) ){
             
-            // If we already have a reader
-            if (outputProtocol != null) {
-
-                
-            }
+            
                                
             fileTransport = t.getNewTransport();
             fileTransport.setOutputPortal(this);
