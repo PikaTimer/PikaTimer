@@ -34,7 +34,7 @@ public class Pikatimer extends Application {
     private static Stage mainStage;
     private static String jdbcURL; // Holds the jdbcURL for the open db
     
-    public static final String VERSION = "0.1 (Alpha)";
+    public static final String VERSION = "0.5 (Alpha)";
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -74,10 +74,9 @@ public class Pikatimer extends Application {
         
         Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();  
   
-        //set Stage boundaries so that the main screen is centered. 
-        // FIX THIS to remove the 1000/600 hard coded values
-        primaryStage.setX((primaryScreenBounds.getWidth() - 1000)/2);  
-        primaryStage.setY((primaryScreenBounds.getHeight() - 600)/2);  
+        //set Stage boundaries so that the main screen is centered.                
+        primaryStage.setX((primaryScreenBounds.getWidth() - primaryStage.getWidth())/2);  
+        primaryStage.setY((primaryScreenBounds.getHeight() - primaryStage.getHeight())/2);  
  
         primaryStage.setScene(myScene);
         primaryStage.show();
