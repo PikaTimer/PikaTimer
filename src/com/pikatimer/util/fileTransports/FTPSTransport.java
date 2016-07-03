@@ -24,6 +24,7 @@ import com.pikatimer.util.HibernateUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,7 +81,7 @@ public class FTPSTransport implements FileTransport{
         transferMap.put(filename,contents);
         if (! transferQueue.contains(filename)) transferQueue.add(filename);
         
-        if (transferThread == null || ftpClient == null || !ftpClient.isConnected() ) transferFile(); // kicks off the thread
+        //if (transferThread == null || ftpClient == null || !ftpClient.isConnected() ) transferFile(); // kicks off the thread
     }
 
     @Override
@@ -99,14 +100,13 @@ public class FTPSTransport implements FileTransport{
     
     }    
 
-    private void transferFile() {
+    public FTPSTransport() {
         
         Task transferTask = new Task<Void>() {
 
                 @Override 
                 public Void call() {
                    
-                    refreshConfig();
 
                     System.out.println("FTPSTransport: new result processing thread started");
                     String filename;
@@ -115,60 +115,35 @@ public class FTPSTransport implements FileTransport{
                     ftpClient = new FTPSClient(false);
                     ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out), true));
                     
-                    try {
-                        // Connect to host
-                        ftpClient.connect(hostname);
-                        int reply = ftpClient.getReplyCode();
-                        if (FTPReply.isPositiveCompletion(reply)) {
-
-                            // Login
-                            if (ftpClient.login(username, password)) {
-
-                                // Set protection buffer size
-                                ftpClient.execPBSZ(0);
-                                // Set data channel protection to private
-                                ftpClient.execPROT("P");
-                                // Enter local passive mode
-                                ftpClient.enterLocalPassiveMode();
-                                ftpClient.setFileType(FTP.ASCII_FILE_TYPE);
-
-                                if(!ftpClient.changeWorkingDirectory(basePath)) {
-                                    reply = ftpClient.mkd(basePath);
-                                    if (!FTPReply.isPositiveCompletion(reply)) {
-                                        System.out.println("Unable to make remote dir " + basePath);
-                                        ftpClient.disconnect();
-                                    } else {
-                                        ftpClient.changeWorkingDirectory(basePath);
-                                    }
-                                }
-                            } else {
-                              System.out.println("FTP login failed");
-                            }
-                        } else {
-                          System.out.println("FTP connect to host failed");
-                        }
-                    } catch (IOException ioe) {
-                      System.out.println("FTP client received network error");
-                    }
+                    
                     
                     
                     // now let's process files
                     
-                    while(ftpClient.isConnected()) {
+                    while(true) {
+                        
+                        
                         try {
-                            System.out.println("FTPSTransport Thread: Waiting for a file to ...");
-                            filename = transferQueue.poll(60, TimeUnit.SECONDS);
-                            String file = transferMap.get(filename);
-                           
-                            InputStream data = IOUtils.toInputStream(file, "UTF-8");
-                            
-                            System.out.println("FTPSTransport Thread: The wait is over...");
+                            while(true) {
+                                System.out.println("FTPSTransport Thread: Waiting for a file to ...");
+                                //filename = transferQueue.poll(60, TimeUnit.SECONDS);
+                                filename = transferQueue.take(); // blocks until
 
-                            ftpClient.storeFile(filename, data);
-                            
-                            data.close();
-                            transferMap.remove(filename, file);
-                            
+                                System.out.println("FTPSTransport Thread: Transfering " + filename);
+                                String contents = transferMap.get(filename);
+
+                                if (!ftpClient.isConnected()) openConnection();
+
+                                //InputStream data = IOUtils.toInputStream(contents, "UTF-8");
+                                InputStream data = IOUtils.toInputStream(contents);
+
+                                ftpClient.storeFile(filename, data);
+
+                                data.close();
+                                transferMap.remove(filename, contents);
+                                System.out.println("FTPSTransport Thread: transfer of " + filename + " done");
+                            }
+
                         } catch (InterruptedException ex) {
                             Logger.getLogger(ResultsDAO.class.getName()).log(Level.SEVERE, null, ex);
                         } catch (IOException ex) {
@@ -176,6 +151,8 @@ public class FTPSTransport implements FileTransport{
                         } finally {
                             if (ftpClient.isConnected()) {
                                 try {
+                                    System.out.println("FTPSTransport Thread: calling ftpClient.disconnect()");
+
                                     ftpClient.disconnect();
                                 } catch (IOException f) {
                                     // do nothing
@@ -183,13 +160,59 @@ public class FTPSTransport implements FileTransport{
                             }
                         }
                     }
-                    return null;
+                    
                 }
             };
             transferThread = new Thread(transferTask);
-            transferThread.setName("Thread-FTPS-");
+            transferThread.setName("Thread-FTPS-Transfer");
             transferThread.setDaemon(true);
             transferThread.start();
         
+    }
+    
+    private void openConnection(){
+        try {
+            
+            refreshConfig();
+            System.out.println("FTPS Not connected, connecting...");
+            // Connect to host
+            ftpClient.connect(hostname);
+            int reply = ftpClient.getReplyCode();
+            if (FTPReply.isPositiveCompletion(reply)) {
+                
+                
+                // Login
+                if (ftpClient.login(username, password)) {
+
+                    // Set protection buffer size
+                    ftpClient.execPBSZ(0);
+                    // Set data channel protection to private
+                    ftpClient.execPROT("P");
+                    // Enter local passive mode
+                    ftpClient.enterLocalPassiveMode();
+                    ftpClient.setFileType(FTP.ASCII_FILE_TYPE);
+                    //ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+                    if(!ftpClient.changeWorkingDirectory(basePath)) {
+                        reply = ftpClient.mkd(basePath);
+                        if (!FTPReply.isPositiveCompletion(reply)) {
+                            System.out.println("Unable to make remote dir " + basePath);
+                            ftpClient.disconnect();
+                        } else {
+                            ftpClient.changeWorkingDirectory(basePath);
+                        }
+                    }
+                } else {
+                  System.out.println("FTP login failed");
+                  ftpClient.disconnect();
+                }
+            } else {
+              System.out.println("FTP connect to host failed");
+              ftpClient.disconnect();
+            }
+        } catch (IOException ioe) {
+            System.out.println("FTP client received network error");
+            
+        }
     }
 }
