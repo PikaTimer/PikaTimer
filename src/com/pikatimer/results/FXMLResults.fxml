@@ -73,9 +73,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     </columnConstraints>
                     <rowConstraints>
                       <RowConstraints minHeight="-Infinity" valignment="CENTER" vgrow="NEVER" />
-                        <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
                         <RowConstraints maxHeight="1.7976931348623157E308" minHeight="-Infinity" vgrow="NEVER" />
-                        <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="100.0" vgrow="SOMETIMES" />
+                        <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="100.0" vgrow="ALWAYS" />
                         <RowConstraints maxHeight="1.7976931348623157E308" minHeight="-Infinity" vgrow="NEVER" />
                     </rowConstraints>
                      <children>
