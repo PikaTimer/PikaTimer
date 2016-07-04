@@ -101,7 +101,7 @@ public class FXMLResultOutputController {
         if (r.getBooleanAttribute("enabled") == null) r.setBooleanAttribute("enabled", true);
         reportEnabledToggleSwitch.selectedProperty().setValue(r.getBooleanAttribute("enabled"));
         reportEnabledToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
-            r.setBooleanAttribute("inProgress", new_val);
+            r.setBooleanAttribute("enabled", new_val);
             resultsDAO.saveRaceReport(r);
         });         
         

@@ -101,7 +101,7 @@ public class RaceOutputTarget {
 
     @Column(name="remote_target_id")
     public Integer getOutputDestination() {
-        if (outputDestination != null)  return outputDestination.getID();
+        //if (outputDestination != null)  return outputDestination.getID();
         return outputDestinationID;
     }
     public void setOutputDestination(Integer id) {
@@ -109,8 +109,9 @@ public class RaceOutputTarget {
         //outputDestination=ResultsDAO.getInstance().getOutputPortalByID(id);
     }
     public OutputPortal outputDestination() {
-        if(outputDestination == null) outputDestination=ResultsDAO.getInstance().getOutputPortalByID(outputDestinationID);
-        return outputDestination; 
+        //if(outputDestination == null) outputDestination=ResultsDAO.getInstance().getOutputPortalByID(outputDestinationID);
+        //return outputDestination; 
+        return ResultsDAO.getInstance().getOutputPortalByID(outputDestinationID);
     }
     
     //    output_filename varchar
@@ -127,6 +128,8 @@ public class RaceOutputTarget {
     
     public void saveOutput(String s){
         System.out.println("RaceOutputTarget.saveOutput() called");
+        outputDestination = ResultsDAO.getInstance().getOutputPortalByID(outputDestinationID);
+        
         if (outputDestination != null && ! outputFilenameProperty.isEmpty().getValue()) 
             outputDestination.save(outputFilenameProperty.getValue(), s);
         
