@@ -17,37 +17,23 @@
 package com.pikatimer.util.fileTransports;
 
 import com.pikatimer.results.OutputPortal;
-import com.pikatimer.results.Result;
-import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransport;
-import com.pikatimer.util.HibernateUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.PrintCommandListener;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPReply;
 import org.apache.commons.net.ftp.FTPSClient;
-import org.hibernate.Session;
 
 /**
  *
@@ -131,23 +117,29 @@ public class FTPSTransport implements FileTransport{
 
                                 System.out.println("FTPSTransport Thread: Transfering " + filename);
                                 String contents = transferMap.get(filename);
-
+                                    
+                                
                                 if (!ftpClient.isConnected()) openConnection();
 
                                 //InputStream data = IOUtils.toInputStream(contents, "UTF-8");
                                 InputStream data = IOUtils.toInputStream(contents);
-
+                                
+                                long start_time = System.nanoTime();
                                 ftpClient.storeFile(filename, data);
+                                long end_tiome = System.nanoTime();
 
                                 data.close();
-                                transferMap.remove(filename, contents);
-                                System.out.println("FTPSTransport Thread: transfer of " + filename + " done");
+                                transferMap.remove(filename, contents); 
+                                System.out.println("FTPSTransport Thread: transfer of " + filename + " done in " + DurationFormatter.durationToString(Duration.ofNanos(end_tiome-start_time), 3, false, RoundingMode.HALF_EVEN));
                             }
 
                         } catch (InterruptedException ex) {
-                            Logger.getLogger(ResultsDAO.class.getName()).log(Level.SEVERE, null, ex);
+                            System.out.println("FTPSTransport Thread: InterruptedException thrown");
+
+                            //Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
                         } catch (IOException ex) {
-                            Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
+                            System.out.println("FTPSTransport Thread: IOException thrown");
+                            //Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
                         } finally {
                             if (ftpClient.isConnected()) {
                                 try {

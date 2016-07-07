@@ -19,6 +19,7 @@ package com.pikatimer.results;
 import com.pikatimer.results.reports.AgeGroup;
 import com.pikatimer.results.reports.Award;
 import com.pikatimer.results.reports.Overall;
+import com.pikatimer.results.reports.OverallHTML;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.Map;
  */
 public enum ReportTypes {
     OVERALL, 
+    OVERALL_HTML,
     AGEGROUP,
     AWARD; 
 
@@ -37,9 +39,10 @@ public enum ReportTypes {
 
     private static Map<ReportTypes, String> createMap() {
         Map<ReportTypes, String> result = new HashMap<>();
-        result.put(OVERALL, "Overall");
-        result.put(AGEGROUP, "Age Group");
-        result.put(AWARD, "Award");
+        result.put(OVERALL, "Overall (Text)");
+        result.put(AGEGROUP, "Age Group (Text)");
+        result.put(AWARD, "Award (Text)");
+        result.put(OVERALL_HTML,"Overall (HTML)");
 
         return Collections.unmodifiableMap(result);
     }
@@ -55,6 +58,8 @@ public enum ReportTypes {
         switch(this){
             case OVERALL:
                 return new Overall();
+            case OVERALL_HTML:
+                return new OverallHTML();
             case AGEGROUP:
                 return new AgeGroup();
             case AWARD:

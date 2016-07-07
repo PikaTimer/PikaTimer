@@ -17,16 +17,13 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
-import com.pikatimer.event.EventDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
-import com.pikatimer.util.Unit;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
