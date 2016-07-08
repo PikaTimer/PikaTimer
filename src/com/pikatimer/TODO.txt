@@ -1,15 +1,16 @@
 Overall Focus: 
+Cleanup UI and input field validation
 Create a DurationTextField / LocalTimeTextField that "does the right thing"
 Create a DurationCell (or whatever) for inline edits of durations?
--DQ flag + reason for a participant
+editCell that does not revert on focus change (WTF Oracle)
+
 -Fix Result object to calculate and keep split Properties that are based on the start time
--Wrap result object in a Platform.runLater to avoid all sorts of issues with the extractor
+-Fix the result object with a proper extractor for display in the tableview
 -Fix result display to show wave start -> actual delta, gun time
--Fix result display to disassemble the old SortedList -> FilteredList -> List stuff 
-to avoid AOOBE in sorted List on split changes
+-Fix result display to not freak on split changes (maybe a refresh button?)
 -Backup times flag
 -Ignore Chip Read flag (ignoring a cooked time is easy, propagating that to the raw is a bit harder)
--Mandatory split? (if it is mandatory, bail if no data found)
+-Mandatory split? (if it is mandatory)
 -Force participant to the 1st wave of a given race if they are seen at a given timing 
 location? (Good for start lines and really remote locations, but it could be trouble for post run spectators.)
 
@@ -17,8 +18,8 @@ location? (Good for start lines and really remote locations, but it could be tro
 
 Overall:
 Upgrade Hibernate to 5.x
-Fix FXML layout resizing checks on race page
-Add License Key enforcement? 
+Fix FXML layout resizing checks on race and results tabs
+
 Add 'About' page w/ links to the following items:
 --gliphicons
 --h2 db
@@ -46,9 +47,8 @@ Watch TimingLocation list and show if more than the default
 Fix table size for splits and waves
 
 Auto Sort splits by order number, don't permit other sorting of that list
-Setup AG's (5, 10, custom)
-Setup Award Depth 
- - Pull from downstream awards checkbox. 
+Setup Custom AG's (other than just 5 & 10 year increments)?
+
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
 Ability to set min/max times for a segment
 Ability to drag/drop splits to reorder
@@ -74,9 +74,11 @@ Participants:
   -- textfield auto complete for city/state 
   -- textfield for teams pre-populated / with auto complete
 Clean up import from csv (field formatting, etc)
+  -- Custom city name map
+  -- Zip -> City map
 Export to csv
 Validate csv file before continuing. 
-Error check the fields (age, city, state, bib, etc). 
+Error check the fields (age, gender, city, state, bib, etc). 
 Prevent duplicate bib number assignment
 Wave/Race assignment based on import field
 Update/Add on enter from any valid field
@@ -111,17 +113,17 @@ Overrides
 
 
 Backup Times option
-  -- keep processing if found, overwrite if a non-backup time is found. 
+  -- splice them in for missing splits (
 
 Clear all times for the timing location input when the user selects a new reader
 Clear all times for a location when the location is deleted
 Backup flag for a given reader at a split
 
-Option to assign any time to the race/wave start time via right mouse click
-
+Option to assign any time to the race/wave start time via right mouse click menu
 
 Search dropdown to show only a single timing location in the TableView
-
+ability to isolate a bib# for the search 
+    (e.g., " 1234 " would only show 1234 and not 12345)
 
 RFID Direct:
     --Continually import times from box (via tcp in a separate task) to a timing point
@@ -129,33 +131,39 @@ RFID Direct:
     --Chip sequence gap detection that triggers an automatic rewind 
 
 
-Done: (for now) fix column widths
-
 
 Results:
 
      --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
-Wire in a "min time to next split" option to replace hardcoded 10 minutes. 
+Wire in a "min time to next split" option to replace hardcoded 5/10 minutes. 
 cleanup the spacing on the tableview, wider names.
 Ability to show/hide splits on TableView 
-Auto-Reprocess when times are deleted
+Correctly deal with deleted / blank results
 Default the sorting to finish, finish - 1, finish -2, etc, etc)
 Ability to select multiple and DQ, un-DQ them (with a note)
-Show Gender/AG
+Show Gender/AG on results display
+Ability to select multiple results and transfer them to another wave/race
 
 
 Reports:
-Read results, sort by finish, then splits in reverse order.
-Basic text and html output
+
+Derived segments / splits (e.g., "total time from split C -> D")
+  -- may overlap with the split "groups" on the races tab
+
+Basic html output for Overall, AG, Award. 
+Option to strip accent marks (StringUtils.stripAccents(String input))
 Mobile Friendly html output (sortable, searchable, etc)
 Optional banner Text for the page
-Auto FTP to a location every X minutes
-Auto-print of text with each new page or after X number of runners
-Hide/Show DQ's on results page (per person flag?)
-Course Record noting
 
-Publish to responsive / html 5 based web site
-Publish to 3rd party results web site / XXXXX.com? 
+Auto-print of text with each new page or after X number of runners
+Text output with header/FormFeed after X number of lines. 
+
+Course Record alerts in overall text/html reports
+Award winner alerts in overall text/html reports. 
+
+CSS link option for html based reports
+
+Publish to 3rd party results web site / ???????.com? 
 
 
 Team Results
@@ -165,12 +173,12 @@ for co-ed, number per team of each gender (1->(N-1))
 
 
 Awards: 
-Set depth per race
+
 Set depth based on # registrants / finishers
 Team based on top X scorers (specified per team category)
-Award Depth options: Fixed depth, variable, top X % with a cap
+Award Depth options: Fixed depth (done), variable, top X % with a cap
 Ordered list (overall, masters, AG) with per group option to pull winners from
-downstream awards. (double dipping yes, no, maybe)
+Custom award options with filters
 Team awards
 
 

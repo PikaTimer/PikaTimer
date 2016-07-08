@@ -16,24 +16,18 @@
  */
 package com.pikatimer.race;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.MapKeyColumn;
 import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
-import javax.persistence.OrderColumn;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Parameter;
@@ -48,9 +42,10 @@ import org.hibernate.annotations.Parameter;
 @Table(name="race_age_groups")
 public class AgeGroups {
     private Integer raceID;
-    private Integer agStart = 9;
-    private Integer agIncrement = 5;
-    private Integer masters = 40; 
+
+    private IntegerProperty agStartProperty = new SimpleIntegerProperty(9);
+    private IntegerProperty agIncrementProperty = new SimpleIntegerProperty(5);
+    private IntegerProperty mastersProperty = new SimpleIntegerProperty(40);
     
     private Map<Integer,String> agNameMap = new ConcurrentHashMap();
     private Map<Integer,Integer> agMap = new ConcurrentHashMap();
@@ -58,7 +53,11 @@ public class AgeGroups {
     private Race race;
 
     public AgeGroups() {
-    
+        // if the agIncrementProperty or the agStartProperty change, 
+        // invalidate the agMap and agNameMaps
+        agIncrementProperty.addListener(listener -> {invalidateMaps();});
+        agStartProperty.addListener(listener -> {invalidateMaps();});
+        
     }
     
     @Id
@@ -86,29 +85,40 @@ public class AgeGroups {
     @Column(name="ag_increment")
     public Integer getAGIncrement() {
         //System.out.println("AgeGroups.getAGIncrement() returning " + agIncrement);
-        return agIncrement; 
+        return agIncrementProperty.getValue(); 
     }
     public void setAGIncrement(Integer i) {
-        //System.out.println("AgeGroups.setAGIncrement() with " + i);
-
-        agIncrement=i;
+        System.out.println("AgeGroups.setAGIncrement() with " + i);
+        agIncrementProperty.set(i);
+    }
+    public IntegerProperty agIncrementProperty() {
+        return agIncrementProperty;
     }
     
     @Column(name="masters_start")
     public Integer getMasters() {
-        return masters; 
+        return mastersProperty.getValue(); 
     }
     public void setMasters(Integer i) {
-        masters=i;
+        //System.out.println("AgeGroups.setMasters() with " + i);
+        mastersProperty.setValue(i);
+    }
+    public IntegerProperty mastersProperty() {
+        return mastersProperty;
     }
     
     @Column(name="ag_start")
     public Integer getAGStart() {
-        return agStart; 
+        return agStartProperty.getValue(); 
     }
     public void setAGStart(Integer i) {
-        agStart=i;
+        //System.out.println("AgeGroups.setAGStart() with " + i);
+        agStartProperty.set(i);
     }
+    public IntegerProperty agStartProperty() {
+        return agStartProperty;
+    }
+    
 
     public String ageToAGString(Integer i){
         // Returns the string representation of the ag given an age
@@ -116,10 +126,10 @@ public class AgeGroups {
         // based on the increment and the agStart floor (1->9)
         if (agNameMap.containsKey(ageToAG(i))) return agNameMap.get(ageToAG(i));
         
-        if(i < agStart) {
-            agNameMap.put(ageToAG(i), "1-" + (agStart));
+        if(i < agStartProperty.get()) {
+            agNameMap.put(ageToAG(i), "1-" + (agStartProperty.getValue()));
         } else {
-            agNameMap.put(ageToAG(i), ageToAG(i) + "-" + (ageToAG(i)+agIncrement-1));
+            agNameMap.put(ageToAG(i), ageToAG(i) + "-" + (ageToAG(i)+agIncrementProperty.get()-1));
         }
         
         return agNameMap.get(ageToAG(i));
@@ -132,11 +142,18 @@ public class AgeGroups {
         
         if (agMap.containsKey(i)) return agMap.get(i);
         
-        if (i <= agStart) agMap.put(i,1);
-        else agMap.put(i,((i/agIncrement)*agIncrement));
+        if (i <= agStartProperty.get()) agMap.put(i,1);
+        else agMap.put(i,((i/agIncrementProperty.get())*agIncrementProperty.get()));
         
         return agMap.get(i);
         
+    }
+
+    private void invalidateMaps() {
+        //System.out.println("AgeGroups.invalidateMaps() Called");
+
+        agNameMap = new ConcurrentHashMap();
+        agMap = new ConcurrentHashMap();
     }
   
     

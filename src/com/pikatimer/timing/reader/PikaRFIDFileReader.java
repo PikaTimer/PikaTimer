@@ -219,18 +219,29 @@ public class PikaRFIDFileReader implements TimingReader{
         
         String[] tokens = s.split(",", -1);
         // we only care about the following fields:
-        // 0 -- The reader
+        // 0 -- The port (1->4)
         // 1 -- chip
         // 2 -- bib
         // 3 -- time (as a string)
 
         // Step 1: Make sure we have a time in the 4th field
         // Find out if we have a date + time or just a time
+        String reader = tokens[0];
         String chip = tokens[1];
         String dateTime = tokens[3].replaceAll("\"", "");
 
         //System.out.println("Chip: " + chip);
         //System.out.println("dateTime: " + dateTime);
+        
+        if (reader.equals("0") && ! chip.equals("0")) { // invalid combo
+            System.out.println("Non Start time: " + s);
+            return;
+        }
+        
+        if (!reader.matches("[1234]")){
+            System.out.println("Invalid Port: " + s);
+            return;
+        }
 
         if(dateTime.matches("^\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}$")) {
             if(dateTime.matches("^\\d{1}:\\d{2}:\\d{2}\\.\\d{3}$")) {

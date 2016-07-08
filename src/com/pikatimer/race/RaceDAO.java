@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.hibernate.Session;
@@ -32,8 +33,8 @@ import org.hibernate.Session;
  * @author jcgarner
  */
 public class RaceDAO {
-    private static final ObservableList<Race> raceList =FXCollections.observableArrayList();
-    private static final ObservableList<Wave> waveList =FXCollections.observableArrayList();
+    private static final ObservableList<Race> raceList =FXCollections.observableArrayList( e -> new Observable[] {e.raceNameProperty()});
+    private static final ObservableList<Wave> waveList =FXCollections.observableArrayList(e -> new Observable[] {e.waveNameProperty()});
     private static final Map<Integer,Wave> waveMap = new HashMap();
     private Map<Integer,Split> splitMap = new HashMap();
 
@@ -50,6 +51,7 @@ public class RaceDAO {
     }
 
     public static RaceDAO getInstance() {
+        
             return SingletonHolder.INSTANCE;
     }
     

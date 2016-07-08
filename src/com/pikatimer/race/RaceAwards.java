@@ -87,55 +87,59 @@ public class RaceAwards {
     @Column(name="value")
     @CollectionTable(name="race_awards_attributes", joinColumns=@JoinColumn(name="race_id"))
     @OrderColumn(name = "index_id")
-    public Map<String, String> getAttributes() {
+    private Map<String, String> getAttributes() {
         return attributes;
     }
-    public void setAttributes(Map<String,String> m) {
+    private void setAttributes(Map<String,String> m) {
         attributes = m;
     } 
     
 
     //Overall
     //male
-    public Integer getDepth(String key) {
+    public Integer getIntegerAttribute(String key) {
         if (!intAttributes.containsKey(key)) {
             if (attributes.containsKey(key)) {
                 intAttributes.put(key,Integer.parseUnsignedInt(attributes.get(key)));
             } else {
-                intAttributes.put(key, 0);
+                System.out.println("RaceAwards.getIntegerAtrribute key of " + key + " is NULL!");
+                return null;
             }
         }
         return intAttributes.get(key);
     }
-    public void setDepth(String key, Integer n) {
+    public void setIntegerAttribute(String key, Integer n) {
         intAttributes.put(key,n);
         attributes.put(key, n.toString());
     }
     
     
-    //Pull?
-     public Boolean getPull(String key) {
+    //Pull, Gun, etc
+     public Boolean getBooleanAttribute(String key) {
         if (!boolAttributes.containsKey(key)) {
             if (attributes.containsKey(key)) {
                 boolAttributes.put(key,Boolean.parseBoolean(attributes.get(key)));
             } else {
-                boolAttributes.put(key, Boolean.TRUE);
+                System.out.println("RaceAwards.getBooleanAtrribute key of " + key + " is NULL!");
+                return null;
             }
         }
         return boolAttributes.get(key);
     }
-    public void setPull(String key, Boolean n) {
+    public void setBooleanAttribute(String key, Boolean n) {
         boolAttributes.put(key,n);
         attributes.put(key, n.toString());
     }
     
-    //Masters
-    
-    
-    //AG
-    //double dip?
-    //male
-    //female
+    public String getStringAttribute(String key) {
+        if (!attributes.containsKey(key)) {
+            return null;
+        }
+        return attributes.get(key);
+    }
+    public void setStringAttribute(String key, String v) {
+        attributes.put(key, v);
+    }
   
     
 }

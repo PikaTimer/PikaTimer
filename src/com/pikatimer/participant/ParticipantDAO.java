@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -43,6 +45,7 @@ public class ParticipantDAO {
     private static final Map<Integer,Participant> ID2ParticipantMap = new HashMap<>(); 
     private static final Map<Participant,String> Participant2BibMap = new HashMap<>();
     private static final ResultsDAO resultsDAO = ResultsDAO.getInstance();
+    private static final BooleanProperty participantsListInitialized = new SimpleBooleanProperty(false);
     //Semaphore semaphore = new Semaphore(1);
     
     /**
@@ -54,9 +57,11 @@ public class ParticipantDAO {
     }
 
     public static ParticipantDAO getInstance() { 
-        if (participantsList.isEmpty()) {
-            
-            refreshParticipantsList();
+        synchronized(participantsListInitialized){
+              if (!participantsListInitialized.getValue()) {
+                  participantsListInitialized.set(true);
+                  refreshParticipantsList();
+              }
         }
         return SingletonHolder.INSTANCE; 
     }

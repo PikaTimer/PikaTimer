@@ -86,7 +86,11 @@ create table participant (
     state varchar, 
     country varchar,
     team_name varchar,
-    email varchar
+    email varchar,
+    dnf boolean,
+    dnf_note varchar,
+    dq boolean,
+    dq_note varchar
 );
 
 create table participant_attributes (part_id int, index_id int, attribute varchar, value varchar); 
@@ -113,7 +117,12 @@ create table timing_location_input (
     backup boolean
 );
  
-create table timing_location_input_attributes (index_id int, tli_id int, attribute varchar, value varchar); 
+create table timing_location_input_attributes (
+    index_id int, 
+    tli_id int, 
+    attribute varchar, 
+    value varchar
+); 
 
 create table raw_timing_data (
     id int, 
@@ -156,5 +165,41 @@ create table overrides (
     override_time bigint, 
     relative_to_start boolean
 ); 
+
+create table race_outputs (
+    id int primary key, 
+    uuid varchar,
+    race_id int,
+    output_type varchar
+);
+
+create table race_output_attributes (
+    id int, 
+    output_id int, 
+    attribute varchar, 
+    value varchar
+); 
+
+create table race_output_targets (
+    id int primary key, 
+    uuid varchar,
+    output_id int,
+    remote_target_id int,
+    output_filename varchar
+);
+
+create table output_portal (
+    id int primary key, 
+    uuid varchar,
+    target_name varchar,
+    protocol varchar,
+    server varchar,
+    base_path varchar,
+    username varchar,
+    password varchar,
+    private_key varchar,
+    remote_cert varchar,
+    permit_any boolean
+);
 
 commit;

@@ -18,6 +18,7 @@ package com.pikatimer.participant;
 
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
+import static java.lang.Boolean.FALSE;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
@@ -26,7 +27,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -73,6 +76,10 @@ public class Participant {
     private LocalDate birthdayProperty; 
     private final ObservableList<Wave> waves = FXCollections.observableArrayList();   
     private Set<Integer> waveIDSet = new HashSet(); 
+    private final BooleanProperty DNFProperty = new SimpleBooleanProperty(FALSE);
+    private final StringProperty DNFNoteProperty = new SimpleStringProperty();
+    private final BooleanProperty DQProperty = new SimpleBooleanProperty(FALSE);
+    private final StringProperty DQNoteProperty = new SimpleStringProperty();
    
     public Participant() {
         this("","");
@@ -85,7 +92,7 @@ public class Participant {
         setFirstName(firstName);
         setLastName(lastName);
         // TODO: Fix this to include the middle name if it is set
-        fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", lastNameProperty));
+        fullNameProperty.bind(Bindings.concat(firstNameProperty, " ",middleNameProperty," ", lastNameProperty));
     }
     
     public static ObservableMap getAvailableAttributes() {
@@ -297,7 +304,52 @@ public class Participant {
     }
     
     
-
+    @Column(name="dnf", nullable=true)
+    public Boolean getDNF() {
+        return DNFProperty.getValue();
+    }
+    public void setDNF(Boolean s) {
+        DNFProperty.setValue(s);
+    }
+    public BooleanProperty dnfProperty(){
+        return DNFProperty;
+    }
+            
+    @Column(name="dnf_note", nullable=true)
+    public String getDNFNote() {
+        return DNFNoteProperty.getValueSafe();
+    }
+    public void setDNFNote(String s) {
+        DNFNoteProperty.setValue(s);
+    }
+    public StringProperty dnfNoteProperty(){
+        return DNFNoteProperty;
+    }
+    
+    @Column(name="dq", nullable=true)
+    public Boolean getDQ() {
+        return DQProperty.getValue();
+    }
+    public void setDQ(Boolean s) {
+        DQProperty.setValue(s);
+    }
+    public BooleanProperty dqProperty(){
+        return DQProperty;
+    }
+            
+    @Column(name="dq_note", nullable=true)
+    public String getDQNote() {
+        return DQNoteProperty.getValueSafe();
+    }
+    public void setDQNote(String s) {
+        DQNoteProperty.setValue(s);
+    }
+    public StringProperty dqNoteProperty(){
+        return DQNoteProperty;
+    }
+            
+            
+            
     @ElementCollection(fetch = FetchType.EAGER)
     @Column(name="wave_id", nullable=false)
     @CollectionTable(name="part2wave", joinColumns=@JoinColumn(name="participant_id"))
@@ -308,10 +360,7 @@ public class Participant {
     public void setWaveIDs(Set<Integer> w) {
         waveIDSet = w; 
         
-        waves.clear();
-        waveIDSet.stream().forEach(id -> {
-            waves.add(RaceDAO.getInstance().getWaveByID(id)); 
-        });
+        
     }
     
     public void setWaves(List<Wave> w) {
@@ -343,7 +392,11 @@ public class Participant {
         }
     }
     public ObservableList<Wave> wavesProperty() {
-        
+        waves.clear();
+        waveIDSet.stream().forEach(id -> {
+            if (RaceDAO.getInstance().getWaveByID(id) == null) System.out.println("Null WAVE!!! " + id);
+            waves.add(RaceDAO.getInstance().getWaveByID(id)); 
+        });
         return waves; 
     }
     

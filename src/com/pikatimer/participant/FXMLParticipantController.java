@@ -24,6 +24,7 @@ import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
+import static java.lang.Boolean.FALSE;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +45,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -85,6 +87,11 @@ public class FXMLParticipantController  {
     @FXML private Button formResetButton;
     @FXML private Label filteredSizeLabel;
     @FXML private Label listSizeLabel; 
+    @FXML private CheckBox dnfCheckBox;
+    @FXML private TextField dnfTextField;
+    @FXML private CheckBox dqCheckBox;
+    @FXML private TextField dqTextField;
+    
     private ObservableList<Participant> participantsList;
     private ParticipantDAO participantDAO;
     private Participant editedParticipant; 
@@ -256,6 +263,17 @@ public class FXMLParticipantController  {
         listSizeLabel.textProperty().bind(Bindings.size(participantsList).asString());
         filteredSizeLabel.textProperty().bind(Bindings.size(sortedParticipantsList).asString());
         
+        // Only show note if the DNF/DQ checkbox is checked
+        dqTextField.visibleProperty().bind(dqCheckBox.selectedProperty());
+        dqTextField.managedProperty().bind(dqCheckBox.selectedProperty());
+        
+        dnfTextField.visibleProperty().bind(dnfCheckBox.selectedProperty());
+        dnfTextField.managedProperty().bind(dnfCheckBox.selectedProperty());
+        
+        dnfCheckBox.disableProperty().bind(dqCheckBox.selectedProperty());
+        dqCheckBox.disableProperty().bind(dnfCheckBox.selectedProperty());
+
+        
         // if there is only one race, hide the option to pick a race... 
         waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
@@ -304,6 +322,7 @@ public class FXMLParticipantController  {
             //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
         });
         System.out.println("Done Initializing ParticipantController");
+        
         
       
         bibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
@@ -395,15 +414,23 @@ public class FXMLParticipantController  {
         cityTextField.setText(p.getCity()); 
         stateTextField.setText(p.getState());
         
+        // just in case something goes sideways
+        if (p.getDNF() && p.getDQ()) p.setDNF(FALSE);
+        
+        dnfCheckBox.selectedProperty().setValue(p.getDNF());
+        dqCheckBox.selectedProperty().setValue(p.getDQ());
+        dnfTextField.setText(p.getDNFNote());
+        dqTextField.setText(p.getDQNote());
+        
         waveComboBox.getCheckModel().clearChecks();
         
         
         p.wavesProperty().stream().forEach(w -> {
             waveComboBox.getCheckModel().check(w);
-            System.out.println("Checking " + w.getID() + " " + w.toString());
+            //System.out.println("Checking " + w.getID() + " " + w.toString());
         });
         waveComboBox.getCheckModel().getCheckedItems().forEach(w -> {
-            System.out.println("Checked " + w.getID() + " " + w.toString());
+            //System.out.println("Checked " + w.getID() + " " + w.toString());
         });
         //waveComboBox.getCheckModel().check(null);
         
@@ -433,6 +460,11 @@ public class FXMLParticipantController  {
             editedParticipant.setCity(cityTextField.getText());
             editedParticipant.setState(stateTextField.getText());
             editedParticipant.setWaves(waveComboBox.getCheckModel().getCheckedItems());
+            
+            editedParticipant.setDNF(dnfCheckBox.selectedProperty().getValue());
+            editedParticipant.setDQ(dqCheckBox.selectedProperty().getValue());
+            editedParticipant.setDNFNote(dnfTextField.getText());
+            editedParticipant.setDQNote(dqTextField.getText());
             
             // reset the fields
             resetForm();   
@@ -469,6 +501,11 @@ public class FXMLParticipantController  {
         emailField.setText("");  
         cityTextField.setText("");
         stateTextField.setText("");
+        
+        dqCheckBox.selectedProperty().setValue(FALSE);
+        dnfCheckBox.selectedProperty().setValue(FALSE);
+        dnfTextField.setText("");
+        dqTextField.setText("");
         
         // set the Update buton to invisible
         formUpdateButton.setVisible(false);
