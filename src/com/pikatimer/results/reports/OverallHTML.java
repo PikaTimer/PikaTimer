@@ -18,6 +18,7 @@ package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
 import com.pikatimer.race.Race;
+import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
@@ -74,19 +75,26 @@ public class OverallHTML implements RaceReportType{
         
         // TODO: Insert CSS and JS includes here
         
-        report += "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.3/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.12/af-2.1.2/b-1.2.1/b-html5-1.2.1/b-print-1.2.1/fh-3.1.2/kt-2.1.2/r-2.1.0/sc-1.4.2/se-1.2.0/datatables.min.css\"/>\n" +
-                    " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.3/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.12/af-2.1.2/b-1.2.1/b-html5-1.2.1/b-print-1.2.1/fh-3.1.2/kt-2.1.2/r-2.1.0/sc-1.4.2/se-1.2.0/datatables.min.js\"></script>";
+        report += "<meta name=\"viewport\" content=\"width=device-width; initial-scale=1.0; maximum-scale=1.0; minimum-scale=1.0; user-scalable=0;\" />\n";
         
+        report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.3/dt-1.10.12/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" +
+                    " \n" +
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.3/dt-1.10.12/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" +
+                    " \n" +
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
                     "	\n" +
                     "\n" +
                     "$(document).ready(function() {\n" +
-                    "	$('#results').DataTable({\n" +
-                        "    responsive: true,\n" +
-                        "    scrollY: '400px',\n" +
-                        "    scrollCollapse: true,\n" +
-                        "    paging: false\n" +
+                    "	$('#results').DataTable({\n" + 
+                        "    columnDefs: [\n" +
+                        "       { type: 'natural', targets: '_all' }\n" +
+                        "     ]," +
+                        "    responsive: true,\n"  +
+                        "    scrollY: '60vh',\n" +
+                        //"    scrollCollapse: true,\n" +
+                        "    scroller:    true,\n" +
+                        "    deferRender: true\n" +
                         "});\n" +
                     "} );\n" +
                     "\n" +
@@ -96,9 +104,11 @@ public class OverallHTML implements RaceReportType{
         report += "  </HEAD> " +  System.lineSeparator();
         report += "  <BODY> " +  System.lineSeparator();
         report += "    <H1>" + event.getEventName() + "</H1>" + System.lineSeparator();
-        report += "    <H2>" + race.getRaceName() + "</h2>" + System.lineSeparator();
+        report += "    <H2>" ;
+        if (RaceDAO.getInstance().listRaces().size() > 1) 
+            report += race.getRaceName() + "<br>" + System.lineSeparator();
         
-        report += "    <H2>" + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</h2>" + System.lineSeparator();
+        report += "    " + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</h2>" + System.lineSeparator();
         report += System.lineSeparator();
         
         if(inProgress) {
@@ -111,22 +121,22 @@ public class OverallHTML implements RaceReportType{
         // print the headder
         report += "    <thead><tr>" +  System.lineSeparator();
         report += "      <th data-priority=\"1\">OA#</th>" +  System.lineSeparator();
-        report += "      <th data-priority=\"1\">SEX</th>" +  System.lineSeparator(); // 5R chars
-        report += "      <th data-priority=\"2\">AG#</th>" +  System.lineSeparator(); // 5R chars
-        report += "      <th data-priority=\"2\">BIB</th>" +  System.lineSeparator(); // 5R chars for the bib #
-        report += "      <th data-priority=\"1\">AGE</th>" +  System.lineSeparator(); // 4R for the age
-        report += "      <th data-priority=\"1\">SEX</th>" +  System.lineSeparator(); // 4R for the sex
-        report += "      <th data-priority=\"2\">AG</th>" +  System.lineSeparator(); //6L for the AG Group
+        report += "      <th data-priority=\"20\">SEX#</th>" +  System.lineSeparator(); // 5R chars
+        report += "      <th data-priority=\"30\">AG#</th>" +  System.lineSeparator(); // 5R chars
+        report += "      <th data-priority=\"3\">BIB</th>" +  System.lineSeparator(); // 5R chars for the bib #
+        report += "      <th data-priority=\"2\">AGE</th>" +  System.lineSeparator(); // 4R for the age
+        report += "      <th data-priority=\"19\">SEX</th>" +  System.lineSeparator(); // 4R for the sex
+        report += "      <th data-priority=\"29\">AG</th>" +  System.lineSeparator(); //6L for the AG Group
         report += "      <th data-priority=\"1\">Name</th>" +  System.lineSeparator(); // based on the longest name
-        report += "      <th data-priority=\"2\">City</th>" +  System.lineSeparator(); // 18L for the city
-        report += "      <th data-priority=\"2\">ST</th>" +  System.lineSeparator(); // 4C for the state code
+        report += "      <th data-priority=\"40\">City</th>" +  System.lineSeparator(); // 18L for the city
+        report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); // 4C for the state code
          
         // Insert split stuff here
         if (showSplits) {
             // do stuff
             // 9 chars per split
             for (int i = 2; i < race.splitsProperty().size(); i++) {
-                report += "      <th data-priority=\"4\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
+                report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
             }
         }
         
@@ -134,9 +144,9 @@ public class OverallHTML implements RaceReportType{
         report += "      <th data-priority=\"1\">Finish</th>" +  System.lineSeparator(); // 9R Need to adjust for the format code
        
         // gun time
-        if (showGun) report += "      <th data-priority=\"3\">Gun</th>" +  System.lineSeparator(); // 9R ibid
+        if (showGun) report += "      <th data-priority=\"90\">Gun</th>" +  System.lineSeparator(); // 9R ibid
         // pace
-        if (showPace) report += "      <th data-priority=\"3\">Pace</th>" +  System.lineSeparator(); // 10R
+        if (showPace) report += "      <th data-priority=\"90\">Pace</th>" +  System.lineSeparator(); // 10R
         
         report += "</tr></thead>" +  System.lineSeparator(); 
         report += "<tbody>"+ System.lineSeparator();
@@ -159,7 +169,9 @@ public class OverallHTML implements RaceReportType{
             if (!showDQ && dq) return;
             
             if (inProgress && pr.getChipFinish() == null) {
-                chars.append("<td  colspan=\"3\"> **Started** </td>" +  System.lineSeparator());
+                chars.append("<td> **Started** </td>\n"
+                        + "<td>--</td>\n" +
+                        " <td>--</td>" +  System.lineSeparator());
                 hideTime = true;
             } else if (pr.getChipFinish() == null) {
                 return;
@@ -168,8 +180,12 @@ public class OverallHTML implements RaceReportType{
                 chars.append("<td>"+ pr.getSexPlace().toString() + " </td>" +  System.lineSeparator());
                 chars.append("<td>"+ pr.getAGPlace().toString() + " </td>" +  System.lineSeparator()); 
             } else {
-                if (dnf) chars.append("<td  colspan=\"3\">***DNF***</td>" +  System.lineSeparator());
-                else chars.append("<td  colspan=\"3\">*****DQ****</td>" +  System.lineSeparator());
+                if (dnf) chars.append("<td  colspan=\"3\">***DNF***</td>"
+                        + "<td style=\"display: none;\">--</td>\n" +
+                        " <td style=\"display: none;\">--</td>" +  System.lineSeparator());
+                else chars.append("<td  colspan=\"3\">*****DQ****</td>"
+                        + "<td style=\"display: none;\">--</td>\n" +
+                        " <td style=\"display: none;\">--</td>" +  System.lineSeparator());
                     
             }
             
@@ -182,16 +198,24 @@ public class OverallHTML implements RaceReportType{
             chars.append("<td>"+ pr.getParticipant().getState() + "</td>" +  System.lineSeparator());
 
             // Insert split stuff here 
-            if (showSplits && ! hideTime) {
+            if (showSplits) {
             // do stuff
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), 0, Boolean.FALSE, RoundingMode.DOWN)+ "</td>" +  System.lineSeparator());
+                    if (!dq) 
+                        chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), 0, Boolean.FALSE, RoundingMode.DOWN)+ "</td>" +  System.lineSeparator());
+                    else chars.append("<td>---</td>" +  System.lineSeparator());
                 }
             }
             // chip time
             if (! hideTime) chars.append("<td>"+DurationFormatter.durationToString(pr.getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN)+ "</td>" +  System.lineSeparator());
+            else chars.append("<td>---</td>" +  System.lineSeparator());
+            
             if (showGun && ! hideTime) chars.append("<td>"+DurationFormatter.durationToString(pr.getGunFinish(), 0, Boolean.FALSE, RoundingMode.DOWN)+ "</td>" +  System.lineSeparator());
+            else if (showGun && hideTime) chars.append("<td>---</td>" +  System.lineSeparator());
+            
             if (showPace && ! hideTime) chars.append("<td>"+StringUtils.stripStart(Pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish(), Pace.MPM), "0")+ "</td>" +  System.lineSeparator());
+            else if (showPace && hideTime) chars.append("<td>---</td>" +  System.lineSeparator());
+
 //            System.out.println("Results: " + r.getRaceName() + ": "
 //                    + r.getParticipant().fullNameProperty().getValueSafe() 
 //                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
