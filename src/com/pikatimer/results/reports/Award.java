@@ -19,6 +19,7 @@ package com.pikatimer.results.reports;
 import com.pikatimer.event.Event;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
+import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
@@ -85,7 +86,8 @@ public class Award implements RaceReportType {
        
         
         report += StringUtils.center(event.getEventName(),80) + System.lineSeparator();
-        report += StringUtils.center(race.getRaceName(),80) + System.lineSeparator();
+        if (RaceDAO.getInstance().listRaces().size() > 1) 
+            report += StringUtils.center(race.getRaceName(),80) + System.lineSeparator();
         report += StringUtils.center(event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),80) + System.lineSeparator();
         report += System.lineSeparator();
         

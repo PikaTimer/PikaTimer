@@ -87,10 +87,17 @@ public class OverallHTML implements RaceReportType{
                     "\n" +
                     "$(document).ready(function() {\n" +
                     "	$('#results').DataTable({\n" + 
-                        "    columnDefs: [\n" +
-                        "       { type: 'natural', targets: '_all' }\n" +
-                        "     ]," +
-                        "    responsive: true,\n"  +
+                        "    responsive: {\n" +
+                        "            details: {\n" +
+                        "                renderer: $.fn.dataTable.Responsive.renderer.tableAll()," +
+                        "                type: 'column',\n" +
+                        "                target: 'tr'\n" +
+                        "            }\n" +
+                        "        },\n" +
+                        "    columnDefs: [ " +
+                        "            { type: 'natural', targets: '_all' },\n" +
+                        "            {className: 'control', orderable: false, targets:   0}\n" +
+                        "        ],"  +
                         "    scrollY: '60vh',\n" +
                         //"    scrollCollapse: true,\n" +
                         "    scroller:    true,\n" +
@@ -120,6 +127,7 @@ public class OverallHTML implements RaceReportType{
         report += "  <TABLE id=\"results\" class=\"display responsive nowrap\" > " +  System.lineSeparator();
         // print the headder
         report += "    <thead><tr>" +  System.lineSeparator();
+        report += "      <th></th>"+  System.lineSeparator(); // dummy for control box
         report += "      <th data-priority=\"1\">OA#</th>" +  System.lineSeparator();
         report += "      <th data-priority=\"20\">SEX#</th>" +  System.lineSeparator(); // 5R chars
         report += "      <th data-priority=\"30\">AG#</th>" +  System.lineSeparator(); // 5R chars
@@ -167,6 +175,8 @@ public class OverallHTML implements RaceReportType{
 
             if (!showDNF && dnf) return;
             if (!showDQ && dq) return;
+            
+            chars.append("<td></td>" +  System.lineSeparator()); // dummy for control
             
             if (inProgress && pr.getChipFinish() == null) {
                 chars.append("<td> **Started** </td>\n"

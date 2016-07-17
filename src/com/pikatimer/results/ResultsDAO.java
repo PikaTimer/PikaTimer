@@ -283,6 +283,7 @@ public class ResultsDAO {
             });
         }
         
+        
         List<CookedTimeData> timesList = new ArrayList(timingDAO.getCookedTimesByBib(bib));
         timesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
         

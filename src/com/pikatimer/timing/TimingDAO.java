@@ -60,8 +60,9 @@ public class TimingDAO {
         private  Map<String,List<TimeOverride>> overrideMap = new ConcurrentHashMap(); 
 
     public List<CookedTimeData> getCookedTimesByBib(String bib) {
-        return cookedTimeBibMap.get(bib); 
-        
+        if (cookedTimeBibMap.containsKey(bib))
+            return cookedTimeBibMap.get(bib); 
+        return new ArrayList();
     }
         
         
