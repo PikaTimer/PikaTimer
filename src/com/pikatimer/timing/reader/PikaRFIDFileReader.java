@@ -236,7 +236,7 @@ public class PikaRFIDFileReader implements TimingReader{
         if (reader.equals("0") && ! chip.equals("0")) { // invalid combo
             System.out.println("Non Start time: " + s);
             return;
-        } else if (!reader.matches("[1234]")){
+        } else if (!reader.matches("[1234]") && !chip.equals("0")){
             System.out.println("Invalid Port: " + s);
             return;
         }
