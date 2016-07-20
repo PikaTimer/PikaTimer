@@ -23,14 +23,16 @@ Current Features:
 * No practical limit on the number of participants, races, splits, etc (but you'll want a faster box beyond a few thousand runners with a dozen splits).
 * Built in database engine (H2) that stores the entire event in a single file (easy for backups, copying, archiving, etc)
 * Outputs basic Overall, Age Group, and Awards text based reports. 
+* Output of HTML5 table (formatted with DataTables for mobile viewing)
+* Post a file to an FTPS (FTP over SSL) server
 * Output awards file based on gun or chip time for Overall / Masters / AG.
 * DQ / DNF flags for runners and the ability to exclude them on results.
 
 Short List of pending features:
 * Output CSV / HTML5 / Static HTML results as participants finish or cross a timing location
-* Automatically post the results to a web server via ftp/sftp/scp/ftps
+* Automatically post the results to a web server via ftp/sftp/scp
 * Windows / Linux / MacOS native installation apps
-
+* Ability to report on a "segment" (delta between two splits)
 
 Long Term Features:
 * Arbitrary participant attributes an the ability to produce reports based on them
