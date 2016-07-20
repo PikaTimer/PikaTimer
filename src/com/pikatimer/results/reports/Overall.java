@@ -120,29 +120,45 @@ public class Overall implements RaceReportType{
             
             // if they are a DNF or DQ swap out the placement stats
             Boolean hideTime = false; 
+            Boolean hideSplitTimes = false;
+            
             Boolean dnf = pr.getParticipant().getDNF();
             Boolean dq = pr.getParticipant().getDQ();
-            if (dnf || dq) hideTime = true;
-            
-            if (pr.getChipFinish() == null && showDNF) dnf = true;
 
+            if (pr.getChipFinish() == null && showDNF && !inProgress) dnf = true;
+            
             if (!showDNF && dnf) return;
             if (!showDQ && dq) return;
             
-            if (inProgress && pr.getChipFinish() == null) {
-                chars.append(StringUtils.center("**Started**",14));
-                hideTime = true;
-            } else if (pr.getChipFinish() == null) {
-                return;
-            } else if (! dnf && ! dq) { 
+            if (dnf || dq) hideTime = true;
+            if (dq) hideSplitTimes = true; 
+            
+            if (dq) chars.append(StringUtils.center("***DQ****",14));
+            else if (dnf) chars.append(StringUtils.center("***DNF***",14));
+            else if (pr.getChipFinish() != null){ 
                 chars.append(StringUtils.leftPad(pr.getOverall().toString(),4));
                 chars.append(StringUtils.leftPad(pr.getSexPlace().toString(),5));
                 chars.append(StringUtils.leftPad(pr.getAGPlace().toString(),5)); 
-            } else {
-                if (dnf) chars.append(StringUtils.center("***DNF***",14));
-                else chars.append(StringUtils.center("***DQ****",14));
-                    
+            } else if (!inProgress && pr.getChipFinish() == null) return; 
+            else {
+                chars.append(StringUtils.center("**Started**",14));
+                hideTime = true;
             }
+            
+//            if (inProgress && pr.getChipFinish() == null && !dnf) {
+//                chars.append(StringUtils.center("**Started**",14));
+//                hideTime = true;
+//            } else if (pr.getChipFinish() == null && (!showDQ || !showDNF)) {
+//                return;
+//            } else if (! dnf && ! dq) { 
+//                chars.append(StringUtils.leftPad(pr.getOverall().toString(),4));
+//                chars.append(StringUtils.leftPad(pr.getSexPlace().toString(),5));
+//                chars.append(StringUtils.leftPad(pr.getAGPlace().toString(),5)); 
+//            } else {
+//                if (dnf) chars.append(StringUtils.center("***DNF***",14));
+//                else chars.append(StringUtils.center("***DQ****",14));
+//                    
+//            }
             
             chars.append(StringUtils.leftPad(pr.getParticipant().getBib(),5));
             chars.append(StringUtils.leftPad(pr.getAge().toString(),4));
@@ -153,7 +169,7 @@ public class Overall implements RaceReportType{
             chars.append(StringUtils.center(pr.getParticipant().getState(),4));
 
             // Insert split stuff here 
-            if (showSplits && ! hideTime) {
+            if (showSplits && ! hideSplitTimes) {
             // do stuff
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
                     chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getSplit(i), 0, Boolean.FALSE, RoundingMode.DOWN), 9));

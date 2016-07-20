@@ -186,6 +186,7 @@ public class ResultsDAO {
 
                                 Platform.runLater(() -> {
                                     
+                                    //This causes the AAIOB error due to a java bug until we fix the extractor and the tableview to only display properties
                                     //if (r.isEmpty() && raceResultsMap.get(r.getRaceID()).contains(r)) raceResultsMap.get(r.getRaceID()).remove(r);
                                     
                                     if(!r.isEmpty()){
@@ -264,7 +265,7 @@ public class ResultsDAO {
         
         
         Optional<List<TimeOverride>> bibOverrides = timingDAO.getOverridesByBib(bib);
-        if (timingDAO.getCookedTimesByBib(bib) == null && ! bibOverrides.isPresent()) {
+        if (timingDAO.getCookedTimesByBib(bib).isEmpty() && ! bibOverrides.isPresent()) {
             return;
         }
         

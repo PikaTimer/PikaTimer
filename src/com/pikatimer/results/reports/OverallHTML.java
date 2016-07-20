@@ -128,12 +128,12 @@ public class OverallHTML implements RaceReportType{
         // print the headder
         report += "    <thead><tr>" +  System.lineSeparator();
         report += "      <th></th>"+  System.lineSeparator(); // dummy for control box
-        report += "      <th data-priority=\"1\">OA#</th>" +  System.lineSeparator();
+        report += "      <th data-priority=\"10\">OA#</th>" +  System.lineSeparator();
         report += "      <th data-priority=\"20\">SEX#</th>" +  System.lineSeparator(); // 5R chars
         report += "      <th data-priority=\"30\">AG#</th>" +  System.lineSeparator(); // 5R chars
-        report += "      <th data-priority=\"3\">BIB</th>" +  System.lineSeparator(); // 5R chars for the bib #
-        report += "      <th data-priority=\"2\">AGE</th>" +  System.lineSeparator(); // 4R for the age
-        report += "      <th data-priority=\"19\">SEX</th>" +  System.lineSeparator(); // 4R for the sex
+        report += "      <th data-priority=\"5\">BIB</th>" +  System.lineSeparator(); // 5R chars for the bib #
+        report += "      <th data-priority=\"9\">AGE</th>" +  System.lineSeparator(); // 4R for the age
+        report += "      <th data-priority=\"5\">SEX</th>" +  System.lineSeparator(); // 4R for the sex
         report += "      <th data-priority=\"29\">AG</th>" +  System.lineSeparator(); //6L for the AG Group
         report += "      <th data-priority=\"1\">Name</th>" +  System.lineSeparator(); // based on the longest name
         report += "      <th data-priority=\"40\">City</th>" +  System.lineSeparator(); // 18L for the city
@@ -167,37 +167,64 @@ public class OverallHTML implements RaceReportType{
             
             // if they are a DNF or DQ swap out the placement stats
             Boolean hideTime = false; 
+            Boolean hideSplitTimes = false;
+            
             Boolean dnf = pr.getParticipant().getDNF();
             Boolean dq = pr.getParticipant().getDQ();
-            if (dnf || dq) hideTime = true;
-            
-            if (pr.getChipFinish() == null && showDNF) dnf = true;
 
+            if (pr.getChipFinish() == null && showDNF && !inProgress) dnf = true;
+            
             if (!showDNF && dnf) return;
             if (!showDQ && dq) return;
             
+            if (dnf || dq) hideTime = true;
+            if (dq) hideSplitTimes = true; 
+            
+            if (!inProgress && pr.getChipFinish() == null && !showDNF) return;
+            
             chars.append("<td></td>" +  System.lineSeparator()); // dummy for control
             
-            if (inProgress && pr.getChipFinish() == null) {
+            if (dq) chars.append("<td >*****DQ****</td>"
+                        + "<td>--</td>\n" +
+                        " <td>--</td>" +  System.lineSeparator());
+            else if (dnf) chars.append("<td>***DNF***</td>"
+                        + "<td>--</td>\n" +
+                        " <td>--</td>" +  System.lineSeparator());
+            else if (pr.getChipFinish() != null){ 
+                chars.append("<td>"+ pr.getOverall().toString() + " </td>" +  System.lineSeparator());
+                chars.append("<td>"+ pr.getSexPlace().toString() + " </td>" +  System.lineSeparator());
+                chars.append("<td>"+ pr.getAGPlace().toString() + " </td>" +  System.lineSeparator());
+            } else {
                 chars.append("<td> **Started** </td>\n"
                         + "<td>--</td>\n" +
                         " <td>--</td>" +  System.lineSeparator());
                 hideTime = true;
-            } else if (pr.getChipFinish() == null) {
-                return;
-            } else if (! dnf && ! dq) { 
-                chars.append("<td>"+ pr.getOverall().toString() + " </td>" +  System.lineSeparator());
-                chars.append("<td>"+ pr.getSexPlace().toString() + " </td>" +  System.lineSeparator());
-                chars.append("<td>"+ pr.getAGPlace().toString() + " </td>" +  System.lineSeparator()); 
-            } else {
-                if (dnf) chars.append("<td  colspan=\"3\">***DNF***</td>"
-                        + "<td style=\"display: none;\">--</td>\n" +
-                        " <td style=\"display: none;\">--</td>" +  System.lineSeparator());
-                else chars.append("<td  colspan=\"3\">*****DQ****</td>"
-                        + "<td style=\"display: none;\">--</td>\n" +
-                        " <td style=\"display: none;\">--</td>" +  System.lineSeparator());
-                    
             }
+            
+            
+            
+            
+            
+//            if (inProgress && pr.getChipFinish() == null) {
+//                chars.append("<td> **Started** </td>\n"
+//                        + "<td>--</td>\n" +
+//                        " <td>--</td>" +  System.lineSeparator());
+//                hideTime = true;
+//            } else if (pr.getChipFinish() == null) {
+//                return;
+//            } else if (! dnf && ! dq) { 
+//                chars.append("<td>"+ pr.getOverall().toString() + " </td>" +  System.lineSeparator());
+//                chars.append("<td>"+ pr.getSexPlace().toString() + " </td>" +  System.lineSeparator());
+//                chars.append("<td>"+ pr.getAGPlace().toString() + " </td>" +  System.lineSeparator()); 
+//            } else {
+//                if (dnf) chars.append("<td  colspan=\"3\">***DNF***</td>"
+//                        + "<td style=\"display: none;\">--</td>\n" +
+//                        " <td style=\"display: none;\">--</td>" +  System.lineSeparator());
+//                else chars.append("<td  colspan=\"3\">*****DQ****</td>"
+//                        + "<td style=\"display: none;\">--</td>\n" +
+//                        " <td style=\"display: none;\">--</td>" +  System.lineSeparator());
+//                    
+//            }
             
             chars.append("<td>"+ pr.getParticipant().getBib() + "</td>" +  System.lineSeparator());
             chars.append("<td>"+ pr.getAge().toString() + "</td>" +  System.lineSeparator());
@@ -211,7 +238,7 @@ public class OverallHTML implements RaceReportType{
             if (showSplits) {
             // do stuff
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    if (!dq) 
+                    if (!hideSplitTimes) 
                         chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), 0, Boolean.FALSE, RoundingMode.DOWN)+ "</td>" +  System.lineSeparator());
                     else chars.append("<td>---</td>" +  System.lineSeparator());
                 }

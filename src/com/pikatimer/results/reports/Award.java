@@ -77,7 +77,7 @@ public class Award implements RaceReportType {
         // Boolean showGun = rr.getBooleanAttribute("showGun");
         
         // what is the longest name?
-        
+        fullNameLength.setValue(10);
         prList.forEach (pr ->{
             if(pr.getParticipant().fullNameProperty().length().getValue() > fullNameLength.getValue()) 
                 fullNameLength.setValue(pr.getParticipant().fullNameProperty().length().getValue());

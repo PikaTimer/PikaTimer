@@ -144,7 +144,7 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
         
         // Compare based on the following:
         // dQ/DNF -> chipFinishTime -> split results -> start time -> full name (why not)
-        //System.out.println("ProcessedResult.compareTo " + this.participant.getBib() + " vs " + other.participant.getBib());
+//        System.out.println("ProcessedResult.compareTo() starting " + this.participant.getBib() + " vs " + other.participant.getBib());
         // is somebody a DQ or DNF?
         if (participant.getDQ() && ! other.getParticipant().getDQ()) return 1;
         if (! participant.getDQ() && other.getParticipant().getDQ()) return -1;
@@ -154,6 +154,7 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
         // At this point, either both are DNF/DQ's or they both are not. 
         // Sort as if they are not. 
 
+//        System.out.println("ProcessedResult.compareTo dnf/dq check done: " + this.participant.getBib() + " vs " + other.participant.getBib());
         
         // Step 1: check the finish time
         if (chipFinishTime != null && other.chipFinishTime != null ) { 
@@ -171,6 +172,7 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
             return -1; 
         }
         
+        //System.out.println("ProcessedResult.compareTo starting splits check " + this.participant.getBib() + " vs " + other.participant.getBib());
         // check the splits in reverse order
         if(!splitTimes.keySet().isEmpty() && !other.splitTimes.keySet().isEmpty()) {
             // we both have splits... 
@@ -184,15 +186,15 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
             }
             
             
-        } else if (splitTimes.keySet().isEmpty()) {
+        } else if (splitTimes.keySet().isEmpty() && !other.splitTimes.keySet().isEmpty()) {
             //We don't, they do... 
             return 1;
-        } else if (! splitTimes.keySet().isEmpty()) {
+        } else if (! splitTimes.keySet().isEmpty() && other.splitTimes.keySet().isEmpty()) {
             // we do, they don't 
             return -1;
         }
         
-//        System.out.println("ProcessedResult.compareTo " + this.participant.getBib() + " vs " + other.participant.getBib());
+        //System.out.println("ProcessedResult.compareTo splits " + this.participant.getBib() + " vs " + other.participant.getBib());
 
         
         // check the start time
@@ -200,7 +202,7 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
             return chipStartTime.compareTo(other.chipStartTime);
         }
         
-//        System.out.println("ProcessedResult.compareTo " + this.participant.getBib() + " vs " + other.participant.getBib());
+//      System.out.println("ProcessedResult.compareTo start" + this.participant.getBib() + " vs " + other.participant.getBib());
 
         // Ok, so they have identical finish, split, start times, tiebreak on 
         // the full name property of the participant. 

@@ -113,13 +113,20 @@ public class FTPSTransport implements FileTransport{
                             while(true) {
                                 System.out.println("FTPSTransport Thread: Waiting for a file to ...");
                                 //filename = transferQueue.poll(60, TimeUnit.SECONDS);
+                                
                                 filename = transferQueue.take(); // blocks until
 
                                 System.out.println("FTPSTransport Thread: Transfering " + filename);
                                 String contents = transferMap.get(filename);
-                                    
                                 
                                 if (!ftpClient.isConnected()) openConnection();
+                                
+                                if (!ftpClient.isConnected()) {
+                                    System.out.println("FTPSTransport Thread: Still not connected, sleeping for 10 seconds...");
+                                    Thread.sleep(10000);
+                                    transferQueue.put(filename);
+                                    break;
+                                }
 
                                 //InputStream data = IOUtils.toInputStream(contents, "UTF-8");
                                 InputStream data = IOUtils.toInputStream(contents);
@@ -135,10 +142,12 @@ public class FTPSTransport implements FileTransport{
 
                         } catch (InterruptedException ex) {
                             System.out.println("FTPSTransport Thread: InterruptedException thrown");
+                            //if (filename!= null) transferQueue.put(filename);
 
                             //Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
                         } catch (IOException ex) {
                             System.out.println("FTPSTransport Thread: IOException thrown");
+                            //if (filename!= null) transferQueue.put(filename);
                             //Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
                         } finally {
                             if (ftpClient.isConnected()) {
