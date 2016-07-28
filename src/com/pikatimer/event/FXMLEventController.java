@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
@@ -149,6 +150,7 @@ public class FXMLEventController  {
         if (timingLocationList.size() > 2){
             multipleTimingCheckBox.setSelected(true);
         }
+        multipleTimingCheckBox.disableProperty().bind(Bindings.size(timingLocListView.getItems()).greaterThan(2));
         
         timingLocListView.setEditable(true);
         
