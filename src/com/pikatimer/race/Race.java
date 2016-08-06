@@ -17,6 +17,7 @@
 package com.pikatimer.race;
 
 import com.pikatimer.results.RaceReport;
+import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
@@ -56,7 +57,7 @@ public class Race {
 
    private final IntegerProperty IDProperty;
 
-   private BigDecimal raceDistance; //
+   private BigDecimal raceDistance; 
    private Unit raceUnits; 
    private final StringProperty raceUnitsProperty; 
    private final StringProperty raceName;
@@ -72,13 +73,14 @@ public class Race {
    private List<Split> raceSplitList;
    private List<RaceReport> raceReportsList;
    private final ObservableList<RaceReport> raceReports;
-   private final Race self; 
+   private List<Segment> segmentsList;
+   private final ObservableList<Segment> raceSegments =FXCollections.observableArrayList();
+   //private final Race self; 
    
    private RaceAwards awards; 
    private AgeGroups ageGroups;
            
     public Race() {
-        this.self = this; 
         this.IDProperty = new SimpleIntegerProperty();
         this.raceUnitsProperty = new SimpleStringProperty();
         this.raceName = new SimpleStringProperty();
@@ -339,6 +341,32 @@ public class Race {
         raceReports.remove(w); 
         //raceReportsList.remove(w);
         raceReportsList = raceReports.sorted();
+    }
+    
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    public List<Segment> getSegments() {
+        return segmentsList;
+    }
+    public void setSegments(List<Segment> s) {
+        segmentsList = s;
+        if (s == null) System.out.println("Race.setRaceReports(list) called with null list");
+        if (s != null) raceSegments.setAll(s);
+        //System.out.println("Race.setRaceReports(list) " + raceName.getValueSafe() + "( " + IDProperty.getValue().toString() + ")" + " now has " + raceReports.size() + " Reports");
+
+    }
+    public ObservableList<Segment> raceSegmentsProperty() {
+        return raceSegments; 
+    }
+    public void addRaceSegment(Segment s) {
+        raceSegments.add(s);
+        s.setRace(this);
+        //raceReportsList.add(w);
+        segmentsList = raceSegments.sorted();
+    }
+    public void removeRaceSegment(Segment s) {
+        raceSegments.remove(s); 
+        //raceReportsList.remove(w);
+        segmentsList = raceSegments.sorted();
     }
 
 

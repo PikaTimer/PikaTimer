@@ -29,6 +29,7 @@ import com.pikatimer.results.Result;
 import com.pikatimer.timing.Bib2ChipMap;
 import com.pikatimer.timing.CookedTimeData;
 import com.pikatimer.timing.RawTimeData;
+import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.timing.TimingLocation;
@@ -84,6 +85,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(RaceAwards.class);
         cfg.addAnnotatedClass(AgeGroups.class);
         cfg.addAnnotatedClass(Split.class);
+        cfg.addAnnotatedClass(Segment.class);
         cfg.addAnnotatedClass(TimingLocation.class);
         cfg.addAnnotatedClass(TimingLocationInput.class);
         cfg.addAnnotatedClass(Wave.class);

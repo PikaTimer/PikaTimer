@@ -96,6 +96,8 @@ public class FXMLRaceDetailsController {
     @FXML private TextField raceStartTimeTextField; 
     @FXML private VBox splitsVBox;
     @FXML private CheckBox splitsCheckBox; 
+    @FXML private HBox bibRangeHBox;
+    @FXML private VBox segmentsVBox;
     
     @FXML private Button courseRecordsButton;
 
@@ -456,7 +458,7 @@ public class FXMLRaceDetailsController {
             // setup the cutoff label so that it displace the pace in M/Mi if 
             // it is set, otherwise blank it
 
-            //Setup the splits VBox
+            
 
 
             //Setup the wave starts VBOX
@@ -477,6 +479,15 @@ public class FXMLRaceDetailsController {
             );
             waveStartsVBox.managedProperty().bind(waveStartsCheckBox.selectedProperty());
             waveStartsVBox.visibleProperty().bind(waveStartsCheckBox.selectedProperty());
+            bibRangeHBox.managedProperty().bind(Bindings.and(
+                    Bindings.size(raceDAO.listRaces()).greaterThanOrEqualTo(2), 
+                    waveStartsCheckBox.selectedProperty().not()
+            ));
+            bibRangeHBox.visibleProperty().bind(Bindings.and(
+                    Bindings.size(raceDAO.listRaces()).greaterThanOrEqualTo(2), 
+                    waveStartsCheckBox.selectedProperty().not()
+            ));
+                    
             // if we have more than one wave then let's set the waveStartsCheckBox to true.
             if (raceWaves.size() > 1) {
                 waveStartsCheckBox.setSelected(true); 
@@ -521,6 +532,28 @@ public class FXMLRaceDetailsController {
                 splitsCheckBox.setSelected(false);
             }
             splitsCheckBox.disableProperty().bind(Bindings.size(raceSplitsTableView.getItems()).greaterThan(2));
+            raceSplitsTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                System.out.println("Selected splits changed...");
+                if (newSelection != null) {
+                    if (newSelection.splitPositionProperty().getValue().equals(1)) deleteSplitButton.disableProperty().set(true);
+                    else if (newSelection.splitPositionProperty().getValue().equals(raceSplitsTableView.getItems().size())) deleteSplitButton.disableProperty().set(true);
+                    else deleteSplitButton.disableProperty().set(false);
+                } else {
+                    deleteSplitButton.disableProperty().set(true);
+                }
+            });
+            
+            segmentsVBox.managedProperty().bind(Bindings.and(
+                    Bindings.size(raceSplits).greaterThanOrEqualTo(4), 
+                    splitsCheckBox.selectedProperty()
+            ));
+            segmentsVBox.visibleProperty().bind(Bindings.and(
+                    Bindings.size(raceSplits).greaterThanOrEqualTo(4), 
+                    splitsCheckBox.selectedProperty()
+            ));
+            
+            
+            
             
             //Setup the start time
             raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
@@ -671,4 +704,10 @@ public class FXMLRaceDetailsController {
         alert.showAndWait();
     }
     
+    public void addSegment(ActionEvent fxevent){
+        
+    }
+    public void deleteSegment(ActionEvent fxevent){
+        
+    }
 }
