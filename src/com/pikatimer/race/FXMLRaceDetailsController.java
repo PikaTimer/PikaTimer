@@ -97,6 +97,8 @@ public class FXMLRaceDetailsController {
     @FXML private VBox splitsVBox;
     @FXML private CheckBox splitsCheckBox; 
     @FXML private HBox bibRangeHBox;
+    @FXML private TextField startBibTextField;
+    @FXML private TextField endBibTextField;
     @FXML private VBox segmentsVBox;
     
     @FXML private Button courseRecordsButton;
@@ -382,56 +384,22 @@ public class FXMLRaceDetailsController {
         
         
         
-//        raceSplitsTableView.setOnDragDetected(new EventHandler<MouseEvent>() { //drag
-//            @Override
-//            public void handle(MouseEvent event) {
-//                // drag was detected, start drag-and-drop gesture
-//                String selected = raceSplitsTableView.getSelectionModel().getSelectedItem().idProperty().toString();
-//                if(selected !=null){
-//                                   
-//                    Dragboard db = raceSplitsTableView.startDragAndDrop(TransferMode.ANY);
-//                    ClipboardContent content = new ClipboardContent();
-//                    content.putString(selected);
-//                    db.setContent(content);
-//                    event.consume(); 
-//                }
-//            }
-//        });
-//
-// raceSplitsTableView.setOnDragOver(new EventHandler<DragEvent>() {
-//                @Override
-//                public void handle(DragEvent event) {
-//                    // data is dragged over the target 
-//                    Dragboard db = event.getDragboard();
-//                    if (event.getDragboard().hasString()){
-//                        event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
-//                    }
-//                    event.consume();
-//                }
-//            });
-//
-//raceSplitsTableView.setOnDragDropped(new EventHandler<DragEvent>() {
-//                @Override
-//                public void handle(DragEvent event) {
-//                    Dragboard db = event.getDragboard();
-//                    boolean success = false;
-//                    if (event.getDragboard().hasString()) {            
-//
-//                        String text = db.getString();
-//                        
-//                        //raceSplits.add(text);
-//                        //raceSplitsTableView.setItems(raceSplits);
-//                        success = true;
-//                    }
-//                    event.setDropCompleted(success);
-//                    event.consume();
-//                } 
-//            }); 
+
         
         
+        startBibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                System.out.println("startBibTextField out focus");
+                updateRaceStartBib();
+            }
+        });
         
-        
-        
+        endBibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                System.out.println("endBibTestField out focus");
+                updateRaceEndBib();
+            }
+        });
 
     }    
     
@@ -497,9 +465,28 @@ public class FXMLRaceDetailsController {
             waveStartsCheckBox.disableProperty().bind(Bindings.size(waveStartsTableView.getItems()).greaterThan(1));
             //Setup the start time
             raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
-            // if there is only one race, blank out the bib range options
-        
             
+            if (raceWaves.get(0).getWaveAssignmentMethod().equals(WaveAssignment.BIB)) {
+                endBibTextField.setText(raceWaves.get(0).getWaveAssignmentEnd());
+                startBibTextField.setText(raceWaves.get(0).getWaveAssignmentStart());
+            } else {
+                endBibTextField.setText("");
+                startBibTextField.setText("");
+            }
+        
+            waveStartsCheckBox.selectedProperty().addListener((arg0,  oldPropertyValue,  newPropertyValue) -> {
+                if (!newPropertyValue) {
+                    if (raceWaves.get(0).getWaveAssignmentMethod().equals(WaveAssignment.BIB)) {
+                        endBibTextField.setText(raceWaves.get(0).getWaveAssignmentEnd());
+                        startBibTextField.setText(raceWaves.get(0).getWaveAssignmentStart());
+                    } else {
+                        endBibTextField.setText("");
+                        startBibTextField.setText("");
+                    }
+                    
+                    raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
+                }
+            });
             
             splitsVBox.managedProperty().bind(splitsCheckBox.selectedProperty());
             splitsVBox.visibleProperty().bind(splitsCheckBox.selectedProperty());
@@ -616,6 +603,23 @@ public class FXMLRaceDetailsController {
         //raceDAO.updateRace(selectedRace);
         raceDAO.updateWave(raceWaves.get(0));
         ResultsDAO.getInstance().reprocessAll(raceWaves.get(0));
+    }
+    
+    
+    private void updateRaceStartBib() {
+        
+        if (!startBibTextField.getText().equals(raceWaves.get(0).getWaveAssignmentStart())){
+            raceWaves.get(0).setWaveAssignmentStart(startBibTextField.getText());
+            if (raceWaves.get(0).getWaveAssignmentMethod() != WaveAssignment.BIB) raceWaves.get(0).setWaveAssignmentMethod(WaveAssignment.BIB);
+            raceDAO.updateWave(raceWaves.get(0));
+        }
+    }
+    private void updateRaceEndBib() {
+        if (!endBibTextField.getText().equals(raceWaves.get(0).getWaveAssignmentEnd())){
+            raceWaves.get(0).setWaveAssignmentEnd(endBibTextField.getText());
+            if (raceWaves.get(0).getWaveAssignmentMethod() != WaveAssignment.BIB) raceWaves.get(0).setWaveAssignmentMethod(WaveAssignment.BIB);
+            raceDAO.updateWave(raceWaves.get(0));
+        }
     }
     
     public void updateRaceCutoffTime(ActionEvent fxevent){
