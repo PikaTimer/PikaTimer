@@ -88,6 +88,7 @@ public class FXMLRaceDetailsController {
     @FXML private TableColumn<Split,TimingLocation> splitLocationTableColumn; 
     @FXML private TableColumn<Split, String> splitDistanceTableColumn;
     @FXML private TableColumn<Split, String> splitCutoffTableColumn; 
+    @FXML private TableColumn<Split, String> splitTimeTableColumn;
     @FXML private Button deleteSplitButton;
     @FXML private CheckBox waveStartsCheckBox; 
     @FXML private HBox startTimeHBox; 
@@ -400,6 +401,9 @@ public class FXMLRaceDetailsController {
                 updateRaceEndBib();
             }
         });
+        
+        splitCutoffTableColumn.visibleProperty().set(false);
+        splitTimeTableColumn.visibleProperty().set(false);
 
     }    
     
