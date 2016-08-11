@@ -95,6 +95,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   </TableView>
                   <HBox alignment="CENTER_RIGHT" fillHeight="false" spacing="5.0">
                      <children>
+                        <Button fx:id="splitUpdateResultsButton" mnemonicParsing="false" text="Update Results" />
+                        <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                         <Button fx:id="addSplitButton" mnemonicParsing="false" onAction="#addSplit" text="Add" />
                         <Button fx:id="deleteSplitButton" mnemonicParsing="false" onAction="#deleteSplit" text="Delete" />
                      </children>

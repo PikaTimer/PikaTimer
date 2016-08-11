@@ -35,6 +35,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -101,6 +102,7 @@ public class FXMLRaceDetailsController {
     @FXML private TextField startBibTextField;
     @FXML private TextField endBibTextField;
     @FXML private VBox segmentsVBox;
+    @FXML private Button splitUpdateResultsButton;
     
     @FXML private Button courseRecordsButton;
 
@@ -345,10 +347,17 @@ public class FXMLRaceDetailsController {
         splitDistanceTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         splitDistanceTableColumn.setOnEditCommit((CellEditEvent<Split, String> t) -> {
             BigDecimal dist;
+            
             Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
             try {
                 dist = new BigDecimal(t.getNewValue());
                 s.setSplitDistance(dist);
+                if (s.getPosition().equals(s.getRace().getSplits().size())) {
+                    //we are the last split
+                    s.getRace().setRaceDistance(dist);
+                    raceDistanceTextField.setText(dist.toString());
+                    raceDAO.updateRace(s.getRace());
+                }
                 raceDAO.updateSplit(s);
             } catch (Exception e) {
                 // not a number
@@ -384,10 +393,6 @@ public class FXMLRaceDetailsController {
         });
         
         
-        
-
-        
-        
         startBibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 System.out.println("startBibTextField out focus");
@@ -404,6 +409,13 @@ public class FXMLRaceDetailsController {
         
         splitCutoffTableColumn.visibleProperty().set(false);
         splitTimeTableColumn.visibleProperty().set(false);
+        
+        splitUpdateResultsButton.visibleProperty().set(false);
+        
+        splitUpdateResultsButton.setOnAction((event) -> {
+            ResultsDAO.getInstance().reprocessAll(selectedRace);
+            splitUpdateResultsButton.visibleProperty().set(false);
+        });
 
     }    
     
@@ -558,6 +570,14 @@ public class FXMLRaceDetailsController {
             
             updateRaceCutoffPace();
             
+            raceSplits.addListener((ListChangeListener.Change<? extends Split> c) -> {
+                if (ResultsDAO.getInstance().getResults(selectedRace.getID()).size() > 0)splitUpdateResultsButton.visibleProperty().set(true);
+            });
+                
+            
+            
+                    
+            
         } else {
             System.out.println("Null race, de-populate all fields out");
 
@@ -576,15 +596,15 @@ public class FXMLRaceDetailsController {
     }
     
     public void updateRaceDistance() {
-        //TODO: If the location is referenced by a split, 
-        //prompt to reassign the split to a new location or cancel the edit. 
         //Do we have a parsable number?
         BigDecimal dist;
         try {
             dist = new BigDecimal(raceDistanceTextField.getText());
             selectedRace.setRaceDistance(dist);
             selectedRace.setRaceDistanceUnits((Unit)distanceUnitChoiceBox.getValue());
+            selectedRace.getSplits().get(selectedRace.getSplits().size()-1).setSplitDistance(dist);
             raceDAO.updateRace(selectedRace);
+            raceDAO.updateSplit(selectedRace.getSplits().get(selectedRace.getSplits().size()-1));
         } catch (Exception e) {
             // not a number
             dist = selectedRace.getRaceDistance();

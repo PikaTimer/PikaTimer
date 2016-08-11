@@ -17,6 +17,7 @@
 package com.pikatimer.race;
 
 import com.pikatimer.participant.Participant;
+import com.pikatimer.timing.Split;
 import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.time.LocalTime;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import javafx.beans.Observable;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -32,6 +34,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -96,6 +99,9 @@ public class Wave {
         
     }
    
+   public static Callback<Wave, Observable[]> extractor() {
+        return (Wave w) -> new Observable[]{w.waveName,w.waveStartString};
+    }
 //    @Override
 //    public boolean equals(Object w) {
 //        return true; 

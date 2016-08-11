@@ -241,6 +241,9 @@ public class ResultsDAO {
     public void reprocessAll(Wave w) {
         participantDAO.listParticipants().stream().filter(p -> p.getWaveIDs().contains(w.getID())).forEach(p2 -> resultsQueue.add(p2.getBib()));
     }
+    public void reprocessAll(Race r) {
+        r.getWaves().stream().forEach(w -> {reprocessAll(w);});
+    }
     
     // This is absolutely ugly. I hope it works... 
     private void processBib(String bib){

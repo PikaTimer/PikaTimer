@@ -89,36 +89,10 @@ public class Race {
         this.raceCutoffProperty = new SimpleStringProperty();
         this.relayRace = new SimpleBooleanProperty();
         this.raceDistanceProperty = new SimpleStringProperty();
-        this.raceWaves = FXCollections.observableArrayList();
-        this.raceSplits = FXCollections.observableArrayList();
+        this.raceWaves = FXCollections.observableArrayList(Wave.extractor());
+        this.raceSplits = FXCollections.observableArrayList(Split.extractor());
         this.raceReports = FXCollections.observableArrayList();
 
-        // Keep the waves updated as to their position in the list
-//        raceWaves.addListener((Change<? extends Wave> change) -> {
-//            System.out.println("Race::raceWaves(changeListener) for: " + self.getRaceName());
-//            raceWaves.stream().forEach((item) -> {
-//                System.out.println(self.getRaceName() + " has " + item.getWaveName() + " at " + raceWaves.indexOf(item));
-//                item.wavePositionProperty().set(raceWaves.indexOf(item)+1);
-//                //RaceDAO.getInstance().updateWave(item);
-//            });
-//        });
-//        // Keep the splits updated as to their position in the list
-//        raceSplits.addListener((Change<? extends Split> change) -> {
-//            System.out.println("Race::raceSplits(changeListener) for: " + self.getRaceName());
-////            raceSplits.stream().forEach((item) -> {
-////                System.out.println(self.getRaceName() + " has " + item.getSplitName() + " at " + raceSplits.indexOf(item));
-////                item.splitPositionProperty().set(raceSplits.indexOf(item)+1);
-////                Task importTask = new Task<Void>() {
-////                    @Override
-////                    protected Void call() {
-////                        RaceDAO.getInstance().updateSplit(item);
-////                        return null; 
-////                    }
-////                };
-////                new Thread(importTask).start();
-////            });
-//        });
-        
         
     }
         
