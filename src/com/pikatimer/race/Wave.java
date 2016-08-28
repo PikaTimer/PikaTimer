@@ -68,7 +68,7 @@ public class Wave {
     private final StringProperty waveStartString;
     private  Duration waveMaxStart;
     private final StringProperty waveMaxStartString;
-    private WaveAssignment waveAssignmentMethod;
+    private WaveAssignment waveAssignmentMethod = WaveAssignment.BIB;
     private final StringProperty waveAssignmentMethodProperty;
     private final StringProperty waveAssignmentStart;
     private final StringProperty waveAssignmentEnd; 

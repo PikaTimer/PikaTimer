@@ -137,6 +137,15 @@ public class FXMLRaceDetailsController {
             }
         });
         
+        raceNameTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                System.out.println("raceNameTextField out focus");
+                if ( ! raceNameTextField.getText().equals(selectedRace.getRaceName()) ) {
+                    updateRaceName(null);
+                }
+            }
+        });
+        
         // Use this if you whant keystroke by keystroke monitoring.... Reject any non digit attempts
         raceDistanceTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                     //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
