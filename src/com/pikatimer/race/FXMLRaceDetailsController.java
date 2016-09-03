@@ -712,6 +712,7 @@ public class FXMLRaceDetailsController {
         newSplit.setTimingLocation(TimingDAO.getInstance().listTimingLocations().get(1));
         if(raceSplitsTableView.getSelectionModel().getSelectedItems().size()> 0 ) {
             Integer pos = raceSplitsTableView.getSelectionModel().getSelectedItem().getPosition(); 
+            if (pos == 1) pos=2; // they selected the start split
             if (pos > 1) {
                 BigDecimal a = raceSplitsTableView.getItems().get(pos-2).getSplitDistance();
                 BigDecimal b = raceSplitsTableView.getItems().get(pos-1).getSplitDistance();
