@@ -43,7 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
   </rowConstraints>
    <children>
-      <VBox GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
          <children>
             <VBox fx:id="splitsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" VBox.vgrow="ALWAYS">
                <children>
@@ -54,34 +54,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   </Label>
                   <TableView fx:id="raceSplitsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
                     <columns>
-                          <TableColumn fx:id="splitIDTableColumn" maxWidth="20" minWidth="20.0" prefWidth="20.0" text="#">
+                          <TableColumn fx:id="splitIDTableColumn" editable="false" maxWidth="20" minWidth="20.0" prefWidth="20.0" sortable="false" text="#">
                               <cellValueFactory>
                                   <PropertyValueFactory property="splitPosition" />
                               </cellValueFactory>
                           </TableColumn>
       
-                          <TableColumn fx:id="splitNameTableColumn" prefWidth="90.0" text="Name">
+                          <TableColumn fx:id="splitNameTableColumn" prefWidth="90.0" sortable="false" text="Name">
                               <cellValueFactory>
                                   <PropertyValueFactory property="splitName" />
                               </cellValueFactory>
                           </TableColumn>
       
-                          <TableColumn fx:id="splitLocationTableColumn" prefWidth="90.0" text="Location">
+                          <TableColumn fx:id="splitLocationTableColumn" prefWidth="90.0" sortable="false" text="Location">
                               <cellValueFactory>
                                   <PropertyValueFactory property="timingLocation" />
                               </cellValueFactory>
                           </TableColumn>
-                          <TableColumn fx:id="splitDistanceTableColumn" prefWidth="60.0" text="Distance">
+                          <TableColumn fx:id="splitDistanceTableColumn" prefWidth="60.0" sortable="false" text="Distance">
                               <cellValueFactory>
                                   <PropertyValueFactory property="splitDistance" />
                               </cellValueFactory>
                           </TableColumn>
-                          <TableColumn fx:id="splitTimeTableColumn" prefWidth="50.0" text="\% Time">
+                          <TableColumn fx:id="splitTimeTableColumn" prefWidth="50.0" sortable="false" text="\% Time">
                               <cellValueFactory>
                                   <PropertyValueFactory property="splitTime" />
                               </cellValueFactory>
                           </TableColumn>
-                          <TableColumn fx:id="splitCutoffTableColumn" prefWidth="75.0" text="Cutoff">
+                          <TableColumn fx:id="splitCutoffTableColumn" prefWidth="75.0" sortable="false" text="Cutoff">
                               <cellValueFactory>
                                   <PropertyValueFactory property="splitCutoffString" />
                               </cellValueFactory>
@@ -113,11 +113,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <Font size="18.0" />
                      </font>
                   </Label>
-                  <TableView fx:id="raceSegmentTableView" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="SOMETIMES">
+                  <TableView fx:id="raceSegmentsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="300.0" VBox.vgrow="SOMETIMES">
                     <columns>
-                      <TableColumn prefWidth="150.0" text="Name" />
-                      <TableColumn minWidth="0.0" prefWidth="46.0" text="Start" />
-                        <TableColumn minWidth="0.0" prefWidth="119.5" text="End" />
+                      <TableColumn fx:id="segmentNameTableColumn" prefWidth="150.0" text="Name">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="segmentName" />
+                            </cellValueFactory>
+                        </TableColumn>
+                      <TableColumn fx:id="segmentStartSplitTableColumn" minWidth="0.0" prefWidth="46.0" text="Start">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="startSplitString" />
+                            </cellValueFactory>
+                        </TableColumn>
+                        <TableColumn fx:id="segmentEndSplitTableColumn" minWidth="0.0" prefWidth="119.5" text="End">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="endSplitString" />
+                            </cellValueFactory>
+                        </TableColumn>
                     </columns>
                      <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

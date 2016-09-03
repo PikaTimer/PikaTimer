@@ -16,6 +16,7 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.util.HibernateUtil;
 import java.util.ArrayList;
@@ -252,5 +253,22 @@ public class RaceDAO {
             s.update(item);
         });
         s.getTransaction().commit();
+    }
+    
+    public void updateSegment(Segment seg){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        s.saveOrUpdate(seg);
+        s.getTransaction().commit();
+    }
+    public void removeSegment (Segment seg) {
+        
+        Race r = seg.getRace(); 
+        r.removeRaceSegment(seg);
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(seg);
+        s.getTransaction().commit();
+        updateSplitOrder(r);
     }
 }

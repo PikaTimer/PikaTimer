@@ -17,6 +17,7 @@
 package com.pikatimer.race;
 
 import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.timing.TimingDAO;
@@ -62,6 +63,7 @@ import javafx.scene.layout.VBox;
 
 
 
+
 /**
  * FXML Controller class
  *
@@ -103,6 +105,10 @@ public class FXMLRaceDetailsController {
     @FXML private TextField endBibTextField;
     @FXML private VBox segmentsVBox;
     @FXML private Button splitUpdateResultsButton;
+    @FXML private TableView<Segment> raceSegmentsTableView;
+    @FXML private TableColumn<Segment,String> segmentNameTableColumn;
+    @FXML private TableColumn<Segment,Split> segmentStartSplitTableColumn;
+    @FXML private TableColumn<Segment,Split> segmentEndSplitTableColumn;
     
     @FXML private Button courseRecordsButton;
 
@@ -110,6 +116,7 @@ public class FXMLRaceDetailsController {
     Race selectedRace; 
     ObservableList<Wave> raceWaves;
     ObservableList<Split> raceSplits; 
+    ObservableList<Segment> raceSegments;
     /**
      * Initializes the controller class.
      */
@@ -123,6 +130,7 @@ public class FXMLRaceDetailsController {
         raceNameHBox.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
         ObservableList<Unit> unitList = FXCollections.observableArrayList(Arrays.asList(Unit.values()));
         raceWaves = FXCollections.observableArrayList(); 
+        raceSegments = FXCollections.observableArrayList(); 
         //distanceUnitChoiceBox.setItems(FXCollections.observableArrayList(Arrays.asList(Unit.values()))); 
         distanceUnitChoiceBox.setItems(unitList);
         distanceUnitChoiceBox.setValue(Unit.MILES);
@@ -356,8 +364,8 @@ public class FXMLRaceDetailsController {
         splitDistanceTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         splitDistanceTableColumn.setOnEditCommit((CellEditEvent<Split, String> t) -> {
             BigDecimal dist;
-            
-            Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
+            Split s = t.getRowValue();
+            //Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
             try {
                 dist = new BigDecimal(t.getNewValue());
                 s.setSplitDistance(dist);
@@ -425,6 +433,18 @@ public class FXMLRaceDetailsController {
             ResultsDAO.getInstance().reprocessAll(selectedRace);
             splitUpdateResultsButton.visibleProperty().set(false);
         });
+        
+        
+        // Segment table stuff
+        segmentNameTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        segmentNameTableColumn.setOnEditCommit((CellEditEvent<Segment, String> t) -> {
+            Segment s = (Segment) t.getTableView().getItems().get(t.getTablePosition().getRow());
+            s.setSegmentName(t.getNewValue());
+            raceDAO.updateSegment(s);
+        });
+        
+        
+        
 
     }    
     
@@ -555,14 +575,7 @@ public class FXMLRaceDetailsController {
                 }
             });
             
-            segmentsVBox.managedProperty().bind(Bindings.and(
-                    Bindings.size(raceSplits).greaterThanOrEqualTo(4), 
-                    splitsCheckBox.selectedProperty()
-            ));
-            segmentsVBox.visibleProperty().bind(Bindings.and(
-                    Bindings.size(raceSplits).greaterThanOrEqualTo(4), 
-                    splitsCheckBox.selectedProperty()
-            ));
+            
             
             
             
@@ -582,10 +595,34 @@ public class FXMLRaceDetailsController {
             raceSplits.addListener((ListChangeListener.Change<? extends Split> c) -> {
                 if (ResultsDAO.getInstance().getResults(selectedRace.getID()).size() > 0)splitUpdateResultsButton.visibleProperty().set(true);
             });
+            
+            //Segments
+            raceSegments=selectedRace.raceSegmentsProperty();
+            raceSegmentsTableView.setItems(raceSegments);
+            
+            segmentsVBox.managedProperty().bind(Bindings.or(
+                    Bindings.size(raceSplits).greaterThanOrEqualTo(3), 
+                    Bindings.size(raceSegments).greaterThanOrEqualTo(1)
+            ));
+            segmentsVBox.visibleProperty().bind(Bindings.or(
+                    Bindings.size(raceSplits).greaterThanOrEqualTo(3), 
+                    Bindings.size(raceSegments).greaterThanOrEqualTo(1)
+            ));
+            
+            segmentStartSplitTableColumn.setCellFactory(ComboBoxTableCell.<Segment, Split>forTableColumn(selectedRace.splitsProperty()));
+            segmentStartSplitTableColumn.setOnEditCommit((CellEditEvent<Segment, Split> t) -> {
+                Segment s = (Segment) t.getTableView().getItems().get(t.getTablePosition().getRow());
+                s.setStartSplit(t.getNewValue());
+                raceDAO.updateSegment(s);
+            });
+            
+            segmentEndSplitTableColumn.setCellFactory(ComboBoxTableCell.<Segment, Split>forTableColumn(selectedRace.splitsProperty()));
+            segmentEndSplitTableColumn.setOnEditCommit((CellEditEvent<Segment, Split> t) -> {
+                Segment s = (Segment) t.getTableView().getItems().get(t.getTablePosition().getRow());
+                s.setEndSplit(t.getNewValue());
+                raceDAO.updateSegment(s);
+            });
                 
-            
-            
-                    
             
         } else {
             System.out.println("Null race, de-populate all fields out");
@@ -743,9 +780,22 @@ public class FXMLRaceDetailsController {
     }
     
     public void addSegment(ActionEvent fxevent){
-        
+        Segment s = new Segment();
+        s.setRace(selectedRace);
+        s.setSegmentName("New Segment");
+        s.setStartSplit(selectedRace.getSplits().get(0));
+        s.setEndSplit(selectedRace.getSplits().get(1));
+        selectedRace.addRaceSegment(s);
+        raceDAO.updateSegment(s);
     }
+    
     public void deleteSegment(ActionEvent fxevent){
-        
+        ObservableList deleteMe = FXCollections.observableArrayList(raceSegmentsTableView.getSelectionModel().getSelectedItems());
+        Segment s;
+        Iterator<Segment> deleteMeIterator = deleteMe.iterator();
+        while (deleteMeIterator.hasNext()) {
+            s = deleteMeIterator.next();
+            raceDAO.removeSegment(s); 
+        }
     }
 }

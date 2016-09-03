@@ -47,6 +47,8 @@ public class Segment {
     private Integer startSplitID; // 
     private Integer endSplitID; 
     private final StringProperty segmentName = new SimpleStringProperty(); 
+    private final StringProperty endSplitStringProperty = new SimpleStringProperty();
+    private final StringProperty startSplitStringProperty = new SimpleStringProperty();
     
     public Segment(Race r){
 
@@ -81,13 +83,13 @@ public class Segment {
     }
    
     @Column(name="SEGMENT_NAME")
-    public String getSplitName() {
+    public String getSegmentName() {
         return segmentName.getValueSafe();
     }
-    public void setSplitName(String n) {
+    public void setSegmentName(String n) {
         segmentName.setValue(n);
     }
-    public StringProperty splitNameProperty() {
+    public StringProperty segmentNameProperty() {
         return segmentName;
     }
     
@@ -106,9 +108,15 @@ public class Segment {
         if (s != null) {
             System.out.println("Segment.setStartSplit: " + s.getID());
             startSplitID=s.getID();
+            startSplitStringProperty.unbind();
+            startSplitStringProperty.bind(s.splitNameProperty());
         } else {
             System.out.println("Segment.setStartSplit: null"); 
         }
+    }
+    public StringProperty startSplitStringProperty() {
+        if ( ! startSplitStringProperty.isBound() && endSplitID != null && getStartSplit() != null) startSplitStringProperty.bind(getStartSplit().splitNameProperty());
+        return startSplitStringProperty; 
     }
     
     @Column(name = "END_SPLIT_ID",nullable=false)
@@ -126,9 +134,16 @@ public class Segment {
         if (s != null) {
             System.out.println("Segment.setEndSplit: " + s.getID());
             endSplitID=s.getID();
+            endSplitStringProperty.unbind();
+            endSplitStringProperty.bind(s.splitNameProperty());
+            
         } else {
             System.out.println("Segment.setEndSplit: null"); 
         }
+    }
+    public StringProperty endSplitStringProperty() {
+        if ( ! endSplitStringProperty.isBound() && endSplitID != null && getEndSplit() != null) endSplitStringProperty.bind(getEndSplit().splitNameProperty());
+        return endSplitStringProperty; 
     }
     
 }
