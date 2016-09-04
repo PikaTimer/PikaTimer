@@ -33,6 +33,8 @@ import java.util.Iterator;
 import java.util.Optional;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -764,12 +766,33 @@ public class FXMLRaceDetailsController {
     
     public void deleteSplit(ActionEvent fxevent){
         //removeParticipants(FXCollections.observableArrayList(waveStartsTableView.getSelectionModel().getSelectedItems()));
-        ObservableList deleteMe = FXCollections.observableArrayList(raceSplitsTableView.getSelectionModel().getSelectedItems());
-        Split s;
-        Iterator<Split> deleteMeIterator = deleteMe.iterator();
-        while (deleteMeIterator.hasNext()) {
-            s = deleteMeIterator.next();
-            raceDAO.removeSplit(s); 
+        ObservableList<Split> deleteMe = FXCollections.observableArrayList(raceSplitsTableView.getSelectionModel().getSelectedItems());
+        
+        // If the split is referenced by a segment, 
+        // toss up a warning and leave it alone
+        final StringProperty segmentsUsing = new SimpleStringProperty();
+        deleteMe.forEach(sp -> {
+            sp.getRace().getSegments().forEach(s -> {
+                if (s.getStartSplit().equals(sp)) segmentsUsing.set(segmentsUsing.getValueSafe() + sp.getRace().getRaceName() + " " + s.getSegmentName() + " Start\n");
+
+                if (s.getEndSplit().equals(sp)) segmentsUsing.set(segmentsUsing.getValueSafe() +  sp.getRace().getRaceName() + " " + s.getSegmentName() + " End\n");
+            });
+        });
+        
+        if (segmentsUsing.isEmpty().get()) {
+            Split s;
+            Iterator<Split> deleteMeIterator = deleteMe.iterator();
+            while (deleteMeIterator.hasNext()) {
+                s = deleteMeIterator.next();
+                raceDAO.removeSplit(s); 
+            }
+        } else {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Unable to Remove Split");
+            alert.setHeaderText("Unable to remove the selected split");
+            alert.setContentText("One or more of the selected splits is in use by the following segments:\n" + segmentsUsing.getValueSafe());
+
+            alert.showAndWait();
         }
 
     }

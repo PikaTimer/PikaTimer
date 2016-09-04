@@ -34,7 +34,7 @@ public class Pikatimer extends Application {
     private static Stage mainStage;
     private static String jdbcURL; // Holds the jdbcURL for the open db
     
-    public static final String VERSION = "0.5 (Alpha)";
+    public static final String VERSION = "0.6 (Alpha)";
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 

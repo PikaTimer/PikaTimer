@@ -30,6 +30,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -37,6 +39,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
@@ -403,12 +406,30 @@ public class FXMLEventController  {
 
     }
     public void removeTimingLocation(ActionEvent fxevent){
-        //TODO: If the location is referenced by a split, 
-        //prompt to reassign the split to a new location or cancel the edit. 
         
-        timingLocationDAO.removeTimingLocation(timingLocListView.getSelectionModel().getSelectedItem());
-        timingLocAddButton.requestFocus();
-        timingLocAddButton.setDefaultButton(true);
+        final TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItem();
+        
+        // If the location is referenced by a split, 
+        // toss up a warning and leave it alone
+        final StringProperty splitsUsing = new SimpleStringProperty();
+        raceDAO.listRaces().forEach(r -> {
+            r.getSplits().forEach(s -> {
+                if (s.getTimingLocation().equals(tl)) splitsUsing.set(splitsUsing.getValueSafe() + r.getRaceName() + " " + s.getSplitName() + "\n");
+            });
+        });
+        
+        if (splitsUsing.isEmpty().get()) {
+            timingLocationDAO.removeTimingLocation(tl);;
+            timingLocAddButton.requestFocus();
+            timingLocAddButton.setDefaultButton(true);
+        } else {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Unable to Remove Timing Location");
+            alert.setHeaderText("Unable to remove the " + tl.getLocationName() + " timing location.");
+            alert.setContentText("The timing location is in use by the following splits:\n" + splitsUsing.getValueSafe());
+
+            alert.showAndWait();
+        }
     }
     
     public void resetRaces(ActionEvent fxevent){
