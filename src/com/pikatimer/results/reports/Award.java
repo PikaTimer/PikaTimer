@@ -108,11 +108,14 @@ public class Award implements RaceReportType {
         if (chip) overall = prList.stream()
                 .filter(p -> p.getSex().equalsIgnoreCase("F"))
                 .filter(p -> p.getChipFinish() != null)
+                .filter(p -> p.getParticipant().getDQ() != true)
                 .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
                 .collect(Collectors.toList());
         else overall = prList.stream()
                 .filter(p -> p.getSex().equalsIgnoreCase("F"))
                 .filter(p -> p.getGunFinish() != null)
+                .filter(p -> p.getParticipant().getDNF() != true)
+                .filter(p -> p.getParticipant().getDQ() != true)
                 .sorted((p1, p2) -> p1.getGunFinish().compareTo(p2.getGunFinish()))
                 .collect(Collectors.toList());
         
