@@ -56,7 +56,15 @@ public class Award implements RaceReportType {
     public String process(List<ProcessedResult> resList, RaceReport rr) {
         System.out.println("Award.process() Called... ");
 
-        prList = new ArrayList(resList); // our own copy to screw with
+        // Take the list we recieved and filter all DNF's, DQ's, and folks 
+        // with no finish times. 
+        // The result our own copy to screw with
+        prList = new ArrayList(
+                resList.stream().filter(p -> p.getChipFinish() != null)
+                    .filter(p -> p.getParticipant().getDNF() != true)
+                    .filter(p -> p.getParticipant().getDQ() != true)
+                    .collect(Collectors.toList())
+                ); 
         race = rr.getRace(); 
         
         String report = new String();
@@ -107,15 +115,10 @@ public class Award implements RaceReportType {
         List<ProcessedResult> overall; // a filtered and sorted list
         if (chip) overall = prList.stream()
                 .filter(p -> p.getSex().equalsIgnoreCase("F"))
-                .filter(p -> p.getChipFinish() != null)
-                .filter(p -> p.getParticipant().getDQ() != true)
                 .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
                 .collect(Collectors.toList());
         else overall = prList.stream()
                 .filter(p -> p.getSex().equalsIgnoreCase("F"))
-                .filter(p -> p.getGunFinish() != null)
-                .filter(p -> p.getParticipant().getDNF() != true)
-                .filter(p -> p.getParticipant().getDQ() != true)
                 .sorted((p1, p2) -> p1.getGunFinish().compareTo(p2.getGunFinish()))
                 .collect(Collectors.toList());
         
