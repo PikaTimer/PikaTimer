@@ -176,7 +176,7 @@ public class Overall implements RaceReportType{
                 }
             }
             // chip time
-            if (! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8));
+            if (! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 9));
             if (showGun && ! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getGunFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 9));
             if (showPace && ! hideTime) chars.append(StringUtils.leftPad(StringUtils.stripStart(Pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish(), Pace.MPM), "0"),10));
 //            System.out.println("Results: " + r.getRaceName() + ": "
