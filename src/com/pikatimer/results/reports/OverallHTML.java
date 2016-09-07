@@ -268,6 +268,7 @@ public class OverallHTML implements RaceReportType{
             
         report += chars.toString();
         report += "</tbody>" +  System.lineSeparator();
+        report += "</table>" +  System.lineSeparator();
         report += "  </BODY> " +  System.lineSeparator();
         report += "</HTML> " +  System.lineSeparator();
         
