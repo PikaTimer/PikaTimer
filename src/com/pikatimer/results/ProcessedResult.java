@@ -181,8 +181,13 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
             if (latestSplitID > other.latestSplitID) return -1;
             if (other.latestSplitID > latestSplitID) return 1;
             
-            for (int i = latestSplitID; i == 1; i--) {
-                if (! splitTimes.get(i).equals(other.splitTimes.get(i))) return splitTimes.get(i).compareTo(other.splitTimes.get(i));
+            // Check #2: fastest split
+            // splits start at 1 for the start (which we ignore) 
+            // and MAY BE NULL! (so check for that). 
+            for (int i = latestSplitID; i > 1; i--) {
+                if (splitTimes.get(i) != null && other.splitTimes.get(i) != null && ! splitTimes.get(i).equals(other.splitTimes.get(i))) return splitTimes.get(i).compareTo(other.splitTimes.get(i));
+                if (splitTimes.get(i) != null && other.splitTimes.get(i) == null) return -1;
+                if (splitTimes.get(i) == null && other.splitTimes.get(i) != null) return 1;
             }
             
             
