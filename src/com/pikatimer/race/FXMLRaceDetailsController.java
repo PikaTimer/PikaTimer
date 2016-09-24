@@ -58,6 +58,7 @@ import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.ComboBoxTableCell;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -111,6 +112,7 @@ public class FXMLRaceDetailsController {
     @FXML private TableColumn<Segment,String> segmentNameTableColumn;
     @FXML private TableColumn<Segment,Split> segmentStartSplitTableColumn;
     @FXML private TableColumn<Segment,Split> segmentEndSplitTableColumn;
+    @FXML private TableColumn<Segment,String> segmentDistanceTableColumn;
     
     @FXML private Button courseRecordsButton;
 
@@ -445,7 +447,7 @@ public class FXMLRaceDetailsController {
             raceDAO.updateSegment(s);
         });
         
-        
+        segmentDistanceTableColumn.setCellValueFactory(new PropertyValueFactory<>("distanceString"));
         
 
     }    
@@ -625,6 +627,7 @@ public class FXMLRaceDetailsController {
                 raceDAO.updateSegment(s);
             });
                 
+           
             
         } else {
             System.out.println("Null race, de-populate all fields out");

@@ -18,6 +18,7 @@ package com.pikatimer.timing;
 
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
+import java.math.BigDecimal;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -49,6 +50,7 @@ public class Segment {
     private final StringProperty segmentName = new SimpleStringProperty(); 
     private final StringProperty endSplitStringProperty = new SimpleStringProperty();
     private final StringProperty startSplitStringProperty = new SimpleStringProperty();
+    private final StringProperty distanceStringProperty = new SimpleStringProperty("0");
     
     public Segment(Race r){
 
@@ -110,6 +112,11 @@ public class Segment {
             startSplitID=s.getID();
             startSplitStringProperty.unbind();
             startSplitStringProperty.bind(s.splitNameProperty());
+            
+            checkSplitOrder();
+            
+            updateDistanceStringProperty();
+
         } else {
             System.out.println("Segment.setStartSplit: null"); 
         }
@@ -136,7 +143,8 @@ public class Segment {
             endSplitID=s.getID();
             endSplitStringProperty.unbind();
             endSplitStringProperty.bind(s.splitNameProperty());
-            
+            checkSplitOrder();
+            updateDistanceStringProperty();
         } else {
             System.out.println("Segment.setEndSplit: null"); 
         }
@@ -145,5 +153,38 @@ public class Segment {
         if ( ! endSplitStringProperty.isBound() && endSplitID != null && getEndSplit() != null) endSplitStringProperty.bind(getEndSplit().splitNameProperty());
         return endSplitStringProperty; 
     }
+    
+    public StringProperty distanceStringProperty(){
+        updateDistanceStringProperty();
+        return distanceStringProperty;
+    }
+    
+    private void updateDistanceStringProperty(){
+        if (getEndSplit() != null && getStartSplit() != null) {
+            
+            distanceStringProperty.setValue(getEndSplit().getSplitDistance().subtract(getStartSplit().getSplitDistance()).abs().toPlainString().concat(" " + getEndSplit().getSplitDistanceUnits().toShortString()));
+        } else {
+            distanceStringProperty.unbind();
+            distanceStringProperty.setValue("0");
+        }
+            
+    }
+
+    private void checkSplitOrder() {
+        if (getEndSplit() != null && getStartSplit() != null && getStartSplit().getSplitDistance().compareTo(getEndSplit().getSplitDistance()) > 0 ) {
+            // Switch them
+            Integer t = endSplitID;
+            endSplitID = startSplitID;
+            startSplitID = t; 
+            
+            endSplitStringProperty.unbind();
+            endSplitStringProperty.bind(getEndSplit().splitNameProperty());
+            
+            startSplitStringProperty.unbind();
+            startSplitStringProperty.bind(getStartSplit().splitNameProperty());
+            
+        }
+    }
+    
     
 }

@@ -171,8 +171,8 @@ public class FXMLEventController  {
                 }
             }
         }        
-        ));		
-
+        ));	
+        
         timingLocListView.setOnEditCommit((ListView.EditEvent<TimingLocation> t) -> {
             System.out.println("setOnEditCommit " + t.getIndex());
             if(t.getIndex() < t.getSource().getItems().size()) {

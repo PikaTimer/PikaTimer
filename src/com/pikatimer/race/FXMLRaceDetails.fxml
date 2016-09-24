@@ -130,6 +130,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                 <PropertyValueFactory property="endSplitString" />
                             </cellValueFactory>
                         </TableColumn>
+                        <TableColumn fx:id="segmentDistanceTableColumn" editable="false" minWidth="0.0" prefWidth="119.5" text="Distance">
+                           <cellValueFactory>
+                              <PropertyValueFactory property="endSplitString" />
+                           </cellValueFactory>
+                        </TableColumn>
                     </columns>
                      <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
