@@ -371,7 +371,7 @@ public class FXMLRaceDetailsController {
             Split s = t.getRowValue();
             //Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
             try {
-                dist = new BigDecimal(t.getNewValue());
+                dist = new BigDecimal(t.getNewValue().split(" ",2)[0]);
                 s.setSplitDistance(dist);
                 if (s.getPosition().equals(s.getRace().getSplits().size())) {
                     //we are the last split

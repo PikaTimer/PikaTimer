@@ -19,6 +19,7 @@ package com.pikatimer.timing;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import java.math.BigDecimal;
+import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -161,8 +162,17 @@ public class Segment {
     
     private void updateDistanceStringProperty(){
         if (getEndSplit() != null && getStartSplit() != null) {
-            
-            distanceStringProperty.setValue(getEndSplit().getSplitDistance().subtract(getStartSplit().getSplitDistance()).abs().toPlainString().concat(" " + getEndSplit().getSplitDistanceUnits().toShortString()));
+            distanceStringProperty.unbind();
+            distanceStringProperty.bind(new StringBinding(){
+                {
+                super.bind(getEndSplit().splitDistanceProperty(),getStartSplit().splitDistanceProperty());
+                }
+                @Override
+                protected String computeValue() {
+                    return getEndSplit().getSplitDistance().subtract(getStartSplit().getSplitDistance()).abs().toPlainString().concat(" " + getEndSplit().getSplitDistanceUnits().toShortString());
+                }
+            });
+            //distanceStringProperty.setValue(getEndSplit().getSplitDistance().subtract(getStartSplit().getSplitDistance()).abs().toPlainString().concat(" " + getEndSplit().getSplitDistanceUnits().toShortString()));
         } else {
             distanceStringProperty.unbind();
             distanceStringProperty.setValue("0");
