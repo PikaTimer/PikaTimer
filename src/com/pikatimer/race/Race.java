@@ -23,6 +23,7 @@ import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import javafx.beans.property.BooleanProperty;
@@ -199,7 +200,9 @@ public class Race {
         if(c != null) {
             System.out.println("setRaceCutoff " + c.toString());
             raceCutoff = Duration.ofNanos(c);
-            raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff,0)); 
+            if (raceCutoff.isZero()) raceCutoffProperty.set(""); 
+            else raceCutoffProperty.set(Long.toString(raceCutoff.toHours()) + ":" + Long.toString(raceCutoff.toMinutes()-raceCutoff.toHours()*60));
+            //raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff,0)); 
         }
     }
     public StringProperty raceCutoffProperty(){

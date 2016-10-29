@@ -339,8 +339,8 @@ public class FXMLRaceDetailsController {
                     if (raceCutoffTimeTextField.getText().matches("[0-9][0-9]*:[0-5][0-9]") ||raceCutoffTimeTextField.getText().isEmpty() ) {
                         updateRaceCutoffTime(); 
                     } else {
+                        System.out.println("raceCutoffTimeTextField out focus with bad time, reverting to " + selectedRace.raceCutoffProperty().getValueSafe());
                         raceCutoffTimeTextField.setText(selectedRace.raceCutoffProperty().getValueSafe());
-                        System.out.println("raceCutoffTimeTextField out focus with bad time, reverting... ");
                     }
                 } else {
                     System.out.println("Unchaged Cutoff time, not saving: \"" + selectedRace.raceCutoffProperty().getValueSafe() + "\" vs " + raceCutoffTimeTextField.getText() );
