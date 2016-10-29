@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -38,6 +41,10 @@ public class RaceDAO {
     private static final ObservableList<Wave> waveList =FXCollections.observableArrayList(e -> new Observable[] {e.waveNameProperty()});
     private static final Map<Integer,Wave> waveMap = new HashMap();
     private Map<Integer,Split> splitMap = new HashMap();
+    
+    // This is mostly precautionary just in case we put the initial race
+    // loading into a background thread for whatever reason
+    final CountDownLatch racesLoadedLatch = new CountDownLatch(1);
 
     public Split getSplitByID(Integer splitID) {
         return splitMap.get(splitID);
@@ -98,6 +105,8 @@ public class RaceDAO {
         raceList.addAll(list);
         splitMap = new HashMap();
         raceList.forEach(r -> r.getSplits().forEach(sp -> splitMap.put(sp.getID(),sp)));
+        
+        racesLoadedLatch.countDown();
     }     
     
     public ObservableList<Race> listRaces() { 
@@ -144,6 +153,12 @@ public class RaceDAO {
     } 
     
     public Wave getWaveByID(int id) {
+        System.out.println("getWaveByID: racesLoadedLatch is now " + racesLoadedLatch.getCount());
+        try {
+            racesLoadedLatch.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(RaceDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
         if (waveMap.isEmpty()) refreshWaveList(); 
         return waveMap.get(id); 
     }
