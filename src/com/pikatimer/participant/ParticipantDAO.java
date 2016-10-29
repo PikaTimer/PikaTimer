@@ -19,10 +19,12 @@ package com.pikatimer.participant;
 import com.pikatimer.results.ResultsDAO;
 import java.util.List; 
 import com.pikatimer.util.HibernateUtil;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -47,6 +49,8 @@ public class ParticipantDAO {
     private static final ResultsDAO resultsDAO = ResultsDAO.getInstance();
     private static final BooleanProperty participantsListInitialized = new SimpleBooleanProperty(false);
     //Semaphore semaphore = new Semaphore(1);
+    
+    private static final CountDownLatch participantsLoadedLatch = new CountDownLatch(1);
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -142,6 +146,7 @@ public class ParticipantDAO {
                     System.out.println(e.getMessage());
                 } 
                 s.getTransaction().commit();
+                participantsLoadedLatch.countDown();
                 return null;
             }
         }; 
@@ -263,9 +268,19 @@ public class ParticipantDAO {
      } 
     
     public Participant getParticipantByBib(String b) {
+        try {
+            participantsLoadedLatch.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ParticipantDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return Bib2ParticipantMap.get(b);
     }
     public Participant getParticipantByID(Integer id) {
+        try {
+            participantsLoadedLatch.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ParticipantDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return ID2ParticipantMap.get(id); 
     }
 } 
