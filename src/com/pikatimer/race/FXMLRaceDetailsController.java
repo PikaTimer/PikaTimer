@@ -114,7 +114,7 @@ public class FXMLRaceDetailsController {
     @FXML private TableColumn<Segment,Split> segmentEndSplitTableColumn;
     @FXML private TableColumn<Segment,String> segmentDistanceTableColumn;
     
-    @FXML private Button courseRecordsButton;
+    //@FXML private Button courseRecordsButton;
 
     
     Race selectedRace; 
@@ -125,7 +125,7 @@ public class FXMLRaceDetailsController {
      * Initializes the controller class.
      */
     public void initialize() {
-        // TODO
+        
 
         // get a RaceDAO
         raceDAO = RaceDAO.getInstance(); 
@@ -720,6 +720,10 @@ public class FXMLRaceDetailsController {
     }
     
     public void updateRaceCutoffPace(){
+        if (selectedRace.getRaceCutoff().equals(0L)) {
+            raceCutoffTimePaceLabel.setText("");
+            return;
+        }
         System.out.println("Pace Calc inputs: " + selectedRace.getRaceCutoff() + " and " + selectedRace.getRaceDistance().floatValue() );
         Duration pace = Duration.ofNanos(Math.round(selectedRace.getRaceCutoff()/selectedRace.getRaceDistance().doubleValue()));
         raceCutoffTimePaceLabel.setText(DurationFormatter.durationToString(pace, 0, Boolean.FALSE) + " min/" + selectedRace.getRaceDistanceUnits().toShortString());

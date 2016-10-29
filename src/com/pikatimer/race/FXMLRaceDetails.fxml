@@ -258,9 +258,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                </children>
             </HBox>
             <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="1" GridPane.valignment="CENTER" VBox.vgrow="NEVER">
-               <children>
-                  <Button fx:id="courseRecordsButton" mnemonicParsing="false" onAction="#setupCourseRecords" text="Course Records" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-               </children>
                <padding>
                   <Insets top="25.0" />
                </padding>
