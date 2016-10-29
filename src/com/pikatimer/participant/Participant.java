@@ -26,7 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import javafx.beans.binding.Bindings;
+import javafx.beans.Observable;
+import javafx.beans.binding.StringBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -36,6 +37,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.util.Callback;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -92,7 +94,15 @@ public class Participant {
         setFirstName(firstName);
         setLastName(lastName);
         // TODO: Fix this to include the middle name if it is set
-        fullNameProperty.bind(Bindings.concat(firstNameProperty, " ",middleNameProperty," ", lastNameProperty));
+        fullNameProperty.bind(new StringBinding(){
+                {
+                super.bind(firstNameProperty,middleNameProperty, lastNameProperty);
+                }
+                @Override
+                protected String computeValue() {
+                    return (firstNameProperty.getValueSafe() + " " + middleNameProperty.getValueSafe() + " " + lastNameProperty.getValueSafe()).replaceAll("( )+", " ");
+                }
+            });
     }
     
     public static ObservableMap getAvailableAttributes() {
@@ -196,13 +206,6 @@ public class Participant {
     }
     public void setMiddleName(String mName) {
         middleNameProperty.setValue(mName);
-        if ( mName != null && mName.length()>0 ) {
-            fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", Bindings.createStringBinding(() -> 
-        middleNameProperty.get().substring(0,1), middleNameProperty), " ", lastNameProperty));
-        } else {
-            fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", lastNameProperty));
-        }
-
     }
     public StringProperty lastMiddleProperty() {
         return middleNameProperty;
@@ -400,6 +403,9 @@ public class Participant {
         return waves; 
     }
     
+    public static Callback<Participant, Observable[]> extractor() {
+        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.waves};
+    }
 
     @Override
     public int hashCode() {

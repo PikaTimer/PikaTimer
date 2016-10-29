@@ -472,9 +472,6 @@ public class FXMLParticipantController  {
             // perform the actual update
             participantDAO.updateParticipant(editedParticipant);
             
-            //participantsList.remove(editedParticipant);
-            //participantsList.add(editedParticipant); 
-            
             editedParticipant=null; 
             
         }

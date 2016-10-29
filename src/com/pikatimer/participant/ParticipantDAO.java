@@ -42,7 +42,7 @@ import org.hibernate.Session;
  * @author jcgarner
  */
 public class ParticipantDAO {
-    private static final ObservableList<Participant> participantsList = FXCollections.observableArrayList();
+    private static final ObservableList<Participant> participantsList = FXCollections.observableArrayList(Participant.extractor());
     private static final Map<String,Participant> Bib2ParticipantMap = new HashMap<>();
     private static final Map<Integer,Participant> ID2ParticipantMap = new HashMap<>(); 
     private static final Map<Participant,String> Participant2BibMap = new HashMap<>();
@@ -259,10 +259,14 @@ public class ParticipantDAO {
         if ( ! p.getBib().equals(Participant2BibMap.get(p))) {
             // bib number changed
             System.out.println("bib Number Change... "); 
+            String oldBib = Participant2BibMap.get(p);
             Bib2ParticipantMap.remove(Participant2BibMap.get(p));
             Bib2ParticipantMap.put(p.getBib(), p);
             
             Participant2BibMap.replace(p,p.getBib()); 
+            
+            // Flush out any old results
+            resultsDAO.getResultsQueue().add(oldBib);
         }
         resultsDAO.getResultsQueue().add(p.getBib()); 
      } 
