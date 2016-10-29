@@ -66,14 +66,14 @@ public class FXMLEventController  {
     @FXML private CheckBox multipleRacesCheckBox;
     @FXML private VBox racesVBox; 
     @FXML private TableView<Race> raceTableView; 
-    @FXML private Button raceRemoveAllButton;
+    //@FXML private Button raceRemoveAllButton;
     @FXML private Button raceAddButton;
     @FXML private Button raceRemoveButton;  
     private ObservableList<Race> raceList; 
     @FXML private CheckBox multipleTimingCheckBox;
     @FXML private VBox timingVBox;
     @FXML private ListView<TimingLocation> timingLocListView;
-    @FXML private Button timingLocRemoveAllButton;
+    //@FXML private Button timingLocRemoveAllButton;
     @FXML private Button timingLocAddButton;
     @FXML private Button timingLocRemoveButton;  
     private ObservableList<TimingLocation> timingLocationList;
