@@ -61,7 +61,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.controlsfx.control.CheckComboBox;
-
+import org.controlsfx.control.PrefixSelectionChoiceBox;
 /**
  *
  * @author jcgarner
@@ -72,25 +72,28 @@ public class FXMLParticipantController  {
     @FXML private TableColumn bibNumberColumn;
     @FXML private VBox formVBox; 
     @FXML private TextField bibTextField;
+    @FXML private Label raceLabel;
     @FXML private CheckComboBox<Wave> waveComboBox; 
     @FXML private TextField firstNameField;
     @FXML private TextField middleNameTextField;
     @FXML private TextField lastNameField;
     @FXML private TextField ageTextField;
-    @FXML private TextField sexTextField;
+    //@FXML private TextField sexTextField;
+    @FXML private PrefixSelectionChoiceBox<String> sexPrefixSelectionChoiceBox;
     @FXML private TextField cityTextField; 
     @FXML private TextField stateTextField;
-    @FXML private TextField emailField;
+    //@FXML private TextField emailField;
     @FXML private TextField filterField; 
     @FXML private Button formAddButton; 
     @FXML private Button formUpdateButton;
     @FXML private Button formResetButton;
     @FXML private Label filteredSizeLabel;
     @FXML private Label listSizeLabel; 
-    @FXML private CheckBox dnfCheckBox;
-    @FXML private TextField dnfTextField;
-    @FXML private CheckBox dqCheckBox;
-    @FXML private TextField dqTextField;
+    //@FXML private CheckBox dnfCheckBox;
+    //@FXML private TextField dnfTextField;
+    //@FXML private CheckBox dqCheckBox;
+    //@FXML private TextField dqTextField;
+    @FXML private PrefixSelectionChoiceBox statusPrefixSelectionChoiceBox;
     
     private ObservableList<Participant> participantsList;
     private ParticipantDAO participantDAO;
@@ -263,18 +266,8 @@ public class FXMLParticipantController  {
         listSizeLabel.textProperty().bind(Bindings.size(participantsList).asString());
         filteredSizeLabel.textProperty().bind(Bindings.size(sortedParticipantsList).asString());
         
-        // Only show note if the DNF/DQ checkbox is checked
-        dqTextField.visibleProperty().bind(dqCheckBox.selectedProperty());
-        dqTextField.managedProperty().bind(dqCheckBox.selectedProperty());
-        
-        dnfTextField.visibleProperty().bind(dnfCheckBox.selectedProperty());
-        dnfTextField.managedProperty().bind(dnfCheckBox.selectedProperty());
-        
-        dnfCheckBox.disableProperty().bind(dqCheckBox.selectedProperty());
-        dqCheckBox.disableProperty().bind(dnfCheckBox.selectedProperty());
-
-        
         // if there is only one race, hide the option to pick a race... 
+        raceLabel.visibleProperty().bind(waveComboBox.visibleProperty());
         waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
@@ -354,6 +347,8 @@ public class FXMLParticipantController  {
                 //System.out.println("bibTextField in focus");
             }
         });
+        
+        sexPrefixSelectionChoiceBox.setItems(FXCollections.observableArrayList("M","F") );
     }
     
     @FXML
@@ -365,10 +360,11 @@ public class FXMLParticipantController  {
             );
             
             p.setMiddleName(middleNameTextField.getText());
-            p.setEmail(emailField.getText());
+            //p.setEmail(emailField.getText());
             p.setBib(bibTextField.getText());
             p.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
-            p.setSex(sexTextField.getText());
+            //p.setSex(sexTextField.getText());
+            p.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             p.setState(stateTextField.getText());
             p.setCity(cityTextField.getText());
             p.setWaves(waveComboBox.getCheckModel().getCheckedItems());
@@ -404,24 +400,18 @@ public class FXMLParticipantController  {
         
         editedParticipant=p;
         waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
-        sexTextField.setText(p.getSex());
+        //sexTextField.setText(p.getSex());
+        sexPrefixSelectionChoiceBox.getSelectionModel().select(p.getSex());
         ageTextField.setText(p.getAge().toString());
         bibTextField.setText(p.getBib());
         firstNameField.setText(p.getFirstName());
         middleNameTextField.setText(p.getMiddleName());
         lastNameField.setText(p.getLastName());
-        emailField.setText(p.getEmail());   
+        //emailField.setText(p.getEmail());   
         cityTextField.setText(p.getCity()); 
         stateTextField.setText(p.getState());
         
-        // just in case something goes sideways
-        if (p.getDNF() && p.getDQ()) p.setDNF(FALSE);
-        
-        dnfCheckBox.selectedProperty().setValue(p.getDNF());
-        dqCheckBox.selectedProperty().setValue(p.getDQ());
-        dnfTextField.setText(p.getDNFNote());
-        dqTextField.setText(p.getDQNote());
-        
+             
         waveComboBox.getCheckModel().clearChecks();
         
         
@@ -453,18 +443,15 @@ public class FXMLParticipantController  {
             editedParticipant.setFirstName(firstNameField.getText());
             editedParticipant.setMiddleName(middleNameTextField.getText());
             editedParticipant.setLastName(lastNameField.getText());
-            editedParticipant.setEmail(emailField.getText());
+            
             editedParticipant.setBib(bibTextField.getText());
             editedParticipant.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
-            editedParticipant.setSex(sexTextField.getText());
+            editedParticipant.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             editedParticipant.setCity(cityTextField.getText());
             editedParticipant.setState(stateTextField.getText());
             editedParticipant.setWaves(waveComboBox.getCheckModel().getCheckedItems());
             
-            editedParticipant.setDNF(dnfCheckBox.selectedProperty().getValue());
-            editedParticipant.setDQ(dqCheckBox.selectedProperty().getValue());
-            editedParticipant.setDNFNote(dnfTextField.getText());
-            editedParticipant.setDQNote(dqTextField.getText());
+            
             
             // reset the fields
             resetForm();   
@@ -489,20 +476,17 @@ public class FXMLParticipantController  {
         waveComboBox.getCheckModel().clearChecks();
 
 
-        sexTextField.setText("");
+        sexPrefixSelectionChoiceBox.getSelectionModel().clearSelection();
         ageTextField.setText("");
         bibTextField.setText("");
         firstNameField.setText("");
         middleNameTextField.setText("");
         lastNameField.setText("");
-        emailField.setText("");  
+        
         cityTextField.setText("");
         stateTextField.setText("");
         
-        dqCheckBox.selectedProperty().setValue(FALSE);
-        dnfCheckBox.selectedProperty().setValue(FALSE);
-        dnfTextField.setText("");
-        dqTextField.setText("");
+   
         
         // set the Update buton to invisible
         formUpdateButton.setVisible(false);
