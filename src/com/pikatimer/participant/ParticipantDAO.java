@@ -252,6 +252,10 @@ public class ParticipantDAO {
     }  
     
     public void updateParticipant(Participant p) {
+        if (p == null){
+            System.out.println("Cant save NULL!!!");
+            return;
+        }
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction(); 
         s.update(p);

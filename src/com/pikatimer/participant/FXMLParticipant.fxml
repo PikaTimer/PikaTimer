@@ -102,8 +102,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <PropertyValueFactory property="state" />
                  </cellValueFactory>
              </TableColumn>
-            <TableColumn prefWidth="75.0" text="Country" />
-            <TableColumn prefWidth="75.0" text="Race" />
+            <TableColumn fx:id="countryColumn" prefWidth="75.0" text="Country" />
+            <TableColumn fx:id="raceColumn" prefWidth="75.0" text="Race" />
         </columns>  
         <sortOrder> 
              <fx:reference source="bibNumberColumn" />

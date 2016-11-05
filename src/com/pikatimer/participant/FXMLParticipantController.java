@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -49,6 +52,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -56,6 +60,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.PrefixSelectionChoiceBox;
 /**
@@ -66,6 +71,7 @@ public class FXMLParticipantController  {
 
     @FXML private TableView<Participant> tableView;
     @FXML private TableColumn bibNumberColumn;
+    @FXML private TableColumn<Participant,String> raceColumn;
     @FXML private VBox formVBox; 
     @FXML private TextField bibTextField;
     @FXML private Label raceLabel;
@@ -400,6 +406,23 @@ public class FXMLParticipantController  {
         });
         
         sexPrefixSelectionChoiceBox.setItems(FXCollections.observableArrayList("M","F") );
+        
+        
+        raceColumn.setCellValueFactory(new Callback<CellDataFeatures<Participant, String>, ObservableValue<String>>() {
+            public ObservableValue<String> call(CellDataFeatures<Participant, String> p) {
+                StringProperty waves = new SimpleStringProperty();
+                WaveStringConverter wString=new WaveStringConverter();
+                if (p.getValue().wavesProperty().isEmpty()) return new SimpleStringProperty();
+                
+                p.getValue().wavesProperty().stream().forEach(w -> {
+                    waves.setValue(waves.getValueSafe() + wString.toString(w) + ", " );
+                    //System.out.println("Checking " + w.getID() + " " + w.toString());
+                });
+                // remove the trailing ", "
+                waves.set(waves.getValueSafe().substring(0, waves.getValueSafe().length()-2));
+                return waves;
+            }
+         });
     }
     
     @FXML
@@ -422,7 +445,13 @@ public class FXMLParticipantController  {
             p.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             p.setState(stateTextField.getText());
             p.setCity(cityTextField.getText());
-            p.setWaves(waveComboBox.getCheckModel().getCheckedItems());
+            
+            // If there is only one wave, assign it
+            if (RaceDAO.getInstance().listWaves().size()== 1){
+                p.setWaves(RaceDAO.getInstance().listWaves());
+            } else  {
+                p.setWaves(waveComboBox.getCheckModel().getCheckedItems());
+            }
             
             //participantsList.add(p);
             participantDAO.addParticipant(p);
@@ -504,7 +533,14 @@ public class FXMLParticipantController  {
             editedParticipant.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             editedParticipant.setCity(cityTextField.getText());
             editedParticipant.setState(stateTextField.getText());
-            editedParticipant.setWaves(waveComboBox.getCheckModel().getCheckedItems());
+            
+            // If there is only one wave, assign it
+            if (RaceDAO.getInstance().listWaves().size()== 1){
+                editedParticipant.setWaves(RaceDAO.getInstance().listWaves());
+            } else  {
+                editedParticipant.setWaves(waveComboBox.getCheckModel().getCheckedItems());
+            }
+            
             
             
             
