@@ -24,12 +24,10 @@ import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
-import static java.lang.Boolean.FALSE;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
-import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -45,8 +43,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
@@ -321,27 +317,82 @@ public class FXMLParticipantController  {
         bibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 System.out.println("bibTextField out focus");
+                
+                
+                //Find out if the bib changed, and if so, if it conflicts with anybody else
+                
+                // If it is blank, just let it be and return
+                if (bibTextField.getText().isEmpty()) {
+                    return;
+                }
+                
+                // If it is not blank (previous check...
+                // And nobody is being edited...
+                // And the bib belogs to somebody, then edit them
+                if (editedParticipant == null && !bibTextField.getText().isEmpty() && participantDAO.getParticipantByBib(bibTextField.getText()) != null) { 
+                    
+                    //Hang on, they entered something into the first or lalst name fields
+                    if (!firstNameField.getText().isEmpty() || !lastNameField.getText().isEmpty()) {
+                        Alert alert = new Alert(AlertType.INFORMATION);
+                        alert.setTitle("Bib Assignemtn Error");
+                        alert.setHeaderText("Bib " + bibTextField.getText() + " is in use!");
+                        alert.setContentText("This bib has already been assigned to " + participantDAO.getParticipantByBib(bibTextField.getText()).fullNameProperty().getValueSafe());
+                        alert.showAndWait();
+                        
+                        bibTextField.setText("");
+                        bibTextField.requestFocus();
+                        bibTextField.selectAll();
+                    } else { //If the name fields are blank, then edit
+                        editParticipant(participantDAO.getParticipantByBib(bibTextField.getText()));
+                        return;
+                    }
+                }
+                
+                
                 if ( editedParticipant == null || !bibTextField.getText().equals(editedParticipant.getBib())) { 
-                    AlphanumericComparator comp = new AlphanumericComparator(); 
-                    waveComboBox.getCheckModel().clearChecks();
-                    Map raceMap = new HashMap(); 
-                    waveComboBox.getItems().forEach(i -> {
-                        if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
-                            String start = i.getWaveAssignmentStart(); 
-                            String end = i.getWaveAssignmentEnd(); 
-                            if (!(start.isEmpty() && end.isEmpty()) && (comp.compare(start, bibTextField.getText()) <= 0 || start.isEmpty()) && (comp.compare(end, bibTextField.getText()) >= 0 || end.isEmpty())) {
-                                if(raceMap.containsKey(i.getRace())) {
-                                    //System.out.println("Already in race " + i.getRace().getRaceName()); 
-                                } else {
-                                    waveComboBox.getCheckModel().check(i);
-                                    //System.out.println("Bib " + bibTextField.getText() + " matched wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
-                                    raceMap.put(i.getRace(), true); 
-                                }
+                    
+                    if (participantDAO.getParticipantByBib(bibTextField.getText()) != null) {
+                        //Error Alert
+                        Alert alert = new Alert(AlertType.INFORMATION);
+                        alert.setTitle("Bib Assignemtn Error");
+                        alert.setHeaderText("Bib " + bibTextField.getText() + " is in use!");
+                        alert.setContentText("This bib has already been assigned to " + participantDAO.getParticipantByBib(bibTextField.getText()).fullNameProperty().getValueSafe());
+                        alert.showAndWait();
+                        
+                        //Revert, focus, select
+                        bibTextField.setText(editedParticipant.getBib());
+                        bibTextField.requestFocus();
+                        bibTextField.selectAll();
+                        
+                    } else {
+                        
+                        if (RaceDAO.getInstance().listWaves().size()== 1){
+                            waveComboBox.getCheckModel().checkAll(); // Only one to check anyway
                         } else {
-                                //System.out.println("Bib " + bibTextField.getText() + " did not match wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
-                            }
+                            // Figure out what wave they belong to based on the bib entered...
+                    
+                            AlphanumericComparator comp = new AlphanumericComparator(); 
+                            waveComboBox.getCheckModel().clearChecks();
+                            Map raceMap = new HashMap(); 
+                            waveComboBox.getItems().forEach(i -> {
+                                if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
+                                    String start = i.getWaveAssignmentStart(); 
+                                    String end = i.getWaveAssignmentEnd(); 
+                                    if (!(start.isEmpty() && end.isEmpty()) && (comp.compare(start, bibTextField.getText()) <= 0 || start.isEmpty()) && (comp.compare(end, bibTextField.getText()) >= 0 || end.isEmpty())) {
+                                        if(raceMap.containsKey(i.getRace())) {
+                                            //System.out.println("Already in race " + i.getRace().getRaceName()); 
+                                        } else {
+                                            waveComboBox.getCheckModel().check(i);
+                                            //System.out.println("Bib " + bibTextField.getText() + " matched wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
+                                            raceMap.put(i.getRace(), true); 
+                                        }
+                                } else {
+                                        //System.out.println("Bib " + bibTextField.getText() + " did not match wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
+                                    }
+                                }
+                            }); 
                         }
-                    }); 
+                    }
                 }
             } else {
                 //System.out.println("bibTextField in focus");
@@ -362,7 +413,11 @@ public class FXMLParticipantController  {
             p.setMiddleName(middleNameTextField.getText());
             //p.setEmail(emailField.getText());
             p.setBib(bibTextField.getText());
-            p.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
+            try {
+                p.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
+            } catch(NumberFormatException e) {
+                p.setAge(0);
+            }
             //p.setSex(sexTextField.getText());
             p.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             p.setState(stateTextField.getText());
@@ -388,11 +443,11 @@ public class FXMLParticipantController  {
     }
     
     public void removeParticipants(ObservableList p) {
-        long starttime = System.currentTimeMillis();
+        //long starttime = System.currentTimeMillis();
         
         participantDAO.removeParticipants(p);
         
-        long endtime = System.currentTimeMillis();
+        //long endtime = System.currentTimeMillis();
         //System.out.println("Delete Time: " + (endtime-starttime));
     }
     
@@ -453,13 +508,13 @@ public class FXMLParticipantController  {
             
             
             
-            // reset the fields
-            resetForm();   
+            
             
             // perform the actual update
             participantDAO.updateParticipant(editedParticipant);
             
-            editedParticipant=null; 
+            // reset the fields
+            resetForm();   
             
         }
         bibTextField.requestFocus();
@@ -470,7 +525,7 @@ public class FXMLParticipantController  {
         
         
         // reset the fields
-        
+        editedParticipant=null; 
         //waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
         waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
         waveComboBox.getCheckModel().clearChecks();
