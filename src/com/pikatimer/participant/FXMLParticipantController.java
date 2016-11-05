@@ -282,6 +282,9 @@ public class FXMLParticipantController  {
             //rework the popup menu for the add/delete
             
             waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
+            
+            if (change.getList().size() == 1 ) raceColumn.visibleProperty().set(false);
+            else raceColumn.visibleProperty().set(true);
             //});
         });
         
@@ -423,6 +426,11 @@ public class FXMLParticipantController  {
                 return waves;
             }
          });
+        
+        if (RaceDAO.getInstance().listWaves().size() == 1 ) raceColumn.visibleProperty().set(false);
+            else raceColumn.visibleProperty().set(true);
+        // if only it was this simple
+        // raceColumn.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
     }
     
     @FXML

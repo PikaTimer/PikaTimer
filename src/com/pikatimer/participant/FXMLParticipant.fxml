@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import org.controlsfx.control.CheckComboBox?>
 <?import org.controlsfx.control.PrefixSelectionChoiceBox?>
 
-<GridPane alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.participant.FXMLParticipantController">
+<GridPane alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="485.0" prefWidth="923.0" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.participant.FXMLParticipantController">
     <padding>
         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
     </padding>
@@ -64,7 +64,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </GridPane.margin>
       </HBox>
-       <TableView fx:id="tableView" tableMenuButtonVisible="true" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+       <TableView fx:id="tableView" prefHeight="400.0" prefWidth="531.0" tableMenuButtonVisible="true" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
            <columns>
                <TableColumn fx:id="bibNumberColumn" prefWidth="49.0" resizable="false" text="Bib #">
                  <cellValueFactory>
@@ -102,8 +102,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <PropertyValueFactory property="state" />
                  </cellValueFactory>
              </TableColumn>
-            <TableColumn fx:id="countryColumn" prefWidth="75.0" text="Country" />
-            <TableColumn fx:id="raceColumn" prefWidth="75.0" text="Race" />
+            <TableColumn fx:id="countryColumn" prefWidth="51.0" text="Country" />
+            <TableColumn fx:id="raceColumn" prefWidth="124.0" text="Race" />
         </columns>  
         <sortOrder> 
              <fx:reference source="bibNumberColumn" />
@@ -205,22 +205,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                            </font>
                         </Label>
                         <TextField fx:id="cityTextField" prefHeight="25.0" prefWidth="228.0" promptText="City" />
-                        <Label minWidth="-Infinity" prefHeight="20.0" prefWidth="33.0" text="State">
+                     </children>
+                  </HBox>
+                  <HBox alignment="CENTER_LEFT" spacing="2.0">
+                     <children>
+                        <Label minWidth="-Infinity" prefHeight="20.0" prefWidth="50.0" text="State">
                            <font>
                               <Font size="14.0" />
                            </font>
                         </Label>
                         <TextField fx:id="stateTextField" minWidth="-Infinity" prefWidth="40.0" promptText="State" />
-                     </children>
-                  </HBox>
-                  <HBox alignment="CENTER_LEFT" spacing="2.0">
-                     <children>
-                        <Label prefHeight="20.0" prefWidth="50.0" text="Status">
-                           <font>
-                              <Font size="14.0" />
-                           </font>
-                        </Label>
-                        <PrefixSelectionChoiceBox fx:id="statusPrefixSelectionChoiceBox" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="2.0">
@@ -231,6 +225,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                            </font>
                         </Label>
                         <TextField fx:id="lastNameField1" prefWidth="90" promptText="Country" HBox.hgrow="ALWAYS" />
+                     </children>
+                  </HBox>
+                  <HBox alignment="CENTER_LEFT" spacing="2.0">
+                     <children>
+                        <Label prefHeight="20.0" prefWidth="50.0" text="Status">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                        <PrefixSelectionChoiceBox fx:id="statusPrefixSelectionChoiceBox" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="2.0">
