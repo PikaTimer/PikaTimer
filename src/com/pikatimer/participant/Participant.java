@@ -207,7 +207,7 @@ public class Participant {
     public void setMiddleName(String mName) {
         middleNameProperty.setValue(mName);
     }
-    public StringProperty lastMiddleProperty() {
+    public StringProperty middleNameProperty() {
         return middleNameProperty;
     }
     

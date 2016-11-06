@@ -265,7 +265,7 @@ public class FXMLParticipantController  {
         
         // Set the bib number to be an alphanumeric sort
         bibNumberColumn.setComparator(new AlphanumericComparator());
-        
+        bibNumberColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
         
         listSizeLabel.textProperty().bind(Bindings.size(participantsList).asString());
         filteredSizeLabel.textProperty().bind(Bindings.size(sortedParticipantsList).asString());
@@ -355,6 +355,8 @@ public class FXMLParticipantController  {
                         bibTextField.selectAll();
                     } else { //If the name fields are blank, then edit
                         editParticipant(participantDAO.getParticipantByBib(bibTextField.getText()));
+                        //focus on the name since editParticipant sets the focus to the bibTextField
+                        firstNameField.requestFocus();
                         return;
                     }
                 }

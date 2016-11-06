@@ -76,7 +76,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <PropertyValueFactory property="firstName" />
                  </cellValueFactory>
              </TableColumn>
-            <TableColumn prefWidth="75.0" text="Middle" />
+            <TableColumn prefWidth="75.0" text="Middle" >
+                    <cellValueFactory>
+                     <PropertyValueFactory property="middleName" />
+                 </cellValueFactory>
+             </TableColumn>
              <TableColumn fx:id="lastNameColumn" prefWidth="100" text="Last Name">
                  <cellValueFactory>
                      <PropertyValueFactory property="lastName" />
@@ -103,7 +107,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                  </cellValueFactory>
              </TableColumn>
             <TableColumn fx:id="countryColumn" prefWidth="51.0" text="Country" />
-            <TableColumn fx:id="raceColumn" prefWidth="124.0" text="Race" />
+            <TableColumn fx:id="raceColumn" prefWidth="124.0" text="Race/Wave" />
         </columns>  
         <sortOrder> 
              <fx:reference source="bibNumberColumn" />
