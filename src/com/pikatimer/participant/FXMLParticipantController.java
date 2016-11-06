@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringBinding;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -71,6 +72,7 @@ public class FXMLParticipantController  {
 
     @FXML private TableView<Participant> tableView;
     @FXML private TableColumn bibNumberColumn;
+    //@FXML private TableColumn<Participant,ObservableList<Wave>> raceColumn;
     @FXML private TableColumn<Participant,String> raceColumn;
     @FXML private VBox formVBox; 
     @FXML private TextField bibTextField;
@@ -410,22 +412,48 @@ public class FXMLParticipantController  {
         
         sexPrefixSelectionChoiceBox.setItems(FXCollections.observableArrayList("M","F") );
         
+        //raceColumn.setCellValueFactory(cellData -> cellData.getValue().wavesProperty());
         
-        raceColumn.setCellValueFactory(new Callback<CellDataFeatures<Participant, String>, ObservableValue<String>>() {
-            public ObservableValue<String> call(CellDataFeatures<Participant, String> p) {
-                StringProperty waves = new SimpleStringProperty();
-                WaveStringConverter wString=new WaveStringConverter();
-                if (p.getValue().wavesProperty().isEmpty()) return new SimpleStringProperty();
-                
-                p.getValue().wavesProperty().stream().forEach(w -> {
-                    waves.setValue(waves.getValueSafe() + wString.toString(w) + ", " );
-                    //System.out.println("Checking " + w.getID() + " " + w.toString());
-                });
-                // remove the trailing ", "
-                waves.set(waves.getValueSafe().substring(0, waves.getValueSafe().length()-2));
-                return waves;
-            }
-         });
+        raceColumn.setCellValueFactory((CellDataFeatures<Participant, String> p) -> {
+            StringProperty waves = new SimpleStringProperty();
+            
+            //TODO:
+            // Get the value to bind to the wave list and update automatically
+            // When the race name changes
+//            waves.bind(new StringBinding(){
+//                {
+//                super.bind(p.getValue().wavesProperty());
+//                }
+//                @Override
+//                protected String computeValue() {
+//                    if (p.getValue().wavesProperty().isEmpty()) return "";
+//                    
+//                    StringProperty wString = new SimpleStringProperty();
+//                    WaveStringConverter wStringConv=new WaveStringConverter();
+//                    p.getValue().wavesProperty().stream().forEach(w -> {
+//                        wString.setValue(wString.getValueSafe() + wStringConv.toString(w) + ", " );
+//                        //System.out.println("Checking " + w.getID() + " " + w.toString());
+//                    });
+//                    // remove the trailing ", "
+//                    return wString.get();
+//                    //return wString.getValueSafe().substring(0, waves.getValueSafe().length()-2);
+//                }
+//            });
+            
+
+            WaveStringConverter wString=new WaveStringConverter();
+            if (p.getValue().wavesProperty().isEmpty()) return new SimpleStringProperty();
+            
+            p.getValue().wavesProperty().stream().forEach(w -> {
+                waves.setValue(waves.getValueSafe() + wString.toString(w) + ", " );
+                //System.out.println("Checking " + w.getID() + " " + w.toString());
+            });
+            // remove the trailing ", "
+            waves.set(waves.getValueSafe().substring(0, waves.getValueSafe().length()-2));
+            
+            
+            return waves;
+        });
         
         if (RaceDAO.getInstance().listWaves().size() == 1 ) raceColumn.visibleProperty().set(false);
             else raceColumn.visibleProperty().set(true);

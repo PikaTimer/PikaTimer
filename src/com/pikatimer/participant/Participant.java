@@ -76,7 +76,7 @@ public class Participant {
     private final StringProperty stateProperty= new SimpleStringProperty();
     private final StringProperty countryProperty= new SimpleStringProperty();
     private LocalDate birthdayProperty; 
-    private final ObservableList<Wave> waves = FXCollections.observableArrayList();   
+    private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());   
     private Set<Integer> waveIDSet = new HashSet(); 
     private final BooleanProperty DNFProperty = new SimpleBooleanProperty(FALSE);
     private final StringProperty DNFNoteProperty = new SimpleStringProperty();
