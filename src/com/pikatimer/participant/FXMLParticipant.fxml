@@ -76,7 +76,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <PropertyValueFactory property="firstName" />
                  </cellValueFactory>
              </TableColumn>
-            <TableColumn prefWidth="75.0" text="Middle" >
+            <TableColumn prefWidth="75.0" text="Middle">
                     <cellValueFactory>
                      <PropertyValueFactory property="middleName" />
                  </cellValueFactory>
@@ -251,11 +251,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <TextField fx:id="noteTextField" prefWidth="90" promptText="Note" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
-                  <HBox alignment="CENTER_RIGHT" spacing="5.0">
+                  <HBox alignment="CENTER_LEFT" spacing="5.0">
                       <children>
-                          
+                        <Label prefHeight="20.0" prefWidth="50.0" text="" />  
                         <Button fx:id="formResetButton" onAction="#resetForm" text="Clear Form" />
-                        <Button fx:id="formDeleteButton" managed="false" onAction="#deleteParticipant" text="Delete" visible="false" />
+                        <Label maxWidth="1.7976931348623157E308" prefHeight="20.0" prefWidth="1" text="" HBox.hgrow="ALWAYS" />
                         <Button fx:id="formAddButton" onAction="#addPerson" text="Add" />
                         <Button fx:id="formUpdateButton" managed="false" onAction="#updateParticipant" text="Update" visible="false" />
                       </children>
@@ -274,6 +274,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
       </HBox>
+      <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3">
+         <children>
+            <Button fx:id="formDeleteButton" alignment="CENTER_RIGHT" onAction="#deleteParticipant" text="Delete" />
+         </children>
+      </HBox>
    </children>
    <columnConstraints>
       <ColumnConstraints maxWidth="200.0" minWidth="200.0" prefWidth="200.0" />
@@ -281,9 +286,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
    </columnConstraints>
    <rowConstraints>
       <RowConstraints />
+      <RowConstraints maxHeight="1.7976931348623157E308" />
       <RowConstraints />
       <RowConstraints />
-      <RowConstraints />
+
    </rowConstraints>
    
       
