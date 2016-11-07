@@ -251,9 +251,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <TextField fx:id="noteTextField" prefWidth="90" promptText="Note" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
-                  <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                  <HBox alignment="CENTER_RIGHT" spacing="5.0">
                       <children>
-                        <Button fx:id="formResetButton" onAction="#resetForm" text="Reset" />
+                          
+                        <Button fx:id="formResetButton" onAction="#resetForm" text="Clear Form" />
+                        <Button fx:id="formDeleteButton" managed="false" onAction="#deleteParticipant" text="Delete" visible="false" />
                         <Button fx:id="formAddButton" onAction="#addPerson" text="Add" />
                         <Button fx:id="formUpdateButton" managed="false" onAction="#updateParticipant" text="Update" visible="false" />
                       </children>

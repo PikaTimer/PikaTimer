@@ -604,6 +604,10 @@ public class FXMLParticipantController  {
         resetForm();
     }
     
+    public void deleteParticipant(ActionEvent fxevent){
+        resetForm();
+    }
+    
     public void importParticipants(ActionEvent fxevent) throws FlowException{
         // todo
         Stage importStage = new Stage();
