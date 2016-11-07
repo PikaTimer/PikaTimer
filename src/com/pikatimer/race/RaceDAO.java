@@ -80,7 +80,7 @@ public class RaceDAO {
         s.beginTransaction();
         s.save(w);
         s.getTransaction().commit();
-        System.out.println("Adding Split id: " + w.getID() + "to" + w.getRace().getRaceName());
+        //System.out.println("Adding Split id: " + w.getID() + "to" + w.getRace().getRaceName());
         updateSplitOrder(r);
         splitMap.put(w.getID(), w);
     }
@@ -90,7 +90,7 @@ public class RaceDAO {
         List<Race> list = new ArrayList<>();
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        System.out.println("RacedAO.refreshRaceList() Starting the query");
+        //System.out.println("RacedAO.refreshRaceList() Starting the query");
         
         try {  
             list=s.createQuery("from Race").list();
@@ -99,7 +99,7 @@ public class RaceDAO {
         } 
         s.getTransaction().commit(); 
         
-        System.out.println("RaceDAO::refreshRaceList() Returning the list");
+        //System.out.println("RaceDAO::refreshRaceList() Returning the list");
         if(!raceList.isEmpty())
             raceList.clear();
         raceList.addAll(list);
@@ -121,7 +121,7 @@ public class RaceDAO {
         s.beginTransaction();
         s.save(w);
         s.getTransaction().commit();
-        System.out.println("Adding Wave id: " + w.getID() + "to" + w.getRace().getRaceName());
+        //System.out.println("Adding Wave id: " + w.getID() + "to" + w.getRace().getRaceName());
         waveList.add(w); 
         waveMap.put(w.getID(), w);
     }
@@ -130,12 +130,12 @@ public class RaceDAO {
         
         w.getRace().removeWave(w); 
         //refreshWaveList();         
-        System.out.println("removeWaves before: waveList.size()= " + waveList.size());
-        System.out.println("Wave: " + w.idProperty());
+        //System.out.println("removeWaves before: waveList.size()= " + waveList.size());
+        //System.out.println("Wave: " + w.idProperty());
         waveList.forEach(e -> {System.out.println("Possible: " + e.idProperty() + " " + e.equals(w));});
         Boolean res = waveList.remove(w);
         Wave remove = waveMap.remove(w.getID());
-        System.out.println("removeWaves after: waveList.size()= " + waveList.size() + " result: " + res);
+        //System.out.println("removeWaves after: waveList.size()= " + waveList.size() + " result: " + res);
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
@@ -153,7 +153,7 @@ public class RaceDAO {
     } 
     
     public Wave getWaveByID(int id) {
-        System.out.println("getWaveByID: racesLoadedLatch is now " + racesLoadedLatch.getCount());
+        //System.out.println("getWaveByID: racesLoadedLatch is now " + racesLoadedLatch.getCount());
         try {
             racesLoadedLatch.await();
         } catch (InterruptedException ex) {
