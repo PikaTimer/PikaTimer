@@ -27,7 +27,7 @@ import javafx.util.StringConverter;
 public class WaveStringConverter extends StringConverter<Wave> {
     @Override
     public String toString(Wave w) {
-        System.out.println("WaveStringConverter.toString() called");
+        //System.out.println("WaveStringConverter.toString() called");
 
                         if (w.getRace().wavesProperty().size() == 1 ) {
                             //System.out.println("WaveStringConverter returning " + w.getRace().getRaceName());
