@@ -18,6 +18,7 @@ package com.pikatimer.event;
 
 
 
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.FXMLRaceDetailsController;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
@@ -30,6 +31,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
@@ -476,22 +479,43 @@ public class FXMLEventController  {
 
     }
     public void removeRace(ActionEvent fxevent){
-        //TODO: If the location is referenced by a split, 
-        //prompt to reassign the split to a new location or cancel the edit. 
         
-        raceDAO.removeRace(raceTableView.getSelectionModel().getSelectedItem());
-        raceTableView.getSelectionModel().select(raceList.indexOf(0));
-        raceAddButton.requestFocus();
-        raceAddButton.setDefaultButton(false);
+        final Race r = raceTableView.getSelectionModel().getSelectedItem();
         
-        if (raceList.size() > 1) { 
-            multipleRacesCheckBox.setDisable(true);
-            raceRemoveButton.setDisable(false); 
+        // Do we have any runner's assigned?
+        BooleanProperty inUse = new SimpleBooleanProperty(false);
+        
+        ParticipantDAO.getInstance().listParticipants().forEach(x ->{
+            x.getWaveIDs().forEach(w -> {
+                if (RaceDAO.getInstance().getWaveByID(w).getRace().equals(r)) {
+                    inUse.setValue(Boolean.TRUE);
+                    System.out.println("Race " + RaceDAO.getInstance().getWaveByID(w).getRace().getRaceName() + " is in use by " + x.fullNameProperty().getValueSafe());
+                }
+            });
+        
+        });
+        
+        if (inUse.get()) {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Unable to Remove Race");
+            alert.setHeaderText("Unable to remove the selected race.");
+            alert.setContentText("The race currently has assigned runners.\nPlease assign them to a different race before removing.");
+
+            alert.showAndWait();
         } else {
-            multipleRacesCheckBox.setDisable(false);
-            raceRemoveButton.setDisable(true);
+            raceDAO.removeRace(raceTableView.getSelectionModel().getSelectedItem());
+            raceTableView.getSelectionModel().select(raceList.indexOf(0));
+            raceAddButton.requestFocus();
+            raceAddButton.setDefaultButton(false);
+
+            if (raceList.size() > 1) { 
+                multipleRacesCheckBox.setDisable(true);
+                raceRemoveButton.setDisable(false); 
+            } else {
+                multipleRacesCheckBox.setDisable(false);
+                raceRemoveButton.setDisable(true);
+            }
         }
-        
        
     }
 }
