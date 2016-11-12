@@ -745,7 +745,7 @@ public class FXMLRaceDetailsController {
             x.getWaveIDs().forEach(rw -> {
                 if (w.getID().equals(rw)) {
                     inUse.setValue(Boolean.TRUE);
-                    System.out.println("Wave " + w.getWaveName() + " is in use by " + x.fullNameProperty().getValueSafe());
+                    //System.out.println("Wave " + w.getWaveName() + " is in use by " + x.fullNameProperty().getValueSafe());
                 }
             });
         });

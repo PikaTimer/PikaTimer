@@ -489,7 +489,7 @@ public class FXMLEventController  {
             x.getWaveIDs().forEach(w -> {
                 if (RaceDAO.getInstance().getWaveByID(w).getRace().equals(r)) {
                     inUse.setValue(Boolean.TRUE);
-                    System.out.println("Race " + RaceDAO.getInstance().getWaveByID(w).getRace().getRaceName() + " is in use by " + x.fullNameProperty().getValueSafe());
+                    //System.out.println("Race " + RaceDAO.getInstance().getWaveByID(w).getRace().getRaceName() + " is in use by " + x.fullNameProperty().getValueSafe());
                 }
             });
         
