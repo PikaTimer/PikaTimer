@@ -30,13 +30,13 @@ public class WaveStringConverter extends StringConverter<Wave> {
         System.out.println("WaveStringConverter.toString() called");
 
                         if (w.getRace().wavesProperty().size() == 1 ) {
-                            System.out.println("WaveStringConverter returning " + w.getRace().getRaceName());
+                            //System.out.println("WaveStringConverter returning " + w.getRace().getRaceName());
                             return w.getRace().getRaceName();
                         } else if (RaceDAO.getInstance().listRaces().size() == 1 ) {
-                            System.out.println("WaveStringConverter returning " + w.getWaveName());
+                            //System.out.println("WaveStringConverter returning " + w.getWaveName());
                             return w.getWaveName();
                         } else {
-                            System.out.println("WaveStringConverter returning " +w.getRace().getRaceName() + " " + w.getWaveName());
+                            //System.out.println("WaveStringConverter returning " +w.getRace().getRaceName() + " " + w.getWaveName());
                             return w.getRace().getRaceName() + " " + w.getWaveName();
                         } 
     }
