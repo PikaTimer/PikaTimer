@@ -16,6 +16,7 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
@@ -32,6 +33,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
@@ -733,15 +736,30 @@ public class FXMLRaceDetailsController {
     }
     
     public void deleteWave(ActionEvent fxevent){
-        //removeParticipants(FXCollections.observableArrayList(waveStartsTableView.getSelectionModel().getSelectedItems()));
-        ObservableList deleteMe = FXCollections.observableArrayList(waveStartsTableView.getSelectionModel().getSelectedItems());
-        Wave w;
-        Iterator<Wave> deleteMeIterator = deleteMe.iterator();
-        while (deleteMeIterator.hasNext()) {
-            w = deleteMeIterator.next();
+        // Make sure the wave is not assigned toanybody first
+        final Wave w = waveStartsTableView.getSelectionModel().getSelectedItem();
+        
+        BooleanProperty inUse = new SimpleBooleanProperty(false);
+        
+        ParticipantDAO.getInstance().listParticipants().forEach(x ->{
+            x.getWaveIDs().forEach(rw -> {
+                if (w.getID().equals(rw)) {
+                    inUse.setValue(Boolean.TRUE);
+                    System.out.println("Wave " + w.getWaveName() + " is in use by " + x.fullNameProperty().getValueSafe());
+                }
+            });
+        });
+        
+        if (inUse.get()) {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Unable to Remove Wave");
+            alert.setHeaderText("Unable to remove the selected wave.");
+            alert.setContentText("The wave currently has assigned runners.\nPlease assign them to a different wave before removing.");
+
+            alert.showAndWait();
+        } else {
             raceDAO.removeWave(w); 
         }
-
     }
     
     public void addSplit(ActionEvent fxevent){
