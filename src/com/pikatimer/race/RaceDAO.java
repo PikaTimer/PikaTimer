@@ -38,7 +38,7 @@ import org.hibernate.Session;
  */
 public class RaceDAO {
     private static final ObservableList<Race> raceList =FXCollections.observableArrayList( e -> new Observable[] {e.raceNameProperty()});
-    private static final ObservableList<Wave> waveList =FXCollections.observableArrayList(e -> new Observable[] {e.waveNameProperty()});
+    private static final ObservableList<Wave> waveList =FXCollections.observableArrayList(Wave.extractor());
     private static final Map<Integer,Wave> waveMap = new HashMap();
     private Map<Integer,Split> splitMap = new HashMap();
     

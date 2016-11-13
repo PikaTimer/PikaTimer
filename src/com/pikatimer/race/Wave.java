@@ -25,7 +25,9 @@ import java.util.Objects;
 import javafx.beans.Observable;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -94,7 +96,7 @@ public class Wave {
     }
    
    public static Callback<Wave, Observable[]> extractor() {
-        return (Wave w) -> new Observable[]{w.waveName,w.waveStartString};
+        return (Wave w) -> new Observable[]{w.waveName,w.waveStartString,w.raceName};
     }
 //    @Override
 //    public boolean equals(Object w) {
