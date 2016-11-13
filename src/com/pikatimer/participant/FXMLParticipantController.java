@@ -27,10 +27,13 @@ import io.datafx.controller.flow.container.DefaultFlowContainer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -61,6 +64,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -92,13 +96,17 @@ public class FXMLParticipantController  {
     @FXML private Button formResetButton;
     @FXML private Label filteredSizeLabel;
     @FXML private Label listSizeLabel; 
+    
+    @FXML private HBox zipHBox;
+    @FXML private HBox countryHBox;
+    @FXML private CheckComboBox<Wave> searchWaveComboBox; 
 
     @FXML private PrefixSelectionChoiceBox statusPrefixSelectionChoiceBox;
     
     private ObservableList<Participant> participantsList;
     private ParticipantDAO participantDAO;
     private Participant editedParticipant; 
-    
+    FilteredList<Participant> filteredParticipantsList ;
     
     @FXML
     protected void initialize() {
@@ -224,32 +232,22 @@ public class FXMLParticipantController  {
         
         
         // Deal with the filtering and such. 
-        // TODO Only filter on the visible colums 
         // 1. Wrap the ObservableList in a FilteredList (initially display all data).
-        FilteredList<Participant> filteredParticipantsList = new FilteredList<>(participantsList, p -> true);
+        //FilteredList<Participant> filteredParticipantsList = new FilteredList<>(participantsList, p -> true);
+        filteredParticipantsList = new FilteredList<>(participantsList, p -> true);
 
-        // 2. Set the filter Predicate whenever the filter changes.
+        // 2. Set the filter Predicate whenever the filters changes.
         filterField.textProperty().addListener((observable, oldValue, newValue) -> {
-            filteredParticipantsList.setPredicate(participant -> {
-                // If filter text is empty, display all persons.
-                if (newValue == null || newValue.isEmpty()) {
-                    return true;
-                }
-
-                // Compare first name and last name of every person with filter text.
-                String lowerCaseFilter = "(.*)(" + newValue.toLowerCase() + ")(.*)";
-
-                try {    
-                    if ((participant.getFirstName() + " " + participant.getLastName() + " " + participant.getEmail() + " " + participant.getBib()).toLowerCase().matches(lowerCaseFilter)) {
-                        return true; // Filter matches first/last/email/bib.
-                    } 
-
-                } catch (PatternSyntaxException e) {
-                    return true;
-                }
-                return false; // Does not match.
-            });
+            updateFilterPredicate();
         });
+        searchWaveComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends Wave> c) -> {
+            
+            System.out.println("PartController::searchWaveComboBox(changeListener) fired...");
+            updateFilterPredicate();
+            //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
+        });
+        
+        
         // 3. Wrap the FilteredList in a SortedList. 
         SortedList<Participant> sortedParticipantsList = new SortedList(filteredParticipantsList);
 
@@ -270,7 +268,9 @@ public class FXMLParticipantController  {
         raceLabel.visibleProperty().bind(waveComboBox.visibleProperty());
         waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        searchWaveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
+        searchWaveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
         RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
             //waveComboBox.getItems().clear();
             //Platform.runLater(() -> {
@@ -278,15 +278,24 @@ public class FXMLParticipantController  {
                 
             // TODO
             //rework the popup menu for the add/delete
-            
+            while (change.next() ) 
+                change.getRemoved().forEach(removed -> {
+                    searchWaveComboBox.getCheckModel().clearCheck(removed);
+                });
             waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
+            searchWaveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
             
-            if (change.getList().size() == 1 ) raceColumn.visibleProperty().set(false);
+            if (change.getList().size() == 1 ) {
+                raceColumn.visibleProperty().set(false);
+                searchWaveComboBox.getCheckModel().clearChecks();
+            }
             else raceColumn.visibleProperty().set(true);
             //});
         });
         
         waveComboBox.setConverter(new WaveStringConverter());
+        searchWaveComboBox.setConverter(new WaveStringConverter());
+        
         // DOES NOT WORK :-( 
         waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             System.out.println("PartController::waveComboBox(focusedListener) fired...");
@@ -605,7 +614,10 @@ public class FXMLParticipantController  {
     }
     
     public void deleteParticipant(ActionEvent fxevent){
-        resetForm();
+        //TODO: if over X number, prompt
+        
+        if (editedParticipant!= null && tableView.getSelectionModel().getSelectedItems().contains(editedParticipant)) resetForm();
+        removeParticipants(FXCollections.observableArrayList(tableView.getSelectionModel().getSelectedItems()));
     }
     
     public void importParticipants(ActionEvent fxevent) throws FlowException{
@@ -620,15 +632,7 @@ public class FXMLParticipantController  {
         importStage.setScene(new Scene(pane));
         importStage.initModality(Modality.APPLICATION_MODAL);
         importStage.show(); 
-       // Open a dialog to get the file name
-       // radio button for clearing the existing data or merging the data
-        
-       // look for headers
-        
-       // map the headers to fields
-        
-       // import the csv file by calling 
-       //participantDAO.importFromCSV(file, property2columMap );
+
        
     }
     
@@ -654,4 +658,59 @@ public class FXMLParticipantController  {
         }
         
     }
+    
+    private void updateFilterPredicate(){
+        filteredParticipantsList.setPredicate(participant -> {
+            // If filter text is empty, display all persons.
+           // System.out.println("filteredParticpantsList.predicateProperty changing...");
+            //System.out.println("...filterField="+filterField.textProperty().getValue());
+            //System.out.println("...searchWaveComboBox=" + searchWaveComboBox.getCheckModel().getCheckedItems().size());
+            if (filterField.textProperty().getValueSafe().isEmpty() && searchWaveComboBox.getCheckModel().getCheckedItems().isEmpty()) {
+                //System.out.println("...both are empty: true");
+                return true;
+            }
+
+            BooleanProperty waveFilterMatch = new SimpleBooleanProperty(false);
+
+            if (!searchWaveComboBox.getCheckModel().getCheckedItems().isEmpty()) {
+                participant.getWaveIDs().forEach(w -> {
+                    searchWaveComboBox.getCheckModel().getCheckedItems().forEach(sw -> {
+                        if (sw != null && sw.getID().equals(w)) waveFilterMatch.set(true);
+                    }); 
+                });
+            } else {
+                //System.out.println("...searchWaveComboBox is empty: true");
+
+                waveFilterMatch.set(true);
+            }
+
+            if (filterField.textProperty().getValueSafe().isEmpty() && waveFilterMatch.getValue()) {
+                //System.out.println("...filterField is empty and wave matches");
+                return true;
+            } else if (!waveFilterMatch.getValue()) {
+                //System.out.println("...filterField is empty and wave does not match");
+                return false;
+            } 
+
+            // Compare first name and last name of every person with filter text.
+            String lowerCaseFilter = "(.*)(" + filterField.textProperty().getValueSafe() + ")(.*)";
+            try {
+            Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
+
+
+                if (    pattern.matcher(participant.getFirstName()).matches() ||
+                        pattern.matcher(participant.getLastName()).matches() ||
+                        pattern.matcher(participant.getBib()).matches()) {
+                    return true; // Filter matches first/last/bib.
+                } 
+
+            } catch (PatternSyntaxException e) {
+                
+                return true;
+            }
+            return false; // Does not match.
+        });
+    }
+        
+
 }

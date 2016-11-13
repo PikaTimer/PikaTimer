@@ -47,6 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <Insets left="5.0" />
                </padding></Label>
             <TextField fx:id="filterField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="200.0" promptText="Regex capable search filter" HBox.hgrow="NEVER" />
+            <CheckComboBox fx:id="searchWaveComboBox" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="150.0" />
             <Region maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="125.0" HBox.hgrow="ALWAYS" />
             <Label fx:id="filteredSizeLabel" text="Label" textAlignment="RIGHT" HBox.hgrow="NEVER">
                <HBox.margin>
@@ -108,6 +109,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
              </TableColumn>
             <TableColumn fx:id="countryColumn" prefWidth="51.0" text="Country" />
             <TableColumn fx:id="raceColumn" prefWidth="124.0" text="Race/Wave" />
+            <TableColumn fx:id="statusColumn" prefWidth="124.0" text="Status" />
         </columns>  
         <sortOrder> 
              <fx:reference source="bibNumberColumn" />
@@ -201,6 +203,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <PrefixSelectionChoiceBox fx:id="sexPrefixSelectionChoiceBox" maxWidth="1.7976931348623157E308" />
                      </children>
                   </HBox>
+                  <HBox fx:id="zipHBox" alignment="CENTER_LEFT" spacing="2.0">
+                     <children>
+                        <Label minWidth="-Infinity" prefHeight="20.0" prefWidth="50.0" text="Zip">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                        <TextField fx:id="zipTextField" prefHeight="25.0" prefWidth="228.0" promptText="Zip Code" />
+                     </children>
+                  </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="2.0">
                      <children>
                         <Label minWidth="-Infinity" prefHeight="20.0" prefWidth="50.0" text="City">
@@ -221,7 +233,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <TextField fx:id="stateTextField" minWidth="-Infinity" prefWidth="40.0" promptText="State" />
                      </children>
                   </HBox>
-                  <HBox alignment="CENTER_LEFT" spacing="2.0">
+                  <HBox fx:id="countryHBox" alignment="CENTER_LEFT" spacing="2.0">
                      <children>
                         <Label prefHeight="20.0" prefWidth="50.0" text="Country">
                            <font>
@@ -268,7 +280,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
          <children>
             <Button fx:id="importButton" focusTraversable="false" mnemonicParsing="false" onAction="#importParticipants" prefHeight="25.0" prefWidth="60.0" text="Import" textAlignment="CENTER" />
             <Button fx:id="exportButton" mnemonicParsing="false" onAction="#exportParticipants" prefWidth="60.0" text="Export" />
-            <Button fx:id="clearButton" focusTraversable="false" mnemonicParsing="false" onAction="#clearParticipants" prefWidth="60.0" text="Clear" textAlignment="CENTER" />
+            <Button fx:id="clearButton" focusTraversable="false" mnemonicParsing="false" onAction="#clearParticipants" prefWidth="60.0" text="Clear All" textAlignment="CENTER" />
          </children>
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -286,7 +298,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
    </columnConstraints>
    <rowConstraints>
       <RowConstraints />
-      <RowConstraints maxHeight="1.7976931348623157E308" />
+      <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
       <RowConstraints />
       <RowConstraints />
 
