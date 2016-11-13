@@ -28,17 +28,20 @@ public class WaveStringConverter extends StringConverter<Wave> {
     @Override
     public String toString(Wave w) {
         //System.out.println("WaveStringConverter.toString() called");
+        
+            if (w == null) return "";
+            if (w.getRace() == null) return w.getWaveName();
 
-                        if (w.getRace().wavesProperty().size() == 1 ) {
-                            //System.out.println("WaveStringConverter returning " + w.getRace().getRaceName());
-                            return w.getRace().getRaceName();
-                        } else if (RaceDAO.getInstance().listRaces().size() == 1 ) {
-                            //System.out.println("WaveStringConverter returning " + w.getWaveName());
-                            return w.getWaveName();
-                        } else {
-                            //System.out.println("WaveStringConverter returning " +w.getRace().getRaceName() + " " + w.getWaveName());
-                            return w.getRace().getRaceName() + " " + w.getWaveName();
-                        } 
+            if (w.getRace().wavesProperty().size() == 1 ) {
+                //System.out.println("WaveStringConverter returning " + w.getRace().getRaceName());
+                return w.getRace().getRaceName();
+            } else if (RaceDAO.getInstance().listRaces().size() == 1 ) {
+                //System.out.println("WaveStringConverter returning " + w.getWaveName());
+                return w.getWaveName();
+            } else {
+                //System.out.println("WaveStringConverter returning " +w.getRace().getRaceName() + " " + w.getWaveName());
+                return w.getRace().getRaceName() + " " + w.getWaveName();
+            } 
     }
 
     @Override
