@@ -623,11 +623,21 @@ public class FXMLRaceDetailsController {
            raceSplitsTableViewListener=(obs, oldSelection, newSelection) -> {
                 System.out.println("Selected splits changed...");
                 if (newSelection != null) {
-                    if (newSelection.splitPositionProperty().getValue().equals(1)) deleteSplitButton.disableProperty().set(true);
-                    else if (newSelection.splitPositionProperty().getValue().equals(raceSplitsTableView.getItems().size())) deleteSplitButton.disableProperty().set(true);
-                    else deleteSplitButton.disableProperty().set(false);
+                    if (newSelection.splitPositionProperty().getValue().equals(1)) {
+                        deleteSplitButton.disableProperty().set(true);
+                        splitDistanceTableColumn.setEditable(false);
+                    }
+                    else if (newSelection.splitPositionProperty().getValue().equals(raceSplitsTableView.getItems().size())) {
+                        deleteSplitButton.disableProperty().set(true);
+                        splitDistanceTableColumn.setEditable(true);
+                    }
+                    else {
+                        deleteSplitButton.disableProperty().set(false);
+                        splitDistanceTableColumn.setEditable(true);
+                    }
                 } else {
                     deleteSplitButton.disableProperty().set(true);
+                    splitDistanceTableColumn.setEditable(false);
                 }
             };
            raceSplitsTableView.getSelectionModel().selectedItemProperty().addListener(raceSplitsTableViewListener);
