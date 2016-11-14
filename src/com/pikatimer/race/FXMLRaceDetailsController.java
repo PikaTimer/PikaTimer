@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Iterator;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -118,6 +119,10 @@ public class FXMLRaceDetailsController {
     ObservableList<Wave> raceWaves;
     ObservableList<Split> raceSplits; 
     ObservableList<Segment> raceSegments;
+    private ChangeListener<? super Split>  raceSplitsTableViewListener;
+    private ChangeListener<? super Boolean> waveStartsCheckBoxListener;
+    private ListChangeListener<? super Split> raceSplitsListener;
+
     /**
      * Initializes the controller class.
      */
@@ -446,10 +451,21 @@ public class FXMLRaceDetailsController {
         
         segmentDistanceTableColumn.setCellValueFactory(new PropertyValueFactory<>("distanceString"));
         
+        
 
     }    
     
     public void selectRace(Race r) {
+        
+        if (selectedRace != null) {
+            
+            //Unbind any existing listeners to the table views or check boxes
+            raceSplitsTableView.getSelectionModel().selectedItemProperty().removeListener(raceSplitsTableViewListener);
+            waveStartsCheckBox.selectedProperty().removeListener(waveStartsCheckBoxListener);
+            raceSplits.removeListener(raceSplitsListener);
+            
+        }
+        
         selectedRace = r;
         
         if (selectedRace != null) {
@@ -520,19 +536,7 @@ public class FXMLRaceDetailsController {
                 startBibTextField.setText("");
             }
         
-            waveStartsCheckBox.selectedProperty().addListener((arg0,  oldPropertyValue,  newPropertyValue) -> {
-                if (!newPropertyValue) {
-                    if (raceWaves.get(0).getWaveAssignmentMethod().equals(WaveAssignment.BIB)) {
-                        endBibTextField.setText(raceWaves.get(0).getWaveAssignmentEnd());
-                        startBibTextField.setText(raceWaves.get(0).getWaveAssignmentStart());
-                    } else {
-                        endBibTextField.setText("");
-                        startBibTextField.setText("");
-                    }
-                    
-                    raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
-                }
-            });
+            
             
             splitsVBox.managedProperty().bind(splitsCheckBox.selectedProperty());
             splitsVBox.visibleProperty().bind(splitsCheckBox.selectedProperty());
@@ -565,16 +569,7 @@ public class FXMLRaceDetailsController {
                 splitsCheckBox.setSelected(false);
             }
             splitsCheckBox.disableProperty().bind(Bindings.size(raceSplitsTableView.getItems()).greaterThan(2));
-            raceSplitsTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-                System.out.println("Selected splits changed...");
-                if (newSelection != null) {
-                    if (newSelection.splitPositionProperty().getValue().equals(1)) deleteSplitButton.disableProperty().set(true);
-                    else if (newSelection.splitPositionProperty().getValue().equals(raceSplitsTableView.getItems().size())) deleteSplitButton.disableProperty().set(true);
-                    else deleteSplitButton.disableProperty().set(false);
-                } else {
-                    deleteSplitButton.disableProperty().set(true);
-                }
-            });
+            
             
             
             
@@ -593,9 +588,8 @@ public class FXMLRaceDetailsController {
             
             updateRaceCutoffPace();
             
-            raceSplits.addListener((ListChangeListener.Change<? extends Split> c) -> {
-                if (ResultsDAO.getInstance().getResults(selectedRace.getID()).size() > 0)splitUpdateResultsButton.visibleProperty().set(true);
-            });
+            
+            
             
             //Segments
             raceSegments=selectedRace.raceSegmentsProperty();
@@ -624,7 +618,39 @@ public class FXMLRaceDetailsController {
                 raceDAO.updateSegment(s);
             });
                 
-           
+            
+            // Need to UN-Register the old listeners before setting up the new ones...
+           raceSplitsTableViewListener=(obs, oldSelection, newSelection) -> {
+                System.out.println("Selected splits changed...");
+                if (newSelection != null) {
+                    if (newSelection.splitPositionProperty().getValue().equals(1)) deleteSplitButton.disableProperty().set(true);
+                    else if (newSelection.splitPositionProperty().getValue().equals(raceSplitsTableView.getItems().size())) deleteSplitButton.disableProperty().set(true);
+                    else deleteSplitButton.disableProperty().set(false);
+                } else {
+                    deleteSplitButton.disableProperty().set(true);
+                }
+            };
+           raceSplitsTableView.getSelectionModel().selectedItemProperty().addListener(raceSplitsTableViewListener);
+        
+            waveStartsCheckBoxListener=(arg0,  oldPropertyValue,  newPropertyValue) -> {
+                if (!newPropertyValue) {
+                    if (raceWaves.get(0).getWaveAssignmentMethod().equals(WaveAssignment.BIB)) {
+                        endBibTextField.setText(raceWaves.get(0).getWaveAssignmentEnd());
+                        startBibTextField.setText(raceWaves.get(0).getWaveAssignmentStart());
+                    } else {
+                        endBibTextField.setText("");
+                        startBibTextField.setText("");
+                    }
+
+                    raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
+                }
+            };
+            waveStartsCheckBox.selectedProperty().addListener(waveStartsCheckBoxListener);
+        
+            raceSplitsListener=(ListChangeListener.Change<? extends Split> c) -> {
+                if (ResultsDAO.getInstance().getResults(selectedRace.getID()).size() > 0)splitUpdateResultsButton.visibleProperty().set(true);
+            };
+            raceSplits.addListener(raceSplitsListener);
             
         } else {
             System.out.println("Null race, de-populate all fields out");
