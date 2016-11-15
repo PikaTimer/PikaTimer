@@ -52,24 +52,16 @@ Setup Custom AG's (other than just 5 & 10 year increments)?
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
 Ability to set min/max times for a segment
 Ability to drag/drop splits to reorder
-protect start/finish split from removal
-protect start/finish split distances from updates
-auto-update finish split distance
-allow for zero distance splits (transition)
 
 Cumulative vs differential distance for splits specification?
 Ability to override the pace display for a segment: m/s, m/h, k/h, s/100y, s/100m) 
 Ability to set split specific distance unit
-Ability to create segment "groups" (swim, bike, run)? 
 Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
-Prevent removal of waves that have assigned participants
-Prevent removal of races that have assigned participants
-Prevent removal of Timing Locations that are mapped to splits
-Show bib range if there are multiple races and wave starts is not checked
+
 Ability to Flag a race as a relay race
 
 Participants:
-  -- limit to one wave or multiple per checkbox on the event setup
+  -- Option on the event page to limit participants to only one race/wave
   -- store the team id
   -- textfield auto complete for city/state 
   -- textfield for teams pre-populated / with auto complete
@@ -79,16 +71,13 @@ Clean up import from csv (field formatting, etc)
 Export to csv
 Validate csv file before continuing. 
 Error check the fields (age, gender, city, state, bib, etc). 
-Prevent duplicate bib number assignment
 Wave/Race assignment based on import field
 Update/Add on enter from any valid field
 Custom fields / attributes w/ data types (string, limited select, date, time)
 Link to Team
 Inline Edit of the cells?
 Mass bib assignment 
-Show race/wave as column
-Used first/last name edit fields as filters for the list
-Flag bib if already in use, disable "add" option, only edit
+
 sync from/to fusesport / active.com / runsignup / other
 
 Relay Teams? Figure this one out!
@@ -107,19 +96,21 @@ Add intermediate dialog for bib -> chip setup
 Ignore chip reads times option
 
 Overrides 
-  -- Make the bib an autocomplete text field based on the runners
+  -- Make the bib an autocomplete text field based on the registered runners
   -- replace if bib + split already exists
   -- cleanup split drop down for when the runner is in multiple races
+  -- mouse over shows runner name in override table view
 
 
 Backup Times option
-  -- splice them in for missing splits (
+  -- splice them in for missing splits 
 
 Clear all times for the timing location input when the user selects a new reader
 Clear all times for a location when the location is deleted
 Backup flag for a given reader at a split
 
 Option to assign any time to the race/wave start time via right mouse click menu
+Option to 'search' for "0" chip times and map them to a wave start
 
 Search dropdown to show only a single timing location in the TableView
 ability to isolate a bib# for the search 
@@ -150,16 +141,16 @@ Reports:
 Derived segments / splits (e.g., "total time from split C -> D")
   -- may overlap with the split "groups" on the races tab
 
-Basic html output for Overall, AG, Award. 
+
 Option to strip accent marks (StringUtils.stripAccents(String input))
-Mobile Friendly html output (sortable, searchable, etc)
+
 Optional banner Text for the page
 
 Auto-print of text with each new page or after X number of runners
 Text output with header/FormFeed after X number of lines. 
 
-Course Record alerts in overall text/html reports
-Award winner alerts in overall text/html reports. 
+Course Record note in overall text/html reports
+Award winner note in overall text/html reports. 
 
 CSS link option for html based reports
 
@@ -183,7 +174,7 @@ Team awards
 
 
 Options tab:
-SCP/FTP/Active.com/FuseSport Account info profiles
+Active.com/RunSignUp/FuseSport Account info profiles
 Gender Display (Men/Women, Male/Female, custom)
 
 -------------------------------------
