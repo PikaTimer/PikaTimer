@@ -18,12 +18,14 @@ package com.pikatimer.participant;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
+import com.pikatimer.timing.TimingInputTypes;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.WaveStringConverter;
 import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -79,6 +81,7 @@ public class FXMLParticipantController  {
     @FXML private TableView<Participant> tableView;
     @FXML private TableColumn bibNumberColumn;
     @FXML private TableColumn<Participant,String> raceColumn;
+    @FXML private TableColumn<Participant,Status> statusColumn;
     @FXML private VBox formVBox; 
     @FXML private TextField bibTextField;
     @FXML private Label raceLabel;
@@ -101,7 +104,8 @@ public class FXMLParticipantController  {
     @FXML private HBox countryHBox;
     @FXML private CheckComboBox<Wave> searchWaveComboBox; 
 
-    @FXML private PrefixSelectionChoiceBox statusPrefixSelectionChoiceBox;
+    @FXML private PrefixSelectionChoiceBox<Status> statusPrefixSelectionChoiceBox;
+    @FXML private TextField noteTextField;
     
     private ObservableList<Participant> participantsList;
     private ParticipantDAO participantDAO;
@@ -421,26 +425,32 @@ public class FXMLParticipantController  {
         
 
         raceColumn.setCellValueFactory((CellDataFeatures<Participant, String> p) -> {
-            StringProperty waves = new SimpleStringProperty();
+            StringProperty wavesString = new SimpleStringProperty();
             WaveStringConverter wString=new WaveStringConverter();
             if (p.getValue().wavesProperty().isEmpty()) return new SimpleStringProperty();
             
             p.getValue().wavesProperty().stream().forEach(w -> {
-                waves.setValue(waves.getValueSafe() + wString.toString(w) + ", " );
+                wavesString.setValue(wavesString.getValueSafe() + wString.toString(w) + ", " );
                 //System.out.println("Checking " + w.getID() + " " + w.toString());
             });
             // remove the trailing ", "
-            waves.set(waves.getValueSafe().substring(0, waves.getValueSafe().length()-2));
+            wavesString.set(wavesString.getValueSafe().substring(0, wavesString.getValueSafe().length()-2));
             
             
-            return waves;
+            return wavesString;
         });
         
-        //Sorting triggers a StackOverflow
+        //Sorting the raceColumn triggers a StackOverflow
         raceColumn.sortableProperty().setValue(Boolean.FALSE);
         
         if (RaceDAO.getInstance().listWaves().size() == 1 ) raceColumn.visibleProperty().set(false);
             else raceColumn.visibleProperty().set(true);
+        
+        ObservableList<Status> statusypeList = FXCollections.observableArrayList(Arrays.asList(Status.values()));
+        statusPrefixSelectionChoiceBox.setItems(statusypeList);
+        
+        statusColumn.setCellValueFactory(person -> person.getValue().statusProperty());
+        
 
     }
     
@@ -472,6 +482,8 @@ public class FXMLParticipantController  {
                 p.setWaves(waveComboBox.getCheckModel().getCheckedItems());
             }
             
+            p.setNote(noteTextField.getText());
+            p.setStatus(statusPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             //participantsList.add(p);
             participantDAO.addParticipant(p);
             
@@ -514,6 +526,8 @@ public class FXMLParticipantController  {
         cityTextField.setText(p.getCity()); 
         stateTextField.setText(p.getState());
         
+        statusPrefixSelectionChoiceBox.getSelectionModel().select(p.getStatus());
+        noteTextField.setText(p.getNote());
              
         waveComboBox.getCheckModel().clearChecks();
         
@@ -527,6 +541,7 @@ public class FXMLParticipantController  {
         });
         //waveComboBox.getCheckModel().check(null);
         
+
         
         // Make the update button visible and hide the add button
         formUpdateButton.setVisible(true);
@@ -552,6 +567,9 @@ public class FXMLParticipantController  {
             editedParticipant.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             editedParticipant.setCity(cityTextField.getText());
             editedParticipant.setState(stateTextField.getText());
+            
+            editedParticipant.setStatus(statusPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
+            editedParticipant.setNote(noteTextField.getText());
             
             // If there is only one wave, assign it
             if (RaceDAO.getInstance().listWaves().size()== 1){
@@ -595,6 +613,9 @@ public class FXMLParticipantController  {
         
         cityTextField.setText("");
         stateTextField.setText("");
+        
+        noteTextField.setText("");
+        statusPrefixSelectionChoiceBox.getSelectionModel().select(Status.GOOD);
         
    
         

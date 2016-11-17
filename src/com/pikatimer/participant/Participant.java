@@ -27,11 +27,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javafx.beans.Observable;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -42,11 +45,14 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -78,10 +84,11 @@ public class Participant {
     private LocalDate birthdayProperty; 
     private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());   
     private Set<Integer> waveIDSet = new HashSet(); 
-    private final BooleanProperty DNFProperty = new SimpleBooleanProperty(FALSE);
-    private final StringProperty DNFNoteProperty = new SimpleStringProperty();
-    private final BooleanProperty DQProperty = new SimpleBooleanProperty(FALSE);
-    private final StringProperty DQNoteProperty = new SimpleStringProperty();
+    private final BooleanProperty dnfProperty = new SimpleBooleanProperty(FALSE);
+    private final BooleanProperty dqProperty = new SimpleBooleanProperty(FALSE);
+    private final StringProperty noteProperty = new SimpleStringProperty();
+    private Status status; 
+    private final ObjectProperty<Status> statusProperty = new SimpleObjectProperty(Status.GOOD);
    
     public Participant() {
         this("","");
@@ -95,14 +102,31 @@ public class Participant {
         setLastName(lastName);
         // TODO: Fix this to include the middle name if it is set
         fullNameProperty.bind(new StringBinding(){
-                {
-                super.bind(firstNameProperty,middleNameProperty, lastNameProperty);
-                }
-                @Override
-                protected String computeValue() {
-                    return (firstNameProperty.getValueSafe() + " " + middleNameProperty.getValueSafe() + " " + lastNameProperty.getValueSafe()).replaceAll("( )+", " ");
-                }
-            });
+            {super.bind(firstNameProperty,middleNameProperty, lastNameProperty);}
+            @Override
+            protected String computeValue() {
+                return (firstNameProperty.getValueSafe() + " " + middleNameProperty.getValueSafe() + " " + lastNameProperty.getValueSafe()).replaceAll("( )+", " ");
+            }
+        });
+        
+        //Convenience properties for the getDNF and getDQ status checks
+        dnfProperty.bind(new BooleanBinding(){
+            {super.bind(statusProperty);}
+            @Override
+            protected boolean computeValue() {
+                if (statusProperty.getValue().equals(Status.DNF)) return true;
+                return false; 
+            }
+        });
+        dqProperty.bind(new BooleanBinding(){
+            {super.bind(statusProperty);}
+            @Override
+            protected boolean computeValue() {
+                if (statusProperty.getValue().equals(Status.DQ)) return true;
+                return false; 
+            }
+        });
+        
     }
     
     public static ObservableMap getAvailableAttributes() {
@@ -307,51 +331,50 @@ public class Participant {
     }
     
     
-    @Column(name="dnf", nullable=true)
+    @Transient
     public Boolean getDNF() {
-        return DNFProperty.getValue();
-    }
-    public void setDNF(Boolean s) {
-        DNFProperty.setValue(s);
+        return dnfProperty.getValue();
     }
     public BooleanProperty dnfProperty(){
-        return DNFProperty;
+        return dnfProperty;
     }
             
-    @Column(name="dnf_note", nullable=true)
-    public String getDNFNote() {
-        return DNFNoteProperty.getValueSafe();
-    }
-    public void setDNFNote(String s) {
-        DNFNoteProperty.setValue(s);
-    }
-    public StringProperty dnfNoteProperty(){
-        return DNFNoteProperty;
-    }
-    
-    @Column(name="dq", nullable=true)
+    @Transient
     public Boolean getDQ() {
-        return DQProperty.getValue();
-    }
-    public void setDQ(Boolean s) {
-        DQProperty.setValue(s);
+        return dqProperty.getValue();
     }
     public BooleanProperty dqProperty(){
-        return DQProperty;
-    }
-            
-    @Column(name="dq_note", nullable=true)
-    public String getDQNote() {
-        return DQNoteProperty.getValueSafe();
-    }
-    public void setDQNote(String s) {
-        DQNoteProperty.setValue(s);
-    }
-    public StringProperty dqNoteProperty(){
-        return DQNoteProperty;
+        return dqProperty;
     }
             
             
+    @Column(name="note", nullable=true)
+    public String getNote() {
+        return noteProperty.getValueSafe();
+    }
+    public void setNote(String s) {
+        noteProperty.setValue(s);
+    }
+    public StringProperty noteProperty(){
+        return noteProperty;
+    }        
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name="status")
+    public Status getStatus() {
+        return status;
+    }
+    public void setStatus(Status s) {
+        
+        if (s != null && (status == null || ! status.equals(s)) ){
+            
+            status = s;
+            statusProperty.set(status);
+        }
+    }
+    public ObjectProperty<Status> statusProperty(){
+        return statusProperty;
+    }
             
     @ElementCollection(fetch = FetchType.EAGER)
     @Column(name="wave_id", nullable=false)
@@ -404,7 +427,7 @@ public class Participant {
     }
     
     public static Callback<Participant, Observable[]> extractor() {
-        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.waves};
+        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.waves,p.statusProperty};
     }
 
     @Override
