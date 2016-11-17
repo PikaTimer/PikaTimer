@@ -27,24 +27,37 @@ import java.util.Map;
     
 public enum Status {
 
-    GOOD,
-    DNS,
-    DNF, 
-    DQ; 
+    GOOD("","Running"),
+    DNS("DNS","Did Not Start"),
+    DNF("DNF","Did Not Finish"), 
+    DQ("DQ","Disqualified"); 
 
+    private final String shortCode;
+    private final String longCode;
     
     private static final Map<Status, String> InputMap = createMap();
+    
+    Status(String s, String l){
+        shortCode=s;
+        longCode=l;
+    }
 
     private static Map<Status, String> createMap() {
         Map<Status, String> result = new HashMap<>();
-        result.put(GOOD, "");
-        result.put(DNS, "Did Not Start");
-        result.put(DNF, "Did Not Finish");
-        result.put(DQ, "Disqualified");
+        result.put(GOOD, "Running");
+        result.put(DNS, "DNS: Did Not Start");
+        result.put(DNF, "DNF: Did Not Finish");
+        result.put(DQ, "DQ: Disqualified");
 
         return Collections.unmodifiableMap(result);
     }
     
+    public String getLongCode(){ 
+        return longCode;
+    }
+    public String getShortCode(){
+        return shortCode;
+    }
 
     
     @Override 

@@ -448,6 +448,7 @@ public class FXMLParticipantController  {
         
         ObservableList<Status> statusypeList = FXCollections.observableArrayList(Arrays.asList(Status.values()));
         statusPrefixSelectionChoiceBox.setItems(statusypeList);
+        statusPrefixSelectionChoiceBox.getSelectionModel().select(Status.GOOD);
         
         statusColumn.setCellValueFactory(person -> person.getValue().statusProperty());
         
