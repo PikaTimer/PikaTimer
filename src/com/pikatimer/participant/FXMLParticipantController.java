@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.pikatimer.participant;
+import com.pikatimer.event.Event;
+import com.pikatimer.event.EventDAO;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
@@ -25,6 +27,7 @@ import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
+import java.time.Period;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +57,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
@@ -93,6 +97,10 @@ public class FXMLParticipantController  {
     @FXML private PrefixSelectionChoiceBox<String> sexPrefixSelectionChoiceBox;
     @FXML private TextField cityTextField; 
     @FXML private TextField stateTextField;
+    @FXML private TextField zipTextField;
+    @FXML private TextField countryTextField;
+    @FXML private DatePicker birthdayDatePicker;    
+
     @FXML private TextField filterField; 
     @FXML private Button formAddButton; 
     @FXML private Button formUpdateButton;
@@ -455,6 +463,23 @@ public class FXMLParticipantController  {
         
         statusColumn.setCellValueFactory(person -> person.getValue().statusProperty());
         
+        birthdayDatePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.equals(oldValue)) return;
+            
+            ageTextField.setText(Integer.toString(Period.between(newValue, Event.getInstance().getLocalEventDate()).getYears()));
+        
+        });
+        
+        birthdayDatePicker.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                System.out.println("birthdayDatePicker out focus");
+                
+                //If it is now null, just bail
+                if (birthdayDatePicker.getValue() == null) return; 
+                
+                else sexPrefixSelectionChoiceBox.requestFocus();
+            }
+        });
 
     }
     
@@ -529,6 +554,9 @@ public class FXMLParticipantController  {
         //emailField.setText(p.getEmail());   
         cityTextField.setText(p.getCity()); 
         stateTextField.setText(p.getState());
+        zipTextField.setText(p.getZip());
+        countryTextField.setText(p.getCountry());
+        birthdayDatePicker.setValue(p.birthdayProperty().getValue());
         
         statusPrefixSelectionChoiceBox.getSelectionModel().select(p.statusProperty().getValue());
         noteTextField.setText(p.getNote());
@@ -561,16 +589,20 @@ public class FXMLParticipantController  {
         if (!firstNameField.getText().isEmpty() && !lastNameField.getText().isEmpty()) {
             
             // pull the list of checked waves
+            editedParticipant.setBib(bibTextField.getText());
             
             editedParticipant.setFirstName(firstNameField.getText());
             editedParticipant.setMiddleName(middleNameTextField.getText());
             editedParticipant.setLastName(lastNameField.getText());
             
-            editedParticipant.setBib(bibTextField.getText());
+            
+            editedParticipant.setBirthday(birthdayDatePicker.getValue());
             editedParticipant.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
             editedParticipant.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             editedParticipant.setCity(cityTextField.getText());
             editedParticipant.setState(stateTextField.getText());
+            editedParticipant.setZip(zipTextField.getText());
+            editedParticipant.setCountry(countryTextField.getText());
             
             editedParticipant.setStatus(statusPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             editedParticipant.setNote(noteTextField.getText());
@@ -599,8 +631,6 @@ public class FXMLParticipantController  {
     
     public void resetForm() {
         
-        
-        
         // reset the fields
         editedParticipant=null; 
         //waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
@@ -615,8 +645,12 @@ public class FXMLParticipantController  {
         middleNameTextField.setText("");
         lastNameField.setText("");
         
+        birthdayDatePicker.setValue(null);
+        
         cityTextField.setText("");
         stateTextField.setText("");
+        zipTextField.setText("");
+        countryTextField.setText("");
         
         noteTextField.setText("");
         statusPrefixSelectionChoiceBox.getSelectionModel().select(Status.GOOD);

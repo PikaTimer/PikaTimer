@@ -47,8 +47,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <Insets left="5.0" />
                </padding></Label>
             <TextField fx:id="filterField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="200.0" promptText="Regex capable search filter" HBox.hgrow="NEVER" />
+            <Label style="-fx-font: NORMAL 20 Tahoma;" text="Filter">
+               <padding>
+                  <Insets left="5.0" />
+               </padding>
+            </Label>
             <CheckComboBox fx:id="searchWaveComboBox" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="150.0" />
-            <Region maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="125.0" HBox.hgrow="ALWAYS" />
+            <Region maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="75.0" HBox.hgrow="ALWAYS" />
             <Label fx:id="filteredSizeLabel" text="Label" textAlignment="RIGHT" HBox.hgrow="NEVER">
                <HBox.margin>
                   <Insets right="-10.0" />
@@ -179,7 +184,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Font size="14.0" />
                            </font>
                         </Label>
-                        <DatePicker fx:id="dobDatePicker" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefHeight="25.0" prefWidth="135.0" promptText="Date of Birth" HBox.hgrow="ALWAYS" />
+                        <DatePicker fx:id="birthdayDatePicker" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefHeight="25.0" prefWidth="135.0" promptText="Date of Birth" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="2.0">
@@ -240,7 +245,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Font size="14.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="lastNameField1" prefWidth="90" promptText="Country" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="countryTextField" prefWidth="90" promptText="Country" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="2.0">

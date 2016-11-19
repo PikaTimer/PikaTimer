@@ -81,7 +81,9 @@ public class Participant {
     private final StringProperty cityProperty= new SimpleStringProperty();
     private final StringProperty stateProperty= new SimpleStringProperty();
     private final StringProperty countryProperty= new SimpleStringProperty();
-    private LocalDate birthdayProperty; 
+    private final StringProperty zipProperty = new SimpleStringProperty();
+    private LocalDate birthday; 
+    private final ObjectProperty<LocalDate> birthdayProperty = new SimpleObjectProperty();
     private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());   
     private Set<Integer> waveIDSet = new HashSet(); 
     private final BooleanProperty dnfProperty = new SimpleBooleanProperty(FALSE);
@@ -305,28 +307,52 @@ public class Participant {
         return stateProperty;
     }
     
+    @Column(name="ZIP")
+    public String getZip() {
+        return zipProperty.getValueSafe();
+    }
+    public void setZip(String s) {
+        zipProperty.setValue(s);
+    }
+    public StringProperty zipProperty(){
+        return zipProperty;
+    }
+    
+    @Column(name="COUNTRY")
+    public String getCountry() {
+        return countryProperty.getValueSafe();
+    }
+    public void setCountry(String s) {
+        countryProperty.setValue(s);
+    }
+    public StringProperty countryProperty(){
+        return countryProperty;
+    }
+    
     @Column(name="BIRTHDAY",nullable=true)
     public String getBirthday() {
-        if (birthdayProperty != null) {
+        if (birthday != null) {
             //return Date.from(birthdayProperty.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-            return birthdayProperty.toString();
+            return birthday.toString();
         } else {
             return null; 
         }
     }
     public void setBirthday(LocalDate d) {
         if (d != null) {
-            birthdayProperty = d;
+            birthday = d;
+            birthdayProperty.setValue(d);
         }
     }    
     public void setBirthday(String d) {
         if (d != null) {
-            birthdayProperty = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
+            birthday = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
+            birthdayProperty.setValue(birthday);
             //Instant instant = Instant.ofEpochMilli(d.getTime());
             //setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
         }
     }
-    public LocalDate birthdayProperty() {
+    public ObjectProperty<LocalDate> birthdayProperty() {
         return birthdayProperty;
     }
     
