@@ -165,6 +165,7 @@ public class FXMLRaceDetailsController {
                 try {
                     if (!newValue.isEmpty()) {
                         new BigDecimal(raceDistanceTextField.getText());
+                        raceDistanceTextField.setText(newValue.replaceFirst("^0*([1-9])", "$1"));
                     }
                 } catch (Exception e) {
                     raceDistanceTextField.setText(oldValue);
@@ -414,7 +415,9 @@ public class FXMLRaceDetailsController {
             }
         });
         
-        
+        startBibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            startBibTextField.setText(newValue.replaceFirst("^[ 0]*", "").replaceFirst(" *$", ""));
+        });
         startBibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 System.out.println("startBibTextField out focus");
@@ -422,6 +425,9 @@ public class FXMLRaceDetailsController {
             }
         });
         
+        endBibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            endBibTextField.setText(newValue.replaceFirst("^[ 0]*", "").replaceFirst(" *$", ""));
+        });
         endBibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 System.out.println("endBibTestField out focus");

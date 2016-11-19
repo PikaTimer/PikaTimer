@@ -332,7 +332,10 @@ public class FXMLParticipantController  {
         });
         System.out.println("Done Initializing ParticipantController");
         
-        
+        // Strip off leading spaces/zeroes and trailing spaces
+        bibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            bibTextField.setText(newValue.replaceFirst("^[ 0]*", "").replaceFirst(" *$", ""));
+        });
       
         bibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
@@ -527,7 +530,7 @@ public class FXMLParticipantController  {
         cityTextField.setText(p.getCity()); 
         stateTextField.setText(p.getState());
         
-        statusPrefixSelectionChoiceBox.getSelectionModel().select(p.getStatus());
+        statusPrefixSelectionChoiceBox.getSelectionModel().select(p.statusProperty().getValue());
         noteTextField.setText(p.getNote());
              
         waveComboBox.getCheckModel().clearChecks();
