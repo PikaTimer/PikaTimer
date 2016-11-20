@@ -464,8 +464,14 @@ public class FXMLParticipantController  {
         statusColumn.setCellValueFactory(person -> person.getValue().statusProperty());
         
         birthdayDatePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == null || newValue.equals(oldValue)) return;
+            if (newValue == null ) {
+                ageTextField.requestFocus();
+                ageTextField.selectAll();
+                return;
+            }
+            if (newValue.equals(oldValue)) return;
             
+            sexPrefixSelectionChoiceBox.requestFocus();
             ageTextField.setText(Integer.toString(Period.between(newValue, Event.getInstance().getLocalEventDate()).getYears()));
         
         });
