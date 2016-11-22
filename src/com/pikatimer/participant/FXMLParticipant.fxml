@@ -70,7 +70,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </GridPane.margin>
       </HBox>
-       <TableView fx:id="tableView" prefHeight="400.0" prefWidth="531.0" tableMenuButtonVisible="true" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+       <TableView fx:id="participantTableView" prefHeight="400.0" prefWidth="531.0" tableMenuButtonVisible="true" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
            <columns>
                <TableColumn fx:id="bibNumberColumn" prefWidth="49.0" resizable="false" text="Bib #">
                  <cellValueFactory>
@@ -293,7 +293,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       </HBox>
       <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3">
          <children>
-            <Button fx:id="formDeleteButton" alignment="CENTER_RIGHT" onAction="#deleteParticipant" text="Delete" />
+            <Button fx:id="deleteParticipantsButton" alignment="CENTER_RIGHT" onAction="#deleteParticipants" text="Delete" />
          </children>
       </HBox>
    </children>

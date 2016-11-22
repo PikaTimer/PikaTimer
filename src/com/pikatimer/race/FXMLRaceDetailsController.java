@@ -165,10 +165,20 @@ public class FXMLRaceDetailsController {
                 try {
                     if (!newValue.isEmpty()) {
                         new BigDecimal(raceDistanceTextField.getText());
-                        raceDistanceTextField.setText(newValue.replaceFirst("^0*([1-9])", "$1"));
+                        if (newValue.matches("^0*([0-9]+\\.?[0-9]*)")) {
+                            Platform.runLater(() -> { 
+                                int c = raceDistanceTextField.getCaretPosition();
+                                raceDistanceTextField.setText(newValue.replaceFirst("^0*([0-9]+\\.?[0-9]*)", "$1"));
+                                raceDistanceTextField.positionCaret(c);
+                            });
+                        }
                     }
                 } catch (Exception e) {
-                    raceDistanceTextField.setText(oldValue);
+                    Platform.runLater(() -> { 
+                        int c = raceDistanceTextField.getCaretPosition();
+                        raceDistanceTextField.setText(oldValue);
+                        raceDistanceTextField.positionCaret(c);
+                    }); 
                 }
                 
         });

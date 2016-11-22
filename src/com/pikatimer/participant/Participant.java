@@ -16,11 +16,14 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.event.Event;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import static java.lang.Boolean.FALSE;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -138,12 +141,15 @@ public class Participant {
         attribMap.put("middle", "Middle Name");
         attribMap.put("last", "Last Name");
         attribMap.put("age", "Age");
+        attribMap.put("birthday","Birthday");
         attribMap.put("sex-gender", "Sex");
         attribMap.put("city", "City");
         attribMap.put("state", "State");
+        attribMap.put("zip","Zip Code");
+        attribMap.put("status","Status");
         attribMap.put("country", "Country");
         attribMap.put("email", "EMail");
-        // routine to add custom attributes based on db lookup
+        // TODO: routine to add custom attributes based on db lookup
         return attribMap; 
     }
     
@@ -161,13 +167,32 @@ public class Participant {
                  
                      
                  // TODO: catch bad integers 
-                 case "age": this.setAge(Integer.parseUnsignedInt(entry.getValue())); break; 
+                 case "birthdate": 
+                     this.setBirthday(entry.getValue()); 
+                     //set the age too if we were able to parse the birthdate
+                     if (this.birthday != null) this.setAge(Integer.valueOf(Period.between(this.birthday, Event.getInstance().getLocalEventDate()).getYears()));
+                     break;
+                 case "age": 
+                     //Setting the birthdate will also set the age
+                     try {
+                                              if (this.birthday == null) this.setAge(Integer.parseUnsignedInt(entry.getValue())); 
+
+                     } catch (Exception e) {
+                         System.out.println("Unable to parse age " + entry.getValue() );
+                     }
+                     break; 
                      
                  // TODO: map to selected sex translator
                  case "sex-gender": this.setSex(entry.getValue()); break; 
+                 
+                 
                      
                  case "city": this.setCity(entry.getValue()); break; 
                  case "state": this.setState(entry.getValue()); break; 
+                 case "country": this.setCountry(entry.getValue()); break;
+                 case "zip": this.setZip(entry.getValue()); break;
+                 
+                         
                  case "email": this.setEmail(entry.getValue()); break; 
                      
                  // TODO: Team value
@@ -279,7 +304,11 @@ public class Participant {
         return sexProperty.getValueSafe();
     }
     public void setSex(String s) {
-        sexProperty.setValue(s);
+        //Set to an upper case M or F for now
+        //TODO: Switch this to the allowable values for a SEX 
+        if (s.startsWith("M") || s.startsWith("m")) sexProperty.setValue("M");
+        else if (s.startsWith("F") || s.startsWith("f")) sexProperty.setValue("F");
+        else sexProperty.setValue(s);
     }
     public StringProperty sexProperty() {
         return sexProperty;
@@ -346,7 +375,18 @@ public class Participant {
     }    
     public void setBirthday(String d) {
         if (d != null) {
-            birthday = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
+            //Try and parse the date
+            // First try the ISO_LOCAL_DATE (YYYY-MM-DD)
+            // Then try and catch localized date strings such as MM/DD/YYYY 
+            try{
+                birthday = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
+            } catch (Exception e){
+                try {
+                    birthday = LocalDate.parse(d,DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT));
+                } catch (Exception e2){
+                    System.out.println("Unable to parse date " + d);
+                }
+            }
             birthdayProperty.setValue(birthday);
             //Instant instant = Instant.ofEpochMilli(d.getTime());
             //setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());

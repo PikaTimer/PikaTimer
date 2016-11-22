@@ -27,6 +27,7 @@ import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
+import java.math.BigDecimal;
 import java.time.Period;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.BooleanProperty;
@@ -51,6 +53,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -75,6 +78,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.controlsfx.control.CheckComboBox;
+import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PrefixSelectionChoiceBox;
 /**
  *
@@ -82,7 +86,7 @@ import org.controlsfx.control.PrefixSelectionChoiceBox;
  */
 public class FXMLParticipantController  {
 
-    @FXML private TableView<Participant> tableView;
+    @FXML private TableView<Participant> participantTableView;
     @FXML private TableColumn bibNumberColumn;
     @FXML private TableColumn<Participant,String> raceColumn;
     @FXML private TableColumn<Participant,Status> statusColumn;
@@ -115,6 +119,8 @@ public class FXMLParticipantController  {
     @FXML private PrefixSelectionChoiceBox<Status> statusPrefixSelectionChoiceBox;
     @FXML private TextField noteTextField;
     
+    @FXML private Button deleteParticipantsButton;
+    
     private ObservableList<Participant> participantsList;
     private ParticipantDAO participantDAO;
     private Participant editedParticipant; 
@@ -138,29 +144,29 @@ public class FXMLParticipantController  {
         
         
         // Setup the context menu and actions
-        tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        participantTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        tableView.setRowFactory((TableView<Participant> tableView1) -> {
+        participantTableView.setRowFactory((TableView<Participant> tableView1) -> {
             final TableRow<Participant> row = new TableRow<>();
             final ContextMenu rowMenu = new ContextMenu();
             
             row.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
-                editParticipant(tableView.getSelectionModel().getSelectedItem());
+                editParticipant(participantTableView.getSelectionModel().getSelectedItem());
             }
             });
             
             // Context menu
             MenuItem editItem = new MenuItem("Edit");
             editItem.setOnAction((ActionEvent event) -> {
-                editParticipant(tableView.getSelectionModel().getSelectedItem());
+                editParticipant(participantTableView.getSelectionModel().getSelectedItem());
             });
             
             MenuItem removeItem = new MenuItem("Delete");
             removeItem.setOnAction((ActionEvent event) -> {
                 
-                removeParticipants(FXCollections.observableArrayList(tableView.getSelectionModel().getSelectedItems()));
-//                ObservableList deleteMe = FXCollections.observableArrayList(tableView.getSelectionModel().getSelectedItems());
+                removeParticipants(FXCollections.observableArrayList(participantTableView.getSelectionModel().getSelectedItems()));
+//                ObservableList deleteMe = FXCollections.observableArrayList(participantTableView.getSelectionModel().getSelectedItems());
 //                
 //                Iterator<Participant> deleteMeIterator = deleteMe.iterator();
 //		while (deleteMeIterator.hasNext()) {
@@ -172,7 +178,7 @@ public class FXMLParticipantController  {
             
             MenuItem swapBibs = new MenuItem("Swap Bibs");
             swapBibs.setOnAction((ActionEvent event) -> {
-                ObservableList<Participant> swapMe = FXCollections.observableArrayList(tableView.getSelectionModel().getSelectedItems());
+                ObservableList<Participant> swapMe = FXCollections.observableArrayList(participantTableView.getSelectionModel().getSelectedItems());
                 
                 if (swapMe.size() == 2) {
                     String tmp = swapMe.get(1).getBib();
@@ -190,7 +196,7 @@ public class FXMLParticipantController  {
             RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
                 MenuItem m = new MenuItem(w.toString());
                 m.setOnAction(e -> {
-                    tableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
+                    participantTableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
                         p.setWaves(w);
                         participantDAO.updateParticipant(p);
 
@@ -204,7 +210,7 @@ public class FXMLParticipantController  {
                 RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
                     MenuItem m = new MenuItem(w.toString());
                     m.setOnAction(e -> {
-                        tableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
+                        participantTableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
                             p.setWaves(w);
                             participantDAO.updateParticipant(p);
 
@@ -226,7 +232,7 @@ public class FXMLParticipantController  {
             
             // Hide the edit option if more than one item is selected and only show
             // the swap option if exactly two items are selected. 
-            tableView.getSelectionModel().getSelectedIndices().addListener((Change<? extends Integer> change) -> {
+            participantTableView.getSelectionModel().getSelectedIndices().addListener((Change<? extends Integer> change) -> {
                 if (change.getList().size() == 2) {
                     swapBibs.setDisable(false);
                 } else {
@@ -264,10 +270,10 @@ public class FXMLParticipantController  {
         SortedList<Participant> sortedParticipantsList = new SortedList(filteredParticipantsList);
 
         // 4. Bind the SortedList comparator to the TableView comparator.
-        sortedParticipantsList.comparatorProperty().bind(tableView.comparatorProperty());
+        sortedParticipantsList.comparatorProperty().bind(participantTableView.comparatorProperty());
 
         // 5. Add sorted (and filtered) data to the table.
-        tableView.setItems(sortedParticipantsList);
+        participantTableView.setItems(sortedParticipantsList);
         
         // Set the bib number to be an alphanumeric sort
         bibNumberColumn.setComparator(new AlphanumericComparator());
@@ -339,6 +345,32 @@ public class FXMLParticipantController  {
             //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
         });
         System.out.println("Done Initializing ParticipantController");
+        
+        ageTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                try {
+                    if (!newValue.isEmpty()) {
+                        Integer.parseUnsignedInt(ageTextField.getText());
+                        if (newValue.matches("^0*([0-9]+)")) {
+                            Platform.runLater(() -> { 
+                                int c = ageTextField.getCaretPosition();
+                                ageTextField.setText(newValue.replaceFirst("^0*([0-9]+)", "$1"));
+                                ageTextField.positionCaret(c);
+                                
+                            });
+                        }
+                    }
+                } catch (Exception e) {
+                    Platform.runLater(() -> { 
+                        int c = ageTextField.getCaretPosition();
+                        ageTextField.setText(oldValue);
+                        ageTextField.positionCaret(c);
+
+                    }); 
+                    
+                }
+                
+        });
         
         // Strip off leading spaces/zeroes and trailing spaces
         bibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -486,6 +518,8 @@ public class FXMLParticipantController  {
                 else sexPrefixSelectionChoiceBox.requestFocus();
             }
         });
+        
+        deleteParticipantsButton.disableProperty().bind(participantTableView.getSelectionModel().selectedItemProperty().isNull());
 
     }
     
@@ -603,7 +637,13 @@ public class FXMLParticipantController  {
             
             
             editedParticipant.setBirthday(birthdayDatePicker.getValue());
-            editedParticipant.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
+            
+            try {
+                editedParticipant.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
+            } catch(NumberFormatException e) {
+                editedParticipant.setAge(0);
+            }
+            
             editedParticipant.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             editedParticipant.setCity(cityTextField.getText());
             editedParticipant.setState(stateTextField.getText());
@@ -678,11 +718,11 @@ public class FXMLParticipantController  {
         resetForm();
     }
     
-    public void deleteParticipant(ActionEvent fxevent){
+    public void deleteParticipants(ActionEvent fxevent){
         //TODO: if over X number, prompt
         
-        if (editedParticipant!= null && tableView.getSelectionModel().getSelectedItems().contains(editedParticipant)) resetForm();
-        removeParticipants(FXCollections.observableArrayList(tableView.getSelectionModel().getSelectedItems()));
+        if (editedParticipant!= null && participantTableView.getSelectionModel().getSelectedItems().contains(editedParticipant)) resetForm();
+        removeParticipants(FXCollections.observableArrayList(participantTableView.getSelectionModel().getSelectedItems()));
     }
     
     public void importParticipants(ActionEvent fxevent) throws FlowException{
@@ -697,7 +737,6 @@ public class FXMLParticipantController  {
         importStage.setScene(new Scene(pane));
         importStage.initModality(Modality.APPLICATION_MODAL);
         importStage.show(); 
-
        
     }
     
@@ -705,7 +744,17 @@ public class FXMLParticipantController  {
         // todo
         // Open a dialog box to select the fields to export
         // Then the name of the file
-        // finally do the dump using the H2 -> csv libraries. 
+        // finally do the dump as a csv file. 
+        
+        // Figure out how to deal with nultiple race/waves. We don't let folks 
+        // import them directly right now. Maybe we just hide that field for now?
+        
+        
+        ListSelectionView<String> view = new ListSelectionView<>();
+        //view.setSourceItems(value);.setValue(Participant.getAvailableAttributes().
+ 
+        
+        
     }
     
     public void clearParticipants(ActionEvent fxevent){
