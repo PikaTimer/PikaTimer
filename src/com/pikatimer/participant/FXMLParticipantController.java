@@ -16,32 +16,43 @@
  */
 package com.pikatimer.participant;
 import com.pikatimer.event.Event;
-import com.pikatimer.event.EventDAO;
+import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
-import com.pikatimer.timing.TimingInputTypes;
+import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.WaveStringConverter;
 import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
-import java.math.BigDecimal;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.StringBinding;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
@@ -53,30 +64,39 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.scene.Cursor;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
+import static javafx.scene.layout.Region.USE_PREF_SIZE;
+import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PrefixSelectionChoiceBox;
@@ -289,6 +309,10 @@ public class FXMLParticipantController  {
         searchWaveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
         searchWaveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
+        
+        waveComboBox.setConverter(new WaveStringConverter());
+        searchWaveComboBox.setConverter(new WaveStringConverter());
+        
         RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
             //waveComboBox.getItems().clear();
             //Platform.runLater(() -> {
@@ -311,8 +335,7 @@ public class FXMLParticipantController  {
             //});
         });
         
-        waveComboBox.setConverter(new WaveStringConverter());
-        searchWaveComboBox.setConverter(new WaveStringConverter());
+        
         
         // DOES NOT WORK :-( 
         waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
@@ -749,12 +772,238 @@ public class FXMLParticipantController  {
         // Figure out how to deal with nultiple race/waves. We don't let folks 
         // import them directly right now. Maybe we just hide that field for now?
         
+        // An innter class to map the field names to their internal codes
+        class AttributeMap {
+            public SimpleStringProperty key = new SimpleStringProperty();
+            public SimpleStringProperty value= new SimpleStringProperty();
+
+            private AttributeMap(String k, String v) {
+                key.setValue(k);
+                value.setValue(v);            
+            }
+            
+            @Override
+            public String toString(){
+                return value.getValueSafe();
+            }
+            
+        }
         
-        ListSelectionView<String> view = new ListSelectionView<>();
-        //view.setSourceItems(value);.setValue(Participant.getAvailableAttributes().
- 
+        // Create the two lists. One of possible fields to export, the other
+        // of selected fields to export
+        
+        ObservableList<AttributeMap> availableAttributes = FXCollections.observableArrayList();
+        
+        Participant.getAvailableAttributes().entrySet().stream().forEach((entry) -> {
+            availableAttributes.add(new AttributeMap(entry.getKey(),entry.getValue()));
+        });
+        
+        ObservableList<AttributeMap> sortAttributes = FXCollections.observableArrayList();
+        
+        Participant.getAvailableAttributes().entrySet().stream().forEach((entry) -> {
+            sortAttributes.add(new AttributeMap(entry.getKey(),entry.getValue()));
+        });
+        
+        //Add Race/Wave attributes IF there are multiple races/waves to deal with
+        
+        if (RaceDAO.getInstance().listRaces().size() > 1) availableAttributes.add(new AttributeMap("RACE","Race"));
+        if (RaceDAO.getInstance().listWaves().size() > RaceDAO.getInstance().listRaces().size()) availableAttributes.add(new AttributeMap("WAVE","Wave"));
+        
+        // Setup a ListSelectionView
+        ListSelectionView<AttributeMap> listSelectionView = new ListSelectionView<>();
+        listSelectionView.setSourceItems(availableAttributes);
         
         
+        // If more than one race/wave, setup a filter by race/wave
+        
+        // Create a dialog
+        Dialog<ObservableList<AttributeMap>> dialog = new Dialog();
+        dialog.setTitle("Export Participants");
+        dialog.setHeaderText("Select fields to export");
+
+        // Set the button types.
+        ButtonType exportButtonType = new ButtonType("Export...", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(exportButtonType, ButtonType.CANCEL);
+        
+        // setup a grid 
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 20, 10, 10));
+        ColumnConstraints column = new ColumnConstraints(USE_COMPUTED_SIZE);
+        grid.getColumnConstraints().add(column);
+        
+        // Add the race/wave filter if there is something to filter on
+        
+        CheckBox waveFilterCheckBox = new CheckBox("Filter by Race");
+        HBox filterHBox = new HBox();
+        filterHBox.setPadding(new Insets(0,0,0, 10));
+        CheckComboBox<Race> waveFilterComboBox = new CheckComboBox();
+        
+        if (RaceDAO.getInstance().listRaces().size() > 1 || RaceDAO.getInstance().listWaves().size() > 1){
+            
+            waveFilterComboBox.getItems().addAll(RaceDAO.getInstance().listRaces());
+            
+            filterHBox.getChildren().addAll(waveFilterCheckBox,waveFilterComboBox);
+
+            waveFilterComboBox.prefWidth(USE_COMPUTED_SIZE);
+            waveFilterComboBox.maxWidth(USE_PREF_SIZE);
+            filterHBox.setAlignment(Pos.CENTER_LEFT);
+
+            filterHBox.setSpacing(5);
+            waveFilterComboBox.disableProperty().bind(waveFilterCheckBox.selectedProperty().not());
+            grid.add(filterHBox, 0, 0);
+        }
+        
+        // Add the sort by comboBox
+        ComboBox<AttributeMap> sortComboBox = new ComboBox();
+        sortComboBox.setItems(sortAttributes);
+        sortComboBox.getSelectionModel().selectFirst();
+        
+        HBox sortHBox = new HBox();
+        sortHBox.setSpacing(5);
+        sortHBox.setPadding(new Insets(0,0,0, 10));
+        sortHBox.getChildren().addAll(new Label("Sort by:"), sortComboBox);
+                
+        // Add the listSelectionView
+        grid.add(listSelectionView, 0,1);
+        
+        // TODO: Optional 'move up' 'move down' buttons for the listSelectionView
+        grid.add(sortHBox,0,2);
+        
+        // wire in the ok button to be enabled when there is something in the list
+       
+        dialog.getDialogPane().lookupButton(exportButtonType).disableProperty().bind(Bindings.size(listSelectionView.targetItemsProperty().getValue()).greaterThan(0).not());
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == exportButtonType) {
+                return listSelectionView.targetItemsProperty().get();
+            }
+            return null;
+        });
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        Optional<ObservableList<AttributeMap>> result = dialog.showAndWait();
+        
+        if (result.isPresent()) {
+            
+//            result.get().forEach(a -> {
+//                System.out.println("Export: Selected " + a.key.getValueSafe());
+//            });
+            
+            // if OK, prompt for a target file
+            final FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Export Participants...");
+            fileChooser.setInitialDirectory(
+                new File(System.getProperty("user.home"))
+            ); 
+            //fileChooser.getExtensionFilters().add(
+            //        new FileChooser.ExtensionFilter("PikaTimer Events", "*.db") 
+            //    );
+            fileChooser.setInitialFileName("participants.csv");
+            fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("CSV", "*.csv"),
+                new FileChooser.ExtensionFilter("Text","*.txt"),
+                new FileChooser.ExtensionFilter("All files", "*")
+            );
+            
+            
+            File file = fileChooser.showSaveDialog(participantTableView.getScene().getWindow());
+            
+            // make sure we have a file and that they didn't cancel on us
+            if (file != null) {
+                // Make suer we can open it for writting
+                if (file.exists() && ! file.canWrite()) {
+                    // oops, we can't write to the file
+                    // toss up an error dialog and bail
+                    
+                    return;
+                } else if (!file.exists()){
+                    try {
+                        if (!file.createNewFile()){
+                            // oops, we can't create the target file
+                            // toss up an error dialog and bail
+
+                            return;
+                        }
+                    } catch (IOException ex) {
+                        // oops, we can't create the target file
+                        // toss up an error dialog and bail
+
+                        return;
+                    } 
+                } 
+                
+                // At this point, we should have a file we can actually write to
+                
+                List<String> exportData = new ArrayList();
+                
+                //First the header
+                String header = "";
+                int fieldCount=result.get().size();
+                for(int i = 0; i< fieldCount;i++) {
+                    header+="\"";
+                    header+=result.get().get(i);
+                    header+="\"";
+                    if(i != fieldCount -1) header+=",";
+                }
+                
+                
+                exportData.add(header);
+                
+                // now itterate through the participants and create a quoted csv file
+                // escape any double quotes in the values by using double double quotes
+                
+                // ParticipantsList -> Filter -> Sort -> itterate on attributes
+                AlphanumericComparator acComparator = new AlphanumericComparator();
+                String sortAttribute = sortComboBox.getSelectionModel().getSelectedItem().key.getValueSafe();
+                participantDAO.listParticipants().stream().sorted((Participant o1, Participant o2) -> {
+                    return acComparator.compare(o1.getNamedAttribute(sortAttribute), o2.getNamedAttribute(sortAttribute));
+                }).forEach(p -> {
+                    BooleanProperty filtered = new SimpleBooleanProperty(true);
+                    if (waveFilterCheckBox.selectedProperty().get()){
+                        waveFilterComboBox.getCheckModel().getCheckedItems().forEach(r -> {
+                            p.wavesProperty().forEach(w -> {
+                                if (w.getRace().equals(r)) filtered.setValue(false);
+                            });
+                        });
+                    } else filtered.setValue(false); 
+                    
+                    if (filtered.getValue()) return;
+                    
+                    System.out.println("Exporting Particpant " + p.fullNameProperty().getValueSafe());
+                    String part = "";
+                    String fieldName;
+                    for(int i = 0; i< fieldCount;i++) {
+                        fieldName=result.get().get(i).key.getValueSafe();
+                        part+="\"";
+                        
+                        //We need to handle the race/wave exports carefully
+                        if (fieldName.equals("RACE") ){ 
+                            part += p.wavesProperty().stream().map (w -> w.getRace().getRaceName()).distinct().collect (Collectors.joining(","));
+                        } else if (fieldName.equals("WAVE") ) {
+                            part += p.wavesProperty().stream().map (w -> w.getWaveName()).collect (Collectors.joining(","));
+                        } else part+=p.getNamedAttribute(fieldName).replace("\"", "\"\"");
+                        part+="\"";
+                        
+                        if(i != fieldCount -1) part+=",";
+                    }
+                    exportData.add(part);
+                
+                });
+
+                try {
+                    
+                    Files.write(file.toPath(),exportData,StandardCharsets.UTF_8,StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                    
+                } catch (IOException e) {
+                    // oops, we can't create the target file
+                            // toss up an error dialog and bail
+
+                }
+            }
+        }
     }
     
     public void clearParticipants(ActionEvent fxevent){

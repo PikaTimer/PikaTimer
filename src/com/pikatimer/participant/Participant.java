@@ -25,6 +25,7 @@ import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -134,8 +135,9 @@ public class Participant {
         
     }
     
-    public static ObservableMap getAvailableAttributes() {
-        ObservableMap<String,String> attribMap = FXCollections.observableHashMap();
+    public static ObservableMap<String,String> getAvailableAttributes() {
+        ObservableMap<String,String> attribMap = FXCollections.observableMap(new LinkedHashMap() );
+        
         attribMap.put("bib", "Bib");
         attribMap.put("first", "First Name");
         attribMap.put("middle", "Middle Name");
@@ -146,8 +148,9 @@ public class Participant {
         attribMap.put("city", "City");
         attribMap.put("state", "State");
         attribMap.put("zip","Zip Code");
-        attribMap.put("status","Status");
         attribMap.put("country", "Country");
+        attribMap.put("status","Status");
+        attribMap.put("note","Note");
         attribMap.put("email", "EMail");
         // TODO: routine to add custom attributes based on db lookup
         return attribMap; 
@@ -165,17 +168,16 @@ public class Participant {
                  case "middle": this.setMiddleName(entry.getValue()); break;
                  case "last": this.setLastName(entry.getValue()); break;
                  
-                     
                  // TODO: catch bad integers 
-                 case "birthdate": 
+                 case "birthday": 
                      this.setBirthday(entry.getValue()); 
                      //set the age too if we were able to parse the birthdate
-                     if (this.birthday != null) this.setAge(Integer.valueOf(Period.between(this.birthday, Event.getInstance().getLocalEventDate()).getYears()));
+                     if (this.birthday != null) this.setAge(Period.between(this.birthday, Event.getInstance().getLocalEventDate()).getYears());
                      break;
                  case "age": 
-                     //Setting the birthdate will also set the age
+                     //Setting the birthdate will also set the age, so if the age is already set just skip it.
                      try {
-                                              if (this.birthday == null) this.setAge(Integer.parseUnsignedInt(entry.getValue())); 
+                        if (this.birthday == null) this.setAge(Integer.parseUnsignedInt(entry.getValue())); 
 
                      } catch (Exception e) {
                          System.out.println("Unable to parse age " + entry.getValue() );
@@ -192,6 +194,14 @@ public class Participant {
                  case "country": this.setCountry(entry.getValue()); break;
                  case "zip": this.setZip(entry.getValue()); break;
                  
+                 case "note": this.setNote(entry.getValue()); break;
+                 
+                 case "status": 
+                     try {
+                         this.setStatus(Status.valueOf(entry.getValue()));
+                     } catch (Exception e){
+                         
+                     }
                          
                  case "email": this.setEmail(entry.getValue()); break; 
                      
@@ -199,6 +209,45 @@ public class Participant {
              }
             }
         });
+    }
+    
+    public String getNamedAttribute(String attribute) {
+        
+        if (attribute != null) {
+                //System.out.println("processing " + entry.getKey() );
+            switch(attribute) {
+                case "bib": return this.bibProperty.getValueSafe();
+                case "first": return this.firstNameProperty.getValueSafe();
+                case "middle": return this.middleNameProperty.getValueSafe();
+                case "last": return this.lastNameProperty.getValueSafe();
+
+                // TODO: catch bad integers 
+                case "birthday": if (this.birthday != null) return birthday.format(DateTimeFormatter.ISO_DATE); else return "";
+                    
+                case "age":  if (this.ageProperty.getValue() != null) return this.ageProperty.getValue().toString(); else return "";
+                     
+
+                // TODO: map to selected sex translator
+                case "sex-gender": return this.sexProperty.getValueSafe();
+
+                case "city": return this.cityProperty.getValueSafe();
+                case "state": return this.stateProperty.getValueSafe();
+                case "country": return this.countryProperty.getValueSafe();
+                case "zip": return this.zipProperty.getValueSafe();
+
+                case "note": return this.noteProperty.getValueSafe();
+
+                case "status": if (status != null) return status.name(); else return Status.GOOD.name();
+
+
+                case "email": return this.emailProperty.getValueSafe();  
+                
+                
+                
+                // TODO: Team value
+            }
+        }
+        return "";
     }
     
     @Id
