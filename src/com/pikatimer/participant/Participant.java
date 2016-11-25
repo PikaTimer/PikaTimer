@@ -41,6 +41,8 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
@@ -89,6 +91,7 @@ public class Participant {
     private LocalDate birthday; 
     private final ObjectProperty<LocalDate> birthdayProperty = new SimpleObjectProperty();
     private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());   
+    private final ObjectProperty<ObservableList<Wave>> wavesProperty = new SimpleObjectProperty(waves);
     private Set<Integer> waveIDSet = new HashSet(); 
     private final BooleanProperty dnfProperty = new SimpleBooleanProperty(FALSE);
     private final BooleanProperty dqProperty = new SimpleBooleanProperty(FALSE);
@@ -532,7 +535,7 @@ public class Participant {
             waveIDSet.add(w.getID()); 
         }
     }
-    public ObservableList<Wave> wavesProperty() {
+    public ObservableList<Wave> wavesObservableList() {
         waves.clear();
         waveIDSet.stream().forEach(id -> {
             if (RaceDAO.getInstance().getWaveByID(id) == null) System.out.println("Null WAVE!!! " + id);
@@ -541,8 +544,12 @@ public class Participant {
         return waves; 
     }
     
+    public ObjectProperty<ObservableList<Wave>> wavesProperty(){
+        return wavesProperty;
+    }
+    
     public static Callback<Participant, Observable[]> extractor() {
-        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.waves,p.statusProperty};
+        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.wavesProperty,p.statusProperty};
     }
 
     @Override

@@ -20,7 +20,6 @@ import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
-import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.WaveStringConverter;
 import io.datafx.controller.flow.Flow;
@@ -29,23 +28,16 @@ import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.time.Duration;
-import java.time.LocalTime;
 import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -66,7 +58,6 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -82,6 +73,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableRow;
@@ -108,6 +100,7 @@ public class FXMLParticipantController  {
 
     @FXML private TableView<Participant> participantTableView;
     @FXML private TableColumn bibNumberColumn;
+    //@FXML private TableColumn<Participant,ObservableList<Wave>> raceColumn;
     @FXML private TableColumn<Participant,String> raceColumn;
     @FXML private TableColumn<Participant,Status> statusColumn;
     @FXML private VBox formVBox; 
@@ -162,6 +155,7 @@ public class FXMLParticipantController  {
         
         filterField.requestFocus(); // set the focus to the filter menu first
         
+        participantTableView.setPlaceholder(new Label("No participants have been entered yet"));
         
         // Setup the context menu and actions
         participantTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -489,13 +483,30 @@ public class FXMLParticipantController  {
         
         sexPrefixSelectionChoiceBox.setItems(FXCollections.observableArrayList("M","F") );
         
+        // TODO: Get the CellFactory to work
+//        raceColumn.setCellValueFactory(person -> person.getValue().wavesProperty());
+//        raceColumn.setCellFactory(column -> {
+//            return new TableCell<Participant, ObservableList<Wave>>() {
+//                @Override
+//                protected void updateItem(ObservableList<Wave> waves, boolean empty) {
+//                    super.updateItem(waves, empty);
+//
+//                    if (waves == null || empty) {
+//                        setText(null);
+//                    } else {
+//                        WaveStringConverter wsc = new WaveStringConverter();
+//                        setText(waves.stream().map (w -> wsc.toString(w)).collect(Collectors.joining(",")));
+//                    }
+//                }
+//            };
+//        });
 
         raceColumn.setCellValueFactory((CellDataFeatures<Participant, String> p) -> {
             StringProperty wavesString = new SimpleStringProperty();
             WaveStringConverter wString=new WaveStringConverter();
-            if (p.getValue().wavesProperty().isEmpty()) return new SimpleStringProperty();
+            if (p.getValue().wavesObservableList().isEmpty()) return new SimpleStringProperty();
             
-            p.getValue().wavesProperty().stream().forEach(w -> {
+            p.getValue().wavesObservableList().stream().forEach(w -> {
                 wavesString.setValue(wavesString.getValueSafe() + wString.toString(w) + ", " );
                 //System.out.println("Checking " + w.getID() + " " + w.toString());
             });
@@ -627,7 +638,7 @@ public class FXMLParticipantController  {
         waveComboBox.getCheckModel().clearChecks();
         
         
-        p.wavesProperty().stream().forEach(w -> {
+        p.wavesObservableList().stream().forEach(w -> {
             waveComboBox.getCheckModel().check(w);
             //System.out.println("Checking " + w.getID() + " " + w.toString());
         });
@@ -917,19 +928,33 @@ public class FXMLParticipantController  {
                 if (file.exists() && ! file.canWrite()) {
                     // oops, we can't write to the file
                     // toss up an error dialog and bail
-                    
+                    Alert alert = new Alert(AlertType.INFORMATION);
+                    alert.setTitle("Unable to export");
+                    alert.setHeaderText("Unable to export.");
+                    alert.setContentText("We are unable to export the data to the selected file. \n You do not appear to have permissions to write to it.");
+                    alert.showAndWait();
                     return;
                 } else if (!file.exists()){
                     try {
                         if (!file.createNewFile()){
                             // oops, we can't create the target file
                             // toss up an error dialog and bail
+                            Alert alert = new Alert(AlertType.INFORMATION);
+                            alert.setTitle("Unable to export");
+                            alert.setHeaderText("Unable to export.");
+                            alert.setContentText("We are unable to export the data to the selected file. \n You do not appear to have permissions to create the file.");
+                            alert.showAndWait();
 
                             return;
                         }
                     } catch (IOException ex) {
                         // oops, we can't create the target file
                         // toss up an error dialog and bail
+                        Alert alert = new Alert(AlertType.INFORMATION);
+                            alert.setTitle("Unable to export");
+                            alert.setHeaderText("Unable to export.");
+                            alert.setContentText("We are unable to export the data to the selected file. \n You do not appear to have permissions to create the file.\n Error: " + ex.getLocalizedMessage());
+                            alert.showAndWait();
 
                         return;
                     } 
@@ -949,7 +974,6 @@ public class FXMLParticipantController  {
                     if(i != fieldCount -1) header+=",";
                 }
                 
-                
                 exportData.add(header);
                 
                 // now itterate through the participants and create a quoted csv file
@@ -964,7 +988,7 @@ public class FXMLParticipantController  {
                     BooleanProperty filtered = new SimpleBooleanProperty(true);
                     if (waveFilterCheckBox.selectedProperty().get()){
                         waveFilterComboBox.getCheckModel().getCheckedItems().forEach(r -> {
-                            p.wavesProperty().forEach(w -> {
+                            p.wavesObservableList().forEach(w -> {
                                 if (w.getRace().equals(r)) filtered.setValue(false);
                             });
                         });
@@ -981,16 +1005,15 @@ public class FXMLParticipantController  {
                         
                         //We need to handle the race/wave exports carefully
                         if (fieldName.equals("RACE") ){ 
-                            part += p.wavesProperty().stream().map (w -> w.getRace().getRaceName()).distinct().collect (Collectors.joining(","));
+                            part += p.wavesObservableList().stream().map (w -> w.getRace().getRaceName()).distinct().collect (Collectors.joining(","));
                         } else if (fieldName.equals("WAVE") ) {
-                            part += p.wavesProperty().stream().map (w -> w.getWaveName()).collect (Collectors.joining(","));
+                            part += p.wavesObservableList().stream().map (w -> w.getWaveName()).collect (Collectors.joining(","));
                         } else part+=p.getNamedAttribute(fieldName).replace("\"", "\"\"");
                         part+="\"";
                         
                         if(i != fieldCount -1) part+=",";
                     }
                     exportData.add(part);
-                
                 });
 
                 try {
@@ -1000,6 +1023,12 @@ public class FXMLParticipantController  {
                 } catch (IOException e) {
                     // oops, we can't create the target file
                             // toss up an error dialog and bail
+                            Alert alert = new Alert(AlertType.INFORMATION);
+                            alert.setTitle("Unable to export");
+                            alert.setHeaderText("An error occurred during the export.");
+                            alert.setContentText("We are unable to export all of the data to the selected file. \n Error: " + e.getLocalizedMessage());
+
+                            alert.showAndWait();
 
                 }
             }

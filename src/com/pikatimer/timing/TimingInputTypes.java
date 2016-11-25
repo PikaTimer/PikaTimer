@@ -78,13 +78,19 @@ public enum TimingInputTypes {
                 
         switch(this){
             case OutreachDirect:
-                return new PikaOutreachDirectReader();
+                return new PikaRFIDFileReader();
+
+                //return new PikaOutreachDirectReader();
             case OutreachFile:
-                return new PikaOutreachFileReader();
+                return new PikaRFIDFileReader();
+
+                //return new PikaOutreachFileReader();
             case PCTimer:
                 return new PikaPCTimerFileReader();
             case RFIDDirect:
-                return new PikaRFIDDirectReader();
+                return new PikaRFIDFileReader();
+
+                //return new PikaRFIDDirectReader();
             case RFIDFile:
                 return new PikaRFIDFileReader();
         }

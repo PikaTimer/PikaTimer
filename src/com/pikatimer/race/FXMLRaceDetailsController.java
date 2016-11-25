@@ -457,6 +457,8 @@ public class FXMLRaceDetailsController {
         
         
         // Segment table stuff
+        raceSegmentsTableView.setPlaceholder(new Label("No race segments have been defined yet"));
+        
         segmentNameTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         segmentNameTableColumn.setOnEditCommit((CellEditEvent<Segment, String> t) -> {
             Segment s = (Segment) t.getTableView().getItems().get(t.getTablePosition().getRow());

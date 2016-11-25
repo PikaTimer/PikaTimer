@@ -628,7 +628,7 @@ public class FXMLTimingController {
         ButtonType createButtonType = new ButtonType("Create", ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
 
-        // Create the username and password labels and fields.
+        // Create the various labels and fields.
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -647,7 +647,7 @@ public class FXMLTimingController {
             if (p != null) {
                 participantLabel.setText(p.fullNameProperty().getValueSafe());
                 ObservableList<Split> splitList = FXCollections.observableArrayList();
-                p.wavesProperty().forEach(w -> {
+                p.wavesObservableList().forEach(w -> {
                     splitList.addAll(w.getRace().getSplits());
                 });
                 splitComboBox.setItems(splitList);
@@ -736,7 +736,7 @@ public class FXMLTimingController {
         //grid.setMinSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
         dialog.getDialogPane().setContent(grid);
 
-        // Convert the result to a username-password-pair when the login button is clicked.
+        // Convert the result to a TimeOverride
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == createButtonType) {
                 TimeOverride o = new TimeOverride();
