@@ -19,6 +19,7 @@ package com.pikatimer.timing;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.RaceDAO;
+import com.pikatimer.race.Race;
 import com.pikatimer.timing.reader.PikaRFIDFileReader;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
@@ -41,6 +42,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -75,6 +77,8 @@ import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
+import org.controlsfx.control.PrefixSelectionChoiceBox;
+import org.controlsfx.control.ToggleSwitch;
 
 /**
  * FXML Controller class
@@ -110,6 +114,11 @@ public class FXMLTimingController {
     @FXML private TableColumn<TimeOverride,String> overrideTimeColumn;
     @FXML private TableColumn<TimeOverride,String> overrideSplitColumn;
     @FXML private TableColumn<TimeOverride,Boolean> overrideRelativeColumn;
+    
+    @FXML private Button overrideEditButton;
+    
+    @FXML private ToggleSwitch assignToRaceToggleSwitch;
+    @FXML private PrefixSelectionChoiceBox<Race> assignToRacePrefixSelectionChoiceBox;
     
     private ObservableList<CookedTimeData> cookedTimeList;
     private ObservableList<TimingLocation> timingLocationList;
@@ -175,7 +184,7 @@ public class FXMLTimingController {
                 System.out.println("Timing setOnEditCommit event out of index: " + t.getIndex());
             }
             timingLocAddButton.requestFocus();
-            timingLocAddButton.setDefaultButton(true);
+           // timingLocAddButton.setDefaultButton(true);
         });
 
         timingLocListView.setOnEditCancel((ListView.EditEvent<TimingLocation> t) ->{
@@ -190,7 +199,7 @@ public class FXMLTimingController {
                 System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
             }
             timingLocAddButton.requestFocus();
-            timingLocAddButton.setDefaultButton(true);
+            //timingLocAddButton.setDefaultButton(true);
         });
         
         timingLocRemoveButton.disableProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull());
@@ -460,7 +469,7 @@ public class FXMLTimingController {
         }
         
         timingLocAddButton.requestFocus();
-        timingLocAddButton.setDefaultButton(true);
+        //timingLocAddButton.setDefaultButton(true);
     }
         
     public void addTimingLocation(ActionEvent fxevent){
@@ -482,11 +491,28 @@ public class FXMLTimingController {
 
     }
     public void removeTimingLocation(ActionEvent fxevent){
-        //TODO: If the location is referenced by a split, 
-        //prompt to reassign the split to a new location or cancel the edit. 
-        timingDAO.removeTimingLocation(timingLocListView.getSelectionModel().getSelectedItem());
-        //timingLocAddButton.requestFocus();
-        //timingLocAddButton.setDefaultButton(true);
+        final TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItem();
+        
+        // If the location is referenced by a split, 
+        // toss up a warning and leave it alone
+        final StringProperty splitsUsing = new SimpleStringProperty();
+        raceDAO.listRaces().forEach(r -> {
+            r.getSplits().forEach(s -> {
+                if (s.getTimingLocation().equals(tl)) splitsUsing.set(splitsUsing.getValueSafe() + r.getRaceName() + " " + s.getSplitName() + "\n");
+            });
+        });
+        
+        if (splitsUsing.isEmpty().get()) {
+            timingDAO.removeTimingLocation(tl);;
+            timingLocAddButton.requestFocus();
+            //timingLocAddButton.setDefaultButton(true);
+        } else {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Unable to Remove Timing Location");
+            alert.setHeaderText("Unable to remove the " + tl.getLocationName() + " timing location.");
+            alert.setContentText("The timing location is in use by the following splits:\n" + splitsUsing.getValueSafe());
+            alert.showAndWait();
+        }
     }
     
     public void addTimingInput(ActionEvent fxevent){
@@ -517,11 +543,11 @@ public class FXMLTimingController {
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Clear Timing Data...");
         alert.setHeaderText("Clear Timing Data:");
-        alert.setContentText("Do you want to clear the times for just this imput or all inputs?.");
+        alert.setContentText("Do you want to clear the times for all locations just " + selectedTimingLocation.getLocationName()+ "?");
 
-        ButtonType allButtonType = new ButtonType("All");
+        ButtonType allButtonType = new ButtonType("All Times");
         
-        ButtonType currentButtonType = new ButtonType("Current",ButtonData.YES);
+        ButtonType currentButtonType = new ButtonType(selectedTimingLocation.getLocationName() + " Times",ButtonData.YES);
         ButtonType cancelButtonType = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE);
 
         alert.getButtonTypes().setAll(cancelButtonType, allButtonType,  currentButtonType );
@@ -771,7 +797,7 @@ public class FXMLTimingController {
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Clear Overrides...");
         alert.setHeaderText("Delete Overrides:");
-        alert.setContentText("Do you want to delete all overrides?.");
+        alert.setContentText("Do you want to delete all overrides?");
 
         //ButtonType allButtonType = new ButtonType("All");
         

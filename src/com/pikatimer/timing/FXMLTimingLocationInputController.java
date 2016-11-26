@@ -18,7 +18,10 @@ package com.pikatimer.timing;
 
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.Optional;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -26,18 +29,17 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.util.converter.BigDecimalStringConverter;
 
 /**
  * FXML Controller class
@@ -149,26 +151,34 @@ public class FXMLTimingLocationInputController{
             skewTextField.textProperty().setValue(timingLocationInput.getSkewString());
             //skewTextField.textFormatterProperty().setValue(new TextFormatter(new BigDecimalStringConverter()));
             
-            DecimalFormat format = new DecimalFormat( "0;-0" );
+            
 
-            skewTextField.setTextFormatter( new TextFormatter<>(c ->{
-                if ( c.getControlNewText().isEmpty() )
-                {
-                    return c;
+            skewTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                if (newValue.matches("^-?\\..*$")) {
+                    Platform.runLater(() -> {
+                        int caret = skewTextField.getCaretPosition();
+                        skewTextField.setText(newValue.replaceFirst("\\.","0."));
+                        skewTextField.positionCaret(caret);
+                    });
+                } else if (newValue.matches("^-?0\\d+\\.?\\d*$")) {
+                    Platform.runLater(() -> {
+                        int caret = skewTextField.getCaretPosition();
+                        skewTextField.setText(newValue.replaceFirst("0",""));
+                        skewTextField.positionCaret(caret);
+                    });
+                } else if (newValue.matches("^-?\\d*\\.?\\d*$")){
+                    System.out.println("Good skew time: " + newValue);
+                } else {
+                    Platform.runLater(() -> {
+                        int caret = skewTextField.getCaretPosition();
+                        skewTextField.setText(oldValue);
+                        skewTextField.positionCaret(caret-1);
+
+                    });
                 }
 
-                ParsePosition parsePosition = new ParsePosition( 0 );
-                Object object = format.parse( c.getControlNewText(), parsePosition );
-
-                if ( object == null || parsePosition.getIndex() < c.getControlNewText().length() )
-                {
-                    return null;
-                }
-                else
-                {
-                    return c;
-                }
-            }));
+            });
             
             
             
@@ -180,10 +190,16 @@ public class FXMLTimingLocationInputController{
                     System.out.println("skewTextField out focus");
                     if ( ! skewTextField.getText().equals(timingLocationInput.getSkewString()) ) {
                         System.out.println("Skew changed from " + timingLocationInput.getSkewString()+ " to " + skewTextField.getText());
+                        Duration oldSkew = timingLocationInput.getSkew();
                         timingLocationInput.setSkewString(skewTextField.getText());
-                        timingLocationDAO.updateTimingLocationInput(timingLocationInput);
-                        if (timingLocationInput.getSkewNanos().equals(0L)) timeSkewCheckBox.setSelected(false); 
-                        timingLocationInput.reprocessReads();
+                        if (! oldSkew.equals(timingLocationInput.getSkew())){
+                            timingLocationDAO.updateTimingLocationInput(timingLocationInput);
+                            timingLocationInput.reprocessReads();
+                        }
+                        if (timingLocationInput.getSkewNanos().equals(0L)) {
+                            timeSkewCheckBox.setSelected(false);
+                            skewTextField.setText("");
+                        } 
                     } else {
                         System.out.println("No change in skew time");
                     }
@@ -202,11 +218,24 @@ public class FXMLTimingLocationInputController{
     }
     
     public void removeTimingInput(ActionEvent fxevent){
-        System.out.println("parentPane is a " +  baseGridPane.getParent().getClass().getName());
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Clear Input...");
+        alert.setHeaderText("Delete Input:");
+        alert.setContentText("Do you want to remove the " +timingLocationInput.getLocationName() + " input?\nThis will clear all reads associated with this input.");
 
-        boolean remove = ((VBox) baseGridPane.getParent()).getChildren().remove(baseGridPane);
-        if (timingLocationInput != null) {
-            timingLocationDAO.removeTimingLocationInput(timingLocationInput);
+        //ButtonType allButtonType = new ButtonType("All");
+        
+        ButtonType removeButtonType = new ButtonType("Remove",ButtonBar.ButtonData.YES);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(cancelButtonType, removeButtonType );
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == removeButtonType) {
+            boolean remove = ((VBox) baseGridPane.getParent()).getChildren().remove(baseGridPane);
+            if (timingLocationInput != null) {
+                timingLocationDAO.removeTimingLocationInput(timingLocationInput);
+            }
         }
         //TimingLocationDAO.getInstance().removeTimingLocationInput(this);
         //parent.getChildren().remove(this); 

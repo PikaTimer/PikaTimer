@@ -97,7 +97,7 @@ public class TimingLocationInput implements TimingListener{
         timingReaderInitialized = new SimpleBooleanProperty();
         skewInput = new SimpleBooleanProperty();
         //attributes = new ConcurrentHashMap <>();
-        skewDuration = Duration.ofNanos(0);
+        skewDuration = Duration.ZERO;
         skewInput.setValue(Boolean.FALSE);
 
         
@@ -487,8 +487,11 @@ public class TimingLocationInput implements TimingListener{
         return durationString; 
     }
     public void setSkewString(String text) {
-        String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
-        if (!durationString.equals(text)) {
+        
+        // check for null/blank/zero
+        if (text == null || text.isEmpty() || text.equals("0")) {
+            skewDuration = Duration.ZERO;
+        } else {
             skewDuration = Duration.ofNanos(new BigDecimalStringConverter().fromString(text).multiply(new BigDecimal(1000000000L)).longValue());
             System.out.println("Skew duration is now " + skewDuration);
         }
