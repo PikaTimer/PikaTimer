@@ -243,8 +243,20 @@ public class FXMLTimingLocationInputController{
     }
     
     public void clearReads(ActionEvent fxevent){
-        //timingLocationInput.stopReader();
-        timingLocationInput.clearReads(); 
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Clear times...");
+        alert.setHeaderText("Clear Times:");
+        alert.setContentText("Are you sure you want to clear all existing times for this input?");
+
+        ButtonType deleteButtonType = new ButtonType("Clear Times",ButtonBar.ButtonData.YES);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(cancelButtonType, deleteButtonType );
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == deleteButtonType) {
+            timingLocationInput.clearReads(); 
+        }
     }
     
 

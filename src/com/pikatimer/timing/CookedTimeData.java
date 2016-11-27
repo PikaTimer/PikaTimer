@@ -41,12 +41,12 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="cooked_timing_data")
 public class CookedTimeData {
     private Duration timestamp;
-    private StringProperty timestampStringProperty = new SimpleStringProperty();
-    private StringProperty bibProperty = new SimpleStringProperty();
-    private StringProperty participantNameProperty = new SimpleStringProperty();
+    private final StringProperty timestampStringProperty = new SimpleStringProperty();
+    private final StringProperty bibProperty = new SimpleStringProperty();
+    //private StringProperty participantNameProperty = new SimpleStringProperty();
     private Integer timingLocationId;
     private Integer timingLocationInputId;
-    private StringProperty timingLocationNameProperty = new SimpleStringProperty();
+    //private StringProperty timingLocationNameProperty = new SimpleStringProperty();
     private Integer cookedTimeId; 
     private final BooleanProperty ignoreTimeBoolean = new SimpleBooleanProperty(Boolean.FALSE);
     private final BooleanProperty backupTimeBoolean = new SimpleBooleanProperty(Boolean.FALSE);
@@ -97,7 +97,7 @@ public class CookedTimeData {
 
     public void setBib(String b) {
         bibProperty.setValue(b);
-        participantNameProperty.setValue("Not yet Implemented");
+        //participantNameProperty.setValue("Not yet Implemented");
     }
     public StringProperty bibProperty() {
         return bibProperty;
@@ -112,9 +112,9 @@ public class CookedTimeData {
         //System.out.println("RawTimeData: Setting timingLocationInputId to " + i);
         this.timingLocationId = i;
     }
-    public StringProperty timingLocationNameProperty() {
-        return timingLocationNameProperty;
-    }
+//    public StringProperty timingLocationNameProperty() {
+//        return timingLocationNameProperty;
+//    }
     
     @Column(name="timing_loc_input_id") 
     public Integer getTimingLocationInputId() {
@@ -186,12 +186,12 @@ public class CookedTimeData {
         return true;
     }
 
-    @Transient
-    public String getParticipantName() {
-        return participantNameProperty.getValue(); 
-    }
-    public StringProperty participantNameProperty() {
-        return participantNameProperty;
-    }    
+//    @Transient
+//    public String getParticipantName() {
+//        return participantNameProperty.getValue(); 
+//    }
+//    public StringProperty participantNameProperty() {
+//        return participantNameProperty;
+//    }    
 
 }

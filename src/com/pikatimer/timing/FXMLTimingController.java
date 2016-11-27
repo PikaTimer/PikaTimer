@@ -104,6 +104,7 @@ public class FXMLTimingController {
     @FXML private TableColumn bibColumn;
     @FXML private TableColumn timeColumn;
     @FXML private TableColumn<CookedTimeData,String> nameColumn;
+    @FXML private TableColumn<CookedTimeData,String> locationColumn;
     @FXML private TableColumn<CookedTimeData,String> inputColumn;
     @FXML private TableColumn backupColumn;
     @FXML private TableColumn ignoreColumn;
@@ -255,17 +256,30 @@ public class FXMLTimingController {
         timeColumn.setComparator(new AlphanumericComparator());
         
         nameColumn.setCellValueFactory(cellData -> {
-            Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
-            if (p == null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getBib());
+            String bib = cellData.getValue().getBib();
+            Participant p = participantDAO.getParticipantByBib(bib);
+            if (p == null) { 
+                if (bib.startsWith("Unmapped")) return new SimpleStringProperty("Unknown Chip");
+                return new SimpleStringProperty("Unregistered bib: " + bib);
             } else {
                 return p.fullNameProperty();
             }
         });
-        inputColumn.setCellValueFactory(cellData -> {
+        locationColumn.setCellValueFactory(cellData -> {
             TimingLocation t =  timingDAO.getTimingLocationByID(cellData.getValue().getTimingLocationId());
             if (t == null) { return new SimpleStringProperty("Unknown");
             } else {
                 return t.LocationNameProperty();
+            }
+        });
+        inputColumn.setCellValueFactory(cellData -> {
+            TimingLocation t =  timingDAO.getTimingLocationByID(cellData.getValue().getTimingLocationId());
+            
+            if (t == null) return new SimpleStringProperty("Unknown");
+            else {
+                TimingLocationInput tl = t.getInputByID(cellData.getValue().getTimingLocationInputId());
+                if (tl == null) return new SimpleStringProperty("Unknown");
+                return tl.LocationNameProperty();
             }
         });
         

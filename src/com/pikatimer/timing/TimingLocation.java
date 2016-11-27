@@ -17,13 +17,15 @@
 package com.pikatimer.timing;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import javafx.beans.Observable;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -57,8 +59,12 @@ public class TimingLocation {
    private final ObservableList<TimingLocationInput> timingInputs; 
    private static final TimingDAO timingDAO = TimingDAO.getInstance();
    
+   List<TimingLocationInput> timingInputList;
+   
    private Duration filterStartDuration;
    private Duration filterEndDuration; 
+   
+   private Map<Integer,TimingLocationInput> inputMap = new HashMap();
 
 
    public TimingLocation() {
@@ -114,12 +120,15 @@ public class TimingLocation {
     @Cascade(CascadeType.DELETE)
     public List<TimingLocationInput> getInputs() {
         //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
-        return timingInputs.sorted(); 
+        return timingInputList;
     }
     public void setInputs(List<TimingLocationInput> inputs) {
         //System.out.println("TimingLocation.setInputs(list) called for " + locationName + " with " + inputs.size() + " splits"); 
-        if (inputs != null) timingInputs.setAll(inputs);
-        
+        timingInputList = inputs;
+        if (inputs != null) {
+            timingInputs.setAll(inputs);
+
+        }
         //System.out.println(locationName + " now has " + timingInputs.size() + " inputs");   
     }
     public ObservableList<TimingLocationInput> inputsProperty() {
@@ -128,10 +137,21 @@ public class TimingLocation {
     public void addInput(TimingLocationInput t){
         System.out.println("TimingLocation.addInput called");
         timingInputs.add(t);
+        timingInputList.add(t);
         System.out.println(locationName + " now has " + timingInputs.size() + " inputs");
+        
     }
     public void removeInput(TimingLocationInput t){
         timingInputs.remove(t); 
+        timingInputList.remove(t);
+    }
+    
+    public TimingLocationInput getInputByID(Integer id){
+        ObjectProperty<TimingLocationInput> tmp = new SimpleObjectProperty();
+        timingInputs.forEach(i -> {
+                if (i.getID().equals(id)) tmp.set(i);
+        });
+        return tmp.getValue();
     }
     
     public void cookTime(CookedTimeData c) {
