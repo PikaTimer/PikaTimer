@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
 <GridPane fx:id="baseGridPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingLocationInputController">
    <children>
@@ -121,15 +122,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
          </GridPane.margin>
       </HBox>
       <Separator prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.vgrow="NEVER" />
-      <Label text="Input Name" textAlignment="RIGHT" />
+      <Label text="Input Name" textAlignment="RIGHT">
+         <font>
+            <Font size="18.0" />
+         </font></Label>
       <Label text="Options" GridPane.rowIndex="3">
          <GridPane.margin>
             <Insets right="5.0" />
-         </GridPane.margin></Label>
-      <Label fx:id="readCountLabel1" maxWidth="1.7976931348623157E308" prefHeight="17.0" prefWidth="71.0">
-         <GridPane.margin>
-            <Insets right="5.0" />
-         </GridPane.margin></Label>
+         </GridPane.margin>
+         <font>
+            <Font size="18.0" />
+         </font></Label>
       <Button fx:id="clearReads" mnemonicParsing="false" onAction="#clearReads" prefWidth="90.0" text="Clear Reads" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="TOP">
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -140,8 +143,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       </Button>
    </children>
    <columnConstraints>
-      <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="70.0" minWidth="33.0" prefWidth="70.0" />
-      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="377.0" prefWidth="377.0" />
+      <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="104.5" minWidth="33.0" prefWidth="97.5" />
+      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="342.5" prefWidth="349.5" />
       <ColumnConstraints hgrow="NEVER" maxWidth="145.0" />
    </columnConstraints>
    <rowConstraints>
