@@ -614,7 +614,7 @@ public class TimingDAO {
         // and add them to the cookedTimesList;
         
         if (overrideList == null) {
-            overrideList =FXCollections.observableArrayList();
+            overrideList =FXCollections.observableArrayList(TimeOverride.extractor());
             
             Task fetchOverrideFromDB = new Task<Void>() {
                 
@@ -669,11 +669,31 @@ public class TimingDAO {
         // Just in case.... This will make sure we initialized the overrideList
         getOverrides();
         
-        Platform.runLater(() -> {
-            overrideList.add(o);
+        
+        
+        if (!overrideMap.containsKey(o.getBib())) overrideMap.put(o.getBib(), new ArrayList()); 
+        
+        
+        // If this is an edit, don't add it again
+        if (!overrideMap.get(o.getBib()).contains(o)) {
+            // if this is an overwrite, remove the old one first
+            try {
+                TimeOverride old = overrideList.stream().filter(e -> e.getSplitId().equals(o.getSplitId())).findFirst().get();
+                deleteOverride(old);
+            }
+            catch (Exception e) {
+
+            }
+            overrideMap.get(o.getBib()).add(o);
+        }
+        
+        if (!overrideList.contains(o)) Platform.runLater(() -> {
+             overrideList.add(o);
         });
-        if (!overrideMap.containsKey(o.getBib())) overrideMap.put(o.getBib(), new ArrayList());
-        overrideMap.get(o.getBib()).add(o);
+        
+        // Check to see if this one replaces another
+        
+        
         resultsQueue.add(o.getBib());
     }
     

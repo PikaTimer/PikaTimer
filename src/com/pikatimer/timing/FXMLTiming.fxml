@@ -122,6 +122,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </VBox>
             <VBox>
                <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Start Time Trigger Lookup" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
+                     <children>
+                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="startTriggerLookupButton" mnemonicParsing="false" onAction="#startTriggerLookup" text="Lookup" />
+                     </children>
+                     <padding>
+                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
+                     </padding>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox>
+               <children>
                   <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Overrides" textAlignment="CENTER">
                      <font>
                         <Font size="18.0" />
@@ -139,9 +157,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <children>
                         <Button fx:id="overrideClearAllButton" mnemonicParsing="false" onAction="#clearAllOverrides" text="Clear All" />
                         <Pane HBox.hgrow="ALWAYS" />
-                        <Button fx:id="overrideEditButton" mnemonicParsing="false" onAction="#addOverride" text="Edit" />
-                        <Button fx:id="overrideAddButton" mnemonicParsing="false" onAction="#addOverride" text="Add" />
                         <Button fx:id="overrideRemoveButton" mnemonicParsing="false" onAction="#removeOverride" text="Remove" />
+                        <Button fx:id="overrideEditButton" mnemonicParsing="false" onAction="#editOverride" text="Edit" />
+                        <Button fx:id="overrideAddButton" mnemonicParsing="false" onAction="#addOverride" text="Add" />
                      </children>
                      <padding>
                         <Insets bottom="2.0" top="2.0" />

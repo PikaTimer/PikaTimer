@@ -16,11 +16,19 @@
  */
 package com.pikatimer.timing;
 
+import com.pikatimer.race.Wave;
+import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
+import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -44,8 +52,16 @@ public class TimeOverride {
     private Duration timestamp;
     //private Boolean relativeTime; 
     private StringProperty bibProperty = new SimpleStringProperty();
+    private IntegerProperty splitIdProperty = new SimpleIntegerProperty();
     private BooleanProperty relativeProperty = new SimpleBooleanProperty(false);
+    private ObjectProperty<Duration> durationProperty = new SimpleObjectProperty();
+    private StringProperty timestampStringProperty = new SimpleStringProperty();
 
+    
+    public static Callback<TimeOverride, Observable[]> extractor() {
+        return (TimeOverride w) -> new Observable[]{w.bibProperty,w.durationProperty,w.splitIdProperty};
+    }
+    
     @Id
     @GenericGenerator(name="override_id" , strategy="increment")
     @GeneratedValue(generator="override_id")
@@ -67,7 +83,8 @@ public class TimeOverride {
     }
     public void setTimestampLong(Long c) {
         if(c != null) {
-            timestamp = Duration.ofNanos(c);
+            setTimestamp(Duration.ofNanos(c));
+            durationProperty.set(timestamp);
         }
     }
     @Transient
@@ -75,7 +92,15 @@ public class TimeOverride {
         return timestamp;
     }
     public void setTimestamp(Duration d) {
+        
         this.timestamp = d;
+        timestampStringProperty.setValue(DurationFormatter.durationToString(timestamp, 3));
+    }
+    public ObjectProperty<Duration> timestampProperty(){
+        return this.durationProperty;
+    }
+    public StringProperty timestampStringProperty(){
+        return this.timestampStringProperty;
     }
     
     @Column(name="bib")
@@ -98,6 +123,7 @@ public class TimeOverride {
     public void setSplitId(Integer i) {
         //System.out.println("RawTimeData: Setting timingLocationInputId to " + i);
         splitId = i;
+        splitIdProperty.set(i);
     }
     
     @Column(name="relative_to_start")

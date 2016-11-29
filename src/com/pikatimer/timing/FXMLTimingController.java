@@ -65,6 +65,7 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxTableCell;
@@ -78,6 +79,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import org.controlsfx.control.PrefixSelectionChoiceBox;
+import org.controlsfx.control.PrefixSelectionComboBox;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -117,6 +119,7 @@ public class FXMLTimingController {
     @FXML private TableColumn<TimeOverride,Boolean> overrideRelativeColumn;
     
     @FXML private Button overrideEditButton;
+    @FXML private Button overrideRemoveButton;
     
     @FXML private ToggleSwitch assignToRaceToggleSwitch;
     @FXML private PrefixSelectionChoiceBox<Race> assignToRacePrefixSelectionChoiceBox;
@@ -290,6 +293,7 @@ public class FXMLTimingController {
 
         // 6. Add sorted (and filtered) data to the table.
         timeTableView.setItems(sortedTimeList);
+        timeTableView.setPlaceholder(new Label("No times have been entered yet"));
         
         // set the default sort order to the finish time
         timeColumn.setSortType(TableColumn.SortType.DESCENDING);
@@ -438,6 +442,7 @@ public class FXMLTimingController {
         
         
         // Override table
+        overrideTableView.setPlaceholder(new Label("No overrides have been entered yet"));
         overrideTableView.setItems(timingDAO.getOverrides());
         overrideBibColumn.setCellValueFactory(cellData -> {
             return cellData.getValue().bibProperty();
@@ -452,8 +457,10 @@ public class FXMLTimingController {
             }
         });
         
+        
         overrideTimeColumn.setCellValueFactory(cellData -> {
-            return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getTimestamp(), 3));
+            return cellData.getValue().timestampStringProperty();
+            //return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getTimestamp(), 3));
         });
         
         overrideRelativeColumn.setCellValueFactory(cellData -> {
@@ -461,7 +468,22 @@ public class FXMLTimingController {
         });
         overrideRelativeColumn.setCellFactory(tc -> new CheckBoxTableCell());
         
+        overrideTableView.setRowFactory((TableView<TimeOverride> tableView1) -> {
+            final TableRow<TimeOverride> row = new TableRow<>();
+
+            row.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                editOverride(overrideTableView.getSelectionModel().getSelectedItem());
+            }
+            });
         
+        
+            return row;
+        
+        });
+        
+        overrideEditButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
+        overrideRemoveButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
     }    
     
     
@@ -643,6 +665,14 @@ public class FXMLTimingController {
     }
     
     public void addOverride(ActionEvent fxevent){
+        editOverride(new TimeOverride());
+    }
+    
+    public void editOverride(ActionEvent fxevent){
+        editOverride(overrideTableView.getSelectionModel().getSelectedItem());
+    }
+    
+    public void editOverride(TimeOverride o){
         // Open a Dialog box and ask for four things:
         // 1) Bib
         // 2) split (based on the bib)
@@ -650,7 +680,7 @@ public class FXMLTimingController {
         // 4) if that time is based on the time of day or a duration from the start
         // 
         // The dialog modifies a timeOverride object on the fly....
-        
+        if (o == null) return;
         
         
         BooleanProperty bibOK = new SimpleBooleanProperty(false);
@@ -661,11 +691,22 @@ public class FXMLTimingController {
         allOK.bind(Bindings.and(bibOK, timeOK));
         // Create the custom dialog.
         Dialog<TimeOverride> dialog = new Dialog();
-        dialog.setTitle("Add Override");
-        dialog.setHeaderText("Add Override");
-
+        if (o.getID() == null) {
+            dialog.setTitle("Add Override");
+            dialog.setHeaderText("Add Override");
+        } else {
+            dialog.setTitle("Edit Override");
+            dialog.setHeaderText("Edit Override");
+        }
         // Set the button types.
-        ButtonType createButtonType = new ButtonType("Create", ButtonData.OK_DONE);
+        ButtonType createButtonType;
+        
+        if (o.getID() == null) {
+            createButtonType = new ButtonType("Create", ButtonData.OK_DONE);
+        } else {
+            createButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+        }
+        
         dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
 
         // Create the various labels and fields.
@@ -678,9 +719,10 @@ public class FXMLTimingController {
 
         TextField bibTextField = new TextField();
         bibTextField.setPromptText("Bib");
+        
         bibTextField.setPrefWidth(50.0);
         Label participantLabel = new Label();
-        ComboBox<Split> splitComboBox = new ComboBox();
+        PrefixSelectionComboBox<Split> splitComboBox = new PrefixSelectionComboBox();
         splitComboBox.setVisibleRowCount(5);
         bibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             Participant p = participantDAO.getParticipantByBib(newValue);
@@ -711,8 +753,9 @@ public class FXMLTimingController {
 
             if (newValue.matches("([3-9]|[012]:)")) {
                 //Integer pos = raceStartTimeTextField.getCaretPosition();
-                timeTextField.setText("0" + newValue);
+                
                 Platform.runLater(() -> {
+                    timeTextField.setText("0" + newValue);
                     timeTextField.positionCaret(newValue.length()+2);
                 });
             } else if (    newValue.isEmpty() || 
@@ -737,7 +780,7 @@ public class FXMLTimingController {
                     
                 }
             } else {
-                timeTextField.setText(oldValue);
+                
                 System.out.println("Bad Time (newValue: " + newValue + ")");
             }
                 
@@ -775,11 +818,31 @@ public class FXMLTimingController {
 
         //grid.setMinSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
         dialog.getDialogPane().setContent(grid);
+        
+        if (o.getID() != null) {
+            Platform.runLater(() -> { 
+                bibTextField.setText(o.getBib());
+                
+                
+                timeTextField.setText(DurationFormatter.durationToString(o.getTimestamp(), 3, Boolean.TRUE).replaceFirst("^(\\d:)", "0$1"));
+                try{
+                    ObservableList<Split> splitList = FXCollections.observableArrayList();
+                    splitList.addAll(splitComboBox.getItems().stream().filter(e -> e.getID().equals(o.getSplitId())).findFirst().get());
+                    splitComboBox.setItems(splitList);
+                    splitComboBox.getSelectionModel().selectFirst();
+                } catch (Exception e) {}
+                
+                typeCheckBox.setSelected(o.getRelative());
+                
+                bibTextField.setEditable(false);
+                splitComboBox.setEditable(false);
+                
+            });
+        }
 
         // Convert the result to a TimeOverride
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == createButtonType) {
-                TimeOverride o = new TimeOverride();
                 o.setBib( bibTextField.textProperty().getValueSafe());
                 o.setSplitId(splitComboBox.getValue().getID());
                 o.setTimestamp(Duration.between(LocalTime.MIN,LocalTime.parse(timeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME)));
@@ -826,6 +889,10 @@ public class FXMLTimingController {
             timingDAO.clearAllOverrides(); 
         }
  
+    }
+    
+    public void startTriggerLookup(ActionEvent fxevent){
+        
     }
     
 }
