@@ -199,8 +199,9 @@ public class FXMLRaceDetailsController {
                     //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
             if (newValue.matches("([3-9]|[012]:)")) {
                 //Integer pos = raceStartTimeTextField.getCaretPosition();
-                raceStartTimeTextField.setText("0" + newValue);
+                
                 Platform.runLater(() -> {
+                    raceStartTimeTextField.setText("0" + newValue);
                     raceStartTimeTextField.positionCaret(newValue.length()+2);
                 });
                 

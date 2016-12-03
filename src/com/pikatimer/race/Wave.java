@@ -25,9 +25,7 @@ import java.util.Objects;
 import javafx.beans.Observable;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -92,6 +90,7 @@ public class Wave {
         this.participants=FXCollections.observableArrayList();
         //raceSplits = FXCollections.observableArrayList();
         //raceWaves = FXCollections.observableArrayList();
+        setWaveStart("07:00:00"); // default start time
         
     }
    
@@ -154,8 +153,12 @@ public class Wave {
     public void setWaveStart(String c) {
         if(! c.isEmpty()) {
             //Fix this to watch for parse exceptions
-            waveStart = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
-            waveStartString.set(waveStart.format(DateTimeFormatter.ISO_LOCAL_TIME));
+            try {
+                waveStart = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
+                waveStartString.set(waveStart.format(DateTimeFormatter.ISO_LOCAL_TIME));
+            } catch (Exception  e){
+                // noop, we just let the old time rule
+            }
         }
     }
     public LocalTime waveStartProperty(){
