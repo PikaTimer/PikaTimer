@@ -23,6 +23,7 @@ import com.pikatimer.race.Race;
 import com.pikatimer.timing.reader.PikaRFIDFileReader;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.DurationParser;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -104,6 +105,7 @@ public class FXMLTimingController {
     @FXML private Label filteredSizeLabel;
     @FXML private TableView<CookedTimeData> timeTableView;
     @FXML private TableColumn bibColumn;
+    @FXML private TableColumn<CookedTimeData,String> chipColumn;
     @FXML private TableColumn timeColumn;
     @FXML private TableColumn<CookedTimeData,String> nameColumn;
     @FXML private TableColumn<CookedTimeData,String> locationColumn;
@@ -232,7 +234,8 @@ public class FXMLTimingController {
                     String name; 
                     Participant p = participantDAO.getParticipantByBib(time.getBib());
                     if (p == null) { 
-                        name="unknown";
+                        if (time.getBib().startsWith("Unmapped")) name="Unknown Chip";
+                        else name="Unregistered bib: " + time.getBib();
                     } else {
                         name = p.fullNameProperty().get();
                     }
@@ -255,6 +258,10 @@ public class FXMLTimingController {
         // 5. Set the cell factories and stort routines... 
         bibColumn.setCellValueFactory(new PropertyValueFactory<>("bib"));
         bibColumn.setComparator(new AlphanumericComparator());
+        
+        chipColumn.setCellValueFactory(c -> c.getValue().rawChipIDProperty());
+        chipColumn.setComparator(new AlphanumericComparator());
+        
         timeColumn.setCellValueFactory(new PropertyValueFactory<>("timestampString"));
         timeColumn.setComparator(new AlphanumericComparator());
         
@@ -340,12 +347,12 @@ public class FXMLTimingController {
                 timingLocationNameTextField.textProperty().bindBidirectional(selectedTimingLocation.LocationNameProperty());
                 
                 // Show the filter start/end values
-                filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 0, Boolean.TRUE));
-                filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 0, Boolean.TRUE));
+                filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
                 
                 System.out.println("Selected timing location is now " + selectedTimingLocation.getLocationName());
                 //timingLocationDetailsController.setTimingLocationInput(null); // .selectTimingLocation(selectedTimingLocations.get(0));
-                if (selectedTimingLocation.getInputs().size() == 0 ) { // no inputs yet
+                if (selectedTimingLocation.getInputs().isEmpty() ) { // no inputs yet
                     addTimingInput(null);
                 } else { // display all of the inputs
                     System.out.println("Starting the display of inputs for a timing location");
@@ -358,7 +365,7 @@ public class FXMLTimingController {
              }
          });
          
-        timingLocListView.getSelectionModel().clearAndSelect(0);
+       
         
         timingLocationNameTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
@@ -390,42 +397,90 @@ public class FXMLTimingController {
         filterStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 System.out.println("filterStartTextField out focus");
-                if (filterStartTextField.getText().equals(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 0, Boolean.TRUE))) {
+                Duration newTime;
+                if (DurationParser.parsable(filterStartTextField.getText())){
+                    newTime = DurationParser.parse(filterStartTextField.getText());
+                } else {
+                    filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                    return;
+                }
+                
+                if (selectedTimingLocation.getFilterStartDuration().equals(newTime)) {
+                    filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
                     return; 
                 } else if ( filterStartTextField.getText().isEmpty() ) {
                     // set duration to zero
                     selectedTimingLocation.setFilterStart(0L);
                 } else {
                     // duration is not zero... parse it
-                    LocalTime time = LocalTime.parse(filterStartTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
-                    selectedTimingLocation.setFilterStart(Duration.between(LocalTime.MIDNIGHT, time).toNanos());
+                    selectedTimingLocation.setFilterStart(newTime.toNanos());
                 }
-                selectedTimingLocation.reprocessReads();
                 timingDAO.updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
-                
+                filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                selectedTimingLocation.reprocessReads();
             }
         });
         filterEndTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 System.out.println("filterEndTextField out focus");
+                                        
+                Duration newTime;
+                if (DurationParser.parsable(filterEndTextField.getText())){
+                    newTime = DurationParser.parse(filterEndTextField.getText());
+                } else {
+                    filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                    return;
+                }
                 
-                if (filterEndTextField.getText().equals(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 0, Boolean.TRUE))) {
+                if (selectedTimingLocation.getFilterEndDuration().equals(newTime)) {
+                    filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
                     return; 
                 } else if ( filterEndTextField.getText().isEmpty() ) {
                     // set duration to zero
                     selectedTimingLocation.setFilterEnd(0L);
                 } else {
                     // duration is not zero... parse it
-                    LocalTime time = LocalTime.parse(filterEndTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
-                    selectedTimingLocation.setFilterEnd(Duration.between(LocalTime.MIDNIGHT, time).toNanos());
+                    selectedTimingLocation.setFilterEnd(newTime.toNanos());
                 }
-                
-                selectedTimingLocation.reprocessReads();
                 timingDAO.updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
-                
+                filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                selectedTimingLocation.reprocessReads();
             }
         });
         
+        filterStartTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:([0-5]?([0-9]?(:([0-5]?([0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+            } else {
+                Platform.runLater(() -> {
+                    int c = filterStartTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    filterStartTextField.setText(oldValue);
+                    filterStartTextField.positionCaret(c);
+                });
+                System.out.println("Bad End Filter Time (newValue: " + newValue + ")");
+            }
+                
+        });
+        
+        filterEndTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:([0-5]?([0-9]?(:([0-5]?([0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+            } else {
+                Platform.runLater(() -> {
+                    int c = filterEndTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    filterEndTextField.setText(oldValue);
+                    filterEndTextField.positionCaret(c);
+                });
+                System.out.println("Bad End Filter Time (newValue: " + newValue + ")");
+            }
+                
+        });
         
         
         // bib2Chip mappings
@@ -484,6 +539,8 @@ public class FXMLTimingController {
         
         overrideEditButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
         overrideRemoveButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
+        
+         timingLocListView.getSelectionModel().clearAndSelect(0);
     }    
     
     
@@ -579,7 +636,7 @@ public class FXMLTimingController {
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Clear Timing Data...");
         alert.setHeaderText("Clear Timing Data:");
-        alert.setContentText("Do you want to clear the times for all locations just " + selectedTimingLocation.getLocationName()+ "?");
+        alert.setContentText("Do you want to clear the times for all locations or just the " + selectedTimingLocation.getLocationName()+ " location?");
 
         ButtonType allButtonType = new ButtonType("All Times");
         
@@ -655,6 +712,7 @@ public class FXMLTimingController {
                     System.out.println("Found a total of " + bibMap.size() + " mappings");
                     bib2ChipMap.setChip2BibMap(bibMap);
                     timingDAO.updateBib2ChipMap(bib2ChipMap);
+                    timingDAO.reprocessAllRawTimes();
                 } catch (IOException ex) {
                     Logger.getLogger(PikaRFIDFileReader.class.getName()).log(Level.SEVERE, null, ex);
                     // We had an issue reading the file.... 
@@ -744,55 +802,40 @@ public class FXMLTimingController {
         
         
         
+        CheckBox typeCheckBox = new CheckBox("Relative to start time");
+        typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
+        typeCheckBox.disableProperty().setValue(Boolean.TRUE);
         
         TextField timeTextField = new TextField();
         timeTextField.setPromptText("HH:MM:SS.sss");
         timeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                     //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
             timeOK.setValue(false);
-
-            if (newValue.matches("([3-9]|[012]:)")) {
-                //Integer pos = raceStartTimeTextField.getCaretPosition();
-                
-                Platform.runLater(() -> {
-                    timeTextField.setText("0" + newValue);
-                    timeTextField.positionCaret(newValue.length()+2);
-                });
-            } else if (    newValue.isEmpty() || 
-                    newValue.matches("([012]|[01][0-9]|2[0-3])") || 
-                    newValue.matches("([01][0-9]|2[0-3]):[0-5]?") || 
-                    newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9]:[0-5]?") ){
-                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
-                timeOK.setValue(false);
-            } else if(newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]*)?)?") ) { // Looks like a time, lets check
-                System.out.println("Testing Time (newValue: " + newValue + ")");
             
-                try {
-                    if (!newValue.isEmpty()) {
-                        //LocalTime.parse(raceStartTimeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME );
-                        LocalTime.parse(timeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
-                        timeOK.setValue(true);
-                    }
-                } catch (Exception e) {
-                    timeTextField.setText(oldValue);
-                    System.out.println("Exception Bad Time (newValue: " + newValue + ")");
-                    e.printStackTrace();
-                    
-                }
+            if (typeCheckBox.isSelected() && DurationParser.parsable(newValue)) timeOK.setValue(Boolean.TRUE);
+            if (!typeCheckBox.isSelected() && DurationParser.parsable(newValue, false)) timeOK.setValue(Boolean.TRUE);
+
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]*(:?([0-5]?([0-9]?(:([0-5]?([0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
             } else {
-                
-                System.out.println("Bad Time (newValue: " + newValue + ")");
+                Platform.runLater(() -> {
+                    int c = timeTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    timeTextField.setText(oldValue);
+                    timeTextField.positionCaret(c);
+                });
+                System.out.println("Bad End Filter Time (newValue: " + newValue + ")");
             }
                 
         });
         
         
-        CheckBox typeCheckBox = new CheckBox("Relative to start time");
-        typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
-        typeCheckBox.disableProperty().setValue(Boolean.TRUE);
+        
+        
 
         splitComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (splitComboBox.getSelectionModel().getSelectedIndex() == 0) {
+            if (splitComboBox.getSelectionModel().getSelectedItem() != null && splitComboBox.getSelectionModel().getSelectedItem().getPosition() == 1) {
                 typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
                 typeCheckBox.disableProperty().setValue(Boolean.TRUE);
             } else {
@@ -845,7 +888,8 @@ public class FXMLTimingController {
             if (dialogButton == createButtonType) {
                 o.setBib( bibTextField.textProperty().getValueSafe());
                 o.setSplitId(splitComboBox.getValue().getID());
-                o.setTimestamp(Duration.between(LocalTime.MIN,LocalTime.parse(timeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME)));
+                if (typeCheckBox.isSelected()) o.setTimestamp(DurationParser.parse(timeTextField.getText(), false));
+                else o.setTimestamp(DurationParser.parse(timeTextField.getText(), true));
                 o.setRelative(typeCheckBox.isSelected());
                 return o;
             }

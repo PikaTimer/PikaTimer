@@ -203,7 +203,10 @@ public class TimingLocation {
     }
     
     public void reprocessReads() {
-        timingInputs.stream().forEach(t -> {t.reprocessReads();});
+        timingInputs.forEach(t -> {
+            System.out.println("TimingLocation::reprocessReads: " + t.getLocationName());
+            t.reprocessReads();
+        });
     }
     
     

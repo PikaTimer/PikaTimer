@@ -84,7 +84,6 @@ public class TimeOverride {
     public void setTimestampLong(Long c) {
         if(c != null) {
             setTimestamp(Duration.ofNanos(c));
-            durationProperty.set(timestamp);
         }
     }
     @Transient
@@ -94,7 +93,9 @@ public class TimeOverride {
     public void setTimestamp(Duration d) {
         
         this.timestamp = d;
-        timestampStringProperty.setValue(DurationFormatter.durationToString(timestamp, 3));
+        durationProperty.set(timestamp);
+        if (relativeProperty.getValue()) timestampStringProperty.set(DurationFormatter.durationToString(timestamp, 3, Boolean.FALSE).replace(".000", ""));
+        else timestampStringProperty.setValue(DurationFormatter.durationToString(timestamp, 3).replace(".000", ""));
     }
     public ObjectProperty<Duration> timestampProperty(){
         return this.durationProperty;
@@ -134,6 +135,8 @@ public class TimeOverride {
     public void setRelative(Boolean r) {
         //relativeTime = r;
         relativeProperty.setValue(r);
+        if (relativeProperty.getValue()) timestampStringProperty.set(DurationFormatter.durationToString(timestamp, 3, Boolean.FALSE).replace(".000", ""));
+        else timestampStringProperty.setValue(DurationFormatter.durationToString(timestamp, 3).replace(".000", ""));
     }
     public BooleanProperty relativeProperty(){
         return relativeProperty;

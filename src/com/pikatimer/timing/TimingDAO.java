@@ -103,6 +103,7 @@ public class TimingDAO {
         return list; 
     }
     
+      
     public void saveRawTimes(RawTimeData r) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
@@ -264,9 +265,9 @@ public class TimingDAO {
                         });
 
                         cookedTimeBibMap.clear();
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
+                    }
 
                     cookedTimeProcessorSemaphore.release();
                     resultsDAO.reprocessAll();
@@ -312,6 +313,8 @@ public class TimingDAO {
             System.out.println(e.getMessage());
         } 
         s.getTransaction().commit(); 
+        System.out.println("Done deleting all cooked times for " + tli.getLocationName());
+
     
     }
     
@@ -332,7 +335,7 @@ public class TimingDAO {
         return cookedTimeBibMap;
     }
     
-    public BlockingQueue<CookedTimeData> getCookedTimeQueue () {
+    public BlockingQueue<CookedTimeData> getCookedTimeQueue() {
         return cookedTimeQueue; 
     }
     
@@ -443,7 +446,10 @@ public class TimingDAO {
     }
     
     public void reprocessAllRawTimes(){
-        timingLocationList.forEach(t -> t.reprocessReads());
+        timingLocationList.forEach(t -> {
+            System.out.println("TimingDAO::reprocessAllRawTimes: " + t.getLocationName());
+            t.reprocessReads();
+        });
     }
     
 //    public void clearAll() {

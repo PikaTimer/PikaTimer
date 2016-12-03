@@ -364,6 +364,9 @@ public class TimingLocationInput implements TimingListener{
         // mark it as our own
         c.setTimingLocationInputId(this.IDProperty.intValue());
         
+        // set link the cooked time to the parent raw time
+        c.setRawChipID(r.getChip());
+        
         // skew it
         if(skewInput.getValue()) {
             c.setTimestamp(r.getTimestamp().plus(skewDuration)); 
@@ -410,7 +413,7 @@ public class TimingLocationInput implements TimingListener{
     }
     
     public void reprocessReads() {
-        System.out.println("ReprocessAll called... ");
+        System.out.println("TimingLocationInput::reprocessReads() for " + this.getLocationName());
         TimingLocationInput tli = this; 
         
 
@@ -421,11 +424,16 @@ public class TimingLocationInput implements TimingListener{
             @Override public Void call() {
                 try {
                     // set the processReadSemaphore to pause the processRead()
+                    System.out.println("TimingLocationInput::reprocessReads() Task started for " + tli.getLocationName());
                     processRead.acquire();
 
                     // clear out all cooked times for our location
+                    
+                    System.out.println("TimingLocationInput::reprocessReads() Task deleting times for" + tli.getLocationName());
 
                     timingDAO.blockingClearCookedTimes(tli);
+                    
+                    System.out.println("TimingLocationInput::reprocessReads() Task reprocessing " + rawTimeSet.size() + " reads at " + tli.getLocationName() + ".");
 
                     rawTimeSet.stream().forEach( r -> {
                         // for everything in our rawTimeSet, reprocess the read 
@@ -438,6 +446,8 @@ public class TimingLocationInput implements TimingListener{
                     //resume processing of new times. 
                     processRead.release();
                 } catch (InterruptedException ex) {
+                    System.out.println("ReprocessAll exception for " + tli.getLocationName());
+                    ex.printStackTrace();
                     Logger.getLogger(TimingLocationInput.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 //when done, resume processRead()

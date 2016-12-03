@@ -20,7 +20,9 @@ import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.util.Objects;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javax.persistence.Column;
@@ -43,6 +45,7 @@ public class CookedTimeData {
     private Duration timestamp;
     private final StringProperty timestampStringProperty = new SimpleStringProperty();
     private final StringProperty bibProperty = new SimpleStringProperty();
+    private final StringProperty chipProperty = new SimpleStringProperty();
     //private StringProperty participantNameProperty = new SimpleStringProperty();
     private Integer timingLocationId;
     private Integer timingLocationInputId;
@@ -101,6 +104,19 @@ public class CookedTimeData {
     }
     public StringProperty bibProperty() {
         return bibProperty;
+    }
+    
+    @Column(name="raw_chip_id")
+    public String getRawChipID() {
+        return chipProperty.getValue();
+    }
+
+    public void setRawChipID(String  b) {
+        chipProperty.setValue(b);
+        //participantNameProperty.setValue("Not yet Implemented");
+    }
+    public StringProperty rawChipIDProperty() {
+        return chipProperty;
     }
     
     @Column(name="timing_loc_id") 
