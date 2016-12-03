@@ -43,7 +43,7 @@ public class DurationFormatter {
         s = s -(M*60 + H * 3600); 
         Integer t = d.getNano(); 
         //if (d.toNanos() == 0) return ""; 
-        BigDecimal S = new BigDecimal("0." + t.toString()).setScale(p, rm);
+        BigDecimal S = new BigDecimal(d.getNano()).divide(new BigDecimal(1000000000)).setScale(p, rm);
         //System.out.println("H:" + H.toString() + " M:" + M.toString() + " s:" + s.toString() + " S:" + S.toPlainString());
         
         if (p == 0 && S.compareTo(new BigDecimal(1)) == 0) s+= 1; 
