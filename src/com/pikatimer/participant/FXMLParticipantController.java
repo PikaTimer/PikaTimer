@@ -89,6 +89,7 @@ import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PrefixSelectionChoiceBox;
@@ -165,9 +166,9 @@ public class FXMLParticipantController  {
             final ContextMenu rowMenu = new ContextMenu();
             
             row.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
-                editParticipant(participantTableView.getSelectionModel().getSelectedItem());
-            }
+                if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                    editParticipant(participantTableView.getSelectionModel().getSelectedItem());
+                }
             });
             
             // Context menu
@@ -1092,6 +1093,8 @@ public class FXMLParticipantController  {
 
                 if (    pattern.matcher(participant.getFirstName()).matches() ||
                         pattern.matcher(participant.getLastName()).matches() ||
+                        pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
+                        pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
                         pattern.matcher(participant.getBib()).matches()) {
                     return true; // Filter matches first/last/bib.
                 } 
