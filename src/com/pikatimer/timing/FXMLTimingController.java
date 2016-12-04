@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -47,6 +48,7 @@ import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ListChangeListener.Change;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -79,6 +81,8 @@ import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
+import org.apache.commons.lang3.StringUtils;
+import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.PrefixSelectionChoiceBox;
 import org.controlsfx.control.PrefixSelectionComboBox;
 import org.controlsfx.control.ToggleSwitch;
@@ -101,6 +105,7 @@ public class FXMLTimingController {
     @FXML private TextField filterEndTextField; 
             
     @FXML private TextField searchTextBox;
+    @FXML private CheckComboBox<TimingLocation> searchScopeCheckComboBox;
     @FXML private Label listSizeLabel;
     @FXML private Label filteredSizeLabel;
     @FXML private TableView<CookedTimeData> timeTableView;
@@ -127,6 +132,7 @@ public class FXMLTimingController {
     @FXML private PrefixSelectionChoiceBox<Race> assignToRacePrefixSelectionChoiceBox;
     
     private ObservableList<CookedTimeData> cookedTimeList;
+    FilteredList<CookedTimeData> filteredTimesList;
     private ObservableList<TimingLocation> timingLocationList;
     private TimingLocation selectedTimingLocation;
     private RaceDAO raceDAO;
@@ -218,37 +224,21 @@ public class FXMLTimingController {
         // TODO Only filter on the visible colums 
         // 1. Wrap the ObservableList in a FilteredList (initially display all data).
         cookedTimeList = timingDAO.getCookedTimes();
-        FilteredList<CookedTimeData> filteredTimesList = new FilteredList<>(cookedTimeList, p -> true);
+        filteredTimesList = new FilteredList<>(cookedTimeList, p -> true);
 
         // 2. Set the filter Predicate whenever the filter changes.
         searchTextBox.textProperty().addListener((observable, oldValue, newValue) -> {
-            filteredTimesList.setPredicate(time -> {
-                // If filter text is empty, display all persons.
-                if (newValue == null || newValue.isEmpty()) {
-                    return true;
-                }
-
-                // Compare first name and last name of every person with filter text.
-                String lowerCaseFilter = "(.*)(" + newValue.toLowerCase() + ")(.*)";
-                try {    
-                    String name; 
-                    Participant p = participantDAO.getParticipantByBib(time.getBib());
-                    if (p == null) { 
-                        if (time.getBib().startsWith("Unmapped")) name="Unknown Chip";
-                        else name="Unregistered bib: " + time.getBib();
-                    } else {
-                        name = p.fullNameProperty().get();
-                    }
-                    if ((time.getBib() + " " + name).toLowerCase().matches(lowerCaseFilter)) {
-                        return true; // Filter matches first/last/email/bib.
-                    }
-
-                } catch (PatternSyntaxException e) {
-                    return true;
-                }
-                return false; // Does not match.
-            });
+            updateFilterPredicate();
         });
+        searchScopeCheckComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends TimingLocation> c) -> {
+            
+            System.out.println("TimingPartController::searchScopeCheckComboBox(changeListener) fired...");
+            updateFilterPredicate();
+            //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
+        });
+        
+        searchScopeCheckComboBox.getItems().setAll(timingLocationList);
+
         // 3. Wrap the FilteredList in a SortedList. 
         SortedList<CookedTimeData> sortedTimeList = new SortedList<>(filteredTimesList);
 
@@ -295,8 +285,11 @@ public class FXMLTimingController {
         
         backupColumn.setCellValueFactory(new PropertyValueFactory<>("backupTime"));
         backupColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        backupColumn.setEditable(false);
+        
         ignoreColumn.setCellValueFactory(new PropertyValueFactory<>("ignoreTime"));
         ignoreColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        //Need a change listener for the ignoreColumn. Find the cooked read, flag it as an ignore, reprocess the bib
 
         // 6. Add sorted (and filtered) data to the table.
         timeTableView.setItems(sortedTimeList);
@@ -352,7 +345,7 @@ public class FXMLTimingController {
                 
                 System.out.println("Selected timing location is now " + selectedTimingLocation.getLocationName());
                 //timingLocationDetailsController.setTimingLocationInput(null); // .selectTimingLocation(selectedTimingLocations.get(0));
-                if (selectedTimingLocation.getInputs().isEmpty() ) { // no inputs yet
+                if (selectedTimingLocation.inputsProperty().isEmpty() ) { // no inputs yet
                     addTimingInput(null);
                 } else { // display all of the inputs
                     System.out.println("Starting the display of inputs for a timing location");
@@ -541,6 +534,24 @@ public class FXMLTimingController {
         overrideRemoveButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
         
          timingLocListView.getSelectionModel().clearAndSelect(0);
+         
+         timingLocationList.addListener((Change<? extends TimingLocation> change) -> {
+            //waveComboBox.getItems().clear();
+            //Platform.runLater(() -> {
+            System.out.println("TimingController::timingLocationList(changeListener) fired...");
+                
+            // TODO
+            //rework the popup menu for the add/delete
+            searchScopeCheckComboBox.getCheckModel().clearChecks();
+//            while (change.next() ) 
+//                change.getRemoved().forEach(removed -> {
+//                    searchScopeCheckComboBox.getCheckModel().clearCheck(removed);
+//                });
+            searchScopeCheckComboBox.getItems().setAll(timingLocationList);
+            
+
+            //});
+        });
     }    
     
     
@@ -611,7 +622,7 @@ public class FXMLTimingController {
     public void addTimingInput(ActionEvent fxevent){
         TimingLocationInput tli = new TimingLocationInput();
         tli.setTimingLocation(selectedTimingLocation);
-        tli.setLocationName(selectedTimingLocation.getLocationName() + " Input " + selectedTimingLocation.getInputs().size()+1);
+        tli.setLocationName(selectedTimingLocation.getLocationName() + " Input " + selectedTimingLocation.inputsProperty().size()+1);
         timingDAO.addTimingLocationInput(tli);
         showTimingInput(tli);
         //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
@@ -937,6 +948,66 @@ public class FXMLTimingController {
     
     public void startTriggerLookup(ActionEvent fxevent){
         
+    }
+    
+    private void updateFilterPredicate(){
+        filteredTimesList.setPredicate(cookedRead -> {
+            // If filter text is empty, display all persons.
+           // System.out.println("filteredParticpantsList.predicateProperty changing...");
+            //System.out.println("...filterField="+filterField.textProperty().getValue());
+            //System.out.println("...searchWaveComboBox=" + searchWaveComboBox.getCheckModel().getCheckedItems().size());
+            if (searchTextBox.textProperty().getValueSafe().isEmpty() && searchScopeCheckComboBox.getCheckModel().getCheckedItems().isEmpty()) {
+                //System.out.println("...both are empty: true");
+                return true;
+            }
+
+            BooleanProperty waveFilterMatch = new SimpleBooleanProperty(false);
+
+            if (!searchScopeCheckComboBox.getCheckModel().getCheckedItems().isEmpty()) {
+                searchScopeCheckComboBox.getCheckModel().getCheckedItems().forEach(tl -> {
+                        if (tl != null && tl.getID().equals(cookedRead.getTimingLocationId())) waveFilterMatch.set(true);
+                    }); 
+            } else {
+                //System.out.println("...searchWaveComboBox is empty: true");
+
+                waveFilterMatch.set(true);
+            }
+
+            if (searchTextBox.textProperty().getValueSafe().isEmpty() && waveFilterMatch.getValue()) {
+                //System.out.println("...filterField is empty and wave matches");
+                return true;
+            } else if (!waveFilterMatch.getValue()) {
+                //System.out.println("...filterField is empty and wave does not match");
+                return false;
+            } 
+
+            // Compare first name and last name of every person with filter text.
+            String lowerCaseFilter = "(.*)(" + searchTextBox.textProperty().getValueSafe() + ")(.*)";
+            try {
+                Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
+
+                String name; 
+                Participant p = participantDAO.getParticipantByBib(cookedRead.getBib());
+                if (p == null) { 
+                    if (cookedRead.getBib().startsWith("Unmapped")) name="Unknown Chip";
+                    else name="Unregistered bib: " + cookedRead.getBib();
+                } else {
+                    name =  StringUtils.stripAccents(p.fullNameProperty().get());
+                }
+                
+
+                if (    pattern.matcher(name).matches() ||
+                        pattern.matcher(cookedRead.getRawChipID()).matches() ||
+                        pattern.matcher(cookedRead.getBib()).matches()) {
+                    return true; // Filter matches first/last/bib.
+                } 
+
+            } catch (PatternSyntaxException e) {
+                
+                return true;
+            }
+            return false; // Does not match.
+        });
     }
     
 }
