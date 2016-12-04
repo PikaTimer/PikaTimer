@@ -68,6 +68,7 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -80,6 +81,7 @@ import javafx.scene.layout.HBox;
 import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.CheckComboBox;
@@ -115,8 +117,8 @@ public class FXMLTimingController {
     @FXML private TableColumn<CookedTimeData,String> nameColumn;
     @FXML private TableColumn<CookedTimeData,String> locationColumn;
     @FXML private TableColumn<CookedTimeData,String> inputColumn;
-    @FXML private TableColumn backupColumn;
-    @FXML private TableColumn ignoreColumn;
+    @FXML private TableColumn<CookedTimeData,Boolean> backupColumn;
+    @FXML private TableColumn<CookedTimeData,Boolean> ignoreColumn;
     @FXML private CheckBox customChipBibCheckBox;
     
     @FXML private TableView<TimeOverride> overrideTableView;
@@ -289,8 +291,34 @@ public class FXMLTimingController {
         
         ignoreColumn.setCellValueFactory(new PropertyValueFactory<>("ignoreTime"));
         ignoreColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
-        //Need a change listener for the ignoreColumn. Find the cooked read, flag it as an ignore, reprocess the bib
+        
+        
+        ///
+        // FIX THIS if we permit multiple select and a right mouse click to set the ignored state
+        // for multiple times at once.... (use c.getFrom -> c.getTo)
+        // until then this is simpler
+        ///
 
+        sortedTimeList.addListener((ListChangeListener.Change<? extends CookedTimeData> c) -> {
+            while (c.next()) {
+                if (c.wasUpdated()) {
+                    timingDAO.saveCookedTime(sortedTimeList.get(c.getFrom()));
+                    System.out.println("CookedTimeData "+sortedTimeList.get(c.getFrom()).getBib()+" changed value to " +sortedTimeList.get(c.getFrom()).getIgnoreTime());
+                }
+            }
+        });
+//        ///It is not this easy: CheckBoxTableCell does ot fire an onEditCommit action
+//        //Need a change listener for the ignoreColumn. Find the cooked read, flag it as an ignore, reprocess the bib
+//        ignoreColumn.setOnEditCommit((CellEditEvent<CookedTimeData, Boolean> t) -> {
+//            CookedTimeData ct = t.getTableView().getItems().get(t.getTablePosition().getRow());
+//            System.out.println("Ignore flag for CookedTime for bib " + ct.getBib() + " at " + ct.getTimestamp().toString() + " is now " + ct.ignoreTimeProperty().toString());
+//            timingDAO.saveCookedTime(ct);
+//        });
+
+        
+        
+        
+        
         // 6. Add sorted (and filtered) data to the table.
         timeTableView.setItems(sortedTimeList);
         timeTableView.setPlaceholder(new Label("No times have been entered yet"));

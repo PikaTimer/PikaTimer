@@ -143,7 +143,7 @@ public class TimingDAO {
         // and add them to the cookedTimesList;
         
         if (cookedTimeList == null) {
-            cookedTimeList =FXCollections.observableArrayList();
+            cookedTimeList =FXCollections.observableArrayList(CookedTimeData.extractor());
             
             Task fetchCookedFromDB = new Task<Void>() {
                 
@@ -166,7 +166,7 @@ public class TimingDAO {
                     });
                     cookedTimes.stream().forEach(c -> {
                         if (!cookedTimeBibMap.containsKey(c.getBib())) cookedTimeBibMap.put(c.getBib(), new ArrayList());
-                        cookedTimeBibMap.get(c.getBib()).add(c);
+                        if (!c.ignoreTimeProperty().get()) cookedTimeBibMap.get(c.getBib()).add(c);
                     });
                     
                     return null; 
@@ -183,6 +183,7 @@ public class TimingDAO {
                     
                     while(true) {
                         List<CookedTimeData> pending = new ArrayList();
+                        List<CookedTimeData> newTimes = new ArrayList();
                         try {
                             cookedTimeProcessorSemaphore.acquire();
                             pending.add(cookedTimeQueue.take());
@@ -198,7 +199,14 @@ public class TimingDAO {
                             Iterator<CookedTimeData> addIterator = pending.iterator();
                             while (addIterator.hasNext()) {
                                 CookedTimeData c = addIterator.next();
-                                s.save(c); 
+//                                if (c.getID() != null ) // previously saved
+//                                    Platform.runLater(() -> {
+//                                        cookedTimeList.remove(c); // remove for now to prevent duplicate entries
+//                                    });
+                                if (c.getID() == null) newTimes.add(c);
+                                
+                                s.saveOrUpdate(c); 
+                                
                                 if ( ++count % 20 == 0 ) {
                                     //flush a batch of updates and release memory:
                                     s.flush();
@@ -209,11 +217,12 @@ public class TimingDAO {
                             s.getTransaction().commit(); 
 
                             Platform.runLater(() -> {
-                                cookedTimeList.addAll(pending);
+                                cookedTimeList.addAll(newTimes);
                             });
                             pending.stream().forEach(c -> {
                                 if (!cookedTimeBibMap.containsKey(c.getBib())) cookedTimeBibMap.put(c.getBib(), new ArrayList());
-                                cookedTimeBibMap.get(c.getBib()).add(c);
+                                if (c.ignoreTimeProperty().get()) cookedTimeBibMap.get(c.getBib()).remove(c);
+                                else cookedTimeBibMap.get(c.getBib()).add(c);
                                 resultsQueue.add(c.getBib());
                             });
                             

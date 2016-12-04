@@ -19,12 +19,14 @@ package com.pikatimer.timing;
 import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.util.Objects;
+import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -200,6 +202,10 @@ public class CookedTimeData {
         }
         
         return true;
+    }
+    
+    public static Callback<CookedTimeData, Observable[]> extractor() {
+        return (CookedTimeData ct) -> new Observable[]{ct.bibProperty,ct.ignoreTimeBoolean};
     }
 
 //    @Transient
