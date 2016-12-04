@@ -650,7 +650,7 @@ public class FXMLTimingController {
     public void addTimingInput(ActionEvent fxevent){
         TimingLocationInput tli = new TimingLocationInput();
         tli.setTimingLocation(selectedTimingLocation);
-        tli.setLocationName(selectedTimingLocation.getLocationName() + " Input " + selectedTimingLocation.inputsProperty().size()+1);
+        tli.setLocationName("New " + selectedTimingLocation.getLocationName() + " Input " + (selectedTimingLocation.inputsProperty().size()+1));
         timingDAO.addTimingLocationInput(tli);
         showTimingInput(tli);
         //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
