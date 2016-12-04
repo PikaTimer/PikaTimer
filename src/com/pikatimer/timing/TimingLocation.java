@@ -137,7 +137,7 @@ public class TimingLocation {
     public void addInput(TimingLocationInput t){
         System.out.println("TimingLocation.addInput called");
         timingInputs.add(t);
-        timingInputList.add(t);
+        timingInputList = timingInputs.sorted((TimingLocationInput u1, TimingLocationInput u2) -> u1.getID().compareTo(u2.getID()));
         System.out.println(locationName + " now has " + timingInputs.size() + " inputs");
         
     }
