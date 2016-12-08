@@ -129,6 +129,7 @@ public class FXMLParticipantController  {
     @FXML private HBox zipHBox;
     @FXML private HBox countryHBox;
     @FXML private CheckComboBox<Wave> searchWaveComboBox; 
+    @FXML private Label filterLabel;
 
     @FXML private PrefixSelectionChoiceBox<Status> statusPrefixSelectionChoiceBox;
     @FXML private TextField noteTextField;
@@ -302,6 +303,7 @@ public class FXMLParticipantController  {
         waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         searchWaveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        filterLabel.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
         searchWaveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
         

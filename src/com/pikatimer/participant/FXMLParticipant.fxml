@@ -42,18 +42,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
    <children>
       <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="10.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER">
          <children>
-             <Label style="-fx-font: NORMAL 20 Tahoma;" text="Search" GridPane.columnIndex="0" GridPane.rowIndex="0" HBox.hgrow="NEVER">
+             <Label minWidth="-Infinity" style="-fx-font: NORMAL 20 Tahoma;" text="Search" GridPane.columnIndex="0" GridPane.rowIndex="0" HBox.hgrow="NEVER">
                <padding>
                   <Insets left="5.0" />
                </padding></Label>
-            <TextField fx:id="filterField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="200.0" promptText="Regex capable search filter" HBox.hgrow="NEVER" />
-            <Label style="-fx-font: NORMAL 20 Tahoma;" text="Filter">
+            <TextField fx:id="filterField" maxWidth="1.7976931348623157E308" minWidth="125.0" prefHeight="25.0" prefWidth="200.0" promptText="Regex capable search filter" HBox.hgrow="NEVER" />
+            <Label fx:id="filterLabel" minWidth="-Infinity" style="-fx-font: NORMAL 20 Tahoma;" text="Filter">
                <padding>
                   <Insets left="5.0" />
                </padding>
             </Label>
-            <CheckComboBox fx:id="searchWaveComboBox" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="150.0" />
-            <Region maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="75.0" HBox.hgrow="ALWAYS" />
+            <CheckComboBox fx:id="searchWaveComboBox" maxWidth="1.7976931348623157E308" minWidth="100.0" prefHeight="25.0" prefWidth="150.0" />
+            <Region maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="75.0" HBox.hgrow="ALWAYS" />
             <Label fx:id="filteredSizeLabel" text="Label" textAlignment="RIGHT" HBox.hgrow="NEVER">
                <HBox.margin>
                   <Insets right="-10.0" />
