@@ -140,10 +140,12 @@ public class ResultsDAO {
                             System.out.println("ResultsDAO ProcessNewResult Thread: Waiting for more bibs to process...");
                             pendingBibs.add(resultsQueue.take());
                             System.out.println("ResultsDAO ProcessNewResult Thread: The wait is over...");
+                            Thread.sleep(10); // Times rarely come in 1 at a time
 
-                            resultsQueue.drainTo(pendingBibs,199);  // 200 total
-                            
-                            System.out.println("ProcessNewResult Thread: Processing: " + pendingBibs.size());
+
+                            //resultsQueue.drainTo(pendingBibs,299);  // 500 total
+                            resultsQueue.drainTo(pendingBibs);
+                            System.out.println("ResultsDAO ProcessNewResult Thread: Processing: " + pendingBibs.size());
 
                             List<Result> pending = new ArrayList();
                             try {
