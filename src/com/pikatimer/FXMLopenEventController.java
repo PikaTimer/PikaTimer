@@ -103,7 +103,7 @@ public class FXMLopenEventController {
                         Flyway flyway = new Flyway();
                         //LoadingProgressBar.setProgress(0.10F);
                         //System.out.println("Progress: " + LoadingProgressBar.getProgress());
-                        jdbcURL = "jdbc:h2:file:" + dbFile.getAbsolutePath().replace(".mv.db", "");
+                        jdbcURL = "jdbc:h2:file:" + dbFile.getAbsolutePath().replace(".mv.db", "").replace(".db", "");
                         jdbcURL += ";TRACE_LEVEL_FILE=0;TRACE_LEVEL_SYSTEM_OUT=0;CACHE_SIZE=131072"; // disable trace options
                         Pikatimer.setJdbcUrl(jdbcURL);
                         //LoadingProgressBar.setProgress(0.15F);
@@ -112,6 +112,7 @@ public class FXMLopenEventController {
 
                         // Upgrade the schema (if out of date)
                         flyway.migrate();
+                        
                         //LoadingProgressBar.setProgress(0.25F);
                         //System.out.println("Progress: " + LoadingProgressBar.getProgress());
                         // Get Hibernate up and running and populate the event object.... 
@@ -201,7 +202,7 @@ public class FXMLopenEventController {
     @FXML
     protected void newEvent(ActionEvent fxevent) {
         final FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save New Event...");
+        fileChooser.setTitle("Create New Event...");
         fileChooser.setInitialDirectory(
             new File(System.getProperty("user.home"))
         ); 
@@ -215,7 +216,7 @@ public class FXMLopenEventController {
             );
         File file = fileChooser.showSaveDialog(rootGridPane.getScene().getWindow());
         if (file != null) {
-            eventFileName.setText(file.getAbsolutePath().replace(".mv.db", ""));
+            eventFileName.setText(file.getAbsolutePath().replace(".mv.db", "").replace(".db", ""));
             this.openDB(file); 
         }
     }
