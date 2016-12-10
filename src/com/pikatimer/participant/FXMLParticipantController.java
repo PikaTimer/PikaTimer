@@ -394,7 +394,7 @@ public class FXMLParticipantController  {
         
         // Strip off leading spaces/zeroes and trailing spaces
         bibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-            bibTextField.setText(newValue.replaceFirst("^[ 0]*", "").replaceFirst(" *$", ""));
+            bibTextField.setText(newValue.replaceFirst("^[ 0]*", ""));
         });
       
         bibTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
@@ -408,6 +408,7 @@ public class FXMLParticipantController  {
                 if (bibTextField.getText().isEmpty()) {
                     return;
                 }
+                bibTextField.setText(bibTextField.getText().replaceFirst("^[ 0]*", "").replaceFirst(" *$", "")); // string trailing spaces
                 
                 // If it is not blank (previous check...
                 // And nobody is being edited...

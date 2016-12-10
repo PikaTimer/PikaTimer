@@ -138,7 +138,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Font size="14.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="bibTextField" prefHeight="25.0" prefWidth="41.0" promptText="9999" HBox.hgrow="NEVER" />
+                        <TextField fx:id="bibTextField" prefWidth="50.0" promptText="12345" HBox.hgrow="NEVER" />
                         <Label fx:id="raceLabel" minWidth="-Infinity" text=" Race" textAlignment="RIGHT">
                            <font>
                               <Font size="14.0" />
