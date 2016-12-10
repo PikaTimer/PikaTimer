@@ -168,6 +168,9 @@ public class TimingLocation {
         } 
         
         c.setTimingLocationId(this.getID());
+        
+        
+        
         // Move to the timing location
         timingDAO.saveCookedTime(c); 
     }

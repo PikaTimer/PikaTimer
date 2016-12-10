@@ -188,8 +188,9 @@ public class TimingDAO {
                             cookedTimeProcessorSemaphore.acquire();
                             pending.add(cookedTimeQueue.take());
                         
-                            cookedTimeQueue.drainTo(pending,199);  // 200 total
-                            
+                            //cookedTimeQueue.drainTo(pending,499);  // 500 total
+                            Thread.sleep(10); // Times rarely come in 1 at a time
+                            cookedTimeQueue.drainTo(pending);
                             System.out.println("ProcessNewCooked Thread: Processing: " + pending.size());
 
                             int i=1;
@@ -226,7 +227,7 @@ public class TimingDAO {
                                 resultsQueue.add(c.getBib());
                             });
                             
-                            Thread.sleep(100); // This will limit us to being able to process about 2000 times / second
+                            Thread.sleep(100); // This will limit us to being able to process about 5000 times / second
                         } catch (InterruptedException ex) {
                             Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
                         }

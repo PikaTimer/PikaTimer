@@ -331,7 +331,7 @@ public class TimingLocationInput implements TimingListener{
         // Mark it as our own
         r.setTimingLocationInputId(IDProperty.getValue());
         
-        
+        if (rawTimeSet == null) getRawTimeSet();
         // is it a duplicate?
         
         // if so, just return
@@ -429,13 +429,13 @@ public class TimingLocationInput implements TimingListener{
 
                     // clear out all cooked times for our location
                     
-                    System.out.println("TimingLocationInput::reprocessReads() Task deleting times for" + tli.getLocationName());
+                    System.out.println("TimingLocationInput::reprocessReads() Task deleting times for " + tli.getLocationName());
 
                     timingDAO.blockingClearCookedTimes(tli);
                     
-                    System.out.println("TimingLocationInput::reprocessReads() Task reprocessing " + rawTimeSet.size() + " reads at " + tli.getLocationName() + ".");
+                    System.out.println("TimingLocationInput::reprocessReads() Task reprocessing " + getRawTimeSet().size() + " reads at " + tli.getLocationName() + ".");
 
-                    rawTimeSet.stream().forEach( r -> {
+                    getRawTimeSet().stream().forEach( r -> {
                         // for everything in our rawTimeSet, reprocess the read 
 
                         tli.processReadStage2(r);
@@ -444,9 +444,11 @@ public class TimingLocationInput implements TimingListener{
                     });
 
                     //resume processing of new times. 
+                    System.out.println("TimingLocationInput::reprocessReads() Task done for " + tli.getLocationName() + ".");
+
                     processRead.release();
-                } catch (InterruptedException ex) {
-                    System.out.println("ReprocessAll exception for " + tli.getLocationName());
+                } catch (Exception ex) {
+                    System.out.println("TimingLocationInput::reprocessReads() exception for " + tli.getLocationName());
                     ex.printStackTrace();
                     Logger.getLogger(TimingLocationInput.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -509,5 +511,19 @@ public class TimingLocationInput implements TimingListener{
     @Transient
     public Duration getSkew() {
         return skewDuration; 
+    }
+    
+    @Transient
+    private Set<RawTimeData> getRawTimeSet(){
+        if (rawTimeSet == null) {
+                
+            rawTimeSet = Collections.newSetFromMap(new ConcurrentHashMap<>()); 
+
+            rawTimeSet.addAll(timingDAO.getRawTimes(this));
+            System.out.println("TimingLocationInput.initializeReader: Read in " + rawTimeSet.size() + " existing times"); 
+            readCountProperty.set(rawTimeSet.size());
+        } 
+        
+        return rawTimeSet;
     }
 }

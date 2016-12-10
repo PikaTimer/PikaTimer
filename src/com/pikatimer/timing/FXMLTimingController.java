@@ -504,14 +504,30 @@ public class FXMLTimingController {
         // bib2Chip mappings
         bib2ChipMap = timingDAO.getBib2ChipMap();
         customChipBibCheckBox.setSelected(bib2ChipMap.getUseCustomMap()); 
-            
-        customChipBibCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
-            if (!old_val.equals(new_val)) {
-                System.out.println("Setting bib2ChipMap custom to " + new_val.toString());
-                bib2ChipMap.setUseCustomMap(new_val);
+        //customChipBibCheckBox.selectedProperty().bind(bib2ChipMap.useCustomMapProperty());
+        
+        customChipBibCheckBox.setOnAction(a -> {
+            System.out.println("bib2ChipMap custom checkbox clicked!");
+            if (bib2ChipMap.useCustomMapProperty().get()) {
+                bib2ChipMap.setUseCustomMap(false);
                 timingDAO.saveBib2ChipMap(bib2ChipMap);
+                timingDAO.reprocessAllRawTimes();
+            } else if (!bib2ChipMap.useCustomMapProperty().get() && !bib2ChipMap.getChip2BibMap().isEmpty() ) {
+                bib2ChipMap.setUseCustomMap(true);
+                timingDAO.saveBib2ChipMap(bib2ChipMap);
+                timingDAO.reprocessAllRawTimes();
+            } else {
+                setupCustomChipMap(null);
             }
-        });
+        });    
+//        customChipBibCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+//            if (!old_val.equals(new_val)) {
+//                System.out.println("Setting bib2ChipMap custom to " + new_val.toString());
+//                if (new_val) setupCustomChipMap(null);
+//                //bib2ChipMap.setUseCustomMap(new_val);
+//                //timingDAO.saveBib2ChipMap(bib2ChipMap);
+//            }
+//        });
         
         
         // Override table
@@ -713,68 +729,7 @@ public class FXMLTimingController {
             Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
         }
             
-        
-        
-        
-        FileChooser fileChooser = new FileChooser();
-        File sourceFile;
-        Map<String,String> bibMap = new ConcurrentHashMap();
-        final BooleanProperty chipFirst = new SimpleBooleanProperty(false);
-        
-        fileChooser.setTitle("Select Bib -> Chip File");
-        
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home"))); 
-        
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt","*.csv"),
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv"), 
-                new FileChooser.ExtensionFilter("All files", "*")
-            );
-        
-        sourceFile = fileChooser.showOpenDialog(customChipBibCheckBox.getScene().getWindow());
-        if (sourceFile != null) {
-            try {            
-                    Optional<String> fs = Files.lines(sourceFile.toPath()).findFirst();
-                    String[] t = fs.get().split(",", -1);
-                    if (t.length != 2) return; 
-                    
-                    if(t[0].toLowerCase().contains("chip")) {
-                        chipFirst.set(true);
-                        System.out.println("Found a chip -> bib file");
-                    } else if (t[0].toLowerCase().contains("bib")) {
-                        chipFirst.set(false);
-                        System.out.println("Found a bib -> chip file");
-                    } else {
-                        bibMap.put(t[0], t[1]);
-                        System.out.println("No header in file");
-                        System.out.println("Mapped chip " + t[0] + " to " + t[1]);
-                    }
-                    Files.lines(sourceFile.toPath())
-                        .map(s -> s.trim())
-                        .filter(s -> !s.isEmpty())
-                        .skip(1)
-                        .forEach(s -> {
-                            //System.out.println("readOnce read " + s); 
-                            String[] tokens = s.split(",", -1);
-                            if(chipFirst.get()) {
-                                bibMap.put(tokens[0], tokens[1]);
-                                System.out.println("Mapped chip " + tokens[0] + " to " + tokens[1]);
-                            } else {
-                                bibMap.put(tokens[1], tokens[0]);
-                                System.out.println("Mapped chip " + tokens[1] + " to " + tokens[0]);
-                            }
-                        });
-                    System.out.println("Found a total of " + bibMap.size() + " mappings");
-                    bib2ChipMap.setChip2BibMap(bibMap);
-                    timingDAO.updateBib2ChipMap(bib2ChipMap);
-                    timingDAO.reprocessAllRawTimes();
-                } catch (IOException ex) {
-                    Logger.getLogger(PikaRFIDFileReader.class.getName()).log(Level.SEVERE, null, ex);
-                    // We had an issue reading the file.... 
-                }
-            
-            
-        }
+        customChipBibCheckBox.setSelected(bib2ChipMap.getUseCustomMap()); 
     }
     
     public void addOverride(ActionEvent fxevent){
