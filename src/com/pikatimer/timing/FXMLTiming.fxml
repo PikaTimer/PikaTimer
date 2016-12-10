@@ -204,7 +204,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" />
          </GridPane.margin>
       </VBox>
-      <VBox maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+      <VBox fx:id="timingLocVBox" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
          <children>
             <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">
                <children>

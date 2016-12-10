@@ -16,14 +16,22 @@
  */
 package com.pikatimer.timing;
 
+import com.pikatimer.participant.Participant;
+import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.Race;
+import com.pikatimer.race.RaceDAO;
+import com.pikatimer.race.Wave;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javafx.application.Platform;
 import javafx.beans.Observable;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -53,12 +61,16 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="timing_location")
 public class TimingLocation {
     
-   private final IntegerProperty IDProperty;
+   private final IntegerProperty IDProperty = new SimpleIntegerProperty();
    private final StringProperty locationName;
+   private Integer autoAssignRaceID = -1;
+   private final ObjectProperty<Race> raceProperty = new SimpleObjectProperty();
    private final ObservableList<Split> associatedSplits; 
    private final ObservableList<TimingLocationInput> timingInputs; 
    private static final TimingDAO timingDAO = TimingDAO.getInstance();
    
+   private Wave autoWave;
+   private final BooleanProperty cookedTimeReady = new SimpleBooleanProperty(false);
    List<TimingLocationInput> timingInputList;
    
    private Duration filterStartDuration;
@@ -68,7 +80,6 @@ public class TimingLocation {
 
 
    public TimingLocation() {
-        this.IDProperty = new SimpleIntegerProperty();
         this.locationName = new SimpleStringProperty("Not Yet Set");
         this.associatedSplits = FXCollections.observableArrayList();
         this.timingInputs = FXCollections.observableArrayList();
@@ -102,6 +113,37 @@ public class TimingLocation {
         return locationName;
     }
     
+    @Column(name="AUTO_ASSIGN_TO_RACE_ID")
+    public Integer getAutoAssignRaceID() {
+        
+        return autoAssignRaceID; 
+    }
+    public void setAutoAssignRaceID(Integer id) {
+        
+        if (id == null) id = -1;
+        cookedTimeReady.set(false);
+        autoAssignRaceID = id;
+    }
+    
+    public ObjectProperty<Race> autoAssignRaceProperty() {
+        synchronized(cookedTimeReady){
+            if (!cookedTimeReady.get()) {
+                cookedTimeReady.set(true);
+                if (autoAssignRaceID <0) {
+                raceProperty.setValue(null);
+                autoWave = null;
+                } else {
+                    RaceDAO.getInstance().listRaces().forEach(r -> {
+                        if (Objects.equals(r.getID(), autoAssignRaceID)) {
+                            raceProperty.setValue(r);
+                            autoWave = r.getWaves().get(0);
+                        }
+                    });
+                }
+            }
+        }
+        return raceProperty; 
+    }
 //    @OneToMany(mappedBy="timingLocation",fetch = FetchType.LAZY)
 //    public List<Split> getSplits() {
 //        //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
@@ -155,6 +197,11 @@ public class TimingLocation {
     }
     
     public void cookTime(CookedTimeData c) {
+        synchronized(cookedTimeReady){
+            if (!cookedTimeReady.get()) {
+                autoAssignRaceProperty();
+            }
+        }
         
         // Filter it
         if (!filterStartDuration.isZero() && c.getTimestamp().compareTo(filterStartDuration) < 0) {
@@ -169,7 +216,23 @@ public class TimingLocation {
         
         c.setTimingLocationId(this.getID());
         
-        
+        // If this is an auto-assign location, do some auto-assigning
+        if (autoWave != null){
+            System.out.println("TimingLocation::cookTime autoWave is not null...");
+            Participant p = ParticipantDAO.getInstance().getParticipantByBib(c.bibProperty().getValueSafe());
+            if (p != null) {
+                BooleanProperty inRace = new SimpleBooleanProperty(false);
+                p.getWaveIDs().forEach(w -> {
+                    if (autoWave.getRace().getID().equals(RaceDAO.getInstance().getWaveByID(w).getRace().getID())) inRace.setValue(Boolean.TRUE);
+                });
+                if (!inRace.get()) {
+                    System.out.println("TimingLocation::cookTime autoWave assigning " + p.getBib() + " to " + autoWave.getWaveName() );
+
+                    p.setWaves(autoWave);
+                    ParticipantDAO.getInstance().updateParticipant(p);
+                }
+            }
+        }
         
         // Move to the timing location
         timingDAO.saveCookedTime(c); 

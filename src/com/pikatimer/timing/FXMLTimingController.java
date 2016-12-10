@@ -98,6 +98,8 @@ public class FXMLTimingController {
     @FXML private Button timingLocRemoveAllButton;
     @FXML private Button timingLocAddButton;
     @FXML private Button timingLocRemoveButton;  
+    
+    @FXML private VBox timingLocVBox;
     @FXML private TextField timingLocationNameTextField; 
     
     @FXML private TextField filterStartTextField;
@@ -213,10 +215,11 @@ public class FXMLTimingController {
             //timingLocAddButton.setDefaultButton(true);
         });
         
+        
         timingLocRemoveButton.disableProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull());
 
         
-        
+
         
         
         // Deal with the filtering and such. 
@@ -335,34 +338,49 @@ public class FXMLTimingController {
         
         // load up the TimingLocationDetailsPane
                     
-         //if there are no timing locations selected in the view then disable the entire right hand side
-         timingDetailsVBox.visibleProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull().not());
+        //if there are no timing locations selected in the view then disable the entire right hand side
+        timingDetailsVBox.visibleProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull().not());
          
-         
-         timingLocListView.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Cha‌​nge<? extends TimingLocation> c) -> { 
-             System.out.println("timingLocListView changed...");
-             //timingLocListView.getSelectionModel().getSelectedItems().forEach(System.out::println); 
-             ObservableList<TimingLocation> selectedTimingLocations = timingLocListView.getSelectionModel().getSelectedItems();
-             
-             timingDetailsVBox.getChildren().clear();
-             
-             if ( selectedTimingLocations.size() == 0 ) {
-                System.out.println("Nothing Selected");
-                //timingLocationDetailsController.selectTimingLocation(null);
-                if (selectedTimingLocation != null) {
-                    timingLocationNameTextField.textProperty().unbindBidirectional(selectedTimingLocation.LocationNameProperty());
-                    selectedTimingLocation=null; 
-                }
-             } else {
+        
+        assignToRacePrefixSelectionChoiceBox.disableProperty().bind(assignToRaceToggleSwitch.selectedProperty().not());
+        assignToRacePrefixSelectionChoiceBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        assignToRacePrefixSelectionChoiceBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        assignToRaceToggleSwitch.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        assignToRaceToggleSwitch.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        
+        timingLocListView.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Cha‌​nge<? extends TimingLocation> c) -> { 
+            System.out.println("timingLocListView changed...");
+            //timingLocListView.getSelectionModel().getSelectedItems().forEach(System.out::println); 
+            ObservableList<TimingLocation> selectedTimingLocations = timingLocListView.getSelectionModel().getSelectedItems();
+
+            timingDetailsVBox.getChildren().clear();
+
+            if ( selectedTimingLocations.isEmpty() ) {
+               System.out.println("Nothing Selected");
+               //timingLocationDetailsController.selectTimingLocation(null);
+               if (selectedTimingLocation != null) {
+                   timingLocationNameTextField.textProperty().unbindBidirectional(selectedTimingLocation.LocationNameProperty());
+                   selectedTimingLocation=null; 
+                   timingLocVBox.disableProperty().setValue(true);
+               }
+            } else {
                 System.out.println("We just selected " + selectedTimingLocations.get(0).getLocationName());
                 //timingLocationNameTextField.textProperty().setValue(selectedTimingLocations.get(0).LocationNameProperty().getValue());
-                
+                timingLocVBox.disableProperty().setValue(false);
                 if (selectedTimingLocation != null) {
                     System.out.println("Unbinding timingLocationNameTextField");
                     timingLocationNameTextField.textProperty().unbindBidirectional(selectedTimingLocation.LocationNameProperty());
                 }
                 selectedTimingLocation=selectedTimingLocations.get(0); 
                 timingLocationNameTextField.textProperty().bindBidirectional(selectedTimingLocation.LocationNameProperty());
+                
+                if (selectedTimingLocation.getAutoAssignRaceID() < 0) {
+                    assignToRaceToggleSwitch.setSelected(false);
+                    assignToRacePrefixSelectionChoiceBox.getSelectionModel().clearSelection();
+                } else {
+                    assignToRaceToggleSwitch.setSelected(true);
+                    assignToRacePrefixSelectionChoiceBox.getSelectionModel().select(selectedTimingLocation.autoAssignRaceProperty().getValue());
+                }
                 
                 // Show the filter start/end values
                 filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
@@ -380,8 +398,8 @@ public class FXMLTimingController {
                     });
                     System.out.println("Done showing inputs for a timing location");
                 }
-             }
-         });
+            }
+        });
          
        
         
@@ -500,6 +518,38 @@ public class FXMLTimingController {
                 
         });
         
+        assignToRaceToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) { // Don't auto-assign
+                TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItems().get(0);
+                if (tl != null) {
+                    if (!tl.getAutoAssignRaceID().equals(-1)) {
+                        System.out.println("Everybody at " + tl.getLocationName() + " is no longer auto-assigned");
+                        tl.setAutoAssignRaceID(-1);
+                        timingDAO.updateTimingLocation(tl);
+                        assignToRacePrefixSelectionChoiceBox.getSelectionModel().clearSelection();
+                        //selectedTimingLocation.reprocessReads();
+                    }
+                }
+            } else {
+                // Do nothing. If they select a race to assign the runners to then we will do something.
+            }
+        });
+        assignToRacePrefixSelectionChoiceBox.setItems(RaceDAO.getInstance().listRaces());
+        assignToRacePrefixSelectionChoiceBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItems().get(0);
+                Race race = assignToRacePrefixSelectionChoiceBox.getSelectionModel().getSelectedItem();
+                if (tl != null && race != null) {
+                    if (!tl.getAutoAssignRaceID().equals(race.getID())) {
+                        System.out.println("Everybody at " + tl.getLocationName() + " now assigned to race " + race.getRaceName());
+                        tl.setAutoAssignRaceID(race.getID());
+                        timingDAO.updateTimingLocation(tl);
+                        selectedTimingLocation.reprocessReads();
+                    }
+                }
+            }
+        });
+
         
         // bib2Chip mappings
         bib2ChipMap = timingDAO.getBib2ChipMap();
