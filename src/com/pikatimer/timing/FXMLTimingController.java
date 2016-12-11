@@ -61,6 +61,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -130,7 +132,8 @@ public class FXMLTimingController {
     @FXML private Button overrideRemoveButton;
     
     @FXML private ToggleSwitch assignToRaceToggleSwitch;
-    @FXML private PrefixSelectionChoiceBox<Race> assignToRacePrefixSelectionChoiceBox;
+    //@FXML private ChoiceBox<Race> assignToRaceChoiceBox;
+    @FXML private ComboBox<Race> assignToRaceComboBox;
     
     private ObservableList<CookedTimeData> cookedTimeList;
     FilteredList<CookedTimeData> filteredTimesList;
@@ -342,9 +345,9 @@ public class FXMLTimingController {
         timingDetailsVBox.visibleProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull().not());
          
         
-        assignToRacePrefixSelectionChoiceBox.disableProperty().bind(assignToRaceToggleSwitch.selectedProperty().not());
-        assignToRacePrefixSelectionChoiceBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
-        assignToRacePrefixSelectionChoiceBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        assignToRaceComboBox.disableProperty().bind(assignToRaceToggleSwitch.selectedProperty().not());
+        assignToRaceComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        assignToRaceComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         assignToRaceToggleSwitch.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         assignToRaceToggleSwitch.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         
@@ -376,10 +379,10 @@ public class FXMLTimingController {
                 
                 if (selectedTimingLocation.getAutoAssignRaceID() < 0) {
                     assignToRaceToggleSwitch.setSelected(false);
-                    assignToRacePrefixSelectionChoiceBox.getSelectionModel().clearSelection();
+                    assignToRaceComboBox.getSelectionModel().clearSelection();
                 } else {
                     assignToRaceToggleSwitch.setSelected(true);
-                    assignToRacePrefixSelectionChoiceBox.getSelectionModel().select(selectedTimingLocation.autoAssignRaceProperty().getValue());
+                    assignToRaceComboBox.getSelectionModel().select(selectedTimingLocation.autoAssignRaceProperty().getValue());
                 }
                 
                 // Show the filter start/end values
@@ -526,7 +529,7 @@ public class FXMLTimingController {
                         System.out.println("Everybody at " + tl.getLocationName() + " is no longer auto-assigned");
                         tl.setAutoAssignRaceID(-1);
                         timingDAO.updateTimingLocation(tl);
-                        assignToRacePrefixSelectionChoiceBox.getSelectionModel().clearSelection();
+                        assignToRaceComboBox.getSelectionModel().clearSelection();
                         //selectedTimingLocation.reprocessReads();
                     }
                 }
@@ -534,11 +537,11 @@ public class FXMLTimingController {
                 // Do nothing. If they select a race to assign the runners to then we will do something.
             }
         });
-        assignToRacePrefixSelectionChoiceBox.setItems(RaceDAO.getInstance().listRaces());
-        assignToRacePrefixSelectionChoiceBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+        assignToRaceComboBox.setItems(RaceDAO.getInstance().listRaces());
+        assignToRaceComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItems().get(0);
-                Race race = assignToRacePrefixSelectionChoiceBox.getSelectionModel().getSelectedItem();
+                Race race = assignToRaceComboBox.getSelectionModel().getSelectedItem();
                 if (tl != null && race != null) {
                     if (!tl.getAutoAssignRaceID().equals(race.getID())) {
                         System.out.println("Everybody at " + tl.getLocationName() + " now assigned to race " + race.getRaceName());
