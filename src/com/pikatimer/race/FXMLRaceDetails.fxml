@@ -168,19 +168,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         </cellValueFactory>
                     </TableColumn> -->
 
-                    <TableColumn fx:id="waveNameTableColumn" prefWidth="75.0" text="Name">
+                    <TableColumn fx:id="waveNameTableColumn" minWidth="75.0" prefWidth="75.0" text="Name">
                         <cellValueFactory>
                             <PropertyValueFactory property="waveName" />
                         </cellValueFactory>
                     </TableColumn>
 
-                    <TableColumn fx:id="waveStartTimeTableColumn" prefWidth="75.0" text="Start Time">
+                    <TableColumn fx:id="waveStartTimeTableColumn" minWidth="75.0" prefWidth="100.0" text="Start Time">
                         <cellValueFactory>
                             <PropertyValueFactory property="waveStartString" />
                         </cellValueFactory>
                     </TableColumn>
 
-                    <TableColumn fx:id="waveMaxStartTimeTableColumn" prefWidth="75.0" text="Max Start">
+                    <TableColumn fx:id="waveMaxStartTimeTableColumn" prefWidth="75.0" text="Max Start" visible="false">
                         <cellValueFactory>
                          <PropertyValueFactory property="waveMaxStartString" />
                         </cellValueFactory>
