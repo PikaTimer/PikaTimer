@@ -136,6 +136,9 @@ public class Participant {
             }
         });
         
+        status = Status.GOOD;
+        statusProperty.set(status);
+        
     }
     
     public static ObservableMap<String,String> getAvailableAttributes() {

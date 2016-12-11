@@ -76,14 +76,15 @@ public class TimingLocationInput implements TimingListener{
     private TimingInputTypes timingInputType; 
     private Map<String, String> attributes = new ConcurrentHashMap<>(8, 0.9f, 1);
     private TimingReader timingReader;
-    private BooleanProperty tailFileBooleanProperty;
-    private BooleanProperty timingReaderInitialized; 
+    private final BooleanProperty tailFileBooleanProperty;
+    private final BooleanProperty timingReaderInitialized; 
     private static final TimingDAO timingDAO = TimingDAO.getInstance();
     private Button inputButton;
     private TextField inputTextField; 
+    private final BooleanProperty isBackup = new SimpleBooleanProperty(false);
     private final BooleanProperty skewInput;
     private Duration skewDuration; 
-    private Semaphore processRead = new Semaphore(1);
+    private final Semaphore processRead = new Semaphore(1);
 
     private final IntegerProperty readCountProperty = new SimpleIntegerProperty();
     private Set<RawTimeData> rawTimeSet;
@@ -367,6 +368,9 @@ public class TimingLocationInput implements TimingListener{
         // set link the cooked time to the parent raw time
         c.setRawChipID(r.getChip());
         
+        // set the backup flag
+        c.setBackupTime(getIsBackup());
+        
         // skew it
         if(skewInput.getValue()) {
             c.setTimestamp(r.getTimestamp().plus(skewDuration)); 
@@ -466,10 +470,24 @@ public class TimingLocationInput implements TimingListener{
         timingReader.stopReading();
     }
 
+    @Column(name="backup")
+    public Boolean getIsBackup() {
+        //System.out.println("returning isBackup()");
+        return isBackup.getValue();
+    }
+    public void setIsBackup(Boolean i) {
+        if (i != null) { 
+            isBackup.setValue(i);
+        }
+    }
+     
+    public BooleanProperty backupProperty(){
+        return isBackup;
+    }
     
     @Column(name="skew")
     public Boolean getSkewLocationTime() {
-        System.out.println("returning SkewLocation()");
+        //System.out.println("returning SkewLocation()");
         return skewInput.getValue();
     }
     public void setSkewLocationTime(Boolean i) {

@@ -18,6 +18,7 @@ package com.pikatimer.results;
 
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.participant.Status;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
@@ -45,6 +46,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -267,7 +269,7 @@ public class ResultsDAO {
         Set<Integer> waves = p.getWaveIDs();
         if (waves.isEmpty()) return;
         
-        
+        if (p.getStatus().equals(Status.DNS)) return; // They did not start
         
         Optional<List<TimeOverride>> bibOverrides = timingDAO.getOverridesByBib(bib);
         if (timingDAO.getCookedTimesByBib(bib).isEmpty() && ! bibOverrides.isPresent()) {
@@ -290,8 +292,12 @@ public class ResultsDAO {
         }
         
         
-        List<CookedTimeData> timesList = new ArrayList(timingDAO.getCookedTimesByBib(bib));
+        //get a list of times and backup times
+        List<CookedTimeData> allTimesList = new ArrayList(timingDAO.getCookedTimesByBib(bib)); 
+        List<CookedTimeData> timesList = allTimesList.stream().filter(c -> !c.getBackupTime()).collect(Collectors.toList());
+        List<CookedTimeData> backupTimesList = allTimesList.stream().filter(c -> c.getBackupTime()).collect(Collectors.toList());
         timesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
+        backupTimesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
         
         //System.out.println("ResultsDAO.processBib: " + bib + " we have " + timesList.size() + " times");
         
@@ -312,7 +318,7 @@ public class ResultsDAO {
             
             
             Duration waveStart = Duration.between(LocalTime.MIDNIGHT, RaceDAO.getInstance().getWaveByID(i).waveStartProperty());
-            Duration maxWaveStart = waveStart.plus(Duration.ofHours(1)); 
+            Duration maxWaveStart = waveStart.plus(Duration.ofHours(1)); //FIX THIS!
             //System.out.println("ResultsDAO.processBib: " + r.getBib() + " waveStart: " + waveStart + " maxWaveStart" + maxWaveStart);
             List<Split> splits = raceDAO.getWaveByID(i).getRace().getSplits();
             
@@ -397,9 +403,9 @@ public class ResultsDAO {
                             Duration splitMax = overrides[ot].plusMinutes(10); 
 
                             // now consume the rest of the hits at this split until we 
-                            // hit the max
+                            // hit the max//
                             do { 
-                                //System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
+                                System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
                                 if (times.hasNext()) ctd = times.next();
                                 else ctd = null;
                             } while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 );
@@ -415,6 +421,13 @@ public class ResultsDAO {
                 } else if (hasOverrides && overrides[splitIndex] != null) {
                     System.out.println("We have an override for " + splitIndex + " incrementing and moving on.");
                     r.setSplitTime(splitArray[splitIndex].getPosition(), overrides[splitIndex]);
+                    // TODO: Fix this 
+                    Duration splitMax = overrides[splitIndex].plusMinutes(5); 
+                    while (ctd != null && splitMax.compareTo(ctd.getTimestamp()) > 0 ) {
+                        if (times.hasNext()) ctd = times.next();
+                        else ctd = null;
+                    }
+                    
                     splitIndex++; // we pre-filled the split times earlier
                 } else if (ctd.getTimestamp().compareTo(waveStart) < 0 ) {
                     if (times.hasNext()) ctd = times.next();
@@ -511,6 +524,51 @@ public class ResultsDAO {
                 //System.out.println("Found finish time override of " + overrides[splits.size()-1].toString());
                 r.setFinishDuration(overrides[splits.size()-1]);
             }
+            
+            // Now we are going to walk the times and look for backp times that may be able to fill the gaps.
+            if (backupTimesList.isEmpty()) return;
+            int backupTimeIndex = 0;
+            int maxBackupTimes = backupTimesList.size();
+            CookedTimeData c = backupTimesList.get(backupTimeIndex++);; 
+            
+            //fix the start time
+            if(r.getStartDuration().equals(r.getStartWaveStartDuration())) {
+                // zero gun time, look for a backup
+                while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxWaveStart) < 0) {
+                    if (r.getStartDuration().compareTo(c.getTimestamp())<0) {
+                        r.setStartDuration(c.getTimestamp());
+                        System.out.println("Backup start time found for bib " + p.getBib());
+                    }
+                    if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
+                    else break;
+                }
+            }
+            
+            // now fix any intermediate splits
+            
+            //todo next: adjust intermediate splits... 
+            
+            
+            // now fix the finish time 
+            if (r.getFinishDuration() == null || r.getFinishDuration().isZero()) { // we need a finish time
+                int finishSplit = splits.size()-1;
+                
+                // find the last time we saw this runner
+                Duration lastSeen = r.getStartDuration();
+                for (int si = 1; si < finishSplit; si++ ){
+                    if (r.getSplitTime(si) != Duration.ZERO) lastSeen = r.getSplitTime(si);
+                }
+                
+                while (r.getFinishDuration() == null || r.getFinishDuration().isZero() ){
+                    if (Objects.equals(c.getTimingLocationId(), splitArray[finishSplit].getTimingLocationID()) ) {
+                        if (c.getTimestamp().compareTo(lastSeen) > 0) r.setFinishDuration(c.getTimestamp());
+                        System.out.println("Finish start time found for bib " + p.getBib());
+                    }
+                    if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
+                    else break;
+                }
+            }
+            
            // System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
             //resultsList.add(r); 
             //resultsMap.put(bib + " " + r.getRaceID(), r);

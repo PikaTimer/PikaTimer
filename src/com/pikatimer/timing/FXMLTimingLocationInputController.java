@@ -133,6 +133,17 @@ public class FXMLTimingLocationInputController{
             
             readCountLabel.textProperty().bind(Bindings.convert(timingLocationInput.readCountProperty())); 
             
+            // flag as a backup time
+            backupCheckBox.setSelected(timingLocationInput.getIsBackup()); 
+            
+            backupCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+                if (!old_val.equals(new_val)) {
+                    timingLocationInput.setIsBackup(new_val);
+                    timingLocationDAO.updateTimingLocationInput(timingLocationInput);
+                    timingLocationInput.reprocessReads();
+                }
+            });
+            
             
             //Setup the skew
                    
@@ -218,6 +229,7 @@ public class FXMLTimingLocationInputController{
     }
     
     public void removeTimingInput(ActionEvent fxevent){
+        
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Clear Input...");
         alert.setHeaderText("Delete Input:");
