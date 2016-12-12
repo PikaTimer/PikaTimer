@@ -483,23 +483,33 @@ public class FXMLEventController  {
         final Race r = raceTableView.getSelectionModel().getSelectedItem();
         
         // Do we have any runner's assigned?
-        BooleanProperty inUse = new SimpleBooleanProperty(false);
-        
+        BooleanProperty assignedRunners = new SimpleBooleanProperty(false);
+        BooleanProperty assignedTimingLoc= new SimpleBooleanProperty(false);
+        StringProperty assignedTimingLocations = new SimpleStringProperty();
+
         ParticipantDAO.getInstance().listParticipants().forEach(x ->{
             x.getWaveIDs().forEach(w -> {
                 if (RaceDAO.getInstance().getWaveByID(w).getRace().equals(r)) {
-                    inUse.setValue(Boolean.TRUE);
+                    assignedRunners.setValue(Boolean.TRUE);
                     //System.out.println("Race " + RaceDAO.getInstance().getWaveByID(w).getRace().getRaceName() + " is in use by " + x.fullNameProperty().getValueSafe());
                 }
             });
-        
         });
         
-        if (inUse.get()) {
+        TimingDAO.getInstance().listTimingLocations().forEach(x -> {
+            if (x.getAutoAssignRaceID() >= 0 ) {
+                assignedTimingLoc.setValue(Boolean.TRUE);
+                if (assignedTimingLocations.isEmpty().get()) assignedTimingLocations.setValue(x.getLocationName());
+                else assignedTimingLocations.setValue(assignedTimingLocations.getValue() + "\n" + x.getLocationName());
+            }
+        });
+        
+        if (assignedRunners.get() || assignedTimingLoc.get()) {
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Unable to Remove Race");
             alert.setHeaderText("Unable to remove the selected race.");
-            alert.setContentText("The race currently has assigned runners.\nPlease assign them to a different race before removing.");
+            if (assignedRunners.get()) alert.setContentText("This race currently has assigned runners.\nPlease assign them to a different race before removing.");
+            if (assignedTimingLoc.get()) alert.setContentText("The following timing locations are set to\nauto-assign runners to this race:\n\n"+assignedTimingLocations.getValueSafe());
 
             alert.showAndWait();
         } else {
