@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="688.0" prefWidth="769.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="769.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
   <columnConstraints>
     <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
     <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
@@ -113,7 +113,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <Font size="18.0" />
                      </font>
                   </Label>
-                  <TableView fx:id="raceSegmentsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="300.0" VBox.vgrow="SOMETIMES">
+                  <TableView fx:id="raceSegmentsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="SOMETIMES">
                     <columns>
                       <TableColumn fx:id="segmentNameTableColumn" prefWidth="150.0" text="Name">
                             <cellValueFactory>
@@ -243,7 +243,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </HBox>
             <HBox fx:id="bibRangeHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="2.0" VBox.vgrow="NEVER">
                <children>
-                  <Label prefHeight="20.0" text="Bib Range: ">
+                  <Label prefHeight="20.0" prefWidth="85.0" text="Bib Range: ">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -257,10 +257,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <TextField fx:id="endBibTextField" prefWidth="75.0" />
                </children>
             </HBox>
-            <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="1" GridPane.valignment="CENTER" VBox.vgrow="NEVER">
-               <padding>
-                  <Insets top="25.0" />
-               </padding>
+            <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="2.0" VBox.vgrow="NEVER">
+               <children>
+                  <Label prefHeight="20.0" prefWidth="85.0" text="Cutoff Time">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="raceCutoffTimeTextField" prefWidth="75.0" promptText="HH:MM" />
+                  <Label fx:id="raceCutoffTimePaceLabel" prefHeight="20.0" prefWidth="90.0">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+               </children>
             </HBox>
          </children>
       </VBox>
@@ -298,21 +308,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      </font>
                   </Label>
                   <TextField fx:id="raceStartTimeTextField" onAction="#updateRaceStartTime" prefHeight="25.0" prefWidth="96.0" promptText="HH:MM:SS.sss" />
-               </children>
-            </HBox>
-            <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
-               <children>
-                  <Label prefHeight="20.0" prefWidth="90.0" text="Cutoff Time">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
-                  <TextField fx:id="raceCutoffTimeTextField" prefWidth="75.0" promptText="HH:MM" />
-                  <Label fx:id="raceCutoffTimePaceLabel" prefHeight="20.0" prefWidth="90.0">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
                </children>
             </HBox>
          </children>
