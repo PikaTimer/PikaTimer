@@ -298,7 +298,7 @@ public class FXMLSetupBibMapController  {
         else timingDAO.getBib2ChipMap().setUseCustomMap(Boolean.TRUE);
         timingDAO.getBib2ChipMap().setChip2BibMap(bibMap);
         
-        timingDAO.updateBib2ChipMap(timingDAO.getBib2ChipMap());
+        timingDAO.saveBib2ChipMap(timingDAO.getBib2ChipMap());
         timingDAO.reprocessAllRawTimes();
         mapModified.setValue(false);
         ((Node) fxevent.getSource()).getScene().getWindow().fireEvent(
