@@ -18,6 +18,10 @@ package com.pikatimer;
 
 
 import com.pikatimer.event.EventDAO;
+import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.RaceDAO;
+import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.timing.TimingDAO;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.stage.FileChooser;
@@ -125,23 +129,32 @@ public class FXMLopenEventController {
                         // Setup the main screen
                         FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLpika.fxml"));
                     
-   
-                    
-                    Platform.runLater(() -> {
-                        Pane myPane;
-                        try {
-                            myPane = (Pane)loader.load();
-                            //LoadingProgressBar.setProgress(0.75);
-                            Scene myScene = new Scene(myPane);
+                        // Pre-Load stuff...
+                        System.out.println("Pre-Loading the data...");
+                        TimingDAO.getInstance().listTimingLocations(); //Load first to prevent deadlock!
+                        RaceDAO.getInstance().listRaces();
+                        ParticipantDAO.getInstance().listParticipants();
+                        ParticipantDAO.getInstance().getParticipantByBib("1"); // arbitrary to block on the listParticipants() thread
+                        System.out.println("Done Pre-Loading the data...");
 
-                            primaryStage.setScene(myScene);
-                            //LoadingProgressBar.setProgress(0.95);
-                            primaryStage.show();
+                        try {
+                            final Pane myPane = (Pane)loader.load();
+                            Scene myScene = new Scene(myPane);
+                            Platform.runLater(() -> {
+                                //Pane myPane = (Pane)loader.load();
+                                //LoadingProgressBar.setProgress(0.75);
+
+                                primaryStage.setScene(myScene);
+                                //LoadingProgressBar.setProgress(0.95);
+                                primaryStage.show();
+
+                            });
+                            
                         } catch (Exception ex) {
                             System.out.println("OOPS! " + getClass().getResource("FXMLpika.fxml"));
                             ex.printStackTrace();
-                        }
-                    });
+                        }    
+                    
                     
                     } catch (Exception ex) {
                         System.out.println("OOPS!");
