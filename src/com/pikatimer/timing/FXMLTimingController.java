@@ -20,25 +20,31 @@ import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Race;
-import com.pikatimer.timing.reader.PikaRFIDFileReader;
+import com.pikatimer.race.Wave;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.DurationParser;
-import java.io.File;
+import com.pikatimer.util.WaveStringConverter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
@@ -61,16 +67,19 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.ChoiceBoxTableCell;
+import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.ColumnConstraints;
@@ -78,13 +87,12 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.CheckComboBox;
-import org.controlsfx.control.PrefixSelectionChoiceBox;
 import org.controlsfx.control.PrefixSelectionComboBox;
 import org.controlsfx.control.ToggleSwitch;
 
@@ -1000,6 +1008,91 @@ public class FXMLTimingController {
     
     public void startTriggerLookup(ActionEvent fxevent){
         
+        // Check to see if we have any START_TIMEs to map
+        // Wrap it in a new list to avoid the list being modified while we stream/filter it. 
+        List<CookedTimeData> cTimes = new ArrayList(timingDAO.getCookedTimes()); 
+        List<CookedTimeData> cookedTimes = cTimes.stream().filter(c -> !c.ignoreTimeProperty().getValue()).collect(Collectors.toList());
+        
+        // For each race, look for the 1st split. Then look for Zero chips at that split
+        Map<Race,List<CookedTimeData>> startTimesByRace = new HashMap();
+        BooleanProperty startsFound = new SimpleBooleanProperty(false);
+        RaceDAO.getInstance().listRaces().forEach(r -> {
+            Race race = r;        
+            List<CookedTimeData> startTimes = cookedTimes.stream().filter(p -> p.getRawChipID().equals("0") && p.getTimingLocationId().equals(race.getSplits().get(0).getTimingLocationID())).collect(Collectors.toList());
+            startTimesByRace.put(r, startTimes);
+            if (!startTimes.isEmpty()) startsFound.set(true);
+        });
+        
+        if (!startsFound.get()) {
+            // No start times, complain and bail
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("No Start Times...");
+            alert.setHeaderText("No Start Times Found");
+            alert.setContentText("No Start times (typically a \"0\" chip) were\nfound at any of the start timing locations!");
+
+            alert.showAndWait();
+            return;
+        }
+        
+        
+        ObservableList<WaveStarts> waveStarts = FXCollections.observableArrayList();
+        RaceDAO.getInstance().listWaves().forEach(w -> {
+            WaveStarts ws = new WaveStarts();
+            ws.setWave(w);
+        });
+
+        Dialog<Map<Wave,Duration>> dialog = new Dialog();
+        
+       
+        
+        dialog.setTitle("Lookup Start Times");
+        dialog.setHeaderText("Lookup Start Times");
+        
+        // Set the button types.
+        ButtonType okButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+        
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+        
+        
+        
+        // create a table of wavesStarts
+        TableView<WaveStarts> waveTable = new TableView();
+        
+        TableColumn<WaveStarts,String> waveColumn = new TableColumn("Race/Wave");
+        TableColumn<WaveStarts,String> oldTimeColumn = new TableColumn("Current");
+        TableColumn<WaveStarts,CookedTimeData> newTimeColumn = new TableColumn("New");
+    
+        ScrollPane scrollPane = new ScrollPane();
+        VBox mainVbox= new VBox();
+        HBox headerHBox = new HBox();
+        Label waveLabel = new Label("Race/Wave");
+        Label currentTimeLabel = new Label("Current");
+        Label newTimeLabel = new Label("New");
+        headerHBox.getChildren().addAll(waveLabel,currentTimeLabel,newTimeLabel);
+        // for each wave, wrap it in a HBox() and add 
+
+        
+        dialog.getDialogPane().setContent(scrollPane);
+        
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                return null;
+            }
+            return null;
+        });
+        
+        Optional<Map<Wave,Duration>> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            // Walk the map
+            Map<Wave,Duration> results = result.get();
+            results.keySet().forEach(k -> {
+                if (!results.get(k).isZero()) {
+                    k.setWaveStart(LocalTime.MIDNIGHT.plus(results.get(k)).format(DateTimeFormatter.ISO_LOCAL_TIME));
+                    RaceDAO.getInstance().updateWave(k);
+                }
+            });
+        }
     }
     
     private void updateFilterPredicate(){
@@ -1060,6 +1153,29 @@ public class FXMLTimingController {
             }
             return false; // Does not match.
         });
+    }
+
+    private static class WaveStarts {
+        public Wave w;
+        public StringProperty wName = new SimpleStringProperty();
+        public StringProperty wStart;
+        public ObjectProperty<Duration> newStartTime = new SimpleObjectProperty(Duration.ZERO);
+                
+        public WaveStarts() {
+        }
+        
+        public void setWave(Wave wave){
+            w=wave;
+            
+            wName.setValue(WaveStringConverter.getString(w));
+            w.waveNameProperty();
+            wStart = w.waveStartStringProperty();
+        }
+        
+        public void setNewDuration(Duration d){
+            newStartTime.set(d);
+        }
+        
     }
     
 }

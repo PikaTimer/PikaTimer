@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,7 +62,7 @@ public class TimingDAO {
         private  Map<String,List<TimeOverride>> overrideMap = new ConcurrentHashMap(); 
         
         Semaphore cookedTimeProcessorSemaphore = new Semaphore(1);
-        
+        private static final CountDownLatch locationsLoadedLatch = new CountDownLatch(1);
 
     public List<CookedTimeData> getCookedTimesByBib(String bib) {
         if (cookedTimeBibMap.containsKey(bib))
@@ -380,7 +381,7 @@ public class TimingDAO {
             refreshTimingLocationList();
         }
     
-    public void refreshTimingLocationList() { 
+    private void refreshTimingLocationList() { 
 
         List<TimingLocation> list = new ArrayList<>();
         
@@ -390,7 +391,7 @@ public class TimingDAO {
         System.out.println("Runing the refreshTimingLocationList Query");
         
         try {  
-            list=s.createQuery("from TimingLocation").list();
+            list=s.createQuery("from TimingLocation order by id").list();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } 
@@ -400,6 +401,7 @@ public class TimingDAO {
         if(!timingLocationList.isEmpty())
             timingLocationList.clear();
         timingLocationList.addAll(list);
+        locationsLoadedLatch.countDown();
     }     
     
     public ObservableList<TimingLocation> listTimingLocations() { 
@@ -410,8 +412,14 @@ public class TimingDAO {
     }     
     
     public TimingLocation getTimingLocationByID(Integer id) {
-        //System.out.println("Looking for a timingLocation with id " + id);
-        // This is ugly. Setup a map for faster lookups
+        try {
+            //System.out.println("Looking for a timingLocation with id " + id);
+            // This is ugly. Setup a map for faster lookups
+            locationsLoadedLatch.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            
         Optional<TimingLocation> result = timingLocationList.stream()
                     .filter(t -> Objects.equals(t.getID(), id))
                     .findFirst();

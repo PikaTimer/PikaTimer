@@ -22,6 +22,7 @@ import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,20 +145,8 @@ public class TimingLocation {
         }
         return raceProperty; 
     }
-//    @OneToMany(mappedBy="timingLocation",fetch = FetchType.LAZY)
-//    public List<Split> getSplits() {
-//        //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
-//        return associatedSplits.sorted(); 
-//    }
-//    public void setSplits(List<Split> splits) {
-//        System.out.println("TimingLocation.setSplits(list) called for " + locationName + " with " + splits.size() + " splits"); 
-//        associatedSplits.setAll(splits);
-//        System.out.println(locationName + " now has " + associatedSplits.size() + " splits");
-//    }
-//    public ObservableList<Split> splitsProperty() {
-//        return associatedSplits; 
-//    }
-    
+
+    // We keep two lists, one observable for JavaFX, one regular for Hibernate
     @OneToMany(mappedBy="timingLocation",fetch = FetchType.LAZY)
     @Cascade(CascadeType.DELETE)
     public List<TimingLocationInput> getInputs() {
@@ -169,7 +158,7 @@ public class TimingLocation {
         timingInputList = inputs;
         if (inputs != null) {
             timingInputs.setAll(inputs);
-
+            timingInputs.sort((TimingLocationInput u1, TimingLocationInput u2) -> u1.getID().compareTo(u2.getID()));
         }
         //System.out.println(locationName + " now has " + timingInputs.size() + " inputs");   
     }
@@ -178,14 +167,17 @@ public class TimingLocation {
     }
     public void addInput(TimingLocationInput t){
         System.out.println("TimingLocation.addInput called");
-        timingInputs.add(t);
-        timingInputList = timingInputs.sorted((TimingLocationInput u1, TimingLocationInput u2) -> u1.getID().compareTo(u2.getID()));
+        timingInputs.add(t); 
+        timingInputs.sort((TimingLocationInput u1, TimingLocationInput u2) -> u1.getID().compareTo(u2.getID()));
+        timingInputList = new ArrayList(timingInputs); 
         System.out.println(locationName + " now has " + timingInputs.size() + " inputs");
         
     }
     public void removeInput(TimingLocationInput t){
         timingInputs.remove(t); 
         timingInputList.remove(t);
+        System.out.println(locationName + " now has " + timingInputList.size() + " inputs");
+
     }
     
     public TimingLocationInput getInputByID(Integer id){
