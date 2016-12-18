@@ -24,6 +24,7 @@ import com.pikatimer.race.Wave;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.DurationParser;
+import com.pikatimer.util.DurationStringConverter;
 import com.pikatimer.util.WaveStringConverter;
 import java.io.IOException;
 import java.time.Duration;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -42,8 +44,10 @@ import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -76,6 +80,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import static javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ChoiceBoxTableCell;
@@ -87,6 +92,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -1013,14 +1019,27 @@ public class FXMLTimingController {
         List<CookedTimeData> cTimes = new ArrayList(timingDAO.getCookedTimes()); 
         List<CookedTimeData> cookedTimes = cTimes.stream().filter(c -> !c.ignoreTimeProperty().getValue()).collect(Collectors.toList());
         
-        // For each race, look for the 1st split. Then look for Zero chips at that split
-        Map<Race,List<CookedTimeData>> startTimesByRace = new HashMap();
+        // For each timing location look for Zero chips at that split
+        Map<Integer,ObservableList<Duration>> startTimesByLocation = new HashMap();
+        timingDAO.listTimingLocations().forEach(tl -> {
+            Integer tlID = tl.getID();
+            List<Duration> startTimes = cookedTimes.stream().filter(p -> p.getRawChipID().equals("0") && p.getTimingLocationId().equals(tlID)).map(c -> c.getTimestamp()).collect(Collectors.toList());
+            startTimes.sort((p1, p2) -> p1.compareTo(p2));
+            if (!startTimes.isEmpty()) startTimesByLocation.put(tlID, FXCollections.observableArrayList(startTimes));
+        });
+        startTimesByLocation.keySet().forEach(k -> {
+            startTimesByLocation.get(k).forEach(d -> {
+                System.out.println("Found Start: TL#" + k + " -> " + DurationFormatter.durationToString(d));
+            });
+        });
+        // for each race/wave, see if we have any start times
+        Map<Integer,List<Wave>> wavesByLocation = new HashMap();
         BooleanProperty startsFound = new SimpleBooleanProperty(false);
-        RaceDAO.getInstance().listRaces().forEach(r -> {
-            Race race = r;        
-            List<CookedTimeData> startTimes = cookedTimes.stream().filter(p -> p.getRawChipID().equals("0") && p.getTimingLocationId().equals(race.getSplits().get(0).getTimingLocationID())).collect(Collectors.toList());
-            startTimesByRace.put(r, startTimes);
-            if (!startTimes.isEmpty()) startsFound.set(true);
+        RaceDAO.getInstance().listRaces().forEach(race -> {
+            Integer tlID = race.getSplits().get(0).getTimingLocationID();
+            if (!wavesByLocation.containsKey(tlID)) wavesByLocation.put(tlID, race.getWaves());
+            else wavesByLocation.get(tlID).addAll(race.getWaves());
+            if (!startTimesByLocation.isEmpty()) startsFound.set(true);
         });
         
         if (!startsFound.get()) {
@@ -1035,41 +1054,153 @@ public class FXMLTimingController {
         }
         
         
-        ObservableList<WaveStarts> waveStarts = FXCollections.observableArrayList();
-        RaceDAO.getInstance().listWaves().forEach(w -> {
-            WaveStarts ws = new WaveStarts();
-            ws.setWave(w);
-        });
+        
 
-        Dialog<Map<Wave,Duration>> dialog = new Dialog();
-        
-       
-        
+        // Create the base dialog
+        Dialog<List<WaveStartTime>> dialog = new Dialog();
+        dialog.resizableProperty().set(true);
         dialog.setTitle("Lookup Start Times");
         dialog.setHeaderText("Lookup Start Times");
-        
-        // Set the button types.
         ButtonType okButtonType = new ButtonType("Save", ButtonData.OK_DONE);
-        
         dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
         
-        
-        
-        // create a table of wavesStarts
-        TableView<WaveStarts> waveTable = new TableView();
-        
-        TableColumn<WaveStarts,String> waveColumn = new TableColumn("Race/Wave");
-        TableColumn<WaveStarts,String> oldTimeColumn = new TableColumn("Current");
-        TableColumn<WaveStarts,CookedTimeData> newTimeColumn = new TableColumn("New");
-    
+        // Create a scrollPane to put the tables and such in
         ScrollPane scrollPane = new ScrollPane();
-        VBox mainVbox= new VBox();
-        HBox headerHBox = new HBox();
-        Label waveLabel = new Label("Race/Wave");
-        Label currentTimeLabel = new Label("Current");
-        Label newTimeLabel = new Label("New");
-        headerHBox.getChildren().addAll(waveLabel,currentTimeLabel,newTimeLabel);
-        // for each wave, wrap it in a HBox() and add 
+        VBox scrollVBox = new VBox();
+        scrollVBox.fillWidthProperty().set(true);
+        scrollPane.setContent(scrollVBox);
+        scrollPane.fitToWidthProperty().set(true);
+        // For each start location, create a table and a list of possible start times
+        
+        List<WaveStartTime> waveStartMasterList = new ArrayList();
+        
+        wavesByLocation.keySet().forEach(tlID -> {
+                VBox locationVBox = new VBox();
+                locationVBox.fillWidthProperty().set(true);
+                scrollVBox.getChildren().add(locationVBox);
+                if (wavesByLocation.keySet().size()>1) {
+                    Label locLabel = new Label(timingDAO.getTimingLocationByID(tlID).getLocationName() + " Timing Location");
+                    locLabel.setFont(new Font(16));
+                    locationVBox.getChildren().add(locLabel);
+                }
+                if(!startTimesByLocation.containsKey(tlID)) { // no start times
+                    Label noStarts = new Label("No start times found at this location");
+                    locationVBox.getChildren().add(noStarts);
+                } else {
+                    TableView<WaveStartTime> waveTable = new TableView();
+                    waveTable.setFixedCellSize(30);
+                    int size = wavesByLocation.get(tlID).size();
+                    if (size >= 5) {
+                        waveTable.prefHeightProperty().setValue(waveTable.getFixedCellSize()*6 + 2);
+                        waveTable.minHeightProperty().setValue(waveTable.getFixedCellSize()*6 + 2);
+                        waveTable.maxHeightProperty().setValue(waveTable.getFixedCellSize()*6 + 2);
+                    } else {
+                        waveTable.prefHeightProperty().setValue(2+(size + 1 )* waveTable.getFixedCellSize());
+                        waveTable.minHeightProperty().setValue(2+(size + 1 )* waveTable.getFixedCellSize());
+                        waveTable.maxHeightProperty().setValue(2+(size + 1 )* waveTable.getFixedCellSize());
+                    }
+                    
+                    waveTable.maxWidthProperty().setValue(Double.MAX_VALUE);
+                    waveTable.setEditable(true);
+                    waveTable.columnResizePolicyProperty().setValue(CONSTRAINED_RESIZE_POLICY);
+                    
+                    TableColumn<WaveStartTime,String> waveColumn = new TableColumn("Race/Wave");
+                    waveColumn.setCellValueFactory(c -> c.getValue().wName);
+                    waveColumn.setEditable(false);
+                    
+                    TableColumn<WaveStartTime,String> oldTimeColumn = new TableColumn("Current");
+                    oldTimeColumn.setPrefWidth(110);
+                    oldTimeColumn.setMinWidth(oldTimeColumn.getPrefWidth());
+                    oldTimeColumn.setMaxWidth(oldTimeColumn.getPrefWidth());
+                    oldTimeColumn.setCellValueFactory(c -> c.getValue().wStart);
+                    oldTimeColumn.setEditable(false);
+                    
+                    TableColumn<WaveStartTime,Duration> newTimeColumn = new TableColumn("New");
+                    newTimeColumn.setPrefWidth(110);
+                    newTimeColumn.setMinWidth(newTimeColumn.getPrefWidth());
+                    newTimeColumn.setMaxWidth(newTimeColumn.getPrefWidth());
+                    newTimeColumn.setCellValueFactory(c -> c.getValue().newStartTime);
+                    newTimeColumn.setCellFactory(ComboBoxTableCell.forTableColumn(new DurationStringConverter(), startTimesByLocation.get(tlID)));
+                    newTimeColumn.setOnEditCommit((TableColumn.CellEditEvent<WaveStartTime, Duration> t) -> {
+                        WaveStartTime s = t.getTableView().getItems().get(t.getTablePosition().getRow());
+                        s.setNewDuration(t.getNewValue());
+                    });
+
+                    TableColumn<WaveStartTime,Boolean> updateColumn = new TableColumn("Update");
+                    updateColumn.setCellValueFactory(c -> c.getValue().update);
+                    updateColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+                    updateColumn.setEditable(true);
+                    waveTable.getColumns().addAll(waveColumn,oldTimeColumn,newTimeColumn,updateColumn);
+
+                    // create a list of waves for this location
+                    ObservableList<WaveStartTime> waveStarts = FXCollections.observableArrayList();
+                    wavesByLocation.get(tlID).forEach(w -> {
+                        waveStarts.add(new WaveStartTime(w));
+                    });
+                    waveStartMasterList.addAll(waveStarts);
+                    
+                    // match up the waves with the best possible start time
+                    // we start looking 1 minute before the scheduled start and go from there
+                    // and match to the closes to the scheduled start 
+                    waveStarts.sort((w1, w2) -> w1.orgStartTime.compareTo(w2.orgStartTime));
+                    
+                    int maxWaveIndex = waveStarts.size();
+                    List<Duration> startTimes = startTimesByLocation.get(tlID); // already sorted
+                    int startIndex = 0;
+                    int maxStartIndex = startTimes.size();
+                    
+                    // Loop through the waves
+                    for (int waveIndex = 0; waveIndex < maxWaveIndex; waveIndex++){
+                        WaveStartTime w = waveStarts.get(waveIndex);
+                        Duration d = w.orgStartTime;
+                        Long millis = null; 
+                        
+                        System.out.println("Looking for a start trigger for " + w.wName.get() + " at " + DurationFormatter.durationToString(w.orgStartTime,3));
+                        // loop through the unprocessed start times
+                        for (int i = startIndex; i < maxStartIndex; i++) {
+                            
+                            // If it is exactly equal to the existing, stop
+                            if (startTimes.get(i).equals(w.orgStartTime)) {
+                                w.newStartTime.set(startTimes.get(i));
+                                w.update.set(false); // unset the update flag
+                                startIndex = i+1;
+                                System.out.println("  Exact Match at " + DurationFormatter.durationToString(w.newStartTime.get(),3));
+                                break;
+                            }
+                            // otherwise, if we have not assigned a time yet 
+                            // or the new time is closer than the old one... 
+                            if (millis == null || startTimes.get(i).minus(d).abs().toMillis() < millis) { 
+                                millis = startTimes.get(i).minus(d).abs().toMillis();
+                                System.out.println("  Possible Match of " + DurationFormatter.durationToString(startTimes.get(i),3) + " within " + millis + " millis away");
+                                // if the new time is closer to the next wave bail
+                                if (waveIndex+1 < maxWaveIndex && 
+                                        millis > waveStarts.get(waveIndex+1).orgStartTime.minus(startTimes.get(i)).abs().toMillis()) {
+                                    System.out.println("  But it is closer to the next time of " + DurationFormatter.durationToString(waveStarts.get(waveIndex+1).orgStartTime,3));
+                                    System.out.println("  which is only " + waveStarts.get(waveIndex+1).orgStartTime.minus(startTimes.get(i)).abs().toMillis() + " millis away");
+                                    break;
+                                } 
+                                w.newStartTime.set(startTimes.get(i));
+                                w.update.set(true);
+                                startIndex = i+1;
+                            } else {
+                                System.out.println("  Possible Match of " + DurationFormatter.durationToString(startTimes.get(i),3) + " is " + startTimes.get(i).minus(d).abs().toMillis() + " millis away");
+                                break;
+                            }
+                        }
+                    }
+                    
+
+
+                    waveTable.setItems(waveStarts);
+                    locationVBox.getChildren().add(waveTable);
+                }
+            
+        });
+        
+
+    
+        
+
 
         
         dialog.getDialogPane().setContent(scrollPane);
@@ -1077,19 +1208,19 @@ public class FXMLTimingController {
         
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == okButtonType) {
-                return null;
+                return waveStartMasterList;
             }
             return null;
         });
         
-        Optional<Map<Wave,Duration>> result = dialog.showAndWait();
+        Optional<List<WaveStartTime>> result = dialog.showAndWait();
         if (result.isPresent()) {
             // Walk the map
-            Map<Wave,Duration> results = result.get();
-            results.keySet().forEach(k -> {
-                if (!results.get(k).isZero()) {
-                    k.setWaveStart(LocalTime.MIDNIGHT.plus(results.get(k)).format(DateTimeFormatter.ISO_LOCAL_TIME));
-                    RaceDAO.getInstance().updateWave(k);
+            List<WaveStartTime> results = result.get();
+            results.forEach(k -> {
+                if (k.update.get()) {
+                    k.w.setWaveStart((LocalTime.MIDNIGHT.plus(k.newStartTime.get())).format(DateTimeFormatter.ISO_LOCAL_TIME));
+                    RaceDAO.getInstance().updateWave(k.w);
                 }
             });
         }
@@ -1155,25 +1286,32 @@ public class FXMLTimingController {
         });
     }
 
-    private static class WaveStarts {
+    private static class WaveStartTime {
         public Wave w;
         public StringProperty wName = new SimpleStringProperty();
-        public StringProperty wStart;
+        public StringProperty wStart = new SimpleStringProperty();
         public ObjectProperty<Duration> newStartTime = new SimpleObjectProperty(Duration.ZERO);
+        public BooleanProperty update = new SimpleBooleanProperty(false);
+        public Duration orgStartTime;
                 
-        public WaveStarts() {
+        public WaveStartTime() {
+        }
+        public WaveStartTime(Wave w){
+            this.setWave(w);
         }
         
         public void setWave(Wave wave){
             w=wave;
-            
             wName.setValue(WaveStringConverter.getString(w));
-            w.waveNameProperty();
-            wStart = w.waveStartStringProperty();
+            wStart.bind(w.waveStartStringProperty());
+            newStartTime.setValue(Duration.between(LocalTime.MIDNIGHT, w.waveStartProperty()));
+            orgStartTime=newStartTime.get();
         }
         
         public void setNewDuration(Duration d){
             newStartTime.set(d);
+            if (orgStartTime.equals(d)) update.set(false);
+            else update.set(true);
         }
         
     }
