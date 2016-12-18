@@ -279,6 +279,7 @@ public class FXMLTimingController {
             Participant p = participantDAO.getParticipantByBib(bib);
             if (p == null) { 
                 if (bib.startsWith("Unmapped")) return new SimpleStringProperty("Unknown Chip");
+                if (cellData.getValue().getRawChipID().equals("0")) return new SimpleStringProperty("START TRIGGER");
                 return new SimpleStringProperty("Unregistered bib: " + bib);
             } else {
                 return p.fullNameProperty();
@@ -1266,6 +1267,7 @@ public class FXMLTimingController {
                 Participant p = participantDAO.getParticipantByBib(cookedRead.getBib());
                 if (p == null) { 
                     if (cookedRead.getBib().startsWith("Unmapped")) name="Unknown Chip";
+                    else if (cookedRead.getRawChipID().equals("0")) name="START TRIGGER";
                     else name="Unregistered bib: " + cookedRead.getBib();
                 } else {
                     name =  StringUtils.stripAccents(p.fullNameProperty().get());
