@@ -46,7 +46,19 @@ public class DurationFormatter {
         BigDecimal S = new BigDecimal(d.getNano()).divide(new BigDecimal(1000000000)).setScale(p, rm);
         //System.out.println("H:" + H.toString() + " M:" + M.toString() + " s:" + s.toString() + " S:" + S.toPlainString());
         
-        if (p == 0 && S.compareTo(new BigDecimal(1)) == 0) s+= 1; 
+        if (p == 0 && S.compareTo(new BigDecimal(1)) == 0) {
+            s+= 1;
+            if (s==60){
+                s=0L;
+                M++;
+                if (M==60) {
+                    M = 0L; 
+                    H++ ; 
+                }
+            }
+            
+        } 
+        
 
         String r = "";
         if (H > 0 ) r = H.toString() + ":";
