@@ -16,15 +16,21 @@
  */
 package com.pikatimer.timing.reader;
 
+import com.pikatimer.event.Event;
 import com.pikatimer.timing.RawTimeData;
 import com.pikatimer.timing.TimingListener;
 import com.pikatimer.timing.TimingReader;
+import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.DurationParser;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -150,7 +156,7 @@ public class PikaRFIDFileReader implements TimingReader{
             //displayVBox.setPadding(new Insets(5, 5, 5, 5));
             
             
-            inputButton = new Button("File...");
+            inputButton = new Button("Select File...");
             inputTextField = new TextField();
             statusLabel = new Label("");
             
@@ -223,59 +229,93 @@ public class PikaRFIDFileReader implements TimingReader{
         // 1 -- chip
         // 2 -- bib
         // 3 -- time (as a string)
+        // 4 & 5 -- the Reader {1 or 2} and Port (again)
 
         // Step 1: Make sure we have a time in the 4th field
         // Find out if we have a date + time or just a time
-        String reader = tokens[0];
+        String port = tokens[0];
         String chip = tokens[1];
-        String dateTime = tokens[3].replaceAll("\"", "");
+        //String bib = tokens[2]; // We don't care what the bib is
+        String dateAndTime = tokens[3].replaceAll("\"", "");
+        
+        String date = null;
+        String time = null;
+        String[] dateTime = dateAndTime.split(" ", 2);
+        if (dateTime.length > 1) {
+            date = dateTime[0];
+            time = dateTime[1];
+        } else time = dateTime[0];
 
         //System.out.println("Chip: " + chip);
         //System.out.println("dateTime: " + dateTime);
         
-        if (reader.equals("0") && ! chip.equals("0")) { // invalid combo
+        if (port.equals("0") && ! chip.equals("0")) { // invalid combo
             System.out.println("Non Start time: " + s);
             return;
-        } else if (!reader.matches("[1234]") && !chip.equals("0")){
+        } else if (!port.matches("[1234]") && !chip.equals("0")){
             System.out.println("Invalid Port: " + s);
             return;
         }
-
-        if(dateTime.matches("^\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}$")) {
-            if(dateTime.matches("^\\d{1}:\\d{2}:\\d{2}\\.\\d{3}$")) {
-                //ISO_LOCAL_TIME wants a two digit hour....
-                dateTime = "0" + dateTime;
-            }
+        
+        
+        Duration timestamp = Duration.ZERO;
+        if (date != null) {
+            // parse the date
             try { 
+                LocalDate d = LocalDate.parse(date,DateTimeFormatter.ISO_LOCAL_DATE); 
                 
-                LocalTime timestamp = LocalTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_TIME );
-                
-                RawTimeData rawTime = new RawTimeData();
-                              
-                rawTime.setChip(chip);
-                rawTime.setTimestampLong(timestamp.toNanoOfDay());
-
-                //data.setChip(chip);
-                //data.setTime(fullTime); 
-                
-                //System.out.println("Added raw time: " + chip + " " + timestamp.toString());
-                
+                // set the timestamp to the duration between the event start
+                // and this time
+                timestamp = Duration.ofDays(Event.getInstance().getLocalEventDate().until(d, ChronoUnit.DAYS));
+                // if it is before the event date, just return
+                if (timestamp.isNegative()) {
+                    String status = "Date of " + date + " is in the past, ignoring";
+                    System.out.println(status);
+                    Platform.runLater(() -> {
+                        statusLabel.textProperty().setValue(status);
+                    });
+                    return;
+                } 
+            } catch (Exception e) {
+                String status = "Unable to parse the date in \"" + date +"\" : " + e.getMessage();
+                System.out.println(status);
                 Platform.runLater(() -> {
-                    statusLabel.textProperty().setValue("Added raw time: " + chip + " " + timestamp.toString());
+                    statusLabel.textProperty().setValue(status);
                 });
-                
+            }
+        }
+
+        // First look for timestams without a date attached to them
+        if(time.matches("^\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}$")) {
+            if(time.matches("^\\d{1}:\\d{2}:\\d{2}\\.\\d{3}$")) {
+                //ISO_LOCAL_TIME wants a two digit hour....
+                time = "0" + time;
+            }
+            if (DurationParser.parsable(time)){ 
+                timestamp = timestamp.plus(DurationParser.parse(time));
+                //LocalTime timestamp = LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME );
+                RawTimeData rawTime = new RawTimeData();
+                rawTime.setChip(chip);
+                rawTime.setTimestampLong(timestamp.toNanos());
+                String status = "Added raw time: " + chip + " at " + DurationFormatter.durationToString(timestamp, 3);
+                Platform.runLater(() -> {
+                    statusLabel.textProperty().setValue(status);
+                });
                 timingListener.processRead(rawTime); // process it
-               
-            } catch(DateTimeParseException e) {
-                System.out.println("Unable to parse the time in " + dateTime);
+            } else {
+                String status = "Unable to parse the time in " + time;
+                System.out.println(status);
+                Platform.runLater(() -> {
+                    statusLabel.textProperty().setValue(status);
+                });
             }
         } else {
-            System.out.println("Unable to parse the line: " + s);
+            String status="Unable to parse the time: " + s;
+            System.out.println(status);
+            Platform.runLater(() -> {
+                statusLabel.textProperty().setValue(status);
+            });
             
-            /* Odds are it is a Date + Time. In which case we need to pull the date of the event and then 
-             * get the duration between the start of the event date and the time read. 
-             * LocalDate eventDate = timingListener.getEventDate();
-             */
         }
 
     }
