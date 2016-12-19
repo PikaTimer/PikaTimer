@@ -406,6 +406,8 @@ public class TimingLocationInput implements TimingListener{
             });
         }
     }
+    
+    @Override
     public void clearReads() {
         if(rawTimeSet != null && !rawTimeSet.isEmpty()) {
             clearLocalReads();

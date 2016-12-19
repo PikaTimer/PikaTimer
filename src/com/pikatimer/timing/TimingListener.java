@@ -32,4 +32,6 @@ public interface TimingListener {
     
     public LocalDate getEventDate();
     
+    public void clearReads();
+    
 }
