@@ -16,74 +16,24 @@
  */
 package com.pikatimer.timing.reader;
 
-import com.pikatimer.timing.TimingListener;
-import com.pikatimer.timing.TimingLocationInput;
-import com.pikatimer.timing.TimingReader;
-import java.io.File;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.scene.layout.Pane;
 
 
-/**
- *  Notes: Checkbox for time of day vs time since start. 
- *  If time since start, prompt for start time that is
- * independent of the actual race time. 
- * 
- *  
- */
 /**
  *
  * @author jcgarner
  */
-public class PikaPCTimerFileReader implements TimingReader {
-    private TimingLocationInput timingLocationInput;
-    private File sourceFile; 
-    private SimpleStringProperty fileName; 
-    private Pane displayPane; 
-    private final BooleanProperty readingStatus = new SimpleBooleanProperty();
-
-    public PikaPCTimerFileReader(){
+public class PikaPCTimerFileReader extends NonTailingReader{
+    @Override
+    public void process(String s) {
         
-    }
+        
+        
 
-    @Override
-    public void setTimingListener(TimingListener t) {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
-    @Override
-    public void showControls(Pane p) {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void readOnce() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void startReading() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void stopReading() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public BooleanProperty getReadingStatus() {
-        return readingStatus;
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
+    
+   @Override
     public Boolean chipIsBib() {
         return Boolean.TRUE; 
     }
-    
-   
     
 }

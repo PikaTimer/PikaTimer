@@ -18,7 +18,6 @@ package com.pikatimer.timing.reader;
 
 import com.pikatimer.event.Event;
 import com.pikatimer.timing.RawTimeData;
-import com.pikatimer.timing.TimingReader;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.DurationParser;
 import java.time.Duration;
@@ -31,7 +30,7 @@ import javafx.application.Platform;
  *
  * @author jcgarner
  */
-public class PikaRFIDFileReader extends TailingReader implements TimingReader{
+public class PikaRFIDFileReader extends TailingReader {
     
     
     
@@ -137,6 +136,9 @@ public class PikaRFIDFileReader extends TailingReader implements TimingReader{
 
     }
         
-    
+    @Override
+    public Boolean chipIsBib() {
+        return Boolean.FALSE; 
+    }
     
 }
