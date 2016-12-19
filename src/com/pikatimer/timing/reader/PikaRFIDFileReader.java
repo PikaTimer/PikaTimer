@@ -27,9 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +50,7 @@ import javafx.stage.FileChooser;
 
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
+import org.controlsfx.control.ToggleSwitch;
 
 /**
  *
@@ -73,6 +72,7 @@ public class PikaRFIDFileReader implements TimingReader{
     private final BooleanProperty readingStatus;
     ProgressIndicator watchProgressIndicator;
     ToggleButton watchToggleButton;
+    ToggleSwitch autoImportToggleSwitch;
     
     public PikaRFIDFileReader(){
         fileName = new SimpleStringProperty();
@@ -99,6 +99,9 @@ public class PikaRFIDFileReader implements TimingReader{
         
         sourceFile = fileChooser.showOpenDialog(inputButton.getScene().getWindow());
         if (sourceFile != null) {
+            // if we are auto-importing, stop that
+            readingStatus.set(false);
+            
             fileName.setValue(sourceFile.getAbsolutePath());
             // save the filename 
             timingListener.setAttribute("RFIDFileReader:filename", sourceFile.getAbsolutePath());
@@ -106,11 +109,10 @@ public class PikaRFIDFileReader implements TimingReader{
             // set the text field to the filename
             inputTextField.textProperty().setValue(fileName.getValueSafe());
             // read the file
-            readOnce();
-            
-            
+            if (!sourceFile.canRead()){
+                statusLabel.setText("Unable to open file: " + fileName.getValueSafe());
+            } else readOnce();
         }                
-        
     }
 
     
@@ -118,17 +120,17 @@ public class PikaRFIDFileReader implements TimingReader{
     @Override
     public void startReading() {
         // make sure the file exists
-        
-        // If a tailer already exists, stop it
-        if (! readingStatus.getValue() ) {
+        if (!sourceFile.canRead()){
+                statusLabel.setText("Unable to open file: " + fileName.getValueSafe());
+                Platform.runLater(() ->{readingStatus.set(false);});
+        } else  if (! readingStatus.getValue() ) {
+            statusLabel.setText("Reading file: " + fileName.getValueSafe());
+
             MyHandler listener = new MyHandler();
             tailer = Tailer.create(sourceFile, listener, 500, Boolean.FALSE, Boolean.TRUE);
             thread = new Thread(tailer);
             thread.setDaemon(true); // optional
             thread.start();
-            
-            
-
             readingStatus.setValue(Boolean.TRUE);
         }
     }
@@ -151,17 +153,39 @@ public class PikaRFIDFileReader implements TimingReader{
             displayVBox = new VBox();
             watchProgressIndicator = new ProgressIndicator();
             watchToggleButton = new ToggleButton("Watch File...");
-            
+            autoImportToggleSwitch = new ToggleSwitch("Auto-Import File");
+            autoImportToggleSwitch.selectedProperty().set(false);
+            statusLabel = new Label("");
+            inputButton = new Button("Open...");
+            inputTextField = new TextField();
             displayVBox.setSpacing(5); 
             //displayVBox.setPadding(new Insets(5, 5, 5, 5));
             
             
-            inputButton = new Button("Select File...");
-            inputTextField = new TextField();
-            statusLabel = new Label("");
+            inputTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+                if (!newPropertyValue && !fileName.getValueSafe().equals(inputTextField.textProperty().getValueSafe())) {
+                    // if we are auto-importing, stop that
+                    readingStatus.set(false);
+                    
+                    sourceFile = new File(inputTextField.textProperty().getValueSafe());
+                    fileName.setValue(sourceFile.getAbsolutePath());
+
+                    
+                    // save the filename 
+                    timingListener.setAttribute("RFIDFileReader:filename", sourceFile.getAbsolutePath());
+
+                    // read the file
+                    if (!sourceFile.canRead()){
+                        statusLabel.setText("Unable to open file: " + fileName.getValueSafe());
+                    } else readOnce();
+                        
+                } else {
+                    System.out.println("No change in file name");
+                }
+            });
             
             displayHBox.setSpacing(5);
-            displayHBox.getChildren().addAll(inputTextField, inputButton, watchToggleButton, watchProgressIndicator); 
+            displayHBox.getChildren().addAll(inputTextField, inputButton, autoImportToggleSwitch, watchProgressIndicator); 
             displayVBox.getChildren().addAll(displayHBox, statusLabel); 
             
             // Set the action for the inputButton
@@ -170,23 +194,21 @@ public class PikaRFIDFileReader implements TimingReader{
                 selectInput();
             });
             
-            watchProgressIndicator.visibleProperty().bind(watchToggleButton.selectedProperty());
+            watchProgressIndicator.visibleProperty().bind(autoImportToggleSwitch.selectedProperty());
             watchProgressIndicator.setProgress(-1.0);
             // get the current status of the reader
             //watchProgressIndicator.setPrefHeight(30.0);
             watchProgressIndicator.setMaxHeight(30.0);
-            watchToggleButton.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
-                
-                
+            autoImportToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
                 if(newValue) {
-                    System.out.println("PikaRFIDFileReader: watchToggleButton event: calling startReading()");
+                    System.out.println("PikaRFIDFileReader: autoImportToggleSwitch event: calling startReading()");
                     startReading();
                 } else {
-                    System.out.println("PikaRFIDFileReader: watchToggleButton event: calling stopReading()");
+                    System.out.println("PikaRFIDFileReader: autoImportToggleSwitch event: calling stopReading()");
                     stopReading();
                 }
             });
-            watchToggleButton.selectedProperty().bindBidirectional(readingStatus);
+            autoImportToggleSwitch.selectedProperty().bindBidirectional(readingStatus);
             
             inputTextField.textProperty().setValue(fileName.getValueSafe());
             // set the action for the inputTextField
