@@ -94,6 +94,7 @@ import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -1060,6 +1061,7 @@ public class FXMLTimingController {
         // Create the base dialog
         Dialog<List<WaveStartTime>> dialog = new Dialog();
         dialog.resizableProperty().set(true);
+        dialog.getDialogPane().setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight()-150);
         dialog.setTitle("Lookup Start Times");
         dialog.setHeaderText("Lookup Start Times");
         ButtonType okButtonType = new ButtonType("Save", ButtonData.OK_DONE);
@@ -1067,7 +1069,9 @@ public class FXMLTimingController {
         
         // Create a scrollPane to put the tables and such in
         ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setStyle("-fx-font-size: 16px;"); // Make the scroll bar a bit larger
         VBox scrollVBox = new VBox();
+        scrollVBox.setStyle("-fx-font-size: 12px;"); // Make everything normal again
         scrollVBox.fillWidthProperty().set(true);
         scrollPane.setContent(scrollVBox);
         scrollPane.fitToWidthProperty().set(true);
@@ -1091,14 +1095,14 @@ public class FXMLTimingController {
                     TableView<WaveStartTime> waveTable = new TableView();
                     waveTable.setFixedCellSize(30);
                     int size = wavesByLocation.get(tlID).size();
-                    if (size >= 5) {
-                        waveTable.prefHeightProperty().setValue(waveTable.getFixedCellSize()*6 + 2);
-                        waveTable.minHeightProperty().setValue(waveTable.getFixedCellSize()*6 + 2);
-                        waveTable.maxHeightProperty().setValue(waveTable.getFixedCellSize()*6 + 2);
+                    if (size >= 6) {
+                        waveTable.prefHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
+                        waveTable.minHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
+                        waveTable.maxHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
                     } else {
-                        waveTable.prefHeightProperty().setValue(2+(size + 1 )* waveTable.getFixedCellSize());
-                        waveTable.minHeightProperty().setValue(2+(size + 1 )* waveTable.getFixedCellSize());
-                        waveTable.maxHeightProperty().setValue(2+(size + 1 )* waveTable.getFixedCellSize());
+                        waveTable.prefHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
+                        waveTable.minHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
+                        waveTable.maxHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
                     }
                     
                     waveTable.maxWidthProperty().setValue(Double.MAX_VALUE);
@@ -1214,6 +1218,7 @@ public class FXMLTimingController {
             return null;
         });
         
+        Platform.runLater(() -> { dialog.setY((Screen.getPrimary().getVisualBounds().getHeight()-dialog.getHeight())/2); });
         Optional<List<WaveStartTime>> result = dialog.showAndWait();
         if (result.isPresent()) {
             // Walk the map
