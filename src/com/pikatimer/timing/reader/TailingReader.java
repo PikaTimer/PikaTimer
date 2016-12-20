@@ -21,8 +21,10 @@ import com.pikatimer.timing.TimingReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -62,6 +64,8 @@ public abstract class TailingReader implements TimingReader{
     protected final BooleanProperty readingStatus;
     ProgressIndicator watchProgressIndicator;
     ToggleSwitch autoImportToggleSwitch;
+    private Semaphore reading = new Semaphore(1);
+;
     
     public TailingReader(){
         fileName = new SimpleStringProperty();
@@ -108,19 +112,24 @@ public abstract class TailingReader implements TimingReader{
 
     @Override
     public void startReading() {
-        // make sure the file exists
-        if (sourceFile == null || !sourceFile.exists() || !sourceFile.canRead() || !sourceFile.isFile()){
+        try {
+            // make sure the file exists
+            reading.acquire();
+            if (sourceFile == null || !sourceFile.exists() || !sourceFile.canRead() || !sourceFile.isFile()){
                 statusLabel.setText("Unable to open file: " + fileName.getValueSafe());
                 Platform.runLater(() ->{readingStatus.set(false);});
-        } else  if (! readingStatus.getValue() ) {
-            statusLabel.setText("Reading file: " + fileName.getValueSafe());
-
-            MyHandler listener = new MyHandler();
-            tailer = Tailer.create(sourceFile, listener, 500, Boolean.FALSE, Boolean.TRUE);
-            thread = new Thread(tailer);
-            thread.setDaemon(true); // optional
-            thread.start();
-            readingStatus.setValue(Boolean.TRUE);
+            } else  if (! readingStatus.getValue() ) {
+                statusLabel.setText("Reading file: " + fileName.getValueSafe());
+                
+                MyHandler listener = new MyHandler();
+                tailer = Tailer.create(sourceFile, listener, 500, Boolean.FALSE, Boolean.TRUE);
+                thread = new Thread(tailer);
+                thread.setDaemon(true); // optional
+                thread.start();
+                readingStatus.setValue(Boolean.TRUE);
+            }
+        } catch (InterruptedException ex) {
+            Logger.getLogger(TailingReader.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -128,6 +137,7 @@ public abstract class TailingReader implements TimingReader{
     public void stopReading() {
         if (tailer != null) {
             tailer.stop();
+            reading.release();
         }
         readingStatus.setValue(Boolean.FALSE);
     }
@@ -153,7 +163,7 @@ public abstract class TailingReader implements TimingReader{
             inputTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
                 if (!newPropertyValue && !fileName.getValueSafe().equals(inputTextField.textProperty().getValueSafe())) {
                     // if we are auto-importing, stop that
-                    readingStatus.set(false);
+                    stopReading();
                     
                     sourceFile = new File(inputTextField.textProperty().getValueSafe());
                     fileName.setValue(sourceFile.getAbsolutePath());
@@ -236,31 +246,38 @@ public abstract class TailingReader implements TimingReader{
     public void readOnce() {
         // get the event date, just in case we need it
         System.out.println("TailingReader.readOnce called.");
+        stopReading();
+        
         if (sourceFile == null || !sourceFile.exists() || !sourceFile.canRead() || !sourceFile.isFile()) {
             statusLabel.setText("Unable to open file: " + fileName.getValueSafe());
             return;
         }
         System.out.println("  Current file is: \"" + sourceFile.getAbsolutePath() + "\"");
-        // Run this in a thread.... 
+        // Run this in a thread....
         Task task;
         task = new Task<Void>() {
             @Override public Void call() {
-                try {            
-                    Files.lines(sourceFile.toPath())
-                        .map(s -> s.trim())
-                        .filter(s -> !s.isEmpty())
-                        .forEach(s -> {
-                            //System.out.println("readOnce read " + s); 
-                            process(s); 
+                try {
+                    reading.acquire();
+                    try (Stream<String> s = Files.lines(sourceFile.toPath())) {
+                        s.map(line -> line.trim()).filter(line -> !line.isEmpty()).forEach(line -> {
+                            //System.out.println("readOnce read " + s);
+                            process(line);
                         });
-                } catch (IOException ex) {
-                    Logger.getLogger(TailingReader.class.getName()).log(Level.SEVERE, null, ex);
-                    // We had an issue reading the file.... 
+                        s.close();
+                    } catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                    
+                } catch (Exception ex){
+                    ex.printStackTrace();
                 }
+                reading.release();
                 return null;
             }
         };
         new Thread(task).start();
+        
     }
     
     

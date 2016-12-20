@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -89,7 +90,7 @@ public abstract class NonTailingReader implements TimingReader{
             fileChooser.setInitialDirectory(new File(System.getProperty("user.home"))); 
         }
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt"),
+                new FileChooser.ExtensionFilter("Text Files", "*.txt","*.csv"),
                 new FileChooser.ExtensionFilter("All files", "*")
             );
         
@@ -100,7 +101,7 @@ public abstract class NonTailingReader implements TimingReader{
             
             fileName.setValue(sourceFile.getAbsolutePath());
             // save the filename 
-            timingListener.setAttribute("TailingReader:filename", sourceFile.getAbsolutePath());
+            timingListener.setAttribute("NonTailingReader:filename", sourceFile.getAbsolutePath());
             
             // set the text field to the filename
             inputTextField.textProperty().setValue(fileName.getValueSafe());
@@ -251,27 +252,20 @@ public abstract class NonTailingReader implements TimingReader{
         }
         
         System.out.println("NonTailingReader.readOnce called. Current file is: " + sourceFile.getAbsolutePath());
-        
+        timingListener.clearReads();
         // Run this in a thread.... 
         Task task;
         task = new Task<Void>() {
             @Override public Void call() {
-                
-                    timingListener.clearReads();
-                
-                    try {            
-                        Files.lines(sourceFile.toPath())
-                            .map(s -> s.trim())
-                            .filter(s -> !s.isEmpty())
-                            .forEach(s -> {
-                                //System.out.println("readOnce read " + s); 
-                                process(s); 
-                            });
-                    } catch (IOException ex) {
-                        Logger.getLogger(TailingReader.class.getName()).log(Level.SEVERE, null, ex);
-                        // We had an issue reading the file.... 
-                    }
-                
+                try (Stream<String> s = Files.lines(sourceFile.toPath())) {
+                    s.map(line -> line.trim()).filter(line -> !line.isEmpty()).forEach(line -> {
+                        //System.out.println("readOnce read " + s); 
+                        process(line); 
+                    });
+                    s.close();
+                } catch (Exception ex){
+                    ex.printStackTrace();
+                }
                 return null;
             }
         };
