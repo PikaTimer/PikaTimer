@@ -29,20 +29,34 @@ import javafx.application.Platform;
 public class PikaRaceTimerFileReader  extends NonTailingReader{
     @Override
     public void process(String s) {
-        
+        System.out.println("PikaRaceTimerFileReader::process: " + s);
         // the file is either pipe or comma delimited
         // and we don't care which one since the rest of it is just numbers
         // and colons 
-        String[] tokens = s.split("[,|]+", -1); 
+        String[] tokens = s.split(",", -1); 
         // we only care about the following fields:
         // 0 -- The place
         // 1 -- bib
         // 2 -- time (as a string)
         // 3+ -- it should not be here
+        if (tokens.length < 2 ) {
+            System.out.println("  Unable to parse " + s);
+            return;
+        }
 
         // numbers only for the bib. The app sometimes makes the first entry 
         // "BIB####" if folks don't first hit backspace
         String bib = tokens[1].replaceAll("\\D+", ""); 
+        
+        // one way to get rid of the header line.... 
+        if (bib == null || bib.isEmpty()) { // invalid bib
+            System.out.println("  Empty bib: " + s);
+            return;
+        }
+        if (bib.equals("0")) { // invalid bib
+            System.out.println("  Zero bib: " + s);
+            return;
+        }
         
         // strip any extra quotes
         String time = tokens[2].replaceAll("\"", ""); 
@@ -50,21 +64,15 @@ public class PikaRaceTimerFileReader  extends NonTailingReader{
         //System.out.println("Chip: " + chip);
         //System.out.println("dateTime: " + dateTime);
         
-        if (bib.equals("0")) { // invalid bib
-            System.out.println("Non Start time: " + s);
-            return;
-        }
+        
         
         
         Duration timestamp = offset; // We get this from the NonTailingReader class
-        
+        System.out.println("  Offset is: " + offset);
+
 
         // First look for timestams without a date attached to them
-        if(time.matches("^\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}$")) {
-            if(time.matches("^\\d{1}:\\d{2}:\\d{2}\\.\\d{3}$")) {
-                //ISO_LOCAL_TIME wants a two digit hour....
-                time = "0" + time;
-            }
+        if(time.matches("^\\d{1,2}:\\d{2}:\\d{2}(\\.\\d{3})?$")) {
             if (DurationParser.parsable(time)){ 
                 timestamp = timestamp.plus(DurationParser.parse(time));
                 //LocalTime timestamp = LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME );
@@ -85,7 +93,7 @@ public class PikaRaceTimerFileReader  extends NonTailingReader{
                 });
             }
         } else {
-            String status="Unable to parse the time: " + s;
+            String status="Unable to parse the time: " + time;
             System.out.println(status);
             Platform.runLater(() -> {
                 statusLabel.textProperty().setValue(status);
