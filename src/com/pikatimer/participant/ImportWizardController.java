@@ -61,6 +61,7 @@ public class ImportWizardController {
     private StackPane centerPane;
 
     private FlowHandler flowHandler;
+    private ImportWizardData model;
 
     /**
      * The {@code init} method defines a internal flow that contains the steps of the wizard as separate views.
@@ -70,7 +71,8 @@ public class ImportWizardController {
     @PostConstruct
     public void init() throws FlowException {
         ViewFlowContext flowContext = new ViewFlowContext();
-        flowContext.register(new ImportWizardData());
+        model = new ImportWizardData();
+        flowContext.register(model);
         Flow flow = new Flow(ImportWizardView1Controller.class).
                 withLink(ImportWizardView1Controller.class, "next", ImportWizardView2Controller.class).
                 withLink(ImportWizardView2Controller.class, "next", ImportWizardView3Controller.class);
@@ -80,6 +82,8 @@ public class ImportWizardController {
         
         backButton.setDisable(true);
         closeButton.setDisable(false);
+        
+        nextButton.disableProperty().bind(model.nextButtonDisabledProperty());
     }
 
     /**
@@ -99,7 +103,7 @@ public class ImportWizardController {
             backButton.setDisable(false);
         }
         closeButton.setDisable(false);
-        nextButton.setDisable(false);
+        //nextButton.setDisable(false);
     }
 
     /**
@@ -117,12 +121,13 @@ public class ImportWizardController {
         // unbind it when we get to View2
         
         if(flowHandler.getCurrentViewControllerClass().equals(ImportWizardView3Controller.class)) {
-            nextButton.setDisable(true);
+            //nextButton.setDisable(true);
+            model.nextButtonDisabledProperty().set(true);
             backButton.setDisable(true);
             closeButton.setText("Close");
             closeButton.setDisable(false);
         } else {
-            nextButton.setDisable(false);
+            //nextButton.setDisable(false);
             backButton.setDisable(false);
             closeButton.setDisable(false);
         }

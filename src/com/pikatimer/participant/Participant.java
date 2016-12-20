@@ -82,7 +82,7 @@ public class Participant {
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
     private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
     private final StringProperty bibProperty= new SimpleStringProperty();
-    private final IntegerProperty ageProperty = new SimpleIntegerProperty(-1);
+    private final IntegerProperty ageProperty = new SimpleIntegerProperty();
     private final StringProperty sexProperty= new SimpleStringProperty(); 
     private final StringProperty cityProperty= new SimpleStringProperty();
     private final StringProperty stateProperty= new SimpleStringProperty();
@@ -149,7 +149,7 @@ public class Participant {
         attribMap.put("middle", "Middle Name");
         attribMap.put("last", "Last Name");
         attribMap.put("age", "Age");
-        attribMap.put("birthday","Birthday");
+        attribMap.put("birth","Birthday");
         attribMap.put("sex-gender", "Sex");
         attribMap.put("city", "City");
         attribMap.put("state", "State");
@@ -174,17 +174,14 @@ public class Participant {
                  case "middle": this.setMiddleName(entry.getValue()); break;
                  case "last": this.setLastName(entry.getValue()); break;
                  
-                 // TODO: catch bad integers 
-                 case "birthday": 
+                 case "birth": 
                      this.setBirthday(entry.getValue()); 
                      //set the age too if we were able to parse the birthdate
-                     if (this.birthday != null) this.setAge(Period.between(this.birthday, Event.getInstance().getLocalEventDate()).getYears());
                      break;
                  case "age": 
                      //Setting the birthdate will also set the age, so if the age is already set just skip it.
                      try {
                         if (this.birthday == null) this.setAge(Integer.parseUnsignedInt(entry.getValue())); 
-
                      } catch (Exception e) {
                          System.out.println("Unable to parse age " + entry.getValue() );
                      }
@@ -228,7 +225,7 @@ public class Participant {
                 case "last": return this.lastNameProperty.getValueSafe();
 
                 // TODO: catch bad integers 
-                case "birthday": if (this.birthday != null) return birthday.format(DateTimeFormatter.ISO_DATE); else return "";
+                case "birth": if (this.birthday != null) return birthday.format(DateTimeFormatter.ISO_DATE); else return "";
                     
                 case "age":  if (this.ageProperty.getValue() != null) return this.ageProperty.getValue().toString(); else return "";
                      
@@ -429,6 +426,7 @@ public class Participant {
         }
     }    
     public void setBirthday(String d) {
+        System.out.println("Birthdate String: " + d);
         if (d != null) {
             //Try and parse the date
             // First try the ISO_LOCAL_DATE (YYYY-MM-DD)
@@ -436,19 +434,27 @@ public class Participant {
             // finally a last ditch effort for things like MM.DD.YYYY
             try{
                 birthday = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
+                //System.out.println("Parsed via ISO_LOCAL_DATE: " + d);
             } catch (Exception e){
                 try {
                     birthday = LocalDate.parse(d,DateTimeFormatter.ofPattern("M/d/yyyy"));
+                   // System.out.println("Parsed via M/d/yyyy: " + d);
                 } catch (Exception e2){ 
                     try {
                         birthday = LocalDate.parse(d,DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT));
+                        //System.out.println("FormatStyle.SHORT: " + d);
                     } catch (Exception e3) {
-                        System.out.println("Unable to parse date: " + d);
+                        //System.out.println("Unble to parse date: " + d);
                     }
                 }
             }
            
-            birthdayProperty.setValue(birthday);
+            if (this.birthday != null) {
+                birthdayProperty.setValue(birthday);
+                this.setAge(Period.between(this.birthday, Event.getInstance().getLocalEventDate()).getYears());
+                //System.out.println("Parsed Date: " + d + " -> " + getAge());
+            }
+
             //Instant instant = Instant.ofEpochMilli(d.getTime());
             //setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
         }

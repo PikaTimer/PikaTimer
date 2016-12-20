@@ -36,6 +36,8 @@ class ImportWizardData {
     private BooleanProperty waveAssignByAttribute = new SimpleBooleanProperty();
     
     private BooleanProperty clearExistingAttribute = new SimpleBooleanProperty();
+    
+    private BooleanProperty nextButtonEnabledAttribute = new SimpleBooleanProperty(true);
 
     private Wave assignedWave; 
     private final Map<String, String> attributeMap = new HashMap<>();
@@ -90,6 +92,9 @@ class ImportWizardData {
         return clearExistingAttribute; 
     }
 
+    public BooleanProperty nextButtonDisabledProperty(){
+        return nextButtonEnabledAttribute;
+    }
     
     public void mapAttrib(String k, String v) {
         attributeMap.put(k, v); 

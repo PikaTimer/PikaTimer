@@ -23,6 +23,7 @@ import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
 import java.io.File;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -30,6 +31,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -41,7 +43,8 @@ public class ImportWizardView1Controller {
     
     @FXMLViewFlowContext private ViewFlowContext context;
     
-    @FXML private Label fileNameLabel;
+    @FXML private Label fileStatusLabel;
+    @FXML private TextField fileTextField;
     @FXML private Button fileChooserButton;
     @FXML private CheckBox clearExistingCheckBox; 
     @FXML private CheckBox cleanupCityCheckBox; 
@@ -60,8 +63,16 @@ public class ImportWizardView1Controller {
     public void init() throws FlowException {
         System.out.println("ImportWizardView1Controller.initialize()");
         
+        // TODO: 
+        cleanupCityCheckBox.disableProperty().set(true);
+        cleanupCityCheckBox.visibleProperty().set(false);
+        cleanupCityCheckBox.managedProperty().set(false);
+        cleanupNamesCheckBox.disableProperty().set(true);
+        cleanupNamesCheckBox.visibleProperty().set(false);
+        cleanupNamesCheckBox.managedProperty().set(false);
+
         model = context.getRegisteredObject(ImportWizardData.class);
-        fileNameLabel.textProperty().bind(model.fileNameProperty());
+        //fileNameLabel.textProperty().bind(model.fileNameProperty());
         
         fileChooserButton.setOnAction(this::chooseFile);
         
@@ -104,12 +115,35 @@ public class ImportWizardView1Controller {
             waveComboBox.setValue(waves.get(0));
             waveByBibCheckBox.setSelected(true);
 
-            
+            fileTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+                if (!newPropertyValue) {
+                    System.out.println("fileTexField out focus");
+                    if (!fileTextField.getText().equals(model.getFileName())) {
+                        File file = new File(fileTextField.getText());
+                        if (file.exists() && file.isFile() && file.canRead()) {
+                            System.out.println("  The file is good...");
+                            fileStatusLabel.setText("");
+
+                            model.nextButtonDisabledProperty().set(false);
+                            model.setFileName(file.getAbsolutePath());
+                        } else {
+                            System.out.println("  Unable to use this file");
+                            if (! file.exists()) fileStatusLabel.setText("File does not exist");
+                            else if (! file.isFile()) fileStatusLabel.setText("The path entered is not a regular file");
+                            else if (!file.canRead()) fileStatusLabel.setText("Unable to read the file");
+
+
+                            model.setFileName(fileTextField.getText());
+                            model.nextButtonDisabledProperty().set(true);
+                        }
+                    }
+                }
+            });
         }
-        // assigning the race/wave by bib
-        // assigning by an imported attribute
-        // if doing a straight assignment
-        // if only one race, hide it all and just do a straight assignment
+        // TODO:
+        // Assign by attribute
+        // Cleanup Names
+        // Cleanup City / State (by zip?)
         
         
         
@@ -130,12 +164,14 @@ public class ImportWizardView1Controller {
             fileChooser.setInitialFileName(model.getFileName()); 
         }
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("PikaTimer Events", "*.csv"),
+                new FileChooser.ExtensionFilter("CSV/TXT Files", "*.csv", "*.txt"),
                 new FileChooser.ExtensionFilter("All files", "*")
             );
         File file = fileChooser.showOpenDialog(fileChooserButton.getScene().getWindow());
-        if (file != null) {
+        if (file != null && file.exists() && file.isFile() && file.canRead()) {
             model.setFileName(file.getAbsolutePath());
+            fileTextField.setText(file.getAbsolutePath());
+            model.nextButtonDisabledProperty().set(false);
         }        
     }
 }
