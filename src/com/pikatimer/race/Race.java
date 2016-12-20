@@ -57,6 +57,8 @@ public class Race {
     
 
    private final IntegerProperty IDProperty;
+   private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
+
 
    private BigDecimal raceDistance; 
    private Unit raceUnits; 
@@ -209,7 +211,7 @@ public class Race {
         return raceCutoffProperty;  
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     public List<Wave> getWaves() {
         return raceWavesList;
     }
@@ -236,7 +238,7 @@ public class Race {
         raceWavesList = raceWaves.sorted();
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     @OrderBy("split_seq_number")
     public List<Split> getSplits() {
         return raceSplitList;
@@ -294,7 +296,7 @@ public class Race {
         if (ageGroups != null && ageGroups.getRace() != this) ageGroups.setRace(this);
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     public List<RaceReport> getRaceReports() {
         return raceReportsList;
     }
@@ -320,7 +322,7 @@ public class Race {
         raceReportsList = raceReports.sorted();
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     public List<Segment> getSegments() {
         return segmentsList;
     }
@@ -346,15 +348,24 @@ public class Race {
         segmentsList = raceSegments.sorted();
     }
 
-
+    @Column(name="uuid")
+    public String getUUID() {
+       // System.out.println("Participant UUID is " + uuidProperty.get());
+        return uuidProperty.getValue(); 
+    }
+    public void setUUID(String  uuid) {
+        uuidProperty.setValue(uuid);
+        //System.out.println("Participant UUID is now " + uuidProperty.get());
+    }
+    public StringProperty uuidProperty() {
+        return uuidProperty; 
+    }
+    
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 53 * hash + Objects.hashCode(this.raceDistance);
-        hash = 53 * hash + Objects.hashCode(this.raceUnitsProperty);
-        hash = 53 * hash + Objects.hashCode(this.raceName);
-        hash = 53 * hash + Objects.hashCode(this.relayRace);
-        hash = 53 * hash + Objects.hashCode(this.raceDistanceProperty);
+        int hash = 5;
+        hash = 89 * hash + Objects.hashCode(this.uuidProperty.getValue());
+
         return hash;
     }
 
@@ -367,24 +378,10 @@ public class Race {
             return false;
         }
         final Race other = (Race) obj;
-        if (!Objects.equals(this.raceDistance, other.raceDistance)) {
-            return false;
+        if (!Objects.equals(this.uuidProperty.getValue(),other.uuidProperty.getValue())) {
+            return false; 
         }
-        if (this.raceUnits != other.raceUnits) {
-            return false;
-        }
-        if (!Objects.equals(this.raceUnitsProperty.getValue(), other.raceUnitsProperty.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.raceName.getValue(), other.raceName.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.relayRace.getValue(), other.relayRace.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.raceDistanceProperty.getValue(), other.raceDistanceProperty.getValue())) {
-            return false;
-        }
+
         return true;
     }
 

@@ -30,6 +30,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -464,7 +465,7 @@ public class FXMLEventController  {
         r.setRaceDistanceUnits(Unit.KILOMETERS);
         raceDAO.addRace(r);
         System.out.println("Adding a new race. New Size =" + raceList.size() + " New Race Index=" + raceList.indexOf(r));
-        raceTableView.getSelectionModel().select(raceList.indexOf(r));
+        Platform.runLater(() -> {raceTableView.getSelectionModel().select(raceList.indexOf(r));});
         //timingLocListView.edit(timingLocationList.indexOf(t));
         if (raceList.size() > 1) { 
             multipleRacesCheckBox.setDisable(true);
