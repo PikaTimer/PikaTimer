@@ -82,7 +82,7 @@ public class Participant {
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
     private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
     private final StringProperty bibProperty= new SimpleStringProperty();
-    private final IntegerProperty ageProperty = new SimpleIntegerProperty();
+    private final IntegerProperty ageProperty = new SimpleIntegerProperty(-1);
     private final StringProperty sexProperty= new SimpleStringProperty(); 
     private final StringProperty cityProperty= new SimpleStringProperty();
     private final StringProperty stateProperty= new SimpleStringProperty();
@@ -433,15 +433,21 @@ public class Participant {
             //Try and parse the date
             // First try the ISO_LOCAL_DATE (YYYY-MM-DD)
             // Then try and catch localized date strings such as MM/DD/YYYY 
+            // finally a last ditch effort for things like MM.DD.YYYY
             try{
                 birthday = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
             } catch (Exception e){
                 try {
-                    birthday = LocalDate.parse(d,DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT));
-                } catch (Exception e2){
-                    System.out.println("Unable to parse date " + d);
+                    birthday = LocalDate.parse(d,DateTimeFormatter.ofPattern("M/d/yyyy"));
+                } catch (Exception e2){ 
+                    try {
+                        birthday = LocalDate.parse(d,DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT));
+                    } catch (Exception e3) {
+                        System.out.println("Unable to parse date: " + d);
+                    }
                 }
             }
+           
             birthdayProperty.setValue(birthday);
             //Instant instant = Instant.ofEpochMilli(d.getTime());
             //setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
