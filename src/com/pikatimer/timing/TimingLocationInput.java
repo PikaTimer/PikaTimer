@@ -134,7 +134,7 @@ public class TimingLocationInput implements TimingListener{
         return tailFileBooleanProperty;
     }
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "TIMING_LOCATION_ID",nullable=false)
     public TimingLocation getTimingLocation() {
         return timingLocation;
@@ -160,7 +160,7 @@ public class TimingLocationInput implements TimingListener{
         return timingInputType;
     }
     public void setTimingInputType(TimingInputTypes t) {
-        
+        System.out.println("TimingLocationInput::setTimingInputType now " + t);
         if (t != null && (timingInputType == null || ! timingInputType.equals(t)) ){
             
             // If we already have a reader

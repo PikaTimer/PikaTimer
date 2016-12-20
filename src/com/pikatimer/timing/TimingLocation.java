@@ -147,14 +147,14 @@ public class TimingLocation {
     }
 
     // We keep two lists, one observable for JavaFX, one regular for Hibernate
-    @OneToMany(mappedBy="timingLocation",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy="timingLocation",fetch = FetchType.EAGER)
     @Cascade(CascadeType.DELETE)
     public List<TimingLocationInput> getInputs() {
         //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
         return timingInputList;
     }
     public void setInputs(List<TimingLocationInput> inputs) {
-        //System.out.println("TimingLocation.setInputs(list) called for " + locationName + " with " + inputs.size() + " splits"); 
+        //System.out.println("TimingLocation.setInputs(list) called for " + locationName + " with " + inputs.size() + " inputs"); 
         timingInputList = inputs;
         if (inputs != null) {
             timingInputs.setAll(inputs);

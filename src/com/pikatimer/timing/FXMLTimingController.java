@@ -1038,6 +1038,10 @@ public class FXMLTimingController {
         Map<Integer,List<Wave>> wavesByLocation = new HashMap();
         BooleanProperty startsFound = new SimpleBooleanProperty(false);
         RaceDAO.getInstance().listRaces().forEach(race -> {
+            if (race.getSplits() == null || race.getSplits().isEmpty()) {
+                System.out.println(" RACE HAS NO SPLITS!!! " + race.getRaceName());
+                return;
+            }
             Integer tlID = race.getSplits().get(0).getTimingLocationID();
             if (!wavesByLocation.containsKey(tlID)) wavesByLocation.put(tlID, race.getWaves());
             else wavesByLocation.get(tlID).addAll(race.getWaves());
