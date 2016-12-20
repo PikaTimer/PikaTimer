@@ -410,7 +410,7 @@ public class TimingLocationInput implements TimingListener{
     @Override
     public void clearReads() {
         if(rawTimeSet != null && !rawTimeSet.isEmpty()) {
-            clearLocalReads();
+            //clearLocalReads();
             // Delete all from the DB
             // This will trigger a removal of all cooked times associated with 
             // this instance. 
