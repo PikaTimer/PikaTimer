@@ -46,7 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       <Label fx:id="fileStatusLabel" />
       <CheckBox fx:id="clearExistingCheckBox" mnemonicParsing="false" text="Clear existing participants" />
       <CheckBox fx:id="cleanupNamesCheckBox" mnemonicParsing="false" text="Cleanup Names" />
-      <CheckBox fx:id="cleanupCityCheckBox" mnemonicParsing="false" text="Cleanup City / State data" visible="false" />
+      <CheckBox fx:id="cleanupCityCheckBox" mnemonicParsing="false" text="Cleanup City / State data" />
       <VBox fx:id="bibAssignmentVBox" spacing="5.0">
          <children>
             <Label text="Race/Wave Assigment Method:">
