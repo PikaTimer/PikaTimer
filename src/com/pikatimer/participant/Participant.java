@@ -426,7 +426,7 @@ public class Participant {
         }
     }    
     public void setBirthday(String d) {
-        System.out.println("Birthdate String: " + d);
+        //System.out.println("Birthdate String: " + d);
         if (d != null) {
             //Try and parse the date
             // First try the ISO_LOCAL_DATE (YYYY-MM-DD)

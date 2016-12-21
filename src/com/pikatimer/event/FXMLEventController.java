@@ -331,6 +331,8 @@ public class FXMLEventController  {
         
         event.setEventDate(eventDate.getValue());
         updateEvent();
+        
+        // TODO: Recalc all participant ages if they have a birthdate set
            
     }
     
