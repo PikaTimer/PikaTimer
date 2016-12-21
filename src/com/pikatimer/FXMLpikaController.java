@@ -17,6 +17,7 @@
 package com.pikatimer;
 
 import com.pikatimer.event.Event;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TabPane;
@@ -40,8 +41,8 @@ public class FXMLpikaController   {
     protected void initialize() {
         // TODO
         //System.out.println("FXMLpikaController initialized!");
-        eventName.textProperty().bind(event.getObservableEventName());
-        eventDate.textProperty().bind(event.getObservableEventDateString());
+        eventName.textProperty().bind(Bindings.concat("PikaTimer: ").concat(event.eventNameProperty()));
+        eventDate.textProperty().bind(event.eventDateStringProperty());
         event.setMainTabPane(mainTabPane);
     }
     
