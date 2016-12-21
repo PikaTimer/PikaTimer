@@ -26,29 +26,38 @@ public class DurationParser {
     public static final Duration parse(String s, boolean hours) {
         if (s == null || s.isEmpty()) return Duration.ZERO;
         
+        Boolean isNegative = false;
         Long h = 0L;
         Long m = 0L;
         Long sec = 0L;
         Long nano = 0L;
+        if (s.startsWith("-")) {
+            s= s.replaceFirst("-", "");
+            isNegative = true;
+        }
         
-        if (hours) { // HH:MM[:SS.sss]
-            String[] values = s.split(":");
+        String[] values = s.split(":");
+        if (hours ) { // HH:MM[:SS.sss]
+            
             h = Long.valueOf(values[0]);
             m = Long.valueOf(values[1]);
             if (values.length == 3 && values[2] != null) nano = (long)(Double.valueOf(values[2]) * 1000000000);
-        } else { // [HH:]MM:SS[.sss] 
-            String[] values = s.split(":");
-            if (values.length == 3 && values[2] != null) {
+        } else { // [[HH:]MM]:SS[.sss] 
+            
+            if (values.length == 3 && values[2] != null) { // HH:MM:SS.sss
                 h = Long.valueOf(values[0]);
                 m = Long.valueOf(values[1]);
                 if (values[2] != null) nano = (long)(Double.valueOf(values[2]) * 1000000000);
-            } else {
+            } else if (values.length == 2 && values[1] != null) { // MM:SS.sss
                 m = Long.valueOf(values[0]);
                 if (values[1] != null) nano = (long)(Double.valueOf(values[1]) * 1000000000);
+            } else { // SS.ssss
+                if (values[0] != null) nano = (long)(Double.valueOf(values[0]) * 1000000000);
             }
         }
         
-        return Duration.ofHours(h).plusMinutes(m).plusNanos(nano);
+        if (isNegative) return Duration.ofHours(h).plusMinutes(m).plusNanos(nano).negated();
+        else return Duration.ofHours(h).plusMinutes(m).plusNanos(nano);
     }
     
     public static final Duration parse(String s) {
@@ -56,8 +65,8 @@ public class DurationParser {
     }
     public static final Boolean parsable(String s, boolean hours){
         if (s == null || s.isEmpty()) return Boolean.TRUE;
-        else if (hours && s.matches("^\\d+:[0-5][0-9](:[0-5][0-9](\\.\\d*)?)?$")) return Boolean.TRUE;
-        else if (s.matches("^(\\d+:)?[0-5][0-9]:[0-5][0-9](\\.\\d*)?$")) return Boolean.TRUE;
+        else if (hours && s.matches("^-?\\d+:[0-5][0-9](:[0-5][0-9](\\.\\d*)?)?$")) return Boolean.TRUE;
+        else if (s.matches("^-?((\\d+:)?[0-5][0-9]:)?[0-5][0-9](\\.\\d*)?$")) return Boolean.TRUE;
         else return Boolean.FALSE;
     }
     

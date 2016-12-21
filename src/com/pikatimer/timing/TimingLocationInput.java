@@ -17,6 +17,7 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.util.DurationFormatter;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -514,23 +515,27 @@ public class TimingLocationInput implements TimingListener{
     }
     @Transient
     public String getSkewString() {
-        String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
-        System.out.println("Returning skew duration string of " + durationString + " for " + skewDuration);
-        return durationString; 
+        //String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
+        String skewDurationString = DurationFormatter.durationToString(skewDuration, 3, false);
+        System.out.println("Returning skew duration string of " + skewDurationString + " for " + skewDuration);
+        return skewDurationString; 
     }
-    public void setSkewString(String text) {
-        
-        // check for null/blank/zero
-        if (text == null || text.isEmpty() || text.equals("0")) {
-            skewDuration = Duration.ZERO;
-        } else {
-            skewDuration = Duration.ofNanos(new BigDecimalStringConverter().fromString(text).multiply(new BigDecimal(1000000000L)).longValue());
-            System.out.println("Skew duration is now " + skewDuration);
-        }
-    }
+//    public void setSkewString(String text) {
+//        
+//        // check for null/blank/zero
+//        if (text == null || text.isEmpty() || text.equals("0")) {
+//            skewDuration = Duration.ZERO;
+//        } else {
+//            skewDuration = Duration.ofNanos(new BigDecimalStringConverter().fromString(text).multiply(new BigDecimal(1000000000L)).longValue());
+//            System.out.println("Skew duration is now " + skewDuration);
+//        }
+//    }
     @Transient
     public Duration getSkew() {
         return skewDuration; 
+    }
+    public void setSkew(Duration s){
+        skewDuration = s;
     }
     
     @Transient

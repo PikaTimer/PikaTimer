@@ -16,6 +16,7 @@
  */
 package com.pikatimer.timing;
 
+import com.pikatimer.util.DurationParser;
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
 import java.time.Duration;
@@ -157,6 +158,7 @@ public class FXMLTimingLocationInputController{
                 if (!old_val.equals(new_val)) {
                     timingLocationInput.setSkewLocationTime(new_val);
                     timingLocationDAO.updateTimingLocationInput(timingLocationInput);
+                    if (!timingLocationInput.getSkew().isZero()) timingLocationInput.reprocessReads();
                 }
             });
             skewTextField.textProperty().setValue(timingLocationInput.getSkewString());
@@ -166,51 +168,43 @@ public class FXMLTimingLocationInputController{
 
             skewTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                     //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
-                if (newValue.matches("^-?\\..*$")) {
+                if (newValue.isEmpty()) return; 
+                if (newValue.matches("^-?\\.\\d+$")) {
                     Platform.runLater(() -> {
                         int caret = skewTextField.getCaretPosition();
                         skewTextField.setText(newValue.replaceFirst("\\.","0."));
-                        skewTextField.positionCaret(caret);
+                        skewTextField.positionCaret(caret+1);
                     });
-                } else if (newValue.matches("^-?0\\d+\\.?\\d*$")) {
-                    Platform.runLater(() -> {
-                        int caret = skewTextField.getCaretPosition();
-                        skewTextField.setText(newValue.replaceFirst("0",""));
-                        skewTextField.positionCaret(caret);
-                    });
-                } else if (newValue.matches("^-?\\d*\\.?\\d*$")){
+                } else if (newValue.matches("^-?(\\d*:)?(\\d*:)?\\d*\\.?\\d*$")){
                     System.out.println("Good skew time: " + newValue);
                 } else {
                     Platform.runLater(() -> {
                         int caret = skewTextField.getCaretPosition();
                         skewTextField.setText(oldValue);
                         skewTextField.positionCaret(caret-1);
-
                     });
                 }
 
             });
             
-            
-            
-            
-            
-
             skewTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
                 if (!newPropertyValue) {
                     System.out.println("skewTextField out focus");
                     if ( ! skewTextField.getText().equals(timingLocationInput.getSkewString()) ) {
                         System.out.println("Skew changed from " + timingLocationInput.getSkewString()+ " to " + skewTextField.getText());
                         Duration oldSkew = timingLocationInput.getSkew();
-                        timingLocationInput.setSkewString(skewTextField.getText());
-                        if (! oldSkew.equals(timingLocationInput.getSkew())){
+                        //timingLocationInput.setSkewString(skewTextField.getText());
+                        Duration newSkew = DurationParser.parse(skewTextField.getText(), false);
+                        if (! oldSkew.equals(newSkew)){
+                            timingLocationInput.setSkew(newSkew);
                             timingLocationDAO.updateTimingLocationInput(timingLocationInput);
                             timingLocationInput.reprocessReads();
+                            Platform.runLater(() -> {skewTextField.setText(timingLocationInput.getSkewString());});
                         }
-                        if (timingLocationInput.getSkewNanos().equals(0L)) {
+                        if (timingLocationInput.getSkew().isZero()) {
                             timeSkewCheckBox.setSelected(false);
-                            skewTextField.setText("");
-                        } 
+                            Platform.runLater(() -> {skewTextField.setText("");});
+                        } else Platform.runLater(() -> {skewTextField.setText(timingLocationInput.getSkewString());});
                     } else {
                         System.out.println("No change in skew time");
                     }
