@@ -40,13 +40,6 @@ Internationalization? (Spanish, English, French, German, British, US, etc)
 
 
 Races:
-Default start time to 8am? 
-Don't permit blank start time.
-Don't permit blank wave start times / default to race start time or 1st wave start time
-Watch TimingLocation list and show if more than the default
-Fix table size for splits and waves
-
-Auto Sort splits by order number, don't permit other sorting of that list
 Setup Custom AG's (other than just 5 & 10 year increments)?
 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
@@ -68,8 +61,7 @@ Participants:
 Clean up import from csv (field formatting, etc)
   -- Custom city name map
   -- Zip -> City map
-Export to csv
-Validate csv file before continuing. 
+Validate csv file before iporting. 
 Error check the fields (age, gender, city, state, bib, etc). 
 Wave/Race assignment based on import field
 Update/Add on enter from any valid field
@@ -90,31 +82,16 @@ Min for score attribute?
 Team category setup (gender, mixed gender, custom data field setting, etc)
 
 Timing:
-Add intermediate dialog for bib -> chip setup
-  -- show # of mappings
-  -- clear option
-Ignore chip reads times option
+
 
 Overrides 
   -- Make the bib an autocomplete text field based on the registered runners
-  -- replace if bib + split already exists
-  -- cleanup split drop down for when the runner is in multiple races
   -- mouse over shows runner name in override table view
 
 
-Backup Times option
-  -- splice them in for missing splits 
-
-Clear all times for the timing location input when the user selects a new reader
-Clear all times for a location when the location is deleted
-Backup flag for a given reader at a split
 
 Option to assign any time to the race/wave start time via right mouse click menu
-Option to 'search' for "0" chip times and map them to a wave start
 
-Search dropdown to show only a single timing location in the TableView
-ability to isolate a bib# for the search 
-    (e.g., " 1234 " would only show 1234 and not 12345)
 
 RFID Direct:
     --Continually import times from box (via tcp in a separate task) to a timing point
@@ -130,7 +107,6 @@ Wire in a "min time to next split" option to replace hardcoded 5/10 minutes.
 cleanup the spacing on the tableview, wider names.
 Ability to show/hide splits on TableView 
 Correctly deal with deleted / blank results
-Default the sorting to finish, finish - 1, finish -2, etc, etc)
 Ability to select multiple and DQ, un-DQ them (with a note)
 Show Gender/AG on results display
 Ability to select multiple results and transfer them to another wave/race
@@ -142,7 +118,7 @@ Derived segments / splits (e.g., "total time from split C -> D")
   -- may overlap with the split "groups" on the races tab
 
 
-Option to strip accent marks (StringUtils.stripAccents(String input))
+Option to strip accent marks on output reports (StringUtils.stripAccents(String input))
 
 Optional banner Text for the page
 
