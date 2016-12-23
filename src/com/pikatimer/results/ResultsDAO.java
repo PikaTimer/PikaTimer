@@ -118,6 +118,11 @@ public class ResultsDAO {
                     
                     results.stream().forEach(r -> {
                         //resultsMap.put(r.getBib() + " " + r.getRaceID(), r);
+                        
+                        //We can do this outside of the UI thread since the UI 
+                        // does not know about it yet... 
+                        r.recalcTimeProperties();
+                        
                         if (!resultsMap.containsKey(r.getBib())) resultsMap.put(r.getBib(), new HashMap());
                         resultsMap.get(r.getBib()).put(r.getRaceID(),r);
                         
@@ -169,7 +174,7 @@ public class ResultsDAO {
                                     Result c = addIterator.next();
                                     if (c.isEmpty() && c.getID() != null) {                                        
                                         s.delete(c);    
-                                        c.setID(null);
+                                        //c.setID(null);
                                     } else {                                        
                                         s.saveOrUpdate(c);                                        
                                     }
@@ -195,12 +200,13 @@ public class ResultsDAO {
                                     
                                     if(!r.isEmpty()){
                                         if (!raceResultsMap.get(r.getRaceID()).contains(r)) {
+                                            r.recalcTimeProperties();
                                             raceResultsMap.get(r.getRaceID()).add(r);
                                             //System.out.println("ResultsDAO new/updated result added " + r.getBib() + " from race " + r.getRaceID() + " new total " + raceResultsMap.get(r.getRaceID()).size() );
-                                        }// else r.setUpdated();
+                                        } else r.recalcTimeProperties();
+                                    } else if (raceResultsMap.get(r.getRaceID()).contains(r)){
+                                        raceResultsMap.get(r.getRaceID()).remove(r);
                                     }
-                                    
-                                    r.setUpdated();
                                 });
 
                             });
@@ -322,7 +328,7 @@ public class ResultsDAO {
             //System.out.println("ResultsDAO.processBib: " + r.getBib() + " waveStart: " + waveStart + " maxWaveStart" + maxWaveStart);
             List<Split> splits = raceDAO.getWaveByID(i).getRace().getSplits();
             
-            r.setStartWaveStartDuration(waveStart);
+            r.setWaveStartDuration(waveStart);
             
             Iterator<CookedTimeData> times = timesList.iterator();
             Split[] splitArray = splits.toArray(new Split[splits.size()]); 
@@ -342,7 +348,7 @@ public class ResultsDAO {
             if (hasOverrides && overrides[0] != null) {
                 waveStart = overrides[0];
                 r.setStartDuration(waveStart);
-                r.setStartWaveStartDuration(waveStart);
+                r.setWaveStartDuration(waveStart);
                 //System.out.println("Found start time override of " + overrides[0].toString());
                 
                 // Adjust all relative overrides to actual
@@ -532,7 +538,7 @@ public class ResultsDAO {
             CookedTimeData c = backupTimesList.get(backupTimeIndex++);; 
             
             //fix the start time
-            if(r.getStartDuration().equals(r.getStartWaveStartDuration())) {
+            if(r.getStartDuration().equals(r.getWaveStartDuration())) {
                 // zero gun time, look for a backup
                 while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxWaveStart) < 0) {
                     if (r.getStartDuration().compareTo(c.getTimestamp())<0) {
@@ -765,7 +771,7 @@ public class ResultsDAO {
             
             // set the start and wave start times
             Duration chipStartTime = res.getStartDuration();
-            Duration waveStartTime = res.getStartWaveStartDuration();
+            Duration waveStartTime = res.getWaveStartDuration();
             
             // Set the start duration
             pr.setChipStartTime(chipStartTime);

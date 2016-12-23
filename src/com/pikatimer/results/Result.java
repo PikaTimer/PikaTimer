@@ -28,6 +28,8 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 import javafx.util.Callback;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -55,15 +57,17 @@ public class Result {
     private Integer id;
     private Integer raceID ; 
     private Duration startDuration;
-    private final ObjectProperty<Duration> startTimeProperty; 
-    private final ObjectProperty<Duration> startGunTimeProperty;
-    private Duration startWaveStartDuration;
+    private final ObjectProperty<Duration> startDurationProperty; 
+    private final ObjectProperty<Duration> waveStartDurationProperty;
+    private Duration waveStartDuration;
     private Duration finishDuration;
-    private final ObjectProperty<Duration> finishTimeProperty;
-    private final ObjectProperty<Duration> finishGunTimeProperty;
+    private final ObjectProperty<Duration> finishDurationProperty;
+    private final ObjectProperty<Duration> finishGunDurationProperty;
     private Map<Integer,Long> splitMap = new HashMap();
-    private Map<Integer,ObjectProperty<Duration>> splitPropertyMap = new HashMap<>();
+    private final ObservableMap<Integer,ObjectProperty<Duration>> splitPropertyMap = FXCollections.observableHashMap();
     private final IntegerProperty revision = new SimpleIntegerProperty(1); 
+    
+    private Boolean pendingRecalc=false;
     
     // Bib String
     // Race id
@@ -74,26 +78,26 @@ public class Result {
     
     public Result() {
         startDuration = Duration.ZERO;
+        waveStartDuration = Duration.ZERO;
         finishDuration = Duration.ZERO;
-        startWaveStartDuration = Duration.ZERO;
-        startTimeProperty = new SimpleObjectProperty(startDuration);
-        startGunTimeProperty = new SimpleObjectProperty(startDuration);
-        finishTimeProperty = new SimpleObjectProperty(finishDuration);
-        finishGunTimeProperty = new SimpleObjectProperty(finishDuration);
+        startDurationProperty = new SimpleObjectProperty(startDuration);
+        waveStartDurationProperty = new SimpleObjectProperty(waveStartDuration);
+        finishDurationProperty = new SimpleObjectProperty(finishDuration);
+        finishGunDurationProperty = new SimpleObjectProperty(finishDuration);
     }
     
     public void clearTimes(){
         startDuration = Duration.ZERO;
-        startTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        //startTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
 
-        startWaveStartDuration = Duration.ZERO;
-        startGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        waveStartDuration = Duration.ZERO;
+        //startGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
         
         splitMap = new HashMap<>();
         
         finishDuration = Duration.ZERO;
-        finishTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
-        finishGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        //finishTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+        //finishGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
     }
     
     @Id
@@ -146,45 +150,37 @@ public class Result {
     }
     public void setStartDuration(Duration s){
         startDuration = s;
-        //revision.setValue(revision.get()+1);
-        recalcTimeProperties();
+        pendingRecalc=true;
     }
     public ObjectProperty<Duration> startTimeProperty(){
-        if (startDuration.isZero()) startTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
-        
-        else startTimeProperty.setValue(startDuration);
-        return finishTimeProperty; 
+//        if (startDuration.isZero()) startTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+//        
+//        else startTimeProperty.setValue(startDuration);
+        return startDurationProperty; 
     }
-    public ObjectProperty<Duration> startTimeGunTimeProperty(){
-        if (startDuration.isZero()) startGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
-        
-        else startGunTimeProperty.setValue(startDuration.minus(startWaveStartDuration));
-        return startGunTimeProperty; 
-    }
+
     
     @Column(name="waveStart",nullable=true)
     public Long getWaveStart() {
-        if( startWaveStartDuration != null) {
-            return startWaveStartDuration.toNanos();
+        if( waveStartDuration != null) {
+            return waveStartDuration.toNanos();
         } else {
             return 0L;
         }
     }
     public void setWaveStart(Long c) {
         if(c != null) {
-            startWaveStartDuration = Duration.ofNanos(c);
-            if (startDuration == null || startDuration.isZero()) setStartDuration(startWaveStartDuration);
+            waveStartDuration = Duration.ofNanos(c);
+            if (startDuration == null || startDuration.isZero()) setStartDuration(waveStartDuration);
         }
     }
     @Transient
-    public Duration getStartWaveStartDuration(){
-        return startWaveStartDuration;
+    public Duration getWaveStartDuration(){
+        return waveStartDuration;
     }
-    public void setStartWaveStartDuration(Duration ws) {
-        startWaveStartDuration = ws;
-        if (startDuration == null || startDuration.isZero()) setStartDuration(startWaveStartDuration);
-        //revision.setValue(revision.get()+1);
-        
+    public void setWaveStartDuration(Duration ws) {
+        waveStartDuration = ws;
+        if (startDuration == null || startDuration.isZero()) setStartDuration(waveStartDuration);
     }
     
     @Column(name="partFinish",nullable=true)
@@ -198,6 +194,7 @@ public class Result {
     public void setFinish(Long c) {
         if(c != null) {
             setFinishDuration(Duration.ofNanos(c));
+            pendingRecalc=true;
         }
     }
     @Transient  
@@ -206,15 +203,14 @@ public class Result {
     }
     public void setFinishDuration(Duration f){
         finishDuration = f;
-        //revision.setValue(revision.get()+1);
-        recalcTimeProperties();
+        pendingRecalc=true;
     }
     
     public ObjectProperty<Duration> finishTimeProperty(){
-        return finishTimeProperty; 
+        return finishDurationProperty; 
     }
     public ObjectProperty<Duration> finishGunTimeProperty(){
-        return finishGunTimeProperty; 
+        return finishGunDurationProperty; 
     }
     
     @ElementCollection(fetch = FetchType.EAGER)
@@ -226,6 +222,7 @@ public class Result {
     }
     public void setSplitMap(Map<Integer,Long> m){
         splitMap = m; 
+        pendingRecalc=true;
     }
     
     
@@ -242,7 +239,7 @@ public class Result {
         } else {
             splitMap.put(splitID, t.toNanos());
         }
-        //revision.setValue(revision.get()+1);
+        pendingRecalc=true;
     }
     
     public ObjectProperty<Duration> splitTimeByIDProperty(Integer splitID) {
@@ -252,19 +249,37 @@ public class Result {
         return null;
     }
     
-    private void recalcTimeProperties(){
-        if (finishDuration.isZero()) finishTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
-        else finishTimeProperty.setValue(finishDuration.minus(startDuration));
-        
-        if (finishDuration.isZero()) finishGunTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
-        else finishGunTimeProperty.setValue(finishDuration.minus(startWaveStartDuration));
+    public void recalcTimeProperties(){
+        if (pendingRecalc){
+            
+            System.out.println("Result::recalcTimeProperties for bib " + bib.get());
+            System.out.println(" StartDuration: " + startDuration.toString());
+            System.out.println(" waveStartDuration: " + waveStartDuration.toString());
+            System.out.println(" finishDuration: " + finishDuration.toString());
+
+
+            if (!startDuration.equals(startDurationProperty.get())) startDurationProperty.set(startDuration);
+            if (!waveStartDuration.equals(waveStartDurationProperty.get())) waveStartDurationProperty.set(waveStartDuration);
+
+            
+            if (finishDuration.isZero()) finishDurationProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+            else finishDurationProperty.setValue(finishDuration.minus(startDuration));
+
+            if (finishDuration.isZero()) finishGunDurationProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+            else finishGunDurationProperty.setValue(finishDuration.minus(waveStartDuration));
+            
+            System.out.println(" chipTime: " + finishDurationProperty.get().toString());
+            System.out.println(" gunTime: " + finishGunDurationProperty.get().toString());
+
+            pendingRecalc = false;
+        }
     }
     
-    public void setUpdated(){
-        Platform.runLater(() -> {
-            revision.setValue(revision.get()+1);
-        });
-    }
+//    public void setUpdated(){
+//        Platform.runLater(() -> {
+//            revision.setValue(revision.get()+1);
+//        });
+//    }
     
     public static Callback<Result, Observable[]> extractor() {
         return (Result r) -> new Observable[]{r.revision};
@@ -300,6 +315,8 @@ public class Result {
         }
         return Objects.equals(this.raceID, other.raceID);
     }
+
+    
 
     
 }
