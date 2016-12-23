@@ -149,16 +149,15 @@ public class ResultsDAO {
                             System.out.println("ResultsDAO ProcessNewResult Thread: The wait is over...");
                             Thread.sleep(10); // Times rarely come in 1 at a time
 
-
                             //resultsQueue.drainTo(pendingBibs,299);  // 500 total
                             resultsQueue.drainTo(pendingBibs);
                             System.out.println("ResultsDAO ProcessNewResult Thread: Processing: " + pendingBibs.size());
 
-                            List<Result> pending = new ArrayList();
+                            List<Result> pendingResults = new ArrayList();
                             try {
                                 pendingBibs.stream().forEach(pb -> {
                                     processBib(pb);
-                                    if (!resultsMap.get(pb).keySet().isEmpty()) pending.addAll(resultsMap.get(pb).values());
+                                    if (!resultsMap.get(pb).keySet().isEmpty()) pendingResults.addAll(resultsMap.get(pb).values());
                                     
                                 });
                             } catch (Exception e) {
@@ -169,12 +168,12 @@ public class ResultsDAO {
                                 s = HibernateUtil.getSessionFactory().getCurrentSession();
                                 s.beginTransaction();
                                 int count = 0;
-                                Iterator<Result> addIterator = pending.iterator();
+                                Iterator<Result> addIterator = pendingResults.iterator();
                                 while (addIterator.hasNext()) {
                                     Result c = addIterator.next();
                                     if (c.isEmpty() && c.getID() != null) {                                        
                                         s.delete(c);    
-                                        //c.setID(null);
+                                        resultsMap.get(c.getBib()).remove(c.getRaceID());
                                     } else {                                        
                                         s.saveOrUpdate(c);                                        
                                     }
@@ -189,7 +188,7 @@ public class ResultsDAO {
                                 e.printStackTrace();
                             } 
 
-                            pending.stream().forEach(r -> {
+                            pendingResults.stream().forEach(r -> {
                                 
                                 if(!raceResultsMap.containsKey(r.getRaceID())) raceResultsMap.put(r.getRaceID(), FXCollections.observableArrayList(Result.extractor()));
 
@@ -212,7 +211,7 @@ public class ResultsDAO {
                             });
                             
                             
-                            Thread.sleep(100); // This will limit us to being able to process about 2000 results / second
+                            Thread.sleep(10); 
                         } catch (InterruptedException ex) {
                             Logger.getLogger(ResultsDAO.class.getName()).log(Level.SEVERE, null, ex);
                         }
