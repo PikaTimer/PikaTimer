@@ -204,6 +204,17 @@ public class FXMLResultsController  {
                         return p.fullNameProperty();
                     }
                 });
+                // Sex
+                TableColumn<Result,String> sexColumn = new TableColumn("Sex");
+                sexColumn.setPrefWidth(30.0);
+                table.getColumns().add(sexColumn);
+                sexColumn.setCellValueFactory(cellData -> {
+                    Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
+                    if (p == null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getBib());
+                    } else {
+                        return p.sexProperty();
+                    }
+                });
                 
                 // start
                 TableColumn<Result,Duration> startColumn = new TableColumn("Start");
@@ -215,32 +226,38 @@ public class FXMLResultsController  {
                 startColumn.setCellFactory(column -> {
                     return new DurationTableCell();
                 });
-                startColumn.setComparator(new AlphanumericComparator());
+                //startColumn.setComparator(new AlphanumericComparator());
+                startColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
                 table.getColumns().add(startColumn);
                 
                 // for each split from 2 -> n-2
                 //TableColumn<Result,String> splitColumn;
                 for (int i = 2; i <  r.getSplits().size() ; i++) {
-                    TableColumn<Result,String> splitColumn = new TableColumn();
+                    //TableColumn<Result,String> splitColumn = new TableColumn();
+                    TableColumn<Result,Duration> splitColumn = new TableColumn();
                     table.getColumns().add(splitColumn);
                     int splitID  = i; 
                     //splitColumn.setCellFactory(null);
                     
                     splitColumn.textProperty().bind(r.splitsProperty().get(splitID-1).splitNameProperty());
-
-                    splitColumn.setCellValueFactory(cellData -> {
-                        Duration split = cellData.getValue().getSplitTime(splitID);
-                        
-                        if (split.isZero()) return new SimpleStringProperty("");
-                        return new SimpleStringProperty(DurationFormatter.durationToString(split.minus(cellData.getValue().getStartDuration()), 3, Boolean.TRUE));
+                    
+                    splitColumn.setCellValueFactory(cellData -> {return cellData.getValue().splitTimeByIDProperty(splitID);});
+                    splitColumn.setCellFactory(column -> {
+                        return new DurationTableCell();
                     });
-                    splitColumn.setComparator(new AlphanumericComparator());
+                    splitColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+
+//                    splitColumn.setCellValueFactory(cellData -> {
+//                        Duration split = cellData.getValue().getSplitTime(splitID);
+//                        if (split.isZero()) return new SimpleStringProperty("");
+//                        return new SimpleStringProperty(DurationFormatter.durationToString(split.minus(cellData.getValue().getStartDuration()), 3, Boolean.TRUE));
+//                    });
+//                    splitColumn.setComparator(new AlphanumericComparator());
                 }
                 
                 
                 // finish
                 TableColumn<Result,Duration> finishColumn = new TableColumn("Finish");
-                table.getColumns().add(finishColumn);
                 finishColumn.setCellValueFactory(cellData -> {
                     return cellData.getValue().finishTimeProperty(); 
                 });
@@ -248,6 +265,8 @@ public class FXMLResultsController  {
                     return new DurationTableCell();
                 });
                 //finishColumn.setComparator(new DurationComparator());
+                finishColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(finishColumn);
                 
                 // gun
                 TableColumn<Result,Duration> gunColumn = new TableColumn("Gun");
@@ -257,8 +276,9 @@ public class FXMLResultsController  {
                 gunColumn.setCellFactory(column -> {
                     return new DurationTableCell();
                 });
+                gunColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
                 table.getColumns().add(gunColumn);
-                gunColumn.setComparator(new AlphanumericComparator());
+                //gunColumn.setComparator(new AlphanumericComparator());
                 
                 // set the default sort order to the finish time
 		finishColumn.setSortType(SortType.ASCENDING);
@@ -341,7 +361,6 @@ public class FXMLResultsController  {
                 award.setReportType(ReportTypes.AWARD);
                 r.addRaceReport(award);
                 resultsDAO.saveRaceReport(award);
-
                 
                 raceDAO.updateRace(r);
                 
@@ -352,12 +371,9 @@ public class FXMLResultsController  {
                 try {
                     reportDetails.getChildren().add(tlLoader.load());
                     System.out.println("Showing RaceReport of type " + rr.getReportType().toString());
-
-
                 } catch (IOException ex) {
                     System.out.println("Loader Exception for race reports!");
                     ex.printStackTrace();
-                    
                     Logger.getLogger(FXMLResultOutputController.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 ((FXMLResultOutputController)tlLoader.getController()).setRaceReport(rr);
@@ -551,24 +567,20 @@ public class FXMLResultsController  {
                 Logger.getLogger(FXMLResultOutputController.class.getName()).log(Level.SEVERE, null, ex);
             }
             ((FXMLResultOutputController)tlLoader.getController()).setRaceReport(newRR);
-
         }
-            
-            
-
-        
     }
     
     private class DurationTableCell extends TableCell<Result, Duration> {
         @Override
         protected void updateItem(Duration d, boolean empty) {
             super.updateItem(d, empty);
-            if (d == null || empty || d.isZero() || d.equals(Duration.ofNanos(Long.MAX_VALUE))) {
+            if (d == null || empty) {
                 setText(null);
-                setStyle("");
+            } else if (d.isZero() || d.equals(Duration.ofNanos(Long.MAX_VALUE))){
+                setText("");
             } else {
                 // Format duration.
-                setText(DurationFormatter.durationToString(d, 3, Boolean.TRUE));
+                setText(DurationFormatter.durationToString(d, 3, Boolean.FALSE));
             }
         }
     };

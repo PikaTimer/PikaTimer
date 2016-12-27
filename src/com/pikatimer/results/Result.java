@@ -243,10 +243,11 @@ public class Result {
     }
     
     public ObjectProperty<Duration> splitTimeByIDProperty(Integer splitID) {
-        if (splitPropertyMap.containsKey(splitID)) {
-            return splitPropertyMap.get(splitID);
+        if (!splitPropertyMap.containsKey(splitID)) {
+            System.out.println("Split id " + splitID + " not found, adding one in...");
+            splitPropertyMap.put(splitID, new SimpleObjectProperty(Duration.ofNanos(Long.MAX_VALUE)));
         } 
-        return null;
+        return splitPropertyMap.get(splitID);
     }
     
     public void recalcTimeProperties(){
@@ -257,10 +258,8 @@ public class Result {
             System.out.println(" waveStartDuration: " + waveStartDuration.toString());
             System.out.println(" finishDuration: " + finishDuration.toString());
 
-
             if (!startDuration.equals(startDurationProperty.get())) startDurationProperty.set(startDuration);
             if (!waveStartDuration.equals(waveStartDurationProperty.get())) waveStartDurationProperty.set(waveStartDuration);
-
             
             if (finishDuration.isZero()) finishDurationProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
             else finishDurationProperty.setValue(finishDuration.minus(startDuration));
@@ -270,16 +269,20 @@ public class Result {
             
             System.out.println(" chipTime: " + finishDurationProperty.get().toString());
             System.out.println(" gunTime: " + finishGunDurationProperty.get().toString());
-
+            
+            // now loop through and fix the splits...
+            // missing splits are set to MAX_VALUE
+            splitMap.keySet().forEach(splitID -> {
+                Duration d = Duration.ofNanos(splitMap.get(splitID)).minus(startDuration);
+                if (d.isNegative()) d = Duration.ofNanos(Long.MAX_VALUE);
+                if (splitPropertyMap.containsKey(splitID)) splitPropertyMap.get(splitID).set(d);
+                else splitPropertyMap.put(splitID, new SimpleObjectProperty(d));
+            });    
+            
             pendingRecalc = false;
         }
     }
     
-//    public void setUpdated(){
-//        Platform.runLater(() -> {
-//            revision.setValue(revision.get()+1);
-//        });
-//    }
     
     public static Callback<Result, Observable[]> extractor() {
         return (Result r) -> new Observable[]{r.revision};
