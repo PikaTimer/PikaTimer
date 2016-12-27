@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -133,7 +134,7 @@ public class FXMLResultsController  {
             //System.out.println("raceChoiceBox listener fired: now with number2 set to " + number2.intValue());
             
             if (number2.intValue() == -1 )  {
-                raceComboBox.getSelectionModel().clearAndSelect(0);
+                Platform.runLater(() -> {raceComboBox.getSelectionModel().clearAndSelect(0);});
                 return;
             } 
             
@@ -149,20 +150,21 @@ public class FXMLResultsController  {
             // Populate the results TableView
             if( ! raceTableViewMap.containsKey(activeRace)) {
                 rebuildResultsTableView(activeRace);
-            }
-            activeRace.splitsProperty().addListener( new ListChangeListener() {
- 
-                @Override
-                public void onChanged(ListChangeListener.Change change) {
-                    System.out.println("The list of splits has changed...");
-                    TableView oldTableView = raceTableViewMap.get(activeRace);
-                    rebuildResultsTableView(activeRace);
-                    if (raceComboBox.getSelectionModel().getSelectedItem().equals(activeRace)) {
-                        resultsGridPane.getChildren().remove(oldTableView);
-                        resultsGridPane.add(raceTableViewMap.get(activeRace), 0, 1);
+            
+                activeRace.splitsProperty().addListener( new ListChangeListener() {
+
+                    @Override
+                    public void onChanged(ListChangeListener.Change change) {
+                        System.out.println("The list of splits has changed...");
+                        TableView oldTableView = raceTableViewMap.get(activeRace);
+                        rebuildResultsTableView(activeRace);
+                        if (raceComboBox.getSelectionModel().getSelectedItem().equals(activeRace)) {
+                            resultsGridPane.getChildren().remove(oldTableView);
+                            resultsGridPane.add(raceTableViewMap.get(activeRace), 0, 1);
+                        }
                     }
-                }
-            });
+                });
+            }
             
             if (number.intValue() > 0) {
                 Race old = raceComboBox.getItems().get(number.intValue());
