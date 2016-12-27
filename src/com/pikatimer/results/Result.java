@@ -244,7 +244,7 @@ public class Result {
     
     public ObjectProperty<Duration> splitTimeByIDProperty(Integer splitID) {
         if (!splitPropertyMap.containsKey(splitID)) {
-            System.out.println("Split id " + splitID + " not found, adding one in...");
+            //System.out.println("Split id " + splitID + " not found, adding one in...");
             splitPropertyMap.put(splitID, new SimpleObjectProperty(Duration.ofNanos(Long.MAX_VALUE)));
         } 
         return splitPropertyMap.get(splitID);
@@ -253,10 +253,10 @@ public class Result {
     public void recalcTimeProperties(){
         if (pendingRecalc){
             
-            System.out.println("Result::recalcTimeProperties for bib " + bib.get());
-            System.out.println(" StartDuration: " + startDuration.toString());
-            System.out.println(" waveStartDuration: " + waveStartDuration.toString());
-            System.out.println(" finishDuration: " + finishDuration.toString());
+//            System.out.println("Result::recalcTimeProperties for bib " + bib.get());
+//            System.out.println(" StartDuration: " + startDuration.toString());
+//            System.out.println(" waveStartDuration: " + waveStartDuration.toString());
+//            System.out.println(" finishDuration: " + finishDuration.toString());
 
             if (!startDuration.equals(startDurationProperty.get())) startDurationProperty.set(startDuration);
             if (!waveStartDuration.equals(waveStartDurationProperty.get())) waveStartDurationProperty.set(waveStartDuration);
@@ -266,9 +266,9 @@ public class Result {
 
             if (finishDuration.isZero()) finishGunDurationProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
             else finishGunDurationProperty.setValue(finishDuration.minus(waveStartDuration));
-            
-            System.out.println(" chipTime: " + finishDurationProperty.get().toString());
-            System.out.println(" gunTime: " + finishGunDurationProperty.get().toString());
+//            
+//            System.out.println(" chipTime: " + finishDurationProperty.get().toString());
+//            System.out.println(" gunTime: " + finishGunDurationProperty.get().toString());
             
             // now loop through and fix the splits...
             // missing splits are set to MAX_VALUE
