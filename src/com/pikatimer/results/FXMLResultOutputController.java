@@ -27,6 +27,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
@@ -54,6 +55,8 @@ public class FXMLResultOutputController {
     @FXML CheckBox showSplitsCheckBox;
     @FXML CheckBox showGunTimeCheckBox;
     
+    @FXML Label noOutputPpathsLabel;
+    
     @FXML VBox outputTargetsVBox;
     @FXML FlowPane outputOptionsFlowPane;
             
@@ -72,6 +75,9 @@ public class FXMLResultOutputController {
         // TODO
         outputTypeChoiceBox.getItems().setAll(ReportTypes.values());
        outputTargetsVBox.setFillWidth(true);
+       
+       noOutputPpathsLabel.visibleProperty().bind(Bindings.size(outputTargetsVBox.getChildren()).isEqualTo(0));
+       noOutputPpathsLabel.managedProperty().bind(Bindings.size(outputTargetsVBox.getChildren()).isEqualTo(0));
     }    
     
     public void setRaceReport(RaceReport r){
