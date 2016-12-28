@@ -262,7 +262,7 @@ public class FXMLResultsController  {
                 table.getColumns().add(sexColumn);
                 sexColumn.setCellValueFactory(cellData -> {
                     Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
-                    if (p == null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getBib());
+                    if (p == null) { return new SimpleStringProperty("?");
                     } else {
                         return p.sexProperty();
                     }
