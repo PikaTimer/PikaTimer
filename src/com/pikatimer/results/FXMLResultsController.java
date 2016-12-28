@@ -16,11 +16,12 @@
  */
 package com.pikatimer.results;
 
+import com.pikatimer.event.Event;
+import com.pikatimer.event.EventDAO;
+import com.pikatimer.event.EventOptions;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
-import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.Race;
-import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
@@ -36,8 +37,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -62,8 +61,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -90,8 +87,8 @@ public class FXMLResultsController  {
     @FXML ToggleSwitch autoUpdateToggleSwitch;
     @FXML ProgressIndicator autoUpdateProgressIndicator;
     
-    @FXML ChoiceBox timeRoundingChoiceBox;
-    @FXML ChoiceBox timeFormatChoiceBox;
+    @FXML ChoiceBox<String> timeRoundingChoiceBox;
+    @FXML ChoiceBox<String>  timeFormatChoiceBox;
     
     @FXML ListView<OutputPortal> outputDestinationsListView;
     @FXML Button addOutputDestinationsButton;
@@ -106,6 +103,9 @@ public class FXMLResultsController  {
     
     private Race activeRace;
     
+    private final Event event = Event.getInstance();
+    private final EventDAO eventDAO = EventDAO.getInstance();
+    private final EventOptions eventOptions = eventDAO.getEventOptions();;
     //private final BooleanProperty populateAwardSettingsInProgress = new SimpleBooleanProperty(FALSE);
 
     /**
@@ -120,7 +120,16 @@ public class FXMLResultsController  {
         autoUpdateProgressIndicator.visibleProperty().bind(autoUpdateToggleSwitch.selectedProperty());
 
         outputDetailsVBox.setFillWidth(true);
-                
+        
+        
+        // Event wide stuff
+        //eventOptions 
+        
+        timeRoundingChoiceBox.setItems(FXCollections.observableArrayList("Down", "Up", "Half"));
+        timeFormatChoiceBox.setItems(FXCollections.observableArrayList("HH:MM:ss","[HH:]MM:ss", "[HH:]MM:ss.S", "[HH:]MM:ss.SS", "[HH:]MM:ss.SSS"));
+
+        
+        
 
 
         initializeOutputDestinations();
@@ -164,6 +173,10 @@ public class FXMLResultsController  {
                         }
                     }
                 });
+                
+                
+                
+                
             }
             
             if (number.intValue() > 0) {
@@ -173,7 +186,44 @@ public class FXMLResultsController  {
             resultsGridPane.getChildren().remove(raceTableViewMap.get(activeRace));
             resultsGridPane.add(raceTableViewMap.get(activeRace), 0, 1);
             
+            
+            String rm = activeRace.getStringAttribute("TimeRoundingMode");
+            System.out.println("TimeRoundingMode: " + rm);
+            if (rm == null) {
+                rm = "Down";
+                activeRace.setStringAttribute("TimeRoundingMode", rm);
+                raceDAO.updateRace(activeRace);
+            }
+            timeRoundingChoiceBox.getSelectionModel().select(rm);
+            
+            String dispFormat = activeRace.getStringAttribute("TimeDisplayFormat");
+            System.out.println("TimeDisplayFormat: " + dispFormat);
+            if (dispFormat == null) {
+                dispFormat =  timeFormatChoiceBox.getItems().get(0);
+                activeRace.setStringAttribute("TimeDisplayFormat", dispFormat);
+                raceDAO.updateRace(activeRace);
+            }
+            timeFormatChoiceBox.getSelectionModel().select(dispFormat);
+            
+            
         });
+        
+        timeRoundingChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue,  newValue) -> {
+            Race r = raceComboBox.getValue();
+            if (newValue != null && !newValue.equals(r.getStringAttribute("TimeRoundingMode"))) {
+                System.out.println("EventOptions: TimeRoundingMode changed from " + oldValue + " to " + newValue);
+                r.setStringAttribute("TimeRoundingMode", newValue);
+                raceDAO.updateRace(r);
+            }
+         });
+        timeFormatChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue,  newValue) -> {
+            Race r = raceComboBox.getValue();
+            if (newValue != null && !newValue.equals(r.getStringAttribute("TimeDisplayFormat"))) {
+                System.out.println("Race: TimeDisplayFormat changed from " + oldValue + " to " + newValue);
+                r.setStringAttribute("TimeDisplayFormat", newValue);
+                raceDAO.updateRace(r);
+            }
+         });
         
         raceComboBox.getSelectionModel().clearAndSelect(0);
         

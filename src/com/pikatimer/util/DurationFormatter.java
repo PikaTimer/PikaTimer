@@ -30,7 +30,7 @@ public class DurationFormatter {
         // d is the duration to print
         // p is the precision. 0 for no sub-seconds, 
         // hours for padding the time with a 00: if it is under 1 hour
-        // rm is the rounding mode. see RoundingMode for options
+        // rm is the rounding mode. see java.math.RoundingMode for options
         Boolean isNegative = false;
         
         //System.out.println("durationToString start with " + d.toNanos() + " and " + p.toString() + " or " + d.toString());
@@ -91,5 +91,15 @@ public class DurationFormatter {
     
     public static final String durationToString(Duration d) {
         return durationToString(d,0,true,RoundingMode.HALF_EVEN);
+    }
+    
+    public static final String durationToString(Duration d, String format){
+        return durationToString(d,format,"Down");
+    }
+    public static final String durationToString(Duration d, String format, String roundingMode){
+        Integer precision = 0;
+        RoundingMode rm = RoundingMode.HALF_EVEN;
+        
+        return durationToString(d,precision,false,rm);
     }
 }

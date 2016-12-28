@@ -23,9 +23,12 @@ import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -35,18 +38,24 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.OrderColumn;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -56,32 +65,36 @@ import org.hibernate.annotations.GenericGenerator;
 public class Race {
     
 
-   private final IntegerProperty IDProperty;
-   private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
+    private final IntegerProperty IDProperty;
+    private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
 
 
-   private BigDecimal raceDistance; 
-   private Unit raceUnits; 
-   private final StringProperty raceUnitsProperty; 
-   private final StringProperty raceName;
-   private  Duration raceCutoff; 
-   private final StringProperty raceCutoffProperty; 
-   private final StringProperty raceBibStart;
-   private final StringProperty raceBibEnd;
-   private final BooleanProperty relayRace; 
-   private final StringProperty raceDistanceProperty; 
-   private final ObservableList<Wave> raceWaves; 
-   private List<Wave> raceWavesList;
-   private final ObservableList<Split> raceSplits; 
-   private List<Split> raceSplitList;
-   private List<RaceReport> raceReportsList;
-   private final ObservableList<RaceReport> raceReports;
-   private List<Segment> segmentsList;
-   private final ObservableList<Segment> raceSegments =FXCollections.observableArrayList();
-   //private final Race self; 
-   
-   private RaceAwards awards; 
-   private AgeGroups ageGroups;
+    private BigDecimal raceDistance; 
+    private Unit raceUnits; 
+    private final StringProperty raceUnitsProperty; 
+    private final StringProperty raceName;
+    private  Duration raceCutoff; 
+    private final StringProperty raceCutoffProperty; 
+    private final StringProperty raceBibStart;
+    private final StringProperty raceBibEnd;
+    private final BooleanProperty relayRace; 
+    private final StringProperty raceDistanceProperty; 
+    private final ObservableList<Wave> raceWaves; 
+    private List<Wave> raceWavesList;
+    private final ObservableList<Split> raceSplits; 
+    private List<Split> raceSplitList;
+    private List<RaceReport> raceReportsList;
+    private final ObservableList<RaceReport> raceReports;
+    private List<Segment> segmentsList;
+    private final ObservableList<Segment> raceSegments =FXCollections.observableArrayList();
+    //private final Race self; 
+
+    private RaceAwards awards; 
+    private AgeGroups ageGroups;
+
+    private Map<String,String> attributes = new HashMap();
+    private Map<String,Integer> intAttributes = new HashMap();
+    private Map<String,Boolean> boolAttributes = new HashMap();
            
     public Race() {
         this.IDProperty = new SimpleIntegerProperty();
@@ -360,6 +373,79 @@ public class Race {
     public StringProperty uuidProperty() {
         return uuidProperty; 
     }
+    
+    
+    
+    
+    
+    // The map of attributes -> values
+    // easier than a really wide table of attributes since this thing will just 
+    // grow once we add in custom stuff
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name="attribute", insertable=false,updatable=false)
+    @Column(name="value")
+    @CollectionTable(name="race_attributes", joinColumns=@JoinColumn(name="race_id"))
+    private Map<String, String> getAttributes() {
+        return attributes;
+    }
+    private void setAttributes(Map<String,String> m) {
+        attributes = m;
+    } 
+    
+    @Transient
+    public Set<String> getKnownAttributeNames() {
+        return attributes.keySet();
+    }
+
+    //Overall
+    //male
+    public Integer getIntegerAttribute(String key) {
+        if (!intAttributes.containsKey(key)) {
+            if (attributes.containsKey(key)) {
+                intAttributes.put(key,Integer.parseUnsignedInt(attributes.get(key)));
+            } else {
+                System.out.println("RaceAwards.getIntegerAtrribute key of " + key + " is NULL!");
+                return null;
+            }
+        }
+        return intAttributes.get(key);
+    }
+    public void setIntegerAttribute(String key, Integer n) {
+        intAttributes.put(key,n);
+        attributes.put(key, n.toString());
+    }
+    
+    
+    //Pull, Gun, etc
+     public Boolean getBooleanAttribute(String key) {
+        if (!boolAttributes.containsKey(key)) {
+            if (attributes.containsKey(key)) {
+                boolAttributes.put(key,Boolean.parseBoolean(attributes.get(key)));
+            } else {
+                System.out.println("RaceAwards.getBooleanAtrribute key of " + key + " is NULL!");
+                return null;
+            }
+        }
+        return boolAttributes.get(key);
+    }
+    public void setBooleanAttribute(String key, Boolean n) {
+        boolAttributes.put(key,n);
+        attributes.put(key, n.toString());
+    }
+    
+    public String getStringAttribute(String key) {
+        if (!attributes.containsKey(key)) {
+            return null;
+        }
+        return attributes.get(key);
+    }
+    public void setStringAttribute(String key, String v) {
+        attributes.put(key, v);
+    }
+    
+    
+    
+    
     
     @Override
     public int hashCode() {

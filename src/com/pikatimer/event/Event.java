@@ -34,6 +34,7 @@ public class Event {
     private LocalDate eventDate = LocalDate.now(); 
     private final long eventID = 1;
     private  TabPane mainTabPane;  
+    private EventOptions eventOptions;
  
 	/**
 	* SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -88,5 +89,10 @@ public class Event {
         
         public SimpleStringProperty eventDateStringProperty() {
             return eventDateString;
+        }
+        
+        public EventOptions eventOptions(){
+            if (eventOptions == null) eventOptions=EventDAO.getInstance().getEventOptions();
+            return eventOptions;
         }
 }

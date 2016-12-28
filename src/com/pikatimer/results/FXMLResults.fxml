@@ -56,8 +56,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                <children>
                   <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER">
                      <children>
-                        <Label fx:id="selectedRaceLabel" text="Selected Race: " HBox.hgrow="NEVER" />
-                        <ComboBox fx:id="raceComboBox" prefWidth="200.0" />
                         <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                         <Button fx:id="updateNowButton" mnemonicParsing="false" text="Update Now" />
                         <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="110.0" text="Auto-Update" HBox.hgrow="NEVER" />
@@ -81,17 +79,42 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <RowConstraints maxHeight="1.7976931348623157E308" minHeight="-Infinity" vgrow="NEVER" />
                     </rowConstraints>
                      <children>
-                        <HBox GridPane.columnIndex="2">
+                        <VBox spacing="2.0" GridPane.columnIndex="2">
                            <children>
-                              <Label text="Reports" GridPane.columnIndex="2">
-                                 <font>
-                                    <Font size="16.0" />
-                                 </font>
-                              </Label>
-                              <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                              <Button mnemonicParsing="false" onAction="#addNewReport" text="New Report" />
+                              <HBox>
+                                 <children>
+                                    <Label text="Reports" GridPane.columnIndex="2">
+                                       <font>
+                                          <Font size="16.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="selectedRaceLabel" text=" for " HBox.hgrow="NEVER">
+                                       <font>
+                                          <Font size="16.0" />
+                                       </font>
+                                    </Label>
+                                    <ComboBox fx:id="raceComboBox" prefWidth="200.0" />
+                                    <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                                    <Button mnemonicParsing="false" onAction="#addNewReport" text="Add Report" />
+                                 </children>
+                              </HBox>
+                              <HBox alignment="CENTER_LEFT" spacing="2.0">
+                                 <children>
+                                    <Label text="Time Display Format" />
+                                    <ChoiceBox fx:id="timeFormatChoiceBox" prefWidth="120.0" />
+                                    <Label text="Rounding">
+                                       <padding>
+                                          <Insets left="5.0" />
+                                       </padding>
+                                       <HBox.margin>
+                                          <Insets />
+                                       </HBox.margin>
+                                    </Label>
+                                    <ChoiceBox fx:id="timeRoundingChoiceBox" prefWidth="80.0" />
+                                 </children>
+                              </HBox>
                            </children>
-                        </HBox>
+                        </VBox>
                         <ScrollPane fx:id="resultsOutputScrollPane" fitToHeight="false" fitToWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.rowSpan="4" GridPane.vgrow="ALWAYS">
                            <padding>
                               <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
@@ -99,41 +122,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                            <content>
                               <VBox fx:id="outputDetailsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="10.0" />
                            </content></ScrollPane>
-                        <Label text="Report Destinations" GridPane.columnIndex="1" GridPane.rowIndex="2">
-                           <font>
-                              <Font size="16.0" />
-                           </font>
-                        </Label>
-                        <ListView fx:id="outputDestinationsListView" editable="true" prefHeight="88.0" prefWidth="175.0" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.vgrow="SOMETIMES" />
-                        <HBox alignment="CENTER_RIGHT" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                        <VBox GridPane.columnIndex="1" GridPane.rowSpan="4">
                            <children>
-                              <Button fx:id="removeOutputDestinationsButton" mnemonicParsing="false" onAction="#removeOutputDestination" text="Remove" />
-                              <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                              <Button fx:id="editOutputDestinationsButton" mnemonicParsing="false" onAction="#editOutputDestination" text="Edit" />
-                              <Button fx:id="addOutputDestinationsButton" mnemonicParsing="false" onAction="#addOutputDestination" text="Add" />
+                              <Label text="Report Destinations">
+                                 <font>
+                                    <Font size="16.0" />
+                                 </font>
+                              </Label>
+                              <ListView fx:id="outputDestinationsListView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+                              <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
+                                 <children>
+                                    <Button fx:id="removeOutputDestinationsButton" mnemonicParsing="false" onAction="#removeOutputDestination" text="Remove" />
+                                    <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="editOutputDestinationsButton" mnemonicParsing="false" onAction="#editOutputDestination" text="Edit" />
+                                    <Button fx:id="addOutputDestinationsButton" mnemonicParsing="false" onAction="#addOutputDestination" text="Add" />
+                                 </children>
+                              </HBox>
                            </children>
-                        </HBox>
-                        <Label text="Time Formast" GridPane.columnIndex="1">
-                           <font>
-                              <Font size="16.0" />
-                           </font>
-                        </Label>
-                        <GridPane hgap="5.0" vgap="1.0" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.vgrow="NEVER">
-                          <columnConstraints>
-                            <ColumnConstraints hgrow="NEVER" />
-                            <ColumnConstraints hgrow="SOMETIMES" />
-                          </columnConstraints>
-                          <rowConstraints>
-                            <RowConstraints minHeight="10.0" vgrow="NEVER" />
-                            <RowConstraints minHeight="10.0" vgrow="NEVER" />
-                          </rowConstraints>
-                           <children>
-                              <Label text="Time Display Format" />
-                              <Label text="Rounding" GridPane.rowIndex="1" />
-                              <ChoiceBox fx:id="timeFormatChoiceBox" prefWidth="80.0" GridPane.columnIndex="1" />
-                              <ChoiceBox fx:id="timeRoundingChoiceBox" prefWidth="80.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                           </children>
-                        </GridPane>
+                        </VBox>
                      </children>
                   </GridPane>
                </children>

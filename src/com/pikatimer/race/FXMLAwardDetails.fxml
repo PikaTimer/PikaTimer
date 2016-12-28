@@ -67,9 +67,9 @@
             <Label prefHeight="17.0" prefWidth="56.0" text="Increment" />
             <Label text="1st AG End" GridPane.rowIndex="1" />
             <Label text="Masters Start" GridPane.rowIndex="2" />
-            <ChoiceBox fx:id="agIncrementChoiceBox" GridPane.columnIndex="1" />
-            <TextField fx:id="agStartTextField" maxWidth="33.0" minWidth="33.0" prefWidth="33.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <TextField fx:id="agMastersStartTextField" maxWidth="33.0" minWidth="33.0" prefWidth="33.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <ChoiceBox fx:id="agIncrementChoiceBox" prefHeight="25.0" prefWidth="50.0" GridPane.columnIndex="1" />
+            <TextField fx:id="agStartTextField" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <TextField fx:id="agMastersStartTextField" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
          </children>
          <padding>
             <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />

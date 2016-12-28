@@ -19,6 +19,7 @@ package com.pikatimer.event;
 
 import com.pikatimer.util.HibernateUtil;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.hibernate.Query;
@@ -37,6 +38,19 @@ import org.hibernate.type.StringType;
  * object. 
  */
 public class EventDAO {
+    
+    /**
+    * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
+    * or the first access to SingletonHolder.INSTANCE, not before.
+    */
+    private static class SingletonHolder { 
+            private static final EventDAO INSTANCE = new EventDAO();
+    }
+
+    public static EventDAO getInstance() {
+            return SingletonHolder.INSTANCE;
+    }
+    
         private final Event event = Event.getInstance();
         
         public void updateEvent() {
@@ -101,4 +115,41 @@ public class EventDAO {
             }
             
         }
+        
+        public EventOptions getEventOptions(){
+            EventOptions eo;
+            // Run a select
+            List<EventOptions> list = new ArrayList<>();
+            Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+            s.beginTransaction();
+            //System.out.println("RacedAO.refreshRaceList() Starting the query");
+
+            try {  
+                list=s.createQuery("from EventOptions").list();
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            } 
+            s.getTransaction().commit(); 
+                    
+            // if we don't have any, create one and save it
+            if (list.isEmpty()) {
+                eo= new EventOptions();
+                eo.setEventID(1);
+                saveEventOptions(eo);
+            } else {
+                eo = list.get(0);
+            }
+                
+            // return what we have
+            
+            return eo;
+        }
+        
+        public void saveEventOptions(EventOptions e){
+            Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+            s.beginTransaction();
+            s.saveOrUpdate(e);
+            s.getTransaction().commit();
+        }
+        
 }
