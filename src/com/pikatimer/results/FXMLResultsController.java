@@ -238,7 +238,7 @@ public class FXMLResultsController  {
                 TableView<Result> table = new TableView();
                 
                 //table.setPadding(new Insets(5));
-                
+                table.setTableMenuButtonVisible(true);            
                 
                 // create the columns for the table with 
                 // cellValueFactories convert from the Result data to something we can display
