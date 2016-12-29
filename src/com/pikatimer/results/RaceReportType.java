@@ -31,4 +31,6 @@ public interface RaceReportType {
     //the RaceReport is how the report generator gets its config of what to show
     public String process(List<ProcessedResult> r, RaceReport rr);
     
+    public Boolean optionSupport(String feature);
+    
 }

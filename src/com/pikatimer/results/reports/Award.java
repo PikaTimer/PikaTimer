@@ -48,6 +48,11 @@ public class Award implements RaceReportType {
     List<ProcessedResult> prList;
 
     @Override
+    public Boolean optionSupport(String feature) {
+        return false;
+    }
+    
+    @Override
     public void init(Race r) {
         race = r;
     }
@@ -329,4 +334,6 @@ public class Award implements RaceReportType {
         
         return report;
     }
+
+    
 }

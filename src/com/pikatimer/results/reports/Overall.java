@@ -45,6 +45,11 @@ public class Overall implements RaceReportType{
     }
 
     @Override
+    public Boolean optionSupport(String feature) {
+        return true;
+    }
+    
+    @Override
     public String process(List<ProcessedResult> prList, RaceReport rr) {
         System.out.println("Overall.process() Called... ");
         String report = new String();

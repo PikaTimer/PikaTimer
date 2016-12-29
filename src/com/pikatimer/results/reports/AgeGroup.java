@@ -58,6 +58,11 @@ public class AgeGroup implements RaceReportType {
     }
     
     @Override
+    public Boolean optionSupport(String feature) {
+        return true;
+    }
+    
+    @Override
     public String process(List<ProcessedResult> prList, RaceReport rr) {
         System.out.println("AgeGroup.process() Called... ");
         String report = new String();

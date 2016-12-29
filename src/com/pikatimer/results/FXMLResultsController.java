@@ -35,6 +35,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -64,6 +66,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
 
 
@@ -351,24 +354,25 @@ public class FXMLResultsController  {
                         if (newValue == null || newValue.isEmpty()) {
                             return true;
                         }
-                        //System.out.println("Filtered list eval for result " + result.getBib());
-                        // Compare first name and last name of every person with filter text.
-                        String lowerCaseFilter = "(.*)(" + newValue.toLowerCase() + ")(.*)";
+                        
+                        Participant participant = participantDAO.getParticipantByBib(result.getBib());
+                        if (participant == null) { 
+                            System.out.println(" Null participant, bailing...");
+                            return false;
+                        }
+                        String lowerCaseFilter = "(.*)(" + resultsSearchTextField.textProperty().getValueSafe() + ")(.*)";
+                        try {
+                            Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
 
-                        try {    
-                            Participant p = participantDAO.getParticipantByBib(result.getBib());
-                            if (p == null) { 
-                                System.out.println(" Null participant, bailing...");
-                                return false;
-                            }
-
-                            if ((p.fullNameProperty().getValueSafe() + " " + result.getBib() + " ").toLowerCase().matches(lowerCaseFilter)) {
-                                //System.out.println(" Match: " + lowerCaseFilter + " " + p.fullNameProperty().getValueSafe() + " " + result.getBib() );
-                                return true; // Filter matches first/last/email/bib.
+                            if (    pattern.matcher(participant.getFirstName()).matches() ||
+                                    pattern.matcher(participant.getLastName()).matches() ||
+                                    pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
+                                    pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
+                                    pattern.matcher(participant.getBib()).matches()) {
+                                return true; // Filter matches first/last/bib.
                             } 
 
-                        } catch (Exception e) {
-                            //e.printStackTrace();
+                        } catch (PatternSyntaxException e) {
                             return true;
                         }
                         return false; // Does not match.
