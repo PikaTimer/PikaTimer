@@ -67,7 +67,7 @@ public class Pikatimer extends Application {
         //stash the primaryStage in the event object
         mainStage=primaryStage;
         
-        primaryStage.setTitle("PikaTimer");
+        primaryStage.setTitle("PikaTimer " + VERSION);
         
         Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLopenEvent.fxml"));
         Scene myScene = new Scene(myPane);
