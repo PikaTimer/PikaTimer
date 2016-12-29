@@ -48,6 +48,7 @@ public class FXMLResultOutputController {
     
     @FXML ToggleSwitch reportEnabledToggleSwitch;
             
+    @FXML Label optionsLabel;
     @FXML CheckBox inProgressCheckBox;
     @FXML CheckBox showDQCheckBox;
     @FXML CheckBox showDNFCheckBox;
@@ -89,6 +90,9 @@ public class FXMLResultOutputController {
             return;
         }
         thisRaceReport=r;
+        
+        
+        
         outputTypeChoiceBox.getSelectionModel().selectedItemProperty().addListener((ov, oldRT, newRT) -> {
             if (newRT == null) return;
             if (!thisRaceReport.getReportType().equals(newRT)) {
@@ -97,8 +101,10 @@ public class FXMLResultOutputController {
             }
             RaceReportType rrt = thisRaceReport.getReportType().getNewReader();
             boolean attributeAdded = false;
-            // Show or hide options based on what the RaceReportType is capable of handling
             
+            // Show or hide options based on what the RaceReportType is capable of handling
+            optionsLabel.visibleProperty().set(false);
+
             //@FXML ToggleSwitch reportEnabledToggleSwitch;
             if (r.getBooleanAttribute("enabled") == null) {
                 r.setBooleanAttribute("enabled", true);
@@ -115,6 +121,8 @@ public class FXMLResultOutputController {
                 inProgressCheckBox.selectedProperty().setValue(r.getBooleanAttribute("inProgress"));
                 inProgressCheckBox.visibleProperty().set(true);
                 inProgressCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
+
             } else {
                 inProgressCheckBox.visibleProperty().set(false);
                 inProgressCheckBox.managedProperty().set(false);
@@ -129,6 +137,8 @@ public class FXMLResultOutputController {
                 showDQCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showDQ"));
                 showDQCheckBox.visibleProperty().set(true);
                 showDQCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
+
             } else {
                 showDQCheckBox.visibleProperty().set(false);
                 showDQCheckBox.managedProperty().set(false);
@@ -143,6 +153,7 @@ public class FXMLResultOutputController {
                 showDNFCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showDNF"));
                 showDNFCheckBox.visibleProperty().set(true);
                 showDNFCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
             } else {
                 showDNFCheckBox.visibleProperty().set(false);
                 showDNFCheckBox.managedProperty().set(false);
@@ -157,6 +168,7 @@ public class FXMLResultOutputController {
                 showPaceCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showPace"));
                 showPaceCheckBox.visibleProperty().set(true);
                 showPaceCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
             } else {
                 showPaceCheckBox.visibleProperty().set(false);
                 showPaceCheckBox.managedProperty().set(false);
@@ -171,6 +183,7 @@ public class FXMLResultOutputController {
                 showGunTimeCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showGun"));
                 showGunTimeCheckBox.visibleProperty().set(true);
                 showGunTimeCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
             } else {
                 showGunTimeCheckBox.visibleProperty().set(false);
                 showGunTimeCheckBox.managedProperty().set(false);
@@ -184,6 +197,7 @@ public class FXMLResultOutputController {
                 showSplitsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSplits"));
                 showSplitsCheckBox.visibleProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
                 showSplitsCheckBox.managedProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
+                optionsLabel.visibleProperty().set(true);
             } else {
                 showSplitsCheckBox.visibleProperty().unbind();
                 showSplitsCheckBox.visibleProperty().set(false);
@@ -199,6 +213,7 @@ public class FXMLResultOutputController {
                 showSegmentsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSegments"));
                 showSegmentsCheckBox.visibleProperty().bind(Bindings.size(r.getRace().raceSegmentsProperty()).greaterThan(0));
                 showSegmentsCheckBox.managedProperty().bind(Bindings.size(r.getRace().raceSegmentsProperty()).greaterThan(0));
+                optionsLabel.visibleProperty().set(true);
             } else {
                 showSegmentsCheckBox.visibleProperty().unbind();
                 showSegmentsCheckBox.visibleProperty().set(false);
@@ -214,6 +229,7 @@ public class FXMLResultOutputController {
                 showSegmentPaceCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSegmentPace"));
                 showSegmentPaceCheckBox.visibleProperty().bind(Bindings.size(r.getRace().raceSegmentsProperty()).greaterThan(0));
                 showSegmentPaceCheckBox.managedProperty().bind(Bindings.size(r.getRace().raceSegmentsProperty()).greaterThan(0));
+                optionsLabel.visibleProperty().set(true);
             } else {
                 showSegmentPaceCheckBox.visibleProperty().unbind();
                 showSegmentPaceCheckBox.visibleProperty().set(false);
