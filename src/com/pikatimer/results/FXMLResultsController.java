@@ -107,6 +107,11 @@ public class FXMLResultsController  {
     @FXML Button editOutputDestinationsButton;
     @FXML Button removeOutputDestinationsButton;
     
+    @FXML Label startedCountLabel;
+    @FXML Label finishedCountLabel;
+    @FXML Label pendingCountLabel;
+    
+    
     final Map<Race,TableView> raceTableViewMap = new ConcurrentHashMap();
     final Map<Race,VBox> raceReportsUIMap = new ConcurrentHashMap();
     final RaceDAO raceDAO = RaceDAO.getInstance();
@@ -218,6 +223,15 @@ public class FXMLResultsController  {
             timeFormatChoiceBox.getSelectionModel().select(dispFormat);
             
             
+            // Setup the started/finished/pending counters
+            
+            FilteredList<Result> filteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
+                if (res.getFinishDuration().equals(Duration.ZERO)) return false;
+                return true;
+            });
+            startedCountLabel.textProperty().bind(Bindings.size(resultsDAO.getResults(activeRace.getID())).asString());
+            finishedCountLabel.textProperty().bind(Bindings.size(filteredParticipantsList).asString());
+            pendingCountLabel.textProperty().bind(Bindings.subtract(Bindings.size(resultsDAO.getResults(activeRace.getID())), Bindings.size(filteredParticipantsList)).asString());
         });
         
         timeRoundingChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue,  newValue) -> {

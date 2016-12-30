@@ -156,9 +156,51 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <RowConstraints maxHeight="1.7976931348623157E308" minHeight="100.0" vgrow="ALWAYS" />
                </rowConstraints>
                <children>
-                  <HBox spacing="5.0">
+                  <HBox alignment="CENTER_LEFT" spacing="5.0">
                      <children>
+                        <Label text="Search">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
                         <TextField fx:id="resultsSearchTextField" promptText="Search" />
+                        <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                        <Label text="Started: ">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                        <Label fx:id="startedCountLabel" text="0">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                           <padding>
+                              <Insets right="5.0" />
+                           </padding>
+                        </Label>
+                        <Label text="Finished:">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                        <Label fx:id="finishedCountLabel" text="0">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                           <padding>
+                              <Insets right="5.0" />
+                           </padding>
+                        </Label>
+                        <Label text="Pending:">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                        <Label fx:id="pendingCountLabel" text="0">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
                      </children>
                      <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
