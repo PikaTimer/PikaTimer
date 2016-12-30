@@ -17,6 +17,7 @@
 package com.pikatimer.util;
 
 import com.pikatimer.results.OutputPortal;
+import javafx.beans.property.StringProperty;
 
 /**
  *
@@ -31,5 +32,7 @@ public interface FileTransport {
     public void setOutputPortal(OutputPortal aThis);
 
     public void refreshConfig();
+    
+    public StringProperty statusProperty();
     
 }

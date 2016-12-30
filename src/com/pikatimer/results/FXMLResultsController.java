@@ -669,6 +669,7 @@ public class FXMLResultsController  {
         CheckBox enabledCheckBox = new CheckBox("Enabled");
         VBox container = new VBox();
         HBox topLine = new HBox();
+        HBox middleLine = new HBox();
         HBox bottomLine = new HBox();
         
         OutputPortalListCell(){
@@ -681,12 +682,12 @@ public class FXMLResultsController  {
             spring.setMaxWidth(MAX_VALUE);
             protocolLabel.setMinWidth(USE_COMPUTED_SIZE);
             
-            transferStatusLabel.setMinWidth(1);
-            transferStatusLabel.setPrefWidth(2);
+            //transferStatusLabel.setMinWidth(1);
+            //transferStatusLabel.setPrefWidth(2);
             
             HBox.setHgrow(protocolLabel, Priority.NEVER);
             HBox.setHgrow(spring, Priority.ALWAYS);
-            topLine.getChildren().addAll(protocolLabel,transferStatusLabel, spring, enabledCheckBox);
+            topLine.getChildren().addAll(protocolLabel, spring, enabledCheckBox);
 
             
             serverLabel.setMinWidth(USE_COMPUTED_SIZE);
@@ -695,13 +696,15 @@ public class FXMLResultsController  {
             //pathLabel.setPrefWidth(1);
             pathLabel.setTextOverrun(OverrunStyle.LEADING_ELLIPSIS);
             
-            HBox.setHgrow(serverLabel, Priority.NEVER);
+            //HBox.setHgrow(serverLabel, Priority.NEVER);
             HBox.setHgrow(pathLabel, Priority.ALWAYS);
             
             
-            bottomLine.setSpacing(2);
-            bottomLine.getChildren().addAll(pathLabel);
-            container.getChildren().addAll(topLine, bottomLine);
+            middleLine.setSpacing(2);
+            middleLine.getChildren().addAll(pathLabel);
+            
+            bottomLine.getChildren().addAll(transferStatusLabel);
+            container.getChildren().addAll(topLine, middleLine,bottomLine);
             
             
             // TODO: Find the right way to constrain a cell to the 
@@ -724,8 +727,9 @@ public class FXMLResultsController  {
                 if (op.getOutputProtocol().equals(FileTransferTypes.LOCAL)) pathLabel.setText(op.basePathProperty().getValueSafe());
                 else pathLabel.setText(op.serverProperty().getValueSafe() + ":" + op.basePathProperty().getValueSafe());
                 enabledCheckBox.selectedProperty().bindBidirectional(op.enabledProperty());
-                transferStatusLabel.textProperty().bind(op.transferStatusProperty());
+                transferStatusLabel.setText("Status: " + op.transferStatusProperty().getValueSafe());
                 setGraphic(container);
+                System.out.println("updateItem called: " + op.transferStatusProperty().getValueSafe());
             }
         }
     }

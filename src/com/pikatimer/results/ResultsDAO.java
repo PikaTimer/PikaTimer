@@ -748,89 +748,100 @@ public class ResultsDAO {
     }
     
     public void processReports(Race r){
-        List<ProcessedResult> results = new ArrayList();
         
-        Integer splitSize = r.getSplits().size();
-        
-        // get the current results list
-        getResults(r.getID()).forEach(res -> {
-            ProcessedResult pr = new ProcessedResult();
-            
-            // If there is no participant, then bail. 
-            // TODO: Maybe add an option to create a participant on the fly, but
-            // this could gete messy with all of the random RFID chips out there.
-            // Either way, this would be handled on the timing tab, not here. 
-            if(participantDAO.getParticipantByBib(res.getBib()) == null) return; 
-            
-            // Link in the participant
-            pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
-            // Set the AG code (e.g. M30-34) (age and gender are set automagically)
-            pr.setAge(pr.getParticipant().getAge());
-            pr.setAGCode(r.getAgeGroups().ageToAGString(pr.getAge()));
-            
-            // set the start and wave start times
-            Duration chipStartTime = res.getStartDuration();
-            Duration waveStartTime = res.getWaveStartDuration();
-            
-            // Set the start duration
-            pr.setChipStartTime(chipStartTime);
-            pr.setWaveStartTime(waveStartTime);
-            
-            //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
-            
-            // Set the finish times
-            if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
-                pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
-                pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
-            }
-            
-            // Set the splits
-            if(r.getSplits().size() > 2) {
-                for (int i = 2; i <  splitSize ; i++) {
-                    //if (res.getSplitTime(i) != null) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
-                    if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+        Task processRaceReports = new Task<Void>() {
+
+                @Override 
+                public Void call() {
+                    List<ProcessedResult> results = new ArrayList();
+
+                    Integer splitSize = r.getSplits().size();
+
+                    // get the current results list
+                    getResults(r.getID()).forEach(res -> {
+                        ProcessedResult pr = new ProcessedResult();
+
+                        // If there is no participant, then bail. 
+                        // TODO: Maybe add an option to create a participant on the fly, but
+                        // this could gete messy with all of the random RFID chips out there.
+                        // Either way, this would be handled on the timing tab, not here. 
+                        if(participantDAO.getParticipantByBib(res.getBib()) == null) return; 
+
+                        // Link in the participant
+                        pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
+                        // Set the AG code (e.g. M30-34) (age and gender are set automagically)
+                        pr.setAge(pr.getParticipant().getAge());
+                        pr.setAGCode(r.getAgeGroups().ageToAGString(pr.getAge()));
+
+                        // set the start and wave start times
+                        Duration chipStartTime = res.getStartDuration();
+                        Duration waveStartTime = res.getWaveStartDuration();
+
+                        // Set the start duration
+                        pr.setChipStartTime(chipStartTime);
+                        pr.setWaveStartTime(waveStartTime);
+
+                        //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
+
+                        // Set the finish times
+                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
+                            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
+                            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
+                        }
+
+                        // Set the splits
+                        if(r.getSplits().size() > 2) {
+                            for (int i = 2; i <  splitSize ; i++) {
+                                //if (res.getSplitTime(i) != null) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+                                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+                            }
+                        }
+
+                        results.add(pr);
+                    });
+
+                    // sort it by finish, then last completed split
+                    results.sort(null); // ProcessedResult iplements the Comparable interface
+
+                    // calculate placement in Overall, Gender, AG
+                    Map<String,Integer> placementCounter = new HashMap();
+                    placementCounter.put("overall", 1);
+                    placementCounter.put("M",1);
+                    placementCounter.put("F",1);
+
+                    results.forEach(pr -> {
+                        pr.setOverall(placementCounter.get("overall"));
+                        placementCounter.put("overall", pr.getOverall()+1);
+
+                        pr.setSexPlace(placementCounter.get(pr.getSex()));
+                        placementCounter.put(pr.getSex(), pr.getSexPlace()+1);
+
+                        placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
+                        pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
+                        placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace()+1);
+
+            //            System.out.println("Results: " + r.getRaceName() + ": "
+            //                    + pr.getParticipant().fullNameProperty().getValueSafe() 
+            //                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
+            //                    + DurationFormatter.durationToString(pr.getChipFinish())
+            //                    + " O:" + pr.getOverall() + " S:" + pr.getSexPlace() 
+            //                    + " AG:" + pr.getAGPlace()
+            //            );
+
+                    });
+
+
+                    // for each report, feed it the results list
+                    r.raceReportsProperty().forEach(rr ->{
+                        rr.processResult(results);
+                    });
+                    return null;
                 }
-            }
-            
-            results.add(pr);
-        });
-        
-        // sort it by finish, then last completed split
-        results.sort(null); // ProcessedResult iplements the Comparable interface
-        
-        // calculate placement in Overall, Gender, AG
-        Map<String,Integer> placementCounter = new HashMap();
-        placementCounter.put("overall", 1);
-        placementCounter.put("M",1);
-        placementCounter.put("F",1);
-        
-        results.forEach(pr -> {
-            pr.setOverall(placementCounter.get("overall"));
-            placementCounter.put("overall", pr.getOverall()+1);
-            
-            pr.setSexPlace(placementCounter.get(pr.getSex()));
-            placementCounter.put(pr.getSex(), pr.getSexPlace()+1);
-            
-            placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
-            pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
-            placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace()+1);
-            
-//            System.out.println("Results: " + r.getRaceName() + ": "
-//                    + pr.getParticipant().fullNameProperty().getValueSafe() 
-//                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
-//                    + DurationFormatter.durationToString(pr.getChipFinish())
-//                    + " O:" + pr.getOverall() + " S:" + pr.getSexPlace() 
-//                    + " AG:" + pr.getAGPlace()
-//            );
-        
-        });
-        
-        
-        // for each report, feed it the results list
-        r.raceReportsProperty().forEach(rr ->{
-            rr.processResult(results);
-        });
-        
+            };
+            Thread processNewResultThread = new Thread(processRaceReports);
+            processNewResultThread.setName("Thread-processRaceReports-" + r.getRaceName());
+            processNewResultThread.setDaemon(true);
+            processNewResultThread.start();
         
     }
     

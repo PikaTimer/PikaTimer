@@ -56,8 +56,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                <children>
                   <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER">
                      <children>
+                        <Button fx:id="updateNowButton" mnemonicParsing="false" text="Process Reports" />
                         <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                        <Button fx:id="updateNowButton" mnemonicParsing="false" text="Update Now" />
                         <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="110.0" text="Auto-Update" HBox.hgrow="NEVER" />
                         <ProgressIndicator fx:id="autoUpdateProgressIndicator" progress="0.0" />
                      </children>

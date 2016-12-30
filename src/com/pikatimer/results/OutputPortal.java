@@ -127,6 +127,12 @@ public class OutputPortal {
             fileTransport = t.getNewTransport();
             fileTransport.setOutputPortal(this);
             
+            System.out.println("Binding fileTransport.statusProperty() to transferStatusProperty");
+            transferStatusProperty.bind(fileTransport.statusProperty());
+            transferStatusProperty.addListener((ob, oldStatus, newStatus) -> {
+                System.out.println("FileTransport.statusProperty() is now " + newStatus);
+            });
+            
             outputProtocol = t;
             protocolProperty.setValue(outputProtocol.toString());
         }
@@ -285,7 +291,7 @@ public class OutputPortal {
 
     void save(String filename, String contents) {
         System.out.println("OutputPortal.save() called for " + filename);
-        if (fileTransport != null) {
+        if (fileTransport != null && enabledProperty.get()) {
             if (fileTransport.isOK())
                 fileTransport.save(filename,contents);
         }

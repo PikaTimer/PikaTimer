@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.concurrent.Task;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.PrintCommandListener;
@@ -50,6 +52,8 @@ public class FTPSTransport implements FileTransport{
     private static final BlockingQueue<String> transferQueue = new ArrayBlockingQueue(100000);
 
     private static final Map<String,String> transferMap = new ConcurrentHashMap();
+    
+    StringProperty transferStatus = new SimpleStringProperty("Idle");
     
     String hostname;
     String username;
@@ -215,5 +219,10 @@ public class FTPSTransport implements FileTransport{
             System.out.println("FTP client received network error");
             
         }
+    }
+
+    @Override
+    public StringProperty statusProperty() {
+        return transferStatus;
     }
 }

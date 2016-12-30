@@ -22,6 +22,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -33,7 +36,7 @@ public class LocalTransport implements FileTransport {
     Boolean goodToGo = false;
     String basePath;
     OutputPortal parent;
-    
+    StringProperty transferStatus = new SimpleStringProperty("Idle");
 
     @Override
     public boolean isOK() {
@@ -46,8 +49,16 @@ public class LocalTransport implements FileTransport {
         if (goodToGo && ! basePath.isEmpty()) {
             
             try {
+                Platform.runLater(() -> {transferStatus.set("Saving: " + filename);});
+//                try {
+//                    Thread.sleep(3000);
+//                } catch (InterruptedException ex) {
+//                    Logger.getLogger(LocalTransport.class.getName()).log(Level.SEVERE, null, ex);
+//                }
                 FileUtils.writeStringToFile(new File(FilenameUtils.concat(basePath, filename)), contents);
+                Platform.runLater(() -> {transferStatus.set("Idle");});
             } catch (IOException ex) {
+                Platform.runLater(() -> {transferStatus.set("ERROR! " + filename);});
                 Logger.getLogger(LocalTransport.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
@@ -85,6 +96,10 @@ public class LocalTransport implements FileTransport {
         
     }
 
+    @Override
+    public StringProperty statusProperty() {
+        return transferStatus;
+    }
     
     
 }
