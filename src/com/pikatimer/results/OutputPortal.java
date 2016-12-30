@@ -50,7 +50,7 @@ public class OutputPortal {
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
     private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
     private final StringProperty nameProperty= new SimpleStringProperty();
-    private final StringProperty protocolProperty = new SimpleStringProperty("UNSET");
+    private final StringProperty protocolProperty = new SimpleStringProperty();
     private final StringProperty serverProperty = new SimpleStringProperty();
     private final StringProperty basePathProperty = new SimpleStringProperty();
     private final StringProperty usernameProperty = new SimpleStringProperty();
@@ -62,7 +62,7 @@ public class OutputPortal {
     private final StringProperty transferStatusProperty = new SimpleStringProperty();
     
     private FileTransport fileTransport;
-    private FileTransferTypes outputProtocol;
+    private FileTransferTypes outputProtocol = FileTransferTypes.LOCAL;
     
     public OutputPortal(){
         // nothing to do here for now
@@ -120,7 +120,7 @@ public class OutputPortal {
     }
     public void setOutputProtocol(FileTransferTypes t) {
         
-        if (t != null && (outputProtocol == null || ! outputProtocol.equals(t)) ){
+        if (t != null && (outputProtocol == null || fileTransport == null || ! outputProtocol.equals(t)) ){
             
             
                                

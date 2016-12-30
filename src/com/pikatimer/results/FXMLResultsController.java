@@ -47,6 +47,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -68,6 +69,7 @@ import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -471,7 +473,12 @@ public class FXMLResultsController  {
             resultsDAO.saveOutputPortal(op);
         }
         
-        
+        outputDestinationsListView.setOnMouseClicked((MouseEvent click) -> {
+            if (click.getClickCount() == 2) {
+                OutputPortal sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
+                editOutputDestination(sp);
+            }
+        });
         
     }
     public void addOutputDestination(ActionEvent fxevent){
