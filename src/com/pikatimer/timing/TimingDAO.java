@@ -130,6 +130,7 @@ public class TimingDAO {
     }
     
     public void clearRawTimes(TimingLocation tl) {
+        if (tl == null || tl.inputsProperty().isEmpty()) return;
         tl.getInputs().stream().forEach(tli -> {
             clearRawTimes(tli);
         });
