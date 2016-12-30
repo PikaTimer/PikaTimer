@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -58,6 +59,8 @@ public class FXMLAwardDetailsController {
     @FXML TextField awardMastersFemaleDepthTextField;    
     @FXML TextField awardAGMaleDepthTextField;
     @FXML TextField awardAGFemaleDepthTextField;
+    
+    @FXML CheckBox permitTiesCheckBox;
 
     final RaceDAO raceDAO = RaceDAO.getInstance();
     final ResultsDAO resultsDAO = ResultsDAO.getInstance();
@@ -81,23 +84,22 @@ public class FXMLAwardDetailsController {
         
         initializeAgeGroupSettings();
         initializeAwardSettings();
+        initializeRaceSettings();
         
        raceComboBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
-
-            
             if (number2.intValue() == -1 )  {
                 raceComboBox.getSelectionModel().clearAndSelect(0);
                 return;
             } 
-            
-            
+
             activeRace = raceComboBox.getItems().get(number2.intValue());
             
             // Populate the AG settings
             populateAgeGroupSettings(activeRace);
             // Populate the Awards Settings
             populateAwardsSettings(activeRace);
-            
+            // Populate the race-wide settings
+            populateRaceSettings(activeRace);
             
             
             
@@ -124,6 +126,16 @@ public class FXMLAwardDetailsController {
     }
 
             
+    private void initializeRaceSettings(){
+        permitTiesCheckBox.selectedProperty().addListener((ob, oldVal, newVal) -> {
+            Race r = activeRace;
+            if (!newVal.equals(r.getBooleanAttribute("permitTies"))) {
+                r.setBooleanAttribute("permitTies", newVal);
+                raceDAO.updateRace(r);
+            }
+        });
+    }
+    
     private void initializeAgeGroupSettings() {
         //@FXML ChoiceBox agIncrementChoiceBox;
         //@FXML TextField agStartTextField;
@@ -485,6 +497,15 @@ public class FXMLAwardDetailsController {
         });
 
 
+    }
+    
+    private void populateRaceSettings(Race r){
+        if (r == null) return; 
+        if (r.getBooleanAttribute("permitTies") == null ) {
+            r.setBooleanAttribute("permitTies", TRUE);
+            raceDAO.updateRace(r);
+        }
+        permitTiesCheckBox.selectedProperty().set(r.getBooleanAttribute("permitTies"));
     }
 
     private void populateAwardsSettings(Race r) {
