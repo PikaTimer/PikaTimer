@@ -58,6 +58,7 @@ public class OutputPortal {
     private final StringProperty privateKeyProperty = new SimpleStringProperty();
     private final StringProperty remoteCertProperty = new SimpleStringProperty();
     private final BooleanProperty checkCertProperty = new SimpleBooleanProperty();
+    private final BooleanProperty enabledProperty = new SimpleBooleanProperty(true);
     private final StringProperty transferStatusProperty = new SimpleStringProperty();
     
     private FileTransport fileTransport;
@@ -234,6 +235,10 @@ public class OutputPortal {
     }
     public BooleanProperty checkCertProperty() {
         return checkCertProperty; 
+    }
+    
+    public BooleanProperty enabledProperty(){
+        return enabledProperty;
     }
     
     public StringProperty transferStatusProperty(){

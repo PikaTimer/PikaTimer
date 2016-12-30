@@ -29,6 +29,7 @@ import com.pikatimer.util.FileTransferTypes;
 import java.io.IOException;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.lang.Double.MAX_VALUE;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -52,11 +53,14 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -65,7 +69,10 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
 
@@ -446,12 +453,14 @@ public class FXMLResultsController  {
     }
     
     private void initializeOutputDestinations(){
+        
+        
 
         removeOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
         editOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
         outputDestinationsListView.setItems(resultsDAO.listOutputPortals());
         outputDestinationsListView.setEditable(false);
-        
+        outputDestinationsListView.setCellFactory((ListView<OutputPortal> listView) -> new OutputPortalListCell());
         // If empty, create a default local file output
         if(resultsDAO.listOutputPortals().isEmpty()) {
             OutputPortal op = new OutputPortal();
@@ -461,6 +470,8 @@ public class FXMLResultsController  {
             
             resultsDAO.saveOutputPortal(op);
         }
+        
+        
         
     }
     public void addOutputDestination(ActionEvent fxevent){
@@ -640,4 +651,75 @@ public class FXMLResultsController  {
             }
         }
     };
+    
+    private class OutputPortalListCell extends ListCell<OutputPortal> {
+        Label protocolLabel = new Label();
+        Label serverLabel = new Label();
+        Label pathLabel = new Label();
+        Label transferStatusLabel = new Label();
+        Label spring = new Label();
+        
+        CheckBox enabledCheckBox = new CheckBox("Enabled");
+        VBox container = new VBox();
+        HBox topLine = new HBox();
+        HBox bottomLine = new HBox();
+        
+        OutputPortalListCell(){
+            topLine.setSpacing(5);
+            topLine.setStyle("-fx-font-size: 14px;");
+            enabledCheckBox.setStyle("-fx-font-size: 12px;");
+            
+            spring.setMinWidth(1);
+            spring.setPrefWidth(1);
+            spring.setMaxWidth(MAX_VALUE);
+            protocolLabel.setMinWidth(USE_COMPUTED_SIZE);
+            
+            transferStatusLabel.setMinWidth(1);
+            transferStatusLabel.setPrefWidth(2);
+            
+            HBox.setHgrow(protocolLabel, Priority.NEVER);
+            HBox.setHgrow(spring, Priority.ALWAYS);
+            topLine.getChildren().addAll(protocolLabel,transferStatusLabel, spring, enabledCheckBox);
+
+            
+            serverLabel.setMinWidth(USE_COMPUTED_SIZE);
+            serverLabel.setPrefWidth(USE_COMPUTED_SIZE);
+            pathLabel.setMinWidth(1);
+            //pathLabel.setPrefWidth(1);
+            pathLabel.setTextOverrun(OverrunStyle.LEADING_ELLIPSIS);
+            
+            HBox.setHgrow(serverLabel, Priority.NEVER);
+            HBox.setHgrow(pathLabel, Priority.ALWAYS);
+            
+            
+            bottomLine.setSpacing(2);
+            bottomLine.getChildren().addAll(pathLabel);
+            container.getChildren().addAll(topLine, bottomLine);
+            
+            
+            // TODO: Find the right way to constrain a cell to the 
+            // Note that the serverLabel will shrink despite the minWidth setting
+            // The entire thing is beyond frustrating
+            container.setMaxWidth(230);
+            
+        }
+        
+        @Override
+        public void updateItem(OutputPortal op, boolean empty) {
+            super.updateItem(op, empty);
+            if (empty || op == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                setText(null);
+                protocolLabel.setText(op.protocolProperty().getValueSafe());
+                //serverLabel.setText(op.serverProperty().getValueSafe());
+                if (op.getOutputProtocol().equals(FileTransferTypes.LOCAL)) pathLabel.setText(op.basePathProperty().getValueSafe());
+                else pathLabel.setText(op.serverProperty().getValueSafe() + ":" + op.basePathProperty().getValueSafe());
+                enabledCheckBox.selectedProperty().bindBidirectional(op.enabledProperty());
+                transferStatusLabel.textProperty().bind(op.transferStatusProperty());
+                setGraphic(container);
+            }
+        }
+    }
 }

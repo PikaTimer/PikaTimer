@@ -129,7 +129,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                     <Font size="16.0" />
                                  </font>
                               </Label>
-                              <ListView fx:id="outputDestinationsListView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+                              <ListView fx:id="outputDestinationsListView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="250.0" />
                               <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
                                  <children>
                                     <Button fx:id="removeOutputDestinationsButton" mnemonicParsing="false" onAction="#removeOutputDestination" text="Remove" />
