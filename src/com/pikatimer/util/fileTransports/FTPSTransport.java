@@ -34,6 +34,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.concurrent.Task;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.PrintCommandListener;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
@@ -48,7 +49,8 @@ public class FTPSTransport implements FileTransport{
     
     String basePath;
     OutputPortal parent;
-    
+    Boolean stripAccents = false;
+
     Thread transferThread;
     FTPSClient ftpClient;
     
@@ -235,6 +237,7 @@ public class FTPSTransport implements FileTransport{
     @Override
     public void save(String filename, String contents) {
         System.out.println("FTPSTransport.save() called for " + filename);
+        if (stripAccents) contents = StringUtils.stripAccents(contents);
         transferMap.put(filename,contents);
         if (! transferQueue.contains(filename)) transferQueue.add(filename);
         
@@ -262,6 +265,9 @@ public class FTPSTransport implements FileTransport{
                 // do nothing
             }
         }
+        
+        stripAccents = parent.getStripAccents();
+                    
         fatalError=false;
         needConfigRefresh = false;
     

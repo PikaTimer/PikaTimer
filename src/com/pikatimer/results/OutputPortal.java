@@ -59,6 +59,8 @@ public class OutputPortal {
     private final StringProperty remoteCertProperty = new SimpleStringProperty();
     private final BooleanProperty checkCertProperty = new SimpleBooleanProperty();
     private final BooleanProperty enabledProperty = new SimpleBooleanProperty(true);
+    private final BooleanProperty stripAccentsProperty = new SimpleBooleanProperty(false);
+
     private final StringProperty transferStatusProperty = new SimpleStringProperty();
     
     private FileTransport fileTransport;
@@ -230,17 +232,34 @@ public class OutputPortal {
     
 //    permit_any boolean
     @Column(name="permit_any")
-    public boolean getCheckCert() {
+    public Boolean getCheckCert() {
        // System.out.println("Participant UUID is " + uuidProperty.get());
         return checkCertProperty.get();
     }
-    public void setCheckCert(boolean  s) {
+    public void setCheckCert(Boolean  s) {
+        if (s == null) return;
         checkCertProperty.setValue(s);
         if(fileTransport != null) fileTransport.refreshConfig();
         //System.out.println("Participant UUID is now " + uuidProperty.get());
     }
     public BooleanProperty checkCertProperty() {
         return checkCertProperty; 
+    }
+    
+    //    strip Accents boolean
+    @Column(name="stripAccents")
+    public Boolean getStripAccents() {
+       // System.out.println("Participant UUID is " + uuidProperty.get());
+        return stripAccentsProperty.getValue();
+    }
+    public void setStripAccents(Boolean  s) {
+        if (s == null) return;
+        stripAccentsProperty.setValue(s);
+        if(fileTransport != null) fileTransport.refreshConfig();
+        //System.out.println("Participant UUID is now " + uuidProperty.get());
+    }
+    public BooleanProperty stripAccentsProperty() {
+        return stripAccentsProperty; 
     }
     
     public BooleanProperty enabledProperty(){

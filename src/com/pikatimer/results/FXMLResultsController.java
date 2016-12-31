@@ -40,6 +40,8 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -52,6 +54,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
@@ -70,6 +73,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
@@ -577,6 +581,7 @@ public class FXMLResultsController  {
         typeChoiceBox.getItems().setAll(FileTransferTypes.values());
         grid.add(new Label("Type"), 0, 0);
         grid.add(typeChoiceBox, 1, 0);
+        grid.setStyle("-fx-font-size: 14px;");
         
         // Now we create two Grids, one for local files, one for remote
         // We do this so we can easily show one and hide the other as the 
@@ -587,32 +592,7 @@ public class FXMLResultsController  {
         grid.add(localGrid,0,1,2,1); // col 0, row 1, colspan 2, rowspan 1
         grid.add(remoteGrid,0,1,2,1);
         
-        typeChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
-            FileTransferTypes ftt = typeChoiceBox.getItems().get((Integer) number2);
-            if (number2.intValue() < 0) {
-                remoteGrid.managedProperty().setValue(FALSE);
-                remoteGrid.visibleProperty().setValue(FALSE);
-                localGrid.managedProperty().setValue(FALSE);
-                localGrid.visibleProperty().setValue(FALSE);
-                
-            } else if(ftt.equals(FileTransferTypes.LOCAL)) {
-                localGrid.managedProperty().setValue(TRUE);
-                localGrid.visibleProperty().setValue(TRUE);
-                
-                remoteGrid.managedProperty().setValue(FALSE);
-                remoteGrid.visibleProperty().setValue(FALSE);
-            } else {
-                remoteGrid.managedProperty().setValue(TRUE);
-                remoteGrid.visibleProperty().setValue(TRUE);
-                
-                localGrid.managedProperty().setValue(FALSE);
-                localGrid.visibleProperty().setValue(FALSE);
-                
-                dialog.getDialogPane().getScene().getWindow().sizeToScene();
-            }
-        });
-        
-        typeChoiceBox.getSelectionModel().select(sp.getOutputProtocol());
+
 
         // create and populate the localGrid
         TextField filePath = new TextField();
@@ -620,16 +600,16 @@ public class FXMLResultsController  {
         localGrid.add(new Label("Directory"),0,0);
         localGrid.add(filePath,1,0);
         
+        TextField remoteServer = new TextField();
+        remoteServer.setText(sp.getServer());
+        remoteGrid.add(new Label("Server"),0,0);
+        remoteGrid.add(remoteServer,1,0);
+        
         // create and populate the remoteGrid
         TextField remoteDir = new TextField();
         remoteDir.setText(sp.getBasePath());
-        remoteGrid.add(new Label("Path"),0,0);
-        remoteGrid.add(remoteDir,1,0);
-        
-        TextField remoteServer = new TextField();
-        remoteServer.setText(sp.getServer());
-        remoteGrid.add(new Label("Server"),0,1);
-        remoteGrid.add(remoteServer,1,1);
+        remoteGrid.add(new Label("Path"),0,1);
+        remoteGrid.add(remoteDir,1,1);
         
         TextField remoteUsername = new TextField();
         remoteUsername.setText(sp.getUsername());
@@ -641,6 +621,45 @@ public class FXMLResultsController  {
         remoteGrid.add(new Label("Password"),0,3);
         remoteGrid.add(remotePassword,1,3);
         
+        CheckBox stripAccents = new CheckBox("Strip Accents");
+        stripAccents.setSelected(sp.getStripAccents());
+        stripAccents.tooltipProperty().set(new Tooltip("Remove accent marks from files. e.g. é -> e"));
+        grid.add(stripAccents,0,2,2,1);
+        
+        typeChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
+            FileTransferTypes ftt = typeChoiceBox.getItems().get((Integer) number2);
+            if (number2.intValue() < 0) {
+                remoteGrid.managedProperty().setValue(FALSE);
+                remoteGrid.visibleProperty().setValue(FALSE);
+                localGrid.managedProperty().setValue(FALSE);
+                localGrid.visibleProperty().setValue(FALSE);
+            } else if(ftt.equals(FileTransferTypes.LOCAL)) {
+                localGrid.managedProperty().setValue(TRUE);
+                localGrid.visibleProperty().setValue(TRUE);
+                
+                remoteGrid.managedProperty().setValue(FALSE);
+                remoteGrid.visibleProperty().setValue(FALSE);
+                
+                dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(filePath.textProperty().isEmpty());
+            } else {
+                remoteGrid.managedProperty().setValue(TRUE);
+                remoteGrid.visibleProperty().setValue(TRUE);
+                
+                localGrid.managedProperty().setValue(FALSE);
+                localGrid.visibleProperty().setValue(FALSE);
+                
+                BooleanProperty oneEmpty = new SimpleBooleanProperty(false);
+                
+                oneEmpty.bind(Bindings.or(remoteServer.textProperty().isEmpty(), 
+                        remoteDir.textProperty().isEmpty()));
+                
+                dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(oneEmpty);
+            }
+            
+            dialog.getDialogPane().getScene().getWindow().sizeToScene();
+        });
+        
+        typeChoiceBox.getSelectionModel().select(sp.getOutputProtocol());
         
         dialog.getDialogPane().setContent(grid);
 
@@ -658,7 +677,7 @@ public class FXMLResultsController  {
                 sp.setUsername(remoteUsername.getText());
                 sp.setPassword(remotePassword.getText());
                 
-                
+                sp.setStripAccents(stripAccents.selectedProperty().get());
                         
                 return Boolean.TRUE;
             }

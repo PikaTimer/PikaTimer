@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -34,6 +35,7 @@ import org.apache.commons.io.FilenameUtils;
  */
 public class LocalTransport implements FileTransport {
     Boolean goodToGo = false;
+    Boolean stripAccents = false;
     String basePath;
     OutputPortal parent;
     StringProperty transferStatus = new SimpleStringProperty("Idle");
@@ -46,6 +48,9 @@ public class LocalTransport implements FileTransport {
     @Override
     public void save(String filename, String contents) {
         System.out.println("LocalTransport.save called for " + filename);
+        
+        if (stripAccents) contents = StringUtils.stripAccents(contents);
+        
         if (goodToGo && ! basePath.isEmpty()) {
             
             try {
@@ -77,6 +82,7 @@ public class LocalTransport implements FileTransport {
             
             File baseDir = new File(basePath);
             
+            stripAccents = parent.getStripAccents();
 
             // does it exist?
             if (!baseDir.exists()) {
