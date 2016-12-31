@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextField?>
@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.text.Font?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="750.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultsController">
+<GridPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="800.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultsController">
    <columnConstraints>
       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
    </columnConstraints>
@@ -50,16 +50,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <ColumnConstraints hgrow="ALWAYS" minWidth="500.0" prefWidth="500.0" />
               </columnConstraints>
               <rowConstraints>
-                <RowConstraints vgrow="NEVER" />
-                <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" vgrow="SOMETIMES" />
+                <RowConstraints maxHeight="60.0" minHeight="60.0" prefHeight="60.0" vgrow="NEVER" />
+                <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="386.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
                   <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER">
                      <children>
                         <Button fx:id="updateNowButton" mnemonicParsing="false" text="Process Reports" />
                         <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                        <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="110.0" text="Auto-Update" HBox.hgrow="NEVER" />
-                        <ProgressIndicator fx:id="autoUpdateProgressIndicator" progress="0.0" />
+                        <VBox spacing="2.0" HBox.hgrow="NEVER">
+                           <children>
+                              <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                 <children>
+                                    <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="110.0" text="Auto-Update" />
+                                    <ChoiceBox fx:id="updateTimeDelayChoiceBox" prefHeight="25.0" prefWidth="50.0" />
+                                 </children>
+                              </HBox>
+                              <ProgressBar fx:id="autoUpdateProgressBar" maxWidth="1.7976931348623157E308" prefHeight="18.0" prefWidth="160.0" progress="0.0" />
+                           </children>
+                        </VBox>
                      </children>
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

@@ -46,6 +46,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -62,6 +63,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.OverrunStyle;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -74,6 +76,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
@@ -96,8 +99,10 @@ public class FXMLResultsController  {
     @FXML VBox outputDetailsVBox;
     
     @FXML Button updateNowButton;
+    
     @FXML ToggleSwitch autoUpdateToggleSwitch;
-    @FXML ProgressIndicator autoUpdateProgressIndicator;
+    @FXML ChoiceBox<String> updateTimeDelayChoiceBox;
+    @FXML ProgressBar autoUpdateProgressBar;
     
     @FXML ChoiceBox<String> timeRoundingChoiceBox;
     @FXML ChoiceBox<String>  timeFormatChoiceBox;
@@ -134,7 +139,7 @@ public class FXMLResultsController  {
         raceComboBox.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
         selectedRaceLabel.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
         
-        autoUpdateProgressIndicator.visibleProperty().bind(autoUpdateToggleSwitch.selectedProperty());
+        
 
         outputDetailsVBox.setFillWidth(true);
         
@@ -146,7 +151,7 @@ public class FXMLResultsController  {
         timeFormatChoiceBox.setItems(FXCollections.observableArrayList("HH:MM:ss","[HH:]MM:ss", "[HH:]MM:ss.S", "[HH:]MM:ss.SS", "[HH:]MM:ss.SSS"));
 
         
-        
+        initializeAutoUpdate();
 
 
         initializeOutputDestinations();
@@ -466,6 +471,52 @@ public class FXMLResultsController  {
         
         // And set it to the new one
         outputDetailsVBox.getChildren().setAll(raceReportsUIMap.get(r));
+    }
+    
+    private void initializeAutoUpdate(){
+        autoUpdateToggleSwitch.selectedProperty().set(false);
+        updateTimeDelayChoiceBox.setItems(FXCollections.observableArrayList("30s", "1m", "2m", "5m"));
+        updateTimeDelayChoiceBox.disableProperty().bind(autoUpdateToggleSwitch.selectedProperty().not());
+        autoUpdateProgressBar.disableProperty().bind(autoUpdateToggleSwitch.selectedProperty().not());
+        updateTimeDelayChoiceBox.getSelectionModel().selectLast();
+        
+        Task autoUpdateTask = new Task<Void>() {
+
+            @Override 
+            public Void call() {
+                String delayString = "30s";
+                int delay = 30;
+                int counter = 0;
+                while(true) {
+                    try {
+                        if (autoUpdateToggleSwitch.selectedProperty().not().get()) counter = 0;
+                        
+                        delayString=updateTimeDelayChoiceBox.getSelectionModel().getSelectedItem();
+                        delay = Integer.parseUnsignedInt(delayString.replaceAll("\\D+", ""));
+                        if (delayString.contains("m")) delay = delay * 60;
+                        //System.out.println("Auto-Update timer " + (delay-counter) + "s (" + counter + "/" + delay + ")");
+                        
+                        if (counter >= delay) {
+                            counter = 0;
+                            resultsDAO.processAllReports();
+                            updateMessage("Processing...");
+                        } else counter++;
+                        
+                        updateProgress(counter, delay);
+                        Thread.sleep(1000);
+                        updateMessage((delay-counter) + "s");
+                    } catch (Exception ex) {
+                        System.out.println("AutoUpdateReportsThread Exception: " + ex.getMessage());
+                    }
+
+                }
+            }
+        };
+        Thread processNewResultThread = new Thread(autoUpdateTask);
+        processNewResultThread.setName("Thread-AutoUpdateReportsThread");
+        processNewResultThread.setDaemon(true);
+        processNewResultThread.start();
+        autoUpdateProgressBar.progressProperty().bind(autoUpdateTask.progressProperty());
     }
     
     private void initializeOutputDestinations(){
