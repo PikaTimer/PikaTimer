@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.web.HTMLEditor?>
+
+
+<GridPane hgap="15.0" prefHeight="700.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLSetupHeadersController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="300.0" percentWidth="40.0" prefWidth="400.0" />
+      <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="400.0" prefWidth="600.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints fillHeight="false" vgrow="NEVER" />
+      <RowConstraints fillHeight="false" vgrow="NEVER" />
+      <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
+      <RowConstraints fillHeight="false" maxHeight="1.7976931348623157E308" vgrow="NEVER" />
+   </rowConstraints>
+   <children>
+      <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" GridPane.columnSpan="2">
+         <children>
+            <Label fx:id="raceLabel" text="RACE">
+               <font>
+                  <Font size="24.0" />
+               </font>
+            </Label>
+            <Label text=" Header/Footer Setup">
+               <font>
+                  <Font size="24.0" />
+               </font>
+            </Label>
+            <Region maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+            <Label text="Copy from ">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+            <ChoiceBox fx:id="copyFromChoiceBox" prefWidth="150.0" />
+         </children>
+      </HBox>
+      <VBox GridPane.rowIndex="1" GridPane.valignment="TOP">
+         <children>
+            <Label text="Text">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+            <CheckBox fx:id="textForBothCheckBox" mnemonicParsing="false" text="Use Text Header/Footer for both Text and HTML results" />
+         </children>
+      </VBox>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2">
+         <children>
+            <Label text="Header">
+               <font>
+                  <Font size="14.0" />
+               </font>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </Label>
+            <TextArea fx:id="textHeaderTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" promptText="Header text goes at the top of the page" VBox.vgrow="ALWAYS" />
+         </children>
+      </VBox>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3" GridPane.vgrow="ALWAYS">
+         <children>
+            <Label text="Message">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <TextArea fx:id="textMessageTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" promptText="Any message text will go below the title/date but above the results" VBox.vgrow="ALWAYS" />
+         </children>
+      </VBox>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4">
+         <children>
+            <Label text="Footer">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <TextArea fx:id="textFooterTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" promptText="Footer text goes below the results" VBox.vgrow="ALWAYS" />
+         </children>
+      </VBox>
+      <VBox GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.valignment="TOP">
+         <children>
+            <HBox alignment="CENTER_LEFT">
+               <children>
+                  <Label text="HTML">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <Region maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                  <Label text="HTML Editor: ">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <ChoiceBox fx:id="htmlEditorChoiceBox" prefHeight="25.0" prefWidth="108.0" />
+               </children>
+            </HBox>
+            <HBox spacing="10.0">
+               <children>
+                  <VBox>
+                     <children>
+                        <Label text="Google Analytics Code" />
+                        <TextField fx:id="gaTextField" maxWidth="-Infinity" prefHeight="25.0" prefWidth="108.0" promptText="UA-XXXXXXXX-X" />
+                     </children>
+                  </VBox>
+                  <VBox>
+                     <children>
+                        <Label text="CSS Stylesheet" />
+                        <TextField fx:id="cssTextField" maxWidth="-Infinity" prefHeight="25.0" prefWidth="356.0" promptText="An optional link to a custom style sheet" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2">
+         <children>
+            <Label text="Header">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <HBox fx:id="headerHBox" VBox.vgrow="ALWAYS">
+               <children>
+                  <HTMLEditor fx:id="htmlHeaderHTMLEditor" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                  <TextArea fx:id="htmlHeaderTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3" GridPane.vgrow="ALWAYS">
+         <children>
+            <Label text="Message">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <HBox fx:id="messageHBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
+               <children>
+                  <HTMLEditor fx:id="htmlMessageHTMLEditor" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+                  <TextArea fx:id="htmlMessageTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <VBox GridPane.columnIndex="1" GridPane.rowIndex="4">
+         <children>
+            <Label text="Footer">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <HBox fx:id="footerHBox">
+               <children>
+                  <HTMLEditor fx:id="htmlFooterHTMLEditor" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+                  <TextArea fx:id="htmlFooterTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <HBox alignment="CENTER_RIGHT" spacing="15.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
+         <children>
+            <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#cancelButtonAction" text="Cancel" />
+            <Button fx:id="saveButton" mnemonicParsing="false" onAction="#saveButtonAction" text="Save" />
+         </children>
+         <padding>
+            <Insets top="10.0" />
+         </padding>
+      </HBox>
+   </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</GridPane>

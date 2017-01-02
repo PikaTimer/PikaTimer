@@ -23,6 +23,7 @@ import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
+import com.pikatimer.timing.FXMLTimingController;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransferTypes;
@@ -55,6 +56,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
@@ -81,6 +84,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
@@ -728,6 +733,24 @@ public class FXMLResultsController  {
         }
     }
     
+    public void setupHeaders(ActionEvent fxevent){
+                
+        
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("FXMLSetupHeaders.fxml"));
+        Parent setupHeadersRoot;
+        try {
+            setupHeadersRoot = (Parent) fxmlLoader.load();
+            FXMLSetupHeadersController ctrl = (FXMLSetupHeadersController)fxmlLoader.getController();
+            ctrl.setRace(activeRace);
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Header/Footer Setup");
+            stage.setScene(new Scene(setupHeadersRoot));  
+            stage.showAndWait();
+        } catch (IOException ex) {
+            System.out.println("Loader Error in FXMLSetupHeaders.fxml");
+        }
+    }
     private class DurationTableCell extends TableCell<Result, Duration> {
         @Override
         protected void updateItem(Duration d, boolean empty) {
