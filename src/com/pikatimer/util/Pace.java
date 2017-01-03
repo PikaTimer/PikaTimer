@@ -44,9 +44,9 @@ public enum Pace {
     private static Map<Pace, String> createMap() {
         Map<Pace, String> result = new HashMap<>();
         result.put(MPM, "Minutes per Mile (MM:SS/mile)");
-        result.put(MPK, "Minutes per Kilometer (MM:SS/Kilo");
-        result.put(MPH, "Miles Per Hour (XX mph)");
-        result.put(KPH, "Kilometers per Hour (XX kph)");
+        result.put(MPK, "Minutes per Kilometer (MM:SS/K)");
+        result.put(MPH, "Miles Per Hour (XX.X mph)");
+        result.put(KPH, "Kilometers per Hour (XX.X kph)");
         result.put(MPS, "Meters per Second (XX m/s)");
         result.put(YPS, "Yards per Second (XX y/s)");
         result.put(FPS, "Feet per Second (XX f/s)");
