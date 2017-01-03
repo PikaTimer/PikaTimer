@@ -52,30 +52,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <ColumnConstraints hgrow="ALWAYS" minWidth="500.0" prefWidth="500.0" />
               </columnConstraints>
               <rowConstraints>
-                <RowConstraints maxHeight="60.0" minHeight="60.0" prefHeight="60.0" vgrow="NEVER" />
+                <RowConstraints vgrow="NEVER" />
                 <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="386.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER">
-                     <children>
-                        <Button fx:id="updateNowButton" mnemonicParsing="false" text="Process Reports" />
-                        <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                        <VBox spacing="2.0" HBox.hgrow="NEVER">
-                           <children>
-                              <HBox alignment="CENTER_LEFT" spacing="4.0">
-                                 <children>
-                                    <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="110.0" text="Auto-Update" />
-                                    <ChoiceBox fx:id="updateTimeDelayChoiceBox" prefHeight="25.0" prefWidth="50.0" />
-                                 </children>
-                              </HBox>
-                              <ProgressBar fx:id="autoUpdateProgressBar" maxWidth="1.7976931348623157E308" prefHeight="18.0" prefWidth="160.0" progress="0.0" />
-                           </children>
-                        </VBox>
-                     </children>
-                     <GridPane.margin>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </GridPane.margin>
-                  </HBox>
                   <GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" GridPane.rowIndex="1">
                     <columnConstraints>
                       <ColumnConstraints hgrow="NEVER" />
@@ -92,21 +72,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <children>
                         <VBox spacing="2.0" GridPane.columnIndex="2">
                            <children>
-                              <HBox>
+                              <HBox alignment="CENTER_LEFT">
                                  <children>
                                     <Label text="Reports" GridPane.columnIndex="2">
                                        <font>
-                                          <Font size="16.0" />
+                                          <Font size="20.0" />
                                        </font>
                                     </Label>
                                     <Label fx:id="selectedRaceLabel" text=" for " HBox.hgrow="NEVER">
                                        <font>
-                                          <Font size="16.0" />
+                                          <Font size="20.0" />
                                        </font>
                                     </Label>
                                     <ComboBox fx:id="raceComboBox" prefWidth="200.0" />
                                     <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                                    <Button mnemonicParsing="false" onAction="#addNewReport" text="Add Report" />
+                                    <Button mnemonicParsing="false" onAction="#addNewReport" text="Add New Report" />
                                  </children>
                               </HBox>
                               <HBox alignment="CENTER_LEFT" spacing="2.0">
@@ -123,6 +103,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                     </Label>
                                     <ChoiceBox fx:id="timeRoundingChoiceBox" prefWidth="80.0" />
                                     <Region maxWidth="1.7976931348623157E308" prefWidth="2.0" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
+                              <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                 <children>
                                     <CheckBox fx:id="useCustomHeaderCheckBox" mnemonicParsing="false" text="Use Custom Header/Footers" />
                                     <Button fx:id="setupHeaderButton" mnemonicParsing="false" onAction="#setupHeaders" text="Setup" />
                                  </children>
@@ -138,9 +122,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                            </content></ScrollPane>
                         <VBox GridPane.columnIndex="1" GridPane.rowSpan="4">
                            <children>
+                              <VBox spacing="2.0">
+                                 <children>
+                                    <Button fx:id="updateNowButton" mnemonicParsing="false" text="Process All Reports" />
+                                    <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                       <children>
+                                          <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="103.0" text="Auto-Update" />
+                                          <ChoiceBox fx:id="updateTimeDelayChoiceBox" prefHeight="25.0" prefWidth="50.0" />
+                                       </children>
+                                    </HBox>
+                                    <ProgressBar fx:id="autoUpdateProgressBar" maxWidth="1.7976931348623157E308" prefHeight="18.0" prefWidth="160.0" progress="0.0" />
+                                 </children>
+                              </VBox>
                               <Label text="Report Destinations">
                                  <font>
-                                    <Font size="16.0" />
+                                    <Font size="20.0" />
                                  </font>
                               </Label>
                               <ListView fx:id="outputDestinationsListView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="250.0" />
@@ -205,7 +201,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Insets right="5.0" />
                            </padding>
                         </Label>
-                        <Label text="Pending:">
+                        <Label text="Still On Course">
                            <font>
                               <Font size="14.0" />
                            </font>

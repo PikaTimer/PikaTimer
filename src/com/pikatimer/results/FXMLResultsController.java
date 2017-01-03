@@ -288,6 +288,8 @@ public class FXMLResultsController  {
         // create a table
                 TableView<Result> table = new TableView();
                 
+                table.setPlaceholder(new Label("No results for the " + r.getRaceName() + " have been entered yet"));
+                
                 //table.setPadding(new Insets(5));
                 table.setTableMenuButtonVisible(true);            
                 

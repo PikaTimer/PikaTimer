@@ -286,7 +286,7 @@ public class OutputPortal {
         if (FileTransferTypes.LOCAL.equals(outputProtocol)) {
             return protocolProperty.getValueSafe() + ": " + basePathProperty.getValueSafe();
         }
-        return protocolProperty.getValueSafe() + ": " + serverProperty.getValueSafe() + " " + transferStatusProperty.getValueSafe();
+        return protocolProperty.getValueSafe() + ": " + serverProperty.getValueSafe();
     }
     
     @Override

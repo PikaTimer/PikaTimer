@@ -345,6 +345,7 @@ public class FXMLResultOutputController {
     
     private void showRaceReportOutputTarget(RaceOutputTarget t){
         HBox rotHBox = new HBox();
+        rotHBox.setSpacing(4);
         ComboBox<OutputPortal> destinationChoiceBox = new ComboBox();
         
         //destinationChoiceBox.getItems().setAll(resultsDAO.listOutputPortals());
