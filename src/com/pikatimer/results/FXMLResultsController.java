@@ -27,6 +27,7 @@ import com.pikatimer.timing.FXMLTimingController;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransferTypes;
+import com.pikatimer.util.Pace;
 import java.io.IOException;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -115,6 +116,7 @@ public class FXMLResultsController  {
     
     @FXML ChoiceBox<String> timeRoundingChoiceBox;
     @FXML ChoiceBox<String>  timeFormatChoiceBox;
+    @FXML ChoiceBox<Pace> paceFormatChoiceBox;
     
     @FXML ListView<OutputPortal> outputDestinationsListView;
     @FXML Button addOutputDestinationsButton;
@@ -160,7 +162,8 @@ public class FXMLResultsController  {
         
         timeRoundingChoiceBox.setItems(FXCollections.observableArrayList("Down", "Up", "Half"));
         timeFormatChoiceBox.setItems(FXCollections.observableArrayList("HH:MM:ss","[HH:]MM:ss", "[HH:]MM:ss.S", "[HH:]MM:ss.SS", "[HH:]MM:ss.SSS"));
-
+        paceFormatChoiceBox.setItems(FXCollections.observableArrayList(Pace.values()));
+        
         
         initializeAutoUpdate();
 
@@ -228,6 +231,23 @@ public class FXMLResultsController  {
                 raceDAO.updateRace(activeRace);
             }
             timeRoundingChoiceBox.getSelectionModel().select(rm);
+             
+            String paceName = activeRace.getStringAttribute("PaceDisplayFormat");
+            Pace pace; 
+            if (paceName == null) {
+                pace = Pace.MPM;
+                activeRace.setStringAttribute("PaceDisplayFormat", pace.name());
+                raceDAO.updateRace(activeRace);
+            } else {
+                try {
+                    pace = Pace.valueOf(paceName);
+                } catch (Exception e) {
+                    pace = Pace.MPM;
+                    activeRace.setStringAttribute("PaceDisplayFormat", pace.name());
+                    raceDAO.updateRace(activeRace);
+                }
+            }
+            paceFormatChoiceBox.getSelectionModel().select(pace);
             
             String dispFormat = activeRace.getStringAttribute("TimeDisplayFormat");
             System.out.println("TimeDisplayFormat: " + dispFormat);
@@ -278,6 +298,15 @@ public class FXMLResultsController  {
                 raceDAO.updateRace(r);
             }
          });
+        paceFormatChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue,  newValue) -> {
+            Race r = raceComboBox.getValue();
+            if (newValue != null && !newValue.name().equals(r.getStringAttribute("PaceDisplayFormat"))) {
+                System.out.println("Race: PaceDisplayFormat changed from " + oldValue + " to " + newValue);
+                r.setStringAttribute("PaceDisplayFormat", newValue.name());
+                raceDAO.updateRace(r);
+            }
+         });
+        
         
         raceComboBox.getSelectionModel().clearAndSelect(0);
         

@@ -43,15 +43,15 @@ public enum Pace {
 
     private static Map<Pace, String> createMap() {
         Map<Pace, String> result = new HashMap<>();
-        result.put(MPM, "Minutes per Mile (MM:SS/mile)");
-        result.put(MPK, "Minutes per Kilometer (MM:SS/K)");
-        result.put(MPH, "Miles Per Hour (XX.X mph)");
-        result.put(KPH, "Kilometers per Hour (XX.X kph)");
-        result.put(MPS, "Meters per Second (XX m/s)");
-        result.put(YPS, "Yards per Second (XX y/s)");
-        result.put(FPS, "Feet per Second (XX f/s)");
-        result.put(MP100M, "Minutes per 100 Meters (MM:SS/100m)");
-        result.put(MP100Y, "Minutes per 100 Yards (MM:SS/100y)");
+        result.put(MPM, "MM:SS/mile (Minutes per Mile)");
+        result.put(MPK, "MM:SS/K (Minutes per Kilometer)");
+        result.put(MPH, "XX.X mph (Miles Per Hour)");
+        result.put(KPH, "XX.X kph (Kilometers per Hour)");
+        result.put(MPS, "XX m/s (Meters per Second)");
+        result.put(YPS, "XX y/s (Yards per Second)");
+        result.put(FPS, "XX fps (Feet per Second)");
+        result.put(MP100M, "MM:SS/100m (Minutes per 100 Meters)");
+        result.put(MP100Y, "MM:SS/100y (Minutes per 100 Yards)");
         return Collections.unmodifiableMap(result);
     }
     
@@ -108,24 +108,7 @@ public enum Pace {
 
     }
     
-    public Float toKilometers(Float d){
-            
-        return d;
-    }
-    
-    public Float toMeters(Float d) {
-        switch(this) {
-            
-        }
-                
-        return d;
 
-    }
-    
-    public Float toYards(Float d){
-        
-        return d;
-    }
 }
     
 

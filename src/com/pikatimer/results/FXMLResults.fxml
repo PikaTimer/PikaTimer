@@ -102,6 +102,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                        </HBox.margin>
                                     </Label>
                                     <ChoiceBox fx:id="timeRoundingChoiceBox" prefWidth="80.0" />
+                                    <Label text="Pace Display Format">
+                                       <padding>
+                                          <Insets left="5.0" />
+                                       </padding>
+                                    </Label>
+                                    <ChoiceBox fx:id="paceFormatChoiceBox" prefWidth="100.0" />
                                     <Region maxWidth="1.7976931348623157E308" prefWidth="2.0" HBox.hgrow="ALWAYS" />
                                  </children>
                               </HBox>
