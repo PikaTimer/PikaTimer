@@ -23,6 +23,7 @@ import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -72,7 +73,9 @@ public class FXMLSetupHeadersController {
     @FXML HTMLEditor htmlFooterHTMLEditor;
     @FXML TextArea htmlFooterTextArea;
     
+    @FXML Label copyFromLabel;
     @FXML ChoiceBox<Race> copyFromChoiceBox;
+        
     @FXML ChoiceBox<String> htmlEditorChoiceBox;
     
     @FXML Button saveButton;
@@ -143,12 +146,13 @@ public class FXMLSetupHeadersController {
         headerHBox.disableProperty().bind(textForBothCheckBox.selectedProperty());
         messageHBox.disableProperty().bind(textForBothCheckBox.selectedProperty());
         footerHBox.disableProperty().bind(textForBothCheckBox.selectedProperty());
+        htmlEditorChoiceBox.disableProperty().bind(textForBothCheckBox.selectedProperty());
         textForBothCheckBox.selectedProperty().addListener((ob, oldS, newS) -> {
             if (race.getBooleanAttribute("textOnlyHeaders").equals(newS)) headersModified.set(true);
             if (newS) {
                 htmlEditorChoiceBox.getSelectionModel().selectLast();
             } else {
-                htmlEditorChoiceBox.getSelectionModel().selectFirst();
+                htmlEditorChoiceBox.getSelectionModel().select(race.getStringAttribute("htmlEditor"));
             }
         });
 
@@ -195,6 +199,7 @@ public class FXMLSetupHeadersController {
         htmlFooterHTMLEditor.addEventHandler(InputEvent.ANY, (InputEvent event) -> {
             if (!race.getStringAttribute("htmlFooter").equals(htmlFooterHTMLEditor.getHtmlText().replace("<html dir=\"ltr\"><head></head><body contenteditable=\"true\">","").replace("</body></html>", ""))) headersModified.set(true);
         });
+        
         
         // We use an arbitrary node to get the window we are in to set the exit handler
         // Wrap this in a runLater to avoid a NPE since the window does not yet exist
@@ -252,6 +257,73 @@ public class FXMLSetupHeadersController {
         Platform.runLater(()-> {
             htmlEditorChoiceBox.getSelectionModel().select(race.getStringAttribute("htmlEditor"));
         });
+        
+        ObservableList<Race> otherRaces = FXCollections.observableArrayList();
+        RaceDAO.getInstance().listRaces().forEach(or -> {
+            if (or.getID().equals(race.getID())) return;
+            if (or.getBooleanAttribute("useCustomHeaders") != null && or.getBooleanAttribute("useCustomHeaders")) otherRaces.add(or);
+        });
+        if (otherRaces.isEmpty()) {
+            copyFromLabel.visibleProperty().set(false);
+            copyFromChoiceBox.visibleProperty().set(false);
+        } else {
+            copyFromChoiceBox.setItems(otherRaces);
+            copyFromChoiceBox.getSelectionModel().clearSelection();
+        }
+        
+        copyFromChoiceBox.getSelectionModel().selectedItemProperty().addListener((ob, oldR, newR) -> {
+            if (newR == null || newR == oldR) {
+                System.out.println("copyFromChoiceBox Listener: newR is null or equal to oldR");
+                return;
+            }
+            
+            Alert copyConfirmation = new Alert(Alert.AlertType.CONFIRMATION);
+                copyConfirmation.setContentText("This will overwrite all headers and footers\n and replace them with the settings\nfrom " + newR.getRaceName());
+                Button copyButton = (Button) copyConfirmation.getDialogPane().lookupButton(
+                        ButtonType.OK
+                );
+                copyButton.setText("Copy");
+                copyConfirmation.setHeaderText("Overwrite all...");
+                Optional<ButtonType> closeResponse = copyConfirmation.showAndWait();
+                if (ButtonType.OK.equals(closeResponse.get())) {
+                    System.out.println("copyFromChoiceBox Listener: copying from " + newR.getRaceName());
+
+                    
+                    if (newR.getStringAttribute("GACode") == null) newR.setStringAttribute("GACode","");
+                    gaTextField.setText(newR.getStringAttribute("GACode"));
+
+                    if (newR.getStringAttribute("CSSUrl") == null) newR.setStringAttribute("CSSUrl","");
+                    cssTextField.setText(newR.getStringAttribute("CSSUrl"));
+
+                    if (newR.getStringAttribute("textHeader") == null) newR.setStringAttribute("textHeader","");
+                    textHeaderTextArea.setText(newR.getStringAttribute("textHeader"));
+                    if (newR.getStringAttribute("textMessage") == null) newR.setStringAttribute("textMessage","");
+                    textMessageTextArea.setText(newR.getStringAttribute("textMessage"));
+                    if (newR.getStringAttribute("textFooter") == null) newR.setStringAttribute("textFooter","");
+                    textFooterTextArea.setText(newR.getStringAttribute("textFooter"));
+
+                    htmlEditorChoiceBox.getSelectionModel().selectLast();
+                    if (newR.getStringAttribute("htmlHeader") == null) newR.setStringAttribute("htmlHeader","");
+                    htmlHeaderTextArea.setText(newR.getStringAttribute("htmlHeader"));
+                    if (newR.getStringAttribute("htmlMessage") == null) newR.setStringAttribute("htmlMessage","");
+                    htmlMessageTextArea.setText(newR.getStringAttribute("htmlMessage"));
+                    if (newR.getStringAttribute("htmlFooter") == null) newR.setStringAttribute("htmlFooter","");
+                    htmlFooterTextArea.setText(newR.getStringAttribute("htmlFooter"));
+                    htmlEditorChoiceBox.getSelectionModel().selectFirst();
+
+                    if (newR.getBooleanAttribute("textOnlyHeaders") == null) newR.setBooleanAttribute("textOnlyHeaders",false);
+                    textForBothCheckBox.selectedProperty().set(newR.getBooleanAttribute("textOnlyHeaders"));
+
+                    if (newR.getStringAttribute("htmlEditor") == null) newR.setStringAttribute("htmlEditor",htmlEditorChoiceBox.getSelectionModel().getSelectedItem());
+                    Platform.runLater(()-> {
+                        htmlEditorChoiceBox.getSelectionModel().select(newR.getStringAttribute("htmlEditor"));
+                    });
+                }
+                Platform.runLater(()-> {
+                    copyFromChoiceBox.getSelectionModel().clearSelection();
+                });
+        });
+    
     }
     
     protected void saveAll(){

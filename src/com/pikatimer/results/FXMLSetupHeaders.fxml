@@ -44,7 +44,7 @@
                </font>
             </Label>
             <Region maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-            <Label text="Copy from ">
+            <Label fx:id="copyFromLabel" text="Copy from ">
                <font>
                   <Font size="16.0" />
                </font>

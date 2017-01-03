@@ -125,6 +125,8 @@ public class FXMLResultsController  {
     @FXML Label finishedCountLabel;
     @FXML Label pendingCountLabel;
     
+    @FXML CheckBox useCustomHeaderCheckBox;
+    
     
     final Map<Race,TableView> raceTableViewMap = new ConcurrentHashMap();
     final Map<Race,VBox> raceReportsUIMap = new ConcurrentHashMap();
@@ -236,7 +238,19 @@ public class FXMLResultsController  {
             }
             timeFormatChoiceBox.getSelectionModel().select(dispFormat);
             
+            if(activeRace.getBooleanAttribute("useCustomHeaders") == null) {
+                activeRace.setBooleanAttribute("useCustomHeaders", false);
+                raceDAO.updateRace(activeRace);
+            }
+            useCustomHeaderCheckBox.selectedProperty().set(activeRace.getBooleanAttribute("useCustomHeaders"));
+            useCustomHeaderCheckBox.selectedProperty().addListener((ob, oldP, newP) -> {
+                if (activeRace.getBooleanAttribute("useCustomHeaders") == newP) return;
+                
+                if (newP) setupHeaders(null);
+                activeRace.setBooleanAttribute("useCustomHeaders", newP);
+                raceDAO.updateRace(activeRace);
             
+            });
             // Setup the started/finished/pending counters
             
             FilteredList<Result> filteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
