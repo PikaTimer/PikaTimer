@@ -66,6 +66,7 @@ public class FTPSTransport implements FileTransport{
 
     Boolean fatalError = false;
     Boolean needConfigRefresh = true;
+    Long lastTransferTimestamp = 0L;
 
     public FTPSTransport() {
         
@@ -76,7 +77,7 @@ public class FTPSTransport implements FileTransport{
                    
 
                     System.out.println("FTPSTransport: new result processing thread started");
-                    String filename;
+                    String filename = null;
                     
                     // connect to the remote server
                     ftpClient = new FTPSClient(false);
@@ -89,17 +90,28 @@ public class FTPSTransport implements FileTransport{
                     while(true) {
                         try {
                             System.out.println("FTPSTransport Thread: Waiting for the first file...");
-                            filename = transferQueue.take();
+                            if (filename == null) filename = transferQueue.take();
                             
                             while(true) {
                                 System.out.println("FTPSTransport Thread: Waiting for a file...");
                                 //filename = transferQueue.poll(60, TimeUnit.SECONDS);
                                 if (!ftpClient.isConnected()) Platform.runLater(() -> {transferStatus.set("Idle");});
-                                else Platform.runLater(() -> {transferStatus.set("Connected");});
-
+                                else {
+                                    ftpClient.sendNoOp();
+                                    Platform.runLater(() -> {
+                                        if (ftpClient.getEnabledProtocols() != null) 
+                                        transferStatus.set("Connected FTPS");
+                                        else transferStatus.set("Connected");
+                                    });
+                                }
+                                
                                 //filename = transferQueue.take(); // blocks until
                                 if (filename == null) filename = transferQueue.poll(15, TimeUnit.SECONDS);
-                                if (filename == null) continue;
+                                if (filename == null) {
+                                    // If we have been idle for more than 2 minutes, be nice and drop the connection
+                                    if (TimeUnit.NANOSECONDS.toSeconds((System.nanoTime()-lastTransferTimestamp))> 120 ) break;
+                                    else continue;
+                                }
 
                                 System.out.println("FTPSTransport Thread: Transfering " + filename);
                                 String contents = transferMap.get(filename);
@@ -117,14 +129,16 @@ public class FTPSTransport implements FileTransport{
                                 InputStream data = IOUtils.toInputStream(contents);
                                 String fn = filename;
                                 Platform.runLater(() -> {transferStatus.set("Transfering " + fn);});
-                                long start_time = System.nanoTime();
+                                long startTime = System.nanoTime();
                                 ftpClient.storeFile(filename, data);
-                                long end_tiome = System.nanoTime();
+                                long endTime = System.nanoTime();
+                                lastTransferTimestamp = endTime;
 
                                 data.close();
                                 transferMap.remove(filename, contents); 
+                                
+                                System.out.println("FTPSTransport Thread: transfer of " + filename + " done in " + DurationFormatter.durationToString(Duration.ofNanos(endTime-startTime), 3, false, RoundingMode.HALF_EVEN));
                                 filename = null;
-                                System.out.println("FTPSTransport Thread: transfer of " + filename + " done in " + DurationFormatter.durationToString(Duration.ofNanos(end_tiome-start_time), 3, false, RoundingMode.HALF_EVEN));
                             }
 
                         } catch (InterruptedException ex) {
@@ -143,6 +157,7 @@ public class FTPSTransport implements FileTransport{
                                 try {
                                     System.out.println("FTPSTransport Thread: calling ftpClient.disconnect()");
                                     ftpClient.disconnect();
+                                    Platform.runLater(() -> {transferStatus.set("Disconnected");});
                                 } catch (IOException f) {
                                     // do nothing
                                 }
