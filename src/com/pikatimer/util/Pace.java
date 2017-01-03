@@ -43,36 +43,24 @@ public enum Pace {
 
     private static Map<Pace, String> createMap() {
         Map<Pace, String> result = new HashMap<>();
-        result.put(MPM, "MM:SS/mile (Minutes per Mile)");
-        result.put(MPK, "MM:SS/K (Minutes per Kilometer)");
+        result.put(MPM, "MM:SS/mi (Minutes per Mile)");
+        result.put(MPK, "MM:SS/km (Minutes per Kilometer)");
         result.put(MPH, "XX.X mph (Miles Per Hour)");
         result.put(KPH, "XX.X kph (Kilometers per Hour)");
         result.put(MPS, "XX m/s (Meters per Second)");
         result.put(YPS, "XX y/s (Yards per Second)");
-        result.put(FPS, "XX fps (Feet per Second)");
+        result.put(FPS, "XX f/s (Feet per Second)");
         result.put(MP100M, "MM:SS/100m (Minutes per 100 Meters)");
         result.put(MP100Y, "MM:SS/100y (Minutes per 100 Yards)");
         return Collections.unmodifiableMap(result);
     }
-    
-//    private String unit;
-    
-//    private Unit(String s){
-//        unit=s;
-//    }
+
     
     @Override 
     public String toString(){
         return PACE_MAP.get(this);
     }
-//    
-//    public String getValue() {
-//        return unit;
-//    }
-//    
-//    public void setValue(String u) {
-//        unit = u;
-//    
+
     
     // TODO: Put in converters so that we can take miles to km, etc
     
@@ -103,6 +91,7 @@ public enum Pace {
         switch(p){
             case MPM:
                 pace = DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(5280L), 0, FALSE, RoundingMode.DOWN); 
+                
         }
         return pace + "/mi";
 
