@@ -115,9 +115,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </HBox>
          </children>
       </VBox>
-      <HBox alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.halignment="RIGHT">
+      <HBox alignment="CENTER_LEFT" spacing="4.0" GridPane.columnIndex="1" GridPane.halignment="RIGHT">
          <children>
-            <ToggleSwitch fx:id="reportEnabledToggleSwitch" minHeight="-Infinity" minWidth="-Infinity" prefHeight="15.0" prefWidth="78.0" text="Enabled" HBox.hgrow="NEVER" />
+            <ToggleSwitch fx:id="reportEnabledToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="78.0" text="Enabled" HBox.hgrow="NEVER" />
+            <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#processReportNow" text="Process Now" />
             <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
             <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#removeRaceReport" text="Delete Report" />
          </children>

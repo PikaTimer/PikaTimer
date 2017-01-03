@@ -744,10 +744,14 @@ public class ResultsDAO {
     
     
     public void processAllReports(){
-        raceDAO.listRaces().forEach(r -> {processReports(r);});
+        raceDAO.listRaces().forEach(r -> {processReports(r, null);});
     }
     
-    public void processReports(Race r){
+    public void processReport(RaceReport rr) {
+        processReports(rr.getRace(),rr);
+    }
+    
+    public void processReports(Race r, RaceReport rr){
         
         Task processRaceReports = new Task<Void>() {
 
@@ -832,9 +836,11 @@ public class ResultsDAO {
 
 
                     // for each report, feed it the results list
-                    r.raceReportsProperty().forEach(rr ->{
-                        rr.processResult(results);
-                    });
+                    if (rr == null) {
+                        r.raceReportsProperty().forEach(rr ->{
+                            rr.processResult(results);
+                        }); 
+                    } else rr.processResultNow(results);
                     return null;
                 }
             };

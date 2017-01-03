@@ -130,10 +130,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                            <children>
                               <VBox spacing="2.0">
                                  <children>
-                                    <Button fx:id="updateNowButton" mnemonicParsing="false" text="Process All Reports" />
+                                    <Button fx:id="updateNowButton" mnemonicParsing="false" text="Process All Enabled Reports" />
                                     <HBox alignment="CENTER_LEFT" spacing="4.0">
                                        <children>
-                                          <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="103.0" text="Auto-Update" />
+                                          <ToggleSwitch fx:id="autoUpdateToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="172.0" text="Auto-Process All Enabled" />
                                           <ChoiceBox fx:id="updateTimeDelayChoiceBox" prefHeight="25.0" prefWidth="50.0" />
                                        </children>
                                     </HBox>

@@ -226,10 +226,9 @@ public class RaceReport {
         attributes.put(key, v);
     }
     
-    public void processResult(List<ProcessedResult> r){
-        // If we are enabled... do something
-        System.out.println("RaceReport.procesResult() Called... ");
-        if (getBooleanAttribute("enabled") && race != null && reportType != null) {
+    public void processResultNow(List<ProcessedResult> r){
+        System.out.println("RaceReport.procesResultNow() Called... ");
+        if (race != null && reportType != null) {
             if (raceReportType == null) {
                 raceReportType = reportType.getNewReader();
                 raceReportType.init(race);
@@ -242,7 +241,13 @@ public class RaceReport {
                 System.out.println("RaceReport.procesResult() calling ot.saveOutput()");
                 ot.saveOutput(output);
             });
-            
+        }
+    }
+    public void processResult(List<ProcessedResult> r){
+        // If we are enabled... do something
+        System.out.println("RaceReport.procesResult() Called... ");
+        if (getBooleanAttribute("enabled")) {
+            processResultNow(r);
         }
     }
     

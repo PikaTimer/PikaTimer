@@ -343,6 +343,10 @@ public class FXMLResultOutputController {
         
     }
     
+    public void processReportNow(ActionEvent fxevent){
+        resultsDAO.processReport(thisRaceReport);
+    }
+    
     private void showRaceReportOutputTarget(RaceOutputTarget t){
         HBox rotHBox = new HBox();
         rotHBox.setSpacing(4);
