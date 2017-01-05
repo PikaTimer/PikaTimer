@@ -27,6 +27,8 @@ import java.util.Map;
  */
 public class ProcessedResult implements Comparable<ProcessedResult>{
     Map<Integer,Duration> splitTimes = new HashMap();
+    Map<Integer,Duration> segmentTimes = new HashMap();
+    Map<Integer,Map<String,Integer>> segmentPlacement = new HashMap();
     
     Integer overallPlace;
     Integer genderPlace;
@@ -39,6 +41,7 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     String sex;
     String agCode;
     
+    String lastSeen;
        
     Duration chipFinishTime;
     Duration gunFinishTime;
@@ -137,6 +140,43 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     public void setSplit(Integer id, Duration time){
         splitTimes.put(id, time);
         if (id > latestSplitID) latestSplitID = id; 
+    }
+    
+    public String getLastSeen(){
+        return lastSeen;
+    }
+    public void setLastSeen(String l){
+        lastSeen = l;
+    }
+    public Duration getSegmentTime(Integer id) {
+        return segmentTimes.get(id);
+    }
+    public void setSegmentTime(Integer id, Duration time){
+        segmentTimes.put(id,time);
+    }
+    public Integer getSegmentOverallPlace(Integer id){
+        if (segmentPlacement.containsKey(id)) return segmentPlacement.get(id).get("Overall");
+        return null;
+    }
+    public void setSegmentOverallPlace(Integer id, Integer place){
+        segmentPlacement.putIfAbsent(id, new HashMap<>());
+        segmentPlacement.get(id).put("Overall", place);
+    }
+    public Integer getSegmentSexPlace(Integer id){
+        if (segmentPlacement.containsKey(id)) return segmentPlacement.get(id).get("Sex");
+        return null;
+    }
+    public void setSegmentSexPlace(Integer id, Integer place){
+        segmentPlacement.putIfAbsent(id, new HashMap<>());
+        segmentPlacement.get(id).put("Sex", place);
+    }
+    public Integer getSegmentAGPlace(Integer id){
+        if (segmentPlacement.containsKey(id)) return segmentPlacement.get(id).get("AG");
+        return null;
+    }
+    public void setSegmentAGPlace(Integer id, Integer place){
+        segmentPlacement.putIfAbsent(id, new HashMap<>());
+        segmentPlacement.get(id).put("AG", place);
     }
     
     @Override

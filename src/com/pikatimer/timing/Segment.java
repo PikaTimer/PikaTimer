@@ -154,7 +154,14 @@ public class Segment {
         if ( ! endSplitStringProperty.isBound() && endSplitID != null && getEndSplit() != null) endSplitStringProperty.bind(getEndSplit().splitNameProperty());
         return endSplitStringProperty; 
     }
-    
+    @Transient
+    public Integer getEndSplitPosition(){
+        return getEndSplit().getPosition();
+    }
+    @Transient
+    public Integer getStartSplitPosition(){
+        return getStartSplit().getPosition();
+    }
     public StringProperty distanceStringProperty(){
         updateDistanceStringProperty();
         return distanceStringProperty;

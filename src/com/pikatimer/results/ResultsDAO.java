@@ -50,10 +50,12 @@ import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import org.hibernate.HibernateException;
+import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.Session;
 
 /**
@@ -757,6 +759,7 @@ public class ResultsDAO {
 
                 @Override 
                 public Void call() {
+                    try{
                     List<ProcessedResult> results = new ArrayList();
 
                     Integer splitSize = r.getSplits().size();
@@ -784,6 +787,9 @@ public class ResultsDAO {
                         // Set the start duration
                         pr.setChipStartTime(chipStartTime);
                         pr.setWaveStartTime(waveStartTime);
+                        
+                        // by definition, you cross the start line at zero seconds
+                        pr.setSplit(1, Duration.ZERO); 
 
                         //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
 
@@ -791,6 +797,7 @@ public class ResultsDAO {
                         if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
                             pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
                             pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
+                            pr.setSplit(splitSize, pr.getChipFinish());
                         }
 
                         // Set the splits
@@ -800,7 +807,16 @@ public class ResultsDAO {
                                 if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
                             }
                         }
-
+                        
+                        
+                        // set the segment times
+                        r.getSegments().forEach(seg -> {
+                            //System.out.println("Processing segment " + seg.getSegmentName());
+                            if (pr.getSplit(seg.getEndSplitPosition()) != null && pr.getSplit(seg.getStartSplitPosition()) != null) {
+                                pr.setSegmentTime(seg.getID(), pr.getSplit(seg.getEndSplitPosition()).minus(pr.getSplit(seg.getStartSplitPosition())));
+                                //System.out.println("Segment: Bib " + pr.getParticipant().getBib() + " Segment " + seg.getSegmentName() + " Time " + DurationFormatter.durationToString(pr.getSegmentTime(seg.getID())));
+                            }
+                        });
                         results.add(pr);
                     });
 
@@ -823,16 +839,105 @@ public class ResultsDAO {
                         placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
                         pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
                         placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace()+1);
-
-            //            System.out.println("Results: " + r.getRaceName() + ": "
-            //                    + pr.getParticipant().fullNameProperty().getValueSafe() 
-            //                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
-            //                    + DurationFormatter.durationToString(pr.getChipFinish())
-            //                    + " O:" + pr.getOverall() + " S:" + pr.getSexPlace() 
-            //                    + " AG:" + pr.getAGPlace()
-            //            );
-
                     });
+                    
+                    // now do the same for segments 
+                    r.getSegments().forEach(seg -> {
+                        results.sort((p1, p2) -> {
+                            return ObjectUtils.compare(p1.getSegmentTime(seg.getID()), p2.getSegmentTime(seg.getID()));
+                        });
+                        Map<String,Integer> segPlCounter = new HashMap();
+                        segPlCounter.put("overall", 1);
+                        segPlCounter.put("M",1);
+                        segPlCounter.put("F",1);
+                        
+                        results.forEach(pr -> {
+                            if (pr.getSegmentTime(seg.getID()) == null) return;
+                            
+                            pr.setSegmentOverallPlace(seg.getID(),segPlCounter.get("overall"));
+                            segPlCounter.put("overall", pr.getOverall()+1);
+
+                            pr.setSegmentSexPlace(seg.getID(),segPlCounter.get(pr.getSex()));
+                            segPlCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID())+1);
+
+                            segPlCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
+                            pr.setSegmentAGPlace(seg.getID(),segPlCounter.get(pr.getSex()+pr.getAGCode()));
+                            segPlCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID())+1);
+                        });
+                    });
+                    
+                    // now sort them again 
+                    results.sort(null); 
+                    
+                    // Now deal with ties. Ugh.
+                    if (r.getBooleanAttribute("permitTies") != null && r.getBooleanAttribute("permitTies") && r.getStringAttribute("TimeDisplayFormat") != null) {
+                        String dispFormat = r.getStringAttribute("TimeDisplayFormat");
+                        String roundMode = r.getStringAttribute("TimeRoundingMode");
+                        
+                        System.out.println("Tie Processing: Display Format: " + dispFormat + " Rounding " + roundMode);
+                        
+                        // Overall ties
+                        StringProperty lastResult = new SimpleStringProperty(""); 
+                        placementCounter.clear();
+                        
+
+                        results.forEach(pr -> {
+                            if (pr.getChipFinish() == null) return;
+                            String currentResult = DurationFormatter.durationToString(pr.getChipFinish(),dispFormat,roundMode);
+                            
+                            if (currentResult.equals(lastResult.getValueSafe())) { // we have a tie
+                                System.out.println("We have tie at " + currentResult);
+                                pr.setOverall(placementCounter.get("overall"));
+                                
+                                placementCounter.putIfAbsent(pr.getSex(), pr.getSexPlace());
+                                pr.setSexPlace(placementCounter.get(pr.getSex()));
+                                
+                                placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
+                                pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
+                            } else {
+                               lastResult.set(currentResult);
+                               placementCounter.clear();
+                               placementCounter.put("overall", pr.getOverall()); 
+                               placementCounter.put(pr.getSex(), pr.getSexPlace());
+                               placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
+                            }
+
+                        });
+                        
+                        // segment ties
+                        r.getSegments().forEach(seg -> {
+                            lastResult.set("");
+                            results.sort((p1, p2) -> {
+                                return ObjectUtils.compare(p1.getSegmentTime(seg.getID()), p2.getSegmentTime(seg.getID()));
+                            });
+                            results.forEach(pr -> {
+                                if (pr.getSegmentTime(seg.getID()) == null) return;
+                                
+                                String currentResult = DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()),dispFormat,roundMode);
+
+                                if (currentResult.equals(lastResult.getValueSafe())) { // we have a tie
+                                    System.out.println("We have a segment tie at " + currentResult + " for segID " + seg.getID());
+                                    pr.setSegmentOverallPlace(seg.getID(),placementCounter.get("overall"));
+
+                                    placementCounter.putIfAbsent(pr.getSex(), pr.getSegmentSexPlace(seg.getID()));
+                                    pr.setSegmentSexPlace(seg.getID(),placementCounter.get(pr.getSex()));
+
+                                    placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
+                                    pr.setSegmentAGPlace(seg.getID(),placementCounter.get(pr.getSex()+pr.getAGCode()));
+                                } else {
+                                   lastResult.set(currentResult);
+                                   placementCounter.clear();
+                                   placementCounter.put("overall", pr.getSegmentOverallPlace(seg.getID())); 
+                                   placementCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID()));
+                                   placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
+                                }
+
+                            });
+                        });
+                        
+                        // now sort them again 
+                        results.sort(null); 
+                    }
 
 
                     // for each report, feed it the results list
@@ -841,6 +946,9 @@ public class ResultsDAO {
                             rr.processResult(results);
                         }); 
                     } else rr.processResultNow(results);
+                    } catch (Exception ex){
+                        ex.printStackTrace();
+                    }
                     return null;
                 }
             };
