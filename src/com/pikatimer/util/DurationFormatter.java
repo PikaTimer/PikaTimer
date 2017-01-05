@@ -98,7 +98,10 @@ public class DurationFormatter {
     }
     public static final String durationToString(Duration d, String format, String roundingMode){
         Integer precision = 0;
-        RoundingMode rm = RoundingMode.HALF_EVEN;
+        RoundingMode rm = RoundingMode.HALF_EVEN;;
+        if (roundingMode.equals("Down")) rm = RoundingMode.DOWN;
+        if (roundingMode.equals("Half")) rm = RoundingMode.HALF_EVEN;
+        if (roundingMode.equals("Up")) rm = RoundingMode.UP;
         
         return durationToString(d,precision,false,rm);
     }
