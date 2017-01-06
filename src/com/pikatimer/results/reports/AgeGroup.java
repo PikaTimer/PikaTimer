@@ -25,7 +25,6 @@ import com.pikatimer.results.RaceReportType;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -112,7 +111,7 @@ public class AgeGroup implements RaceReportType {
         });
         fullNameLength.setValue(fullNameLength.getValue() + 1);
        
-        if (customHeaders && race.getStringAttribute("textHeader") != null) {
+        if (customHeaders && race.getStringAttribute("textHeader") != null && !race.getStringAttribute("textHeader").isEmpty()) {
             report += race.getStringAttribute("textHeader");
             report += System.lineSeparator();
         }
@@ -127,7 +126,7 @@ public class AgeGroup implements RaceReportType {
             report += System.lineSeparator();
         }
         
-        if (customHeaders && race.getStringAttribute("textMessage") != null) {
+        if (customHeaders && race.getStringAttribute("textMessage") != null && !race.getStringAttribute("textMessage").isEmpty()) {
             report += race.getStringAttribute("textMessage");
             report += System.lineSeparator();
         }
@@ -154,7 +153,7 @@ public class AgeGroup implements RaceReportType {
         
         report += chars.toString();
         
-        if (customHeaders && race.getStringAttribute("textFooter") != null) {
+        if (customHeaders && race.getStringAttribute("textFooter") != null && !race.getStringAttribute("textFooter").isEmpty()) {
             report += race.getStringAttribute("textFooter");
             report += System.lineSeparator();
         }
@@ -166,6 +165,7 @@ public class AgeGroup implements RaceReportType {
         
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
+        Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
         //System.out.println("Age Group Processing: Display Format: " + dispFormat + " Rounding " + roundMode);
         
         Integer dispFormatLength;  // add a space
@@ -218,6 +218,12 @@ public class AgeGroup implements RaceReportType {
             chars.append(StringUtils.rightPad(pr.getParticipant().fullNameProperty().getValueSafe(),fullNameLength.get()));
             chars.append(StringUtils.rightPad(pr.getParticipant().getCity(),18));
             chars.append(StringUtils.center(pr.getParticipant().getState(),4));
+            
+            if (dq) { 
+                chars.append("    Reason: ").append(pr.getParticipant().getNote());
+                chars.append(System.lineSeparator());
+                return;
+            }
 
             // Insert split stuff here 
             if (showSplits && ! hideTime) {
@@ -231,20 +237,21 @@ public class AgeGroup implements RaceReportType {
                 race.getSegments().forEach(seg -> {
                     chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispFormat, roundMode),dispLen));
                     if (showSegmentPace) {
-                        if (pr.getSegmentTime(seg.getID()) != null ) chars.append(StringUtils.leftPad(StringUtils.stripStart(Pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()), Pace.MPM), "0"),9));
-                        else chars.append("         ");
+                        //if (pr.getSegmentTime(seg.getID()) != null ) chars.append(StringUtils.leftPad(StringUtils.stripStart(Pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()), Pace.MPM), "0"),9));
+                        if (pr.getSegmentTime(seg.getID()) != null ) chars.append(StringUtils.leftPad(pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID())),pace.getFieldWidth()+1));
+                        else chars.append(StringUtils.leftPad("",pace.getFieldWidth()+1));
                     }
                 });
             }
             if (dnf) { 
-                chars.append(pr.getParticipant().getNote());
                 chars.append(System.lineSeparator());
                 return;
             }
             // chip time
             if (! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode), dispFormatLength));
             if (showGun && ! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getGunFinish(), dispFormat, roundMode), dispFormatLength));
-            if (showPace && ! hideTime) chars.append(StringUtils.leftPad(StringUtils.stripStart(Pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish(), Pace.MPM), "0"),10));
+            if (showPace && ! hideTime) chars.append(StringUtils.leftPad(pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish()),pace.getFieldWidth()+1));
+
 //            System.out.println("Results: " + r.getRaceName() + ": "
 //                    + r.getParticipant().fullNameProperty().getValueSafe() 
 //                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
@@ -269,6 +276,9 @@ public class AgeGroup implements RaceReportType {
         Integer dispFormatLength = dispFormat.length()+1; // add a space
         if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
         
+        Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
+
+                
         String report = new String();
         // print the headder
         report += " OA#"; // 4R chars 
@@ -296,7 +306,7 @@ public class AgeGroup implements RaceReportType {
             Integer dispLeg = dispFormatLength;
             race.getSegments().forEach(seg -> {
                 chars.append(StringUtils.leftPad(seg.getSegmentName(),dispLeg));
-                if (showSegmentPace) chars.append("   Pace  "); // 10R
+                if (showSegmentPace) chars.append(StringUtils.leftPad("Pace",pace.getFieldWidth()+1)); // pace.getFieldWidth()+1
             });
             report += chars.toString();
         }
@@ -307,7 +317,7 @@ public class AgeGroup implements RaceReportType {
         // gun time
         if (showGun) report += StringUtils.leftPad("Gun", dispFormatLength);
         // pace
-        if (showPace) report += "   Pace"; // 10R
+        if (showPace) report += StringUtils.leftPad("Pace",pace.getFieldWidth()+1); 
         report += System.lineSeparator();
         
         return report; 
