@@ -18,7 +18,6 @@ package com.pikatimer.timing;
 
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
-import java.math.BigDecimal;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -52,6 +51,7 @@ public class Segment {
     private final StringProperty endSplitStringProperty = new SimpleStringProperty();
     private final StringProperty startSplitStringProperty = new SimpleStringProperty();
     private final StringProperty distanceStringProperty = new SimpleStringProperty("0");
+    
     
     public Segment(Race r){
 
@@ -167,6 +167,10 @@ public class Segment {
         return distanceStringProperty;
     }
     
+    @Transient
+    public Float getSegmentDistance(){
+        return getEndSplit().getSplitDistance().subtract(getStartSplit().getSplitDistance()).abs().floatValue();
+    }
     private void updateDistanceStringProperty(){
         if (getEndSplit() != null && getStartSplit() != null) {
             distanceStringProperty.unbind();
