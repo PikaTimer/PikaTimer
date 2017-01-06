@@ -173,7 +173,8 @@ public class AgeGroup implements RaceReportType {
         else dispFormatLength = dispFormat.length()+1;
         
         Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
-        
+        String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
+
         final StringBuilder chars = new StringBuilder();
         
         chars.append(printHeader());
@@ -197,7 +198,9 @@ public class AgeGroup implements RaceReportType {
             } else if (!showDQ && pr.getChipFinish() == null){
                 return;
             } else if (! dnf && ! dq) { 
-                if (cutoffTime.isZero() || cutoffTime.compareTo(pr.getChipFinish()) > 0) {
+                if (cutoffTime.isZero() 
+                        || cutoffTime.compareTo(pr.getChipFinish()) >= 0 
+                        || cutoffTimeString.equals(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode))) {
                     chars.append(StringUtils.leftPad(pr.getOverall().toString(),4));
                     chars.append(StringUtils.leftPad(pr.getSexPlace().toString(),5));
                     chars.append(StringUtils.leftPad(pr.getAGPlace().toString(),5)); 
