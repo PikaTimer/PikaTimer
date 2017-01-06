@@ -69,7 +69,7 @@ public class DurationFormatter {
         String r = "";
         if (isNegative) r = "-"; 
         if (H > 0 ) r += H.toString() + ":";
-        if (H == 0 && printHours) r += "00:";
+        if (H == 0 && printHours) r += "0:";
         if (M > 9) r += M.toString() +":";
         if (M < 10 && M > 0) r+= "0" + M.toString()+":";
         if ((H > 0 || printHours ) && M == 0) r+= "00:";
@@ -98,11 +98,17 @@ public class DurationFormatter {
     }
     public static final String durationToString(Duration d, String format, String roundingMode){
         Integer precision = 0;
+        String[] tokens = format.split("\\.", -1);
+        if (tokens.length > 1) precision = tokens[1].length();
+        
+        Boolean hours = true;
+        if (format.contains("[HH:]")) hours = false;
+        
         RoundingMode rm = RoundingMode.HALF_EVEN;;
         if (roundingMode.equals("Down")) rm = RoundingMode.DOWN;
         if (roundingMode.equals("Half")) rm = RoundingMode.HALF_EVEN;
         if (roundingMode.equals("Up")) rm = RoundingMode.UP;
         
-        return durationToString(d,precision,false,rm);
+        return durationToString(d,precision,hours,rm);
     }
 }
