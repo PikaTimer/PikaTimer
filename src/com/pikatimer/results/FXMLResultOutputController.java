@@ -57,6 +57,7 @@ public class FXMLResultOutputController {
     @FXML CheckBox showGunTimeCheckBox;
     @FXML CheckBox showSegmentsCheckBox;
     @FXML CheckBox showSegmentPaceCheckBox;
+    @FXML CheckBox hideCustomHeadersCheckBox;
     
     @FXML Label noOutputPpathsLabel;
     
@@ -236,6 +237,19 @@ public class FXMLResultOutputController {
                 showSegmentPaceCheckBox.managedProperty().unbind();
                 showSegmentPaceCheckBox.managedProperty().set(false);
             }
+            
+            if (rrt.optionSupport("hideCustomHeaders")) {
+                if (r.getBooleanAttribute("hideCustomHeaders") == null){
+                    r.setBooleanAttribute("hideCustomHeaders", false);
+                    attributeAdded = true;
+                }
+                hideCustomHeadersCheckBox.selectedProperty().setValue(r.getBooleanAttribute("hideCustomHeaders"));
+                hideCustomHeadersCheckBox.visibleProperty().set(true);
+                hideCustomHeadersCheckBox.managedProperty().set(true);
+            } else {
+                hideCustomHeadersCheckBox.visibleProperty().set(false);
+                hideCustomHeadersCheckBox.managedProperty().set(false);
+            }
 
 
         
@@ -311,11 +325,21 @@ public class FXMLResultOutputController {
             }
             
         });
-        
+        showSegmentPaceCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            if (!r.getBooleanAttribute("showSegmentPace").equals(new_val)){
+                r.setBooleanAttribute("showSegmentPace", new_val);
+                resultsDAO.saveRaceReport(r);
+            }
+            
+        });
 //        @FXML CheckBox showGunTimeCheckBox;
-        showGunTimeCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showGun"));
         showGunTimeCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
             r.setBooleanAttribute("showGun", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+        hideCustomHeadersCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("hideCustomHeaders", new_val);
             resultsDAO.saveRaceReport(r);
         });
         

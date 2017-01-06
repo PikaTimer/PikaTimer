@@ -90,6 +90,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <CheckBox fx:id="showSegmentPaceCheckBox" mnemonicParsing="false" text="Show Segment Pace" />
                      </children>
                   </HBox>
+                  <CheckBox fx:id="hideCustomHeadersCheckBox" mnemonicParsing="false" text="Hide Custom Headers/Footers" />
                </children>
             </VBox>
             <FlowPane fx:id="outputOptionsFlowPane" prefWidth="200.0" />
