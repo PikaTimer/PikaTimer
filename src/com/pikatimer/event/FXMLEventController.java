@@ -250,7 +250,6 @@ public class FXMLEventController  {
 
         }
         
-        
         // load up the raceDetailsPane
         // Save the FXMLLoader so that we can send it notes when things change in the races box
         raceDetailsVBox.getChildren().clear();
@@ -283,18 +282,7 @@ public class FXMLEventController  {
          });
          
          raceTableView.getSelectionModel().clearAndSelect(0);
-//         raceTableView.getSelectionModel().getSelectedIndices().addListener((Change<? extends Integer> change) -> {
-////                if (change.getList().size() == 1) {
-////                    multipleRacesCheckBox.setDisable(false);
-////                    //raceDetailsPane.setDisable(true);
-////                } else {
-////                    //raceDetailsPane.setDisable(false); 
-////                    multipleRacesCheckBox.setDisable(true);
-////                }
-//             System.out.println("raceTableView selection changed... ");
-//             raceDetailsController.selectRace(raceTableView.getSelectionModel().getSelectedItem());
-//
-//            });
+
          
          
          
@@ -484,6 +472,8 @@ public class FXMLEventController  {
     public void removeRace(ActionEvent fxevent){
         
         final Race r = raceTableView.getSelectionModel().getSelectedItem();
+        
+        if (r == null) return;
         
         // Do we have any runner's assigned?
         BooleanProperty assignedRunners = new SimpleBooleanProperty(false);
