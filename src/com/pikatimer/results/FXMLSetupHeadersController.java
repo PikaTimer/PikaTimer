@@ -25,7 +25,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -148,7 +147,7 @@ public class FXMLSetupHeadersController {
         footerHBox.disableProperty().bind(textForBothCheckBox.selectedProperty());
         htmlEditorChoiceBox.disableProperty().bind(textForBothCheckBox.selectedProperty());
         textForBothCheckBox.selectedProperty().addListener((ob, oldS, newS) -> {
-            if (race.getBooleanAttribute("textOnlyHeaders").equals(newS)) headersModified.set(true);
+            if (!race.getBooleanAttribute("textOnlyHeaders").equals(newS)) headersModified.set(true);
             if (newS) {
                 htmlEditorChoiceBox.getSelectionModel().selectLast();
             } else {
