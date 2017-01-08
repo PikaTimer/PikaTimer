@@ -24,6 +24,8 @@ import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.DurationParser;
+import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -110,6 +112,7 @@ public class FXMLRaceDetailsController {
     @FXML private TableColumn<Segment,Split> segmentStartSplitTableColumn;
     @FXML private TableColumn<Segment,Split> segmentEndSplitTableColumn;
     @FXML private TableColumn<Segment,String> segmentDistanceTableColumn;
+    @FXML private Button deleteSegmentButton;
     
     //@FXML private Button courseRecordsButton;
 
@@ -332,14 +335,33 @@ public class FXMLRaceDetailsController {
         
         
         // Use this if you whant keystroke by keystroke monitoring.... Reject any non digit attempts
+//        raceCutoffTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+//            if ( newValue.isEmpty() || newValue.matches("([0-9]*|[0-9]*:[0-5]?)") ) {
+//                System.out.println("Possiblely good Race Cutoff Time (newValue: " + newValue + ")");
+//            } else if(newValue.matches("[0-9]*:[0-5][0-9]") ) { // Looks like a HH:MM time, lets check
+//                System.out.println("Looks like a valid Race Cutoff Time (newValue: " + newValue + ")");
+//            } else {
+//                raceCutoffTimeTextField.setText(oldValue);
+//                System.out.println("Bad Race Cutoff Time (newValue: " + newValue + ")");
+//            }
+//                
+//        });
+        raceCutoffTimeTextField.setPromptText("HH:MM:SS");
         raceCutoffTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if ( newValue.isEmpty() || newValue.matches("([0-9]*|[0-9]*:[0-5]?)") ) {
-                System.out.println("Possiblely good Race Cutoff Time (newValue: " + newValue + ")");
-            } else if(newValue.matches("[0-9]*:[0-5][0-9]") ) { // Looks like a HH:MM time, lets check
-                System.out.println("Looks like a valid Race Cutoff Time (newValue: " + newValue + ")");
+                    //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            
+
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
             } else {
-                raceCutoffTimeTextField.setText(oldValue);
-                System.out.println("Bad Race Cutoff Time (newValue: " + newValue + ")");
+                Platform.runLater(() -> {
+                    int c = raceCutoffTimeTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    raceCutoffTimeTextField.setText(oldValue);
+                    raceCutoffTimeTextField.positionCaret(c);
+                });
+                System.out.println("Bad Cutoff Time (newValue: " + newValue + ")");
             }
                 
         });
@@ -349,7 +371,7 @@ public class FXMLRaceDetailsController {
                 System.out.println("raceCutoffTimeTextField out focus");
 
                 if ( ! raceCutoffTimeTextField.getText().equals(selectedRace.raceCutoffProperty().getValueSafe()) ) {
-                    if (raceCutoffTimeTextField.getText().matches("[0-9][0-9]*:[0-5][0-9]") ||raceCutoffTimeTextField.getText().isEmpty() ) {
+                    if (DurationParser.parsable(raceCutoffTimeTextField.getText()) || raceCutoffTimeTextField.getText().isEmpty() ) {
                         updateRaceCutoffTime(); 
                     } else {
                         System.out.println("raceCutoffTimeTextField out focus with bad time, reverting to " + selectedRace.raceCutoffProperty().getValueSafe());
@@ -636,6 +658,7 @@ public class FXMLRaceDetailsController {
                 raceDAO.updateSegment(s);
             });
                 
+            deleteSegmentButton.disableProperty().bind(raceSegmentsTableView.getSelectionModel().selectedItemProperty().isNull());
             
             // Need to UN-Register the old listeners before setting up the new ones...
            raceSplitsTableViewListener=(obs, oldSelection, newSelection) -> {
@@ -659,6 +682,7 @@ public class FXMLRaceDetailsController {
                 }
             };
            raceSplitsTableView.getSelectionModel().selectedItemProperty().addListener(raceSplitsTableViewListener);
+           raceSplitsTableView.getSelectionModel().clearSelection();
         
             waveStartsCheckBoxListener=(arg0,  oldPropertyValue,  newPropertyValue) -> {
                 if (!newPropertyValue) {
@@ -756,13 +780,7 @@ public class FXMLRaceDetailsController {
         if (raceCutoffTimeTextField.getText().isEmpty()) {
             selectedRace.setRaceCutoff(0L);
         } else { 
-            //LocalTime nt = LocalTime.parse(raceCutoffTimeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME );
-            
-            String[] split = raceCutoffTimeTextField.getText().split(":");
-            int hours = Integer.valueOf(split[0]);
-            int minutes = Integer.valueOf(split[1]);
-
-            selectedRace.setRaceCutoff(Duration.ofSeconds(hours * 3600L + minutes * 60L).toNanos());
+            selectedRace.setRaceCutoff(DurationParser.parse(raceCutoffTimeTextField.getText()).toNanos());
         }
         raceCutoffTimeTextField.setText(selectedRace.raceCutoffProperty().getValueSafe());
         raceDAO.updateRace(selectedRace);
@@ -775,9 +793,14 @@ public class FXMLRaceDetailsController {
             raceCutoffTimePaceLabel.setText("");
             return;
         }
-        System.out.println("Pace Calc inputs: " + selectedRace.getRaceCutoff() + " and " + selectedRace.getRaceDistance().floatValue() );
-        Duration pace = Duration.ofNanos(Math.round(selectedRace.getRaceCutoff()/selectedRace.getRaceDistance().doubleValue()));
-        raceCutoffTimePaceLabel.setText(DurationFormatter.durationToString(pace, 0, Boolean.FALSE) + " min/" + selectedRace.getRaceDistanceUnits().toShortString());
+        Pace pace;
+        try {
+            pace = Pace.valueOf(selectedRace.getStringAttribute("PaceDisplayFormat"));
+        } catch (Exception ex) {
+            pace = Pace.MPM;
+        }
+        pace.getPace(selectedRace.getRaceDistance().floatValue(), selectedRace.getRaceDistanceUnits(), Duration.ofNanos(selectedRace.getRaceCutoff()));
+        raceCutoffTimePaceLabel.setText(pace.getPace(selectedRace.getRaceDistance().floatValue(), selectedRace.getRaceDistanceUnits(), Duration.ofNanos(selectedRace.getRaceCutoff())));
     }
     
     public void addWave(ActionEvent fxevent){

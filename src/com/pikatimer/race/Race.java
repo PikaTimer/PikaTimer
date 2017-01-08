@@ -216,9 +216,12 @@ public class Race {
             System.out.println("setRaceCutoff " + c.toString());
             raceCutoff = Duration.ofNanos(c);
             if (raceCutoff.isZero()) raceCutoffProperty.set(""); 
-            else raceCutoffProperty.set(Long.toString(raceCutoff.toHours()) + ":" + Long.toString(raceCutoff.toMinutes()-raceCutoff.toHours()*60));
+            else raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff, 0, Boolean.TRUE));
             //raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff,0)); 
         }
+    }
+    public Duration raceCutoffDuration(){
+        return raceCutoff;
     }
     public StringProperty raceCutoffProperty(){
         return raceCutoffProperty;  

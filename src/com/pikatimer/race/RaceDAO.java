@@ -93,7 +93,7 @@ public class RaceDAO {
         //System.out.println("RacedAO.refreshRaceList() Starting the query");
         
         try {  
-            list=s.createQuery("from Race").list();
+            list=s.createQuery("from Race order by ID").list();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } 
