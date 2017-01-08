@@ -196,10 +196,11 @@ public class Overall implements RaceReportType{
             if (!showDNF && !inProgress && dnf) return;
             if (!showDQ && dq) return;
             
-            if (inProgress && pr.getChipFinish() == null) {
+            if (dq) chars.append(StringUtils.center("***DQ****",14));
+            else if (inProgress && pr.getChipFinish() == null) {
                 chars.append(StringUtils.center("**Started**",14)); 
                 //hideTime = true;
-            } else if (!showDQ && pr.getChipFinish() == null){
+            } else if (!showDNF && pr.getChipFinish() == null){
                 return;
             } else if (! dnf && ! dq) { 
                 if (cutoffTime.isZero() 
@@ -213,9 +214,7 @@ public class Overall implements RaceReportType{
                     chars.append(StringUtils.center("***OCO***",14));
                 }
             } else {
-                if (dnf) chars.append(StringUtils.center("***DNF***",14));
-                else chars.append(StringUtils.center("***DQ****",14));
-                    
+                chars.append(StringUtils.center("***DNF***",14));
             }
             
             chars.append(StringUtils.leftPad(pr.getParticipant().getBib(),5));
