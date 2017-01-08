@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="769.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="769.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
   <columnConstraints>
     <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
     <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
@@ -185,19 +185,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                          <PropertyValueFactory property="waveMaxStartString" />
                         </cellValueFactory>
                     </TableColumn>
-                  <TableColumn prefWidth="150.0" text="Assignments">
+                  <TableColumn minWidth="150.0" prefWidth="150.0" text="Assignments">
                      <columns>
-                              <TableColumn fx:id="waveAssignmentMethodTableColumn" prefWidth="60.0" text="Method">
+                              <TableColumn fx:id="waveAssignmentMethodTableColumn" prefWidth="60.0" text="Method" visible="false">
                                   <cellValueFactory>
                                    <PropertyValueFactory property="waveAssignmentMethod" />
                                   </cellValueFactory>
                               </TableColumn>
-                              <TableColumn fx:id="waveAssignmentStartTableColumn" minWidth="6.0" prefWidth="45.0" text="Start">
+                              <TableColumn fx:id="waveAssignmentStartTableColumn" minWidth="50.0" prefWidth="50.0" text="Start">
                                   <cellValueFactory>
                                    <PropertyValueFactory property="waveAssignmentStart" />
                                   </cellValueFactory>
                               </TableColumn>
-                              <TableColumn fx:id="waveAssignmentEndTableColumn" prefWidth="45.0" text="End">
+                              <TableColumn fx:id="waveAssignmentEndTableColumn" minWidth="50.0" prefWidth="50.0" text="End">
                                   <cellValueFactory>
                                    <PropertyValueFactory property="waveAssignmentEnd" />
                                   </cellValueFactory>

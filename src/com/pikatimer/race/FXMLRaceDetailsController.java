@@ -270,22 +270,23 @@ public class FXMLRaceDetailsController {
         waveStartTimeTableColumn.setOnEditCommit((CellEditEvent<Wave, String> t) -> {
             Wave w = (Wave) t.getTableView().getItems().get(t.getTablePosition().getRow());
             System.out.println("waveStartTimeTextField out focus");
-                try {
-                    if (!t.getNewValue().isEmpty()) {
-                        LocalTime.parse(t.getNewValue(), DateTimeFormatter.ISO_LOCAL_TIME );
-                        w.setWaveStart(t.getNewValue());
-                        raceDAO.updateWave(w);
-                        ResultsDAO.getInstance().reprocessAll(w);
-                    }
-                } catch (Exception e) {
-                    System.out.println("Bad Race Wave Start Time (newValue: " + t.getNewValue() + ")");
-                    w.setWaveStart(t.getOldValue());
-                    
-                }
+            if (t.getNewValue().isEmpty()) {
+                w.setWaveStart(t.getOldValue());
+            }
+            else if (DurationParser.parsable(t.getNewValue())) {
+                Duration newD = DurationParser.parse(t.getNewValue());
+                w.setWaveStart(LocalTime.MIDNIGHT.plus(newD).format(DateTimeFormatter.ISO_LOCAL_TIME));
+                raceDAO.updateWave(w);
+                ResultsDAO.getInstance().reprocessAll(w);
+            } else {
+                w.setWaveStart(t.getOldValue());
+            }
+                
         });
                 
         waveMaxStartTimeTableColumn.setCellFactory(TextFieldTableCell.forTableColumn()); 
         waveMaxStartTimeTableColumn.setOnEditCommit((CellEditEvent<Wave, String> t) -> {
+            
             Wave w = (Wave) t.getTableView().getItems().get(t.getTablePosition().getRow());
             if (t.getNewValue().matches("[0-9]+") ) {
                 int minutes = Integer.valueOf(t.getNewValue());
@@ -808,9 +809,35 @@ public class FXMLRaceDetailsController {
     public void addWave(ActionEvent fxevent){
         Wave wave = new Wave(selectedRace);
         wave.setWaveName("Wave " + (raceWaves.size()+1));
+        
+        // Bib assignemnts
+        Wave pw = raceWaves.get(raceWaves.size()-1);
         wave.setWaveAssignmentMethod(WaveAssignment.BIB);
-        //wave.setWaveStart(selectedRace.getRaceStart());
-        wave.setWaveStart(raceWaves.get(0).getWaveStart());
+        Boolean numericBibs = false;
+        Integer start = 1;
+        Integer end = 100;
+        try{
+            start = Integer.parseUnsignedInt(pw.getWaveAssignmentStart());
+            end = Integer.parseUnsignedInt(pw.getWaveAssignmentEnd());
+            if (start == 1) start = 0;
+            Integer diff = end - start;
+            start = end +1;
+            end = start + diff;
+            numericBibs = true;
+        } catch (Exception ex){
+            numericBibs = false;
+        }
+        if (numericBibs) {
+            wave.setWaveAssignmentStart(start.toString());
+            wave.setWaveAssignmentEnd(end.toString());
+        }
+        
+        if (raceWaves.size() > 1) {
+            Duration delta = Duration.between(pw.waveStartProperty(), raceWaves.get(raceWaves.size()-2).waveStartProperty()).abs();
+            wave.setWaveStart(pw.waveStartProperty().plus(delta).format(DateTimeFormatter.ISO_LOCAL_TIME));
+        } else wave.setWaveStart(pw.waveStartProperty().plusMinutes(5).format(DateTimeFormatter.ISO_LOCAL_TIME));
+        
+        
         raceDAO.addWave(wave);
     }
     
