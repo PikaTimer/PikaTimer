@@ -23,6 +23,7 @@ import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -86,7 +87,7 @@ public class Race {
     private List<RaceReport> raceReportsList;
     private final ObservableList<RaceReport> raceReports;
     private List<Segment> segmentsList;
-    private final ObservableList<Segment> raceSegments =FXCollections.observableArrayList();
+    private final ObservableList<Segment> raceSegments = FXCollections.observableArrayList(Segment.extractor());
     //private final Race self; 
 
     private RaceAwards awards; 
@@ -347,21 +348,18 @@ public class Race {
         if (s == null) System.out.println("Race.setRaceReports(list) called with null list");
         if (s != null) raceSegments.setAll(s);
         //System.out.println("Race.setRaceReports(list) " + raceName.getValueSafe() + "( " + IDProperty.getValue().toString() + ")" + " now has " + raceReports.size() + " Reports");
-
     }
     public ObservableList<Segment> raceSegmentsProperty() {
-        return raceSegments; 
+        return raceSegments.sorted((s1, s2)-> s1.compareTo(s2)); 
     }
     public void addRaceSegment(Segment s) {
-        raceSegments.add(s);
         s.setRace(this);
-        //raceReportsList.add(w);
-        segmentsList = raceSegments.sorted();
+        raceSegments.add(s);
+        segmentsList = raceSegments.sorted((s1, s2)-> s1.compareTo(s2));
     }
     public void removeRaceSegment(Segment s) {
         raceSegments.remove(s); 
-        //raceReportsList.remove(w);
-        segmentsList = raceSegments.sorted();
+        segmentsList = raceSegments.sorted((s1, s2)-> s1.compareTo(s2));
     }
 
     @Column(name="uuid")
