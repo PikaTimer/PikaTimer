@@ -661,9 +661,11 @@ public class FXMLRaceDetailsController {
             deleteSegmentButton.disableProperty().bind(raceSegmentsTableView.getSelectionModel().selectedItemProperty().isNull());
             
             // Need to UN-Register the old listeners before setting up the new ones...
+           deleteSplitButton.disableProperty().set(true);
+           splitDistanceTableColumn.setEditable(false);
            raceSplitsTableViewListener=(obs, oldSelection, newSelection) -> {
-                System.out.println("Selected splits changed...");
-                if (newSelection != null) {
+                System.out.println("Selected splits changed... now " + newSelection);
+                if (newSelection != null ) {
                     if (newSelection.splitPositionProperty().getValue().equals(1)) {
                         deleteSplitButton.disableProperty().set(true);
                         splitDistanceTableColumn.setEditable(false);
