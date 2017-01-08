@@ -18,11 +18,13 @@ package com.pikatimer.timing;
 
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
+import javafx.beans.Observable;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -42,7 +44,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 @DynamicUpdate
 @Table(name="race_segment")
-public class Segment {
+public class Segment implements Comparable<Segment>{
     private final IntegerProperty IDProperty = new SimpleIntegerProperty(); // split_id
     private Race race; // race_id
     private Integer startSplitID; // 
@@ -60,6 +62,9 @@ public class Segment {
     
     public Segment() {
 
+    }
+   public static Callback<Segment, Observable[]> extractor() {
+        return (Segment s) -> new Observable[]{s.segmentName,s.endSplitStringProperty,s.startSplitStringProperty,s.distanceStringProperty};
     }
    
     @Id
@@ -203,8 +208,24 @@ public class Segment {
             
             startSplitStringProperty.unbind();
             startSplitStringProperty.bind(getStartSplit().splitNameProperty());
-            
         }
+    }
+
+    @Override
+    public int compareTo(Segment other) {
+        // compare end split
+        if (this.getEndSplit() != null && other.getEndSplit() == null) return 1;
+        if (this.getEndSplit() == null && other.getEndSplit() != null) return -1;
+        if (this.getEndSplitPosition() > other.getEndSplitPosition()) return 1;
+        if (this.getEndSplitPosition() < other.getEndSplitPosition()) return -1;
+        
+        // compare start split
+        if (this.getStartSplit() != null && other.getStartSplit() == null) return 1;
+        if (this.getStartSplit() == null && other.getStartSplit() != null) return -1;
+        if (this.getStartSplitPosition() > other.getStartSplitPosition()) return 1;
+        if (this.getStartSplitPosition() < other.getStartSplitPosition()) return -1;
+        
+        return 0;
     }
     
     
