@@ -25,11 +25,12 @@ import com.pikatimer.results.RaceReportType;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.HashMap;
 import java.util.List;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -39,6 +40,29 @@ import org.apache.commons.lang3.StringUtils;
 public class OverallHTML implements RaceReportType{
     Race race;
 
+    Boolean showDQ = true;
+    Boolean inProgress = false;
+    Boolean showSplits = false;
+    Boolean showSegments = false;
+    Boolean showSegmentPace = false;
+    Boolean showDNF = true;
+    Boolean showPace = true;
+    Boolean showGun = true;
+
+    Map<String,Boolean> supportedOptions = new HashMap();
+    
+    public OverallHTML(){
+        supportedOptions.put("showDQ", true);
+        supportedOptions.put("inProgress", false);
+        supportedOptions.put("showSplits", false);
+        supportedOptions.put("showSegments", true);
+        supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showDNF", false);
+        supportedOptions.put("showPace", true);
+        supportedOptions.put("showGun", true);
+        supportedOptions.put("hideCustomHeaders", false);
+    }
+    
     @Override
     public void init(Race r) {
         race = r;
@@ -46,7 +70,7 @@ public class OverallHTML implements RaceReportType{
 
     @Override
     public Boolean optionSupport(String feature) {
-        return true;
+        return supportedOptions.containsKey(feature);
     }
     
     @Override
@@ -58,40 +82,81 @@ public class OverallHTML implements RaceReportType{
         
         Event event = Event.getInstance();  // fun with singletons... 
         
-        rr.getKnownAttributeNames().forEach(s -> {System.out.println("Known Attribute: " + s);});
+        supportedOptions.keySet().forEach(k -> supportedOptions.put(k, rr.getBooleanAttribute(k)));
 
-        Boolean showDQ = rr.getBooleanAttribute("showDQ");
-        Boolean inProgress = rr.getBooleanAttribute("inProgress");
-        Boolean showSplits = rr.getBooleanAttribute("showSplits");
-        Boolean showDNF = rr.getBooleanAttribute("showDNF");
-        Boolean showPace = rr.getBooleanAttribute("showPace");
-        Boolean showGun = rr.getBooleanAttribute("showGun");
+
+        showDQ = supportedOptions.get("showDQ");
+        inProgress = supportedOptions.get("inProgress");
+        showSplits = supportedOptions.get("showSplits");
+        showSegments = supportedOptions.get("showSegments");
+        showSegmentPace = supportedOptions.get("showSegmentPace");
+        showDNF = supportedOptions.get("showDNF");
+        showPace = supportedOptions.get("showPace");
+        showGun = supportedOptions.get("showGun");
         
-        // what is the longest name?
-//        IntegerProperty fullNameLength = new SimpleIntegerProperty(10);
-//        prList.forEach (pr ->{
-//            if(pr.getParticipant().fullNameProperty().length().getValue() > fullNameLength.getValue()) 
-//                fullNameLength.setValue(pr.getParticipant().fullNameProperty().length().getValue());
-//        });
-//        fullNameLength.setValue(fullNameLength.getValue() + 1);
+        Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
+        Boolean textOnlyHeaders = race.getBooleanAttribute("textOnlyHeaders");
+        if (customHeaders == null || (customHeaders == true && supportedOptions.get("hideCustomHeaders"))) customHeaders = false;
+        if (customHeaders && textOnlyHeaders == null) textOnlyHeaders = false;
+        
+        String dispFormat = race.getStringAttribute("TimeDisplayFormat");
+        String roundMode = race.getStringAttribute("TimeRoundingMode");
+        Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
+        
+        Integer dispFormatLength;  // add a space
+        if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
+        else dispFormatLength = dispFormat.length()+1;
+        
+        Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
+        String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
+        
        
         report += "<HTML> " +  System.lineSeparator();
         report += "  <HEAD> " +  System.lineSeparator();
         
-        // TODO: Insert CSS and JS includes here
-        
         report += "<meta name=\"viewport\" content=\"width=device-width; initial-scale=1.0; maximum-scale=1.0; minimum-scale=1.0; user-scalable=0;\" />\n";
         
-        report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.3/dt-1.10.12/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" +
+// Google Analytics
+        if (customHeaders && race.getStringAttribute("GACode") != null && !race.getStringAttribute("GACode").isEmpty()) {
+            report +=   "<!-- Google Analytics -->\n" +
+                        "<script>\n" +
+                        "(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){\n" +
+                        "(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),\n" +
+                        "m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)\n" +
+                        "})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');\n" +
+                        "\n" +
+                        "ga('create', '" + race.getStringAttribute("GACode") + "', 'auto');\n" +
+                        "ga('send', 'pageview');\n" +
+                        "</script>\n" +
+                        "<!-- End Google Analytics -->";
+            report += System.lineSeparator();
+        }
+        
+        report +=   "<!-- Stylesheets / JS Includes-->\n" +
+                    "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" +
                     " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.3/dt-1.10.12/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" +
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" +
                     " \n" +
                     "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
+        
+        // Custom CSS 
+        if (customHeaders && race.getStringAttribute("CSSUrl") != null && !race.getStringAttribute("CSSUrl").isEmpty()) {
+            report += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + race.getStringAttribute("CSSUrl") + "\"/>\n";
+            report += System.lineSeparator();
+        }
+        report += "<!-- End Stylesheets / JS Indludes-->";
+
+        // DataTables
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
                     "	\n" +
                     "\n" +
                     "$(document).ready(function() {\n" +
-                    "	$('#results').DataTable({\n" + 
+                    "var search = \"\";\n" +
+                    "	if ( window.location.hash !== \"\" ) {\n" +
+                    "		search = window.location.hash.substring( 1 );\n" +
+                    "	}" +
+                    "var oTable = $('#results').DataTable({\n" +
+                        "   \"oSearch\": { \"sSearch\": search }," + 
                         "    responsive: {\n" +
                         "            details: {\n" +
                         "                renderer: $.fn.dataTable.Responsive.renderer.tableAll()," +
@@ -106,15 +171,34 @@ public class OverallHTML implements RaceReportType{
                         "    scrollY: '60vh',\n" +
                         //"    scrollCollapse: true,\n" +
                         "    scroller:    true,\n" +
-                        "    deferRender: true\n" +
+                        "    deferRender: true,\n" +
+                        "   \"fnInitComplete\": function () {\n" +
+                        "	this.fnAdjustColumnSizing();\n" +
+                        "	$('div.dataTables_filter input').focus();\n" +
+                        "   }\n" +
                         "});\n" +
+                    "   setTimeout( function () {\n" +
+                    "		if (search !== \"\") oTable.rows( {search:'applied'} ).every(function(index){\n" +
+                    "			var row = oTable.row(index);\n" +
+                    "			row.node().click();\n" +
+                    "		});\n" +
+                    "		\n" +
+                    "	}, 300 );" +
                     "} );\n" +
                     "\n" +
                     "\n" +
                     "	</script>";
+        report += "<!-- End DataTables -->";
         
         report += "  </HEAD> " +  System.lineSeparator();
         report += "  <BODY> " +  System.lineSeparator();
+        
+        if (customHeaders){
+            if (textOnlyHeaders) report += race.getStringAttribute("textHeader");
+            else report += race.getStringAttribute("htmlHeader");
+            report += System.lineSeparator();
+        }
+        
         report += "    <H1>" + event.getEventName() + "</H1>" + System.lineSeparator();
         report += "    <H2>" ;
         if (RaceDAO.getInstance().listRaces().size() > 1) 
@@ -128,7 +212,13 @@ public class OverallHTML implements RaceReportType{
             report += System.lineSeparator();
         }
         
-        // Start the table
+        if (customHeaders){
+            if (textOnlyHeaders) report += race.getStringAttribute("textMessage");
+            else report += race.getStringAttribute("htmlMessage");
+            report += System.lineSeparator();
+        }
+        
+// Start the table
         report += "  <TABLE id=\"results\" class=\"display responsive nowrap\" > " +  System.lineSeparator();
         // print the headder
         report += "    <thead><tr>" +  System.lineSeparator();
@@ -146,20 +236,26 @@ public class OverallHTML implements RaceReportType{
          
         // Insert split stuff here
         if (showSplits) {
-            // do stuff
-            // 9 chars per split
             for (int i = 2; i < race.splitsProperty().size(); i++) {
                 report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
             }
         }
-        
+        if (showSegments) {
+            final StringBuilder chars = new StringBuilder();
+            Integer dispLeg = dispFormatLength;
+            race.getSegments().forEach(seg -> {
+                chars.append("      <th data-priority=\"80\">" + seg.getSegmentName()+ "</th>" +  System.lineSeparator());
+                if (showSegmentPace) chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator()); // pace.getFieldWidth()+1
+            });
+            report += chars.toString();
+        }
         // Chip time
         report += "      <th data-priority=\"1\">Finish</th>" +  System.lineSeparator(); // 9R Need to adjust for the format code
        
         // gun time
         if (showGun) report += "      <th data-priority=\"90\">Gun</th>" +  System.lineSeparator(); // 9R ibid
         // pace
-        if (showPace) report += "      <th data-priority=\"90\">Pace</th>" +  System.lineSeparator(); // 10R
+        if (showPace) report += "      <th data-priority=\"85\">Pace</th>" +  System.lineSeparator(); // 10R
         
         report += "</tr></thead>" +  System.lineSeparator(); 
         report += "<tbody>"+ System.lineSeparator();
@@ -187,12 +283,27 @@ public class OverallHTML implements RaceReportType{
             
             if (!inProgress && pr.getChipFinish() == null && !showDNF) return;
             
+            Boolean oco = false;
+            if (dnf || dq) oco = false;
+            else if (cutoffTime.isZero() 
+                        || cutoffTime.compareTo(pr.getChipFinish()) >= 0 
+                        || cutoffTimeString.equals(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode))) {
+                oco = false;
+            } else {
+                oco=true;
+                if (!showDNF && !inProgress) return;
+
+            }
+            
             chars.append("<td></td>" +  System.lineSeparator()); // dummy for control
             
             if (dq) chars.append("<td >*****DQ****</td>"
                         + "<td>--</td>\n" +
                         " <td>--</td>" +  System.lineSeparator());
             else if (dnf) chars.append("<td>***DNF***</td>"
+                        + "<td>--</td>\n" +
+                        " <td>--</td>" +  System.lineSeparator());
+            else if (oco) chars.append("<td>***OCO***</td>"
                         + "<td>--</td>\n" +
                         " <td>--</td>" +  System.lineSeparator());
             else if (pr.getChipFinish() != null){ 
@@ -207,29 +318,7 @@ public class OverallHTML implements RaceReportType{
             }
             
             
-            
-            
-            
-//            if (inProgress && pr.getChipFinish() == null) {
-//                chars.append("<td> **Started** </td>\n"
-//                        + "<td>--</td>\n" +
-//                        " <td>--</td>" +  System.lineSeparator());
-//                hideTime = true;
-//            } else if (pr.getChipFinish() == null) {
-//                return;
-//            } else if (! dnf && ! dq) { 
-//                chars.append("<td>"+ pr.getOverall().toString() + " </td>" +  System.lineSeparator());
-//                chars.append("<td>"+ pr.getSexPlace().toString() + " </td>" +  System.lineSeparator());
-//                chars.append("<td>"+ pr.getAGPlace().toString() + " </td>" +  System.lineSeparator()); 
-//            } else {
-//                if (dnf) chars.append("<td  colspan=\"3\">***DNF***</td>"
-//                        + "<td style=\"display: none;\">--</td>\n" +
-//                        " <td style=\"display: none;\">--</td>" +  System.lineSeparator());
-//                else chars.append("<td  colspan=\"3\">*****DQ****</td>"
-//                        + "<td style=\"display: none;\">--</td>\n" +
-//                        " <td style=\"display: none;\">--</td>" +  System.lineSeparator());
-//                    
-//            }
+
             
             chars.append("<td>"+ pr.getParticipant().getBib() + "</td>" +  System.lineSeparator());
             chars.append("<td>"+ pr.getAge().toString() + "</td>" +  System.lineSeparator());
@@ -244,27 +333,38 @@ public class OverallHTML implements RaceReportType{
             // do stuff
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
                     if (!hideSplitTimes) 
-                        chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), 0, Boolean.FALSE, RoundingMode.DOWN)+ "</td>" +  System.lineSeparator());
+                        chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
                     else chars.append("<td>---</td>" +  System.lineSeparator());
                 }
             }
+            
+            if (showSegments) {
+                Boolean hst = hideSplitTimes;
+                race.getSegments().forEach(seg -> {
+                    if (!hst) 
+                        chars.append("<td>"+ DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
+                    else chars.append("<td>---</td>" +  System.lineSeparator());
+                    if (showSegmentPace) {
+                        if (!hst)
+                            if (pr.getSegmentTime(seg.getID()) != null ) chars.append("<td>"+ pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))+ "</td>" +  System.lineSeparator());
+                            else chars.append("<td>---</td>" +  System.lineSeparator());
+                        else chars.append("<td>---</td>" +  System.lineSeparator());
+                    }
+                });
+            }
+            
             // chip time
-            if (! hideTime) chars.append("<td>"+DurationFormatter.durationToString(pr.getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN)+ "</td>" +  System.lineSeparator());
+            if (dq) chars.append("<td>"+ pr.getParticipant().getNote() + "</td>" +  System.lineSeparator());
+            else if (! hideTime) chars.append("<td>"+DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
             else chars.append("<td>---</td>" +  System.lineSeparator());
             
-            if (showGun && ! hideTime) chars.append("<td>"+DurationFormatter.durationToString(pr.getGunFinish(), 0, Boolean.FALSE, RoundingMode.DOWN)+ "</td>" +  System.lineSeparator());
+            if (showGun && ! hideTime) chars.append("<td>"+DurationFormatter.durationToString(pr.getGunFinish(), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
             else if (showGun && hideTime) chars.append("<td>---</td>" +  System.lineSeparator());
             
-            if (showPace && ! hideTime) chars.append("<td>"+StringUtils.stripStart(Pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish(), Pace.MPM), "0")+ "</td>" +  System.lineSeparator());
+            if (showPace && ! hideTime) chars.append("<td>"+pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish())+ "</td>" +  System.lineSeparator());
             else if (showPace && hideTime) chars.append("<td>---</td>" +  System.lineSeparator());
 
-//            System.out.println("Results: " + r.getRaceName() + ": "
-//                    + r.getParticipant().fullNameProperty().getValueSafe() 
-//                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
-//                    + DurationFormatter.durationToString(pr.getChipFinish())
-//                    + " O:" + pr.getOverall() + " S:" + pr.getSexPlace() 
-//                    + " AG:" + pr.getAGPlace()
-//            );
+
             
             chars.append("</tr>" + System.lineSeparator());
         
@@ -274,6 +374,11 @@ public class OverallHTML implements RaceReportType{
         report += chars.toString();
         report += "</tbody>" +  System.lineSeparator();
         report += "</table>" +  System.lineSeparator();
+        if (customHeaders){
+            if (textOnlyHeaders) report += race.getStringAttribute("textFooter");
+            else report += race.getStringAttribute("htmlFooter");
+            report += System.lineSeparator();
+        }
         report += "  </BODY> " +  System.lineSeparator();
         report += "</HTML> " +  System.lineSeparator();
         
