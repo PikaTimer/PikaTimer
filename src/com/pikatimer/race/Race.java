@@ -248,11 +248,14 @@ public class Race {
     }
     public void addWave(Wave w) {
         raceWaves.add(w);
-        raceWavesList = raceWaves.sorted();
+        if (raceWavesList == null) raceWavesList = new ArrayList();
+        raceWavesList.add(w);
     }
     public void removeWave(Wave w) {
-        raceWaves.remove(w); 
-        raceWavesList = raceWaves.sorted();
+        if (raceWaves.contains(w)){
+            raceWaves.remove(w); 
+            raceWavesList.remove(w);
+        }
     }
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
