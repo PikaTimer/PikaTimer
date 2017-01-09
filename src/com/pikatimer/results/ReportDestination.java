@@ -45,7 +45,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 @DynamicUpdate
 @Table(name="output_portal")
-public class OutputPortal {
+public class ReportDestination {
 
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
     private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
@@ -66,9 +66,9 @@ public class OutputPortal {
     private FileTransport fileTransport;
     private FileTransferTypes outputProtocol = FileTransferTypes.LOCAL;
     
-    public OutputPortal(){
+    public ReportDestination(){
         // nothing to do here for now
-        //System.out.println("OutputPortal construtor called...");
+        //System.out.println("ReportDestination construtor called...");
     }
     
     //    id int primary key, 
@@ -277,8 +277,8 @@ public class OutputPortal {
         return TRUE;
     }
     
-    public static Callback<OutputPortal, Observable[]> extractor() {
-        return (OutputPortal p) -> new Observable[]{p.nameProperty(),p.transferStatusProperty(),p.protocolProperty(),p.basePathProperty()};
+    public static Callback<ReportDestination, Observable[]> extractor() {
+        return (ReportDestination p) -> new Observable[]{p.nameProperty(),p.transferStatusProperty(),p.protocolProperty(),p.basePathProperty()};
     }
     
     @Override
@@ -305,7 +305,7 @@ public class OutputPortal {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        return Objects.equals(this.uuidProperty.getValue(),((OutputPortal)obj).uuidProperty.getValue());
+        return Objects.equals(this.uuidProperty.getValue(),((ReportDestination)obj).uuidProperty.getValue());
     }
 
     void save(String filename, String contents) {

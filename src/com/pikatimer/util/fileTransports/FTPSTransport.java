@@ -16,7 +16,7 @@
  */
 package com.pikatimer.util.fileTransports;
 
-import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.ReportDestination;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransport;
 import java.io.IOException;
@@ -48,7 +48,7 @@ import org.apache.commons.net.ftp.FTPSClient;
 public class FTPSTransport implements FileTransport{
     
     String basePath;
-    OutputPortal parent;
+    ReportDestination parent;
     Boolean stripAccents = false;
 
     Thread transferThread;
@@ -278,7 +278,7 @@ public class FTPSTransport implements FileTransport{
     }
 
     @Override
-    public void setOutputPortal(OutputPortal op) {
+    public void setOutputPortal(ReportDestination op) {
         parent=op;
     }
 

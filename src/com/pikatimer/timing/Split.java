@@ -17,7 +17,7 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.race.Race;
-import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.ReportDestination;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;

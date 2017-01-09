@@ -118,7 +118,7 @@ public class FXMLResultsController  {
     @FXML ChoiceBox<String>  timeFormatChoiceBox;
     @FXML ChoiceBox<Pace> paceFormatChoiceBox;
     
-    @FXML ListView<OutputPortal> outputDestinationsListView;
+    @FXML ListView<ReportDestination> outputDestinationsListView;
     @FXML Button addOutputDestinationsButton;
     @FXML Button editOutputDestinationsButton;
     @FXML Button removeOutputDestinationsButton;
@@ -579,38 +579,38 @@ public class FXMLResultsController  {
 
         removeOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
         editOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
-        outputDestinationsListView.setItems(resultsDAO.listOutputPortals());
+        outputDestinationsListView.setItems(resultsDAO.listReportDestinations());
         outputDestinationsListView.setEditable(false);
-        outputDestinationsListView.setCellFactory((ListView<OutputPortal> listView) -> new OutputPortalListCell());
+        outputDestinationsListView.setCellFactory((ListView<ReportDestination> listView) -> new OutputPortalListCell());
         // If empty, create a default local file output
-        if(resultsDAO.listOutputPortals().isEmpty()) {
-            OutputPortal op = new OutputPortal();
+        if(resultsDAO.listReportDestinations().isEmpty()) {
+            ReportDestination op = new ReportDestination();
             op.setName(System.getProperty("user.home"));
             op.setBasePath(System.getProperty("user.home"));
             op.setOutputProtocol(FileTransferTypes.LOCAL);
             
-            resultsDAO.saveOutputPortal(op);
+            resultsDAO.saveReportDestination(op);
         }
         
         outputDestinationsListView.setOnMouseClicked((MouseEvent click) -> {
             if (click.getClickCount() == 2) {
-                OutputPortal sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
+                ReportDestination sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
                 editOutputDestination(sp);
             }
         });
         
     }
     public void addOutputDestination(ActionEvent fxevent){
-        editOutputDestination(new OutputPortal());
+        editOutputDestination(new ReportDestination());
     }
     
     public void editOutputDestination(ActionEvent fxevent){
-        OutputPortal sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
+        ReportDestination sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
         editOutputDestination(sp);
         
     }
     
-    private void editOutputDestination(OutputPortal sp){
+    private void editOutputDestination(ReportDestination sp){
         
         Dialog<Boolean> dialog = new Dialog<>();
         dialog.setTitle("Report Destination");
@@ -738,14 +738,14 @@ public class FXMLResultsController  {
         
         result.ifPresent(dialogOK -> {
             if (dialogOK) {
-                resultsDAO.saveOutputPortal(sp);
+                resultsDAO.saveReportDestination(sp);
             }
         });
     }
     public void removeOutputDestination(ActionEvent fxevent){
         // Make sure it is  not in use anywhere, then remove it.
         
-        resultsDAO.removeOutputPortal(outputDestinationsListView.getSelectionModel().getSelectedItem());
+        resultsDAO.removeReportDestination(outputDestinationsListView.getSelectionModel().getSelectedItem());
     }
     
     public void addNewReport(ActionEvent fxevent){
@@ -811,7 +811,7 @@ public class FXMLResultsController  {
         }
     };
     
-    private class OutputPortalListCell extends ListCell<OutputPortal> {
+    private class OutputPortalListCell extends ListCell<ReportDestination> {
         Label protocolLabel = new Label();
         Label serverLabel = new Label();
         Label pathLabel = new Label();
@@ -867,7 +867,7 @@ public class FXMLResultsController  {
         }
         
         @Override
-        public void updateItem(OutputPortal op, boolean empty) {
+        public void updateItem(ReportDestination op, boolean empty) {
             super.updateItem(op, empty);
             if (empty || op == null) {
                 setText(null);

@@ -16,7 +16,7 @@
  */
 package com.pikatimer.util;
 
-import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.ReportDestination;
 import javafx.beans.property.StringProperty;
 
 /**
@@ -29,7 +29,7 @@ public interface FileTransport {
 
     public void save(String filename, String contents);
 
-    public void setOutputPortal(OutputPortal aThis);
+    public void setOutputPortal(ReportDestination aThis);
 
     public void refreshConfig();
     

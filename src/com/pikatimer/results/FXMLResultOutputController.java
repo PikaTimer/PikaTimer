@@ -374,15 +374,15 @@ public class FXMLResultOutputController {
     private void showRaceReportOutputTarget(RaceOutputTarget t){
         HBox rotHBox = new HBox();
         rotHBox.setSpacing(4);
-        ComboBox<OutputPortal> destinationChoiceBox = new ComboBox();
+        ComboBox<ReportDestination> destinationChoiceBox = new ComboBox();
         
-        //destinationChoiceBox.getItems().setAll(resultsDAO.listOutputPortals());
+        //destinationChoiceBox.getItems().setAll(resultsDAO.listReportDestinations());
         
-        destinationChoiceBox.setItems(resultsDAO.listOutputPortals());
+        destinationChoiceBox.setItems(resultsDAO.listReportDestinations());
         
         // ChoserBox for the OutputDestination
         destinationChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
-            OutputPortal op = destinationChoiceBox.getItems().get((Integer) number2);
+            ReportDestination op = destinationChoiceBox.getItems().get((Integer) number2);
 //            if(! Objects.equals(destinationChoiceBox.getSelectionModel().getSelectedItem(),op)) {
 //                t.setOutputDestination(op.getID());
 //                resultsDAO.saveRaceReportOutputTarget(t);

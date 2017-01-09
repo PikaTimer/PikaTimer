@@ -16,7 +16,7 @@
  */
 package com.pikatimer.util.fileTransports;
 
-import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.ReportDestination;
 import com.pikatimer.util.FileTransport;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -28,7 +28,7 @@ import javafx.beans.property.StringProperty;
 public class SCPTransport implements FileTransport{
     Boolean goodToGo = false;
     String basePath;
-    OutputPortal parent;
+    ReportDestination parent;
     StringProperty transferStatus = new SimpleStringProperty("Idle");
 
     @Override
@@ -42,7 +42,7 @@ public class SCPTransport implements FileTransport{
     }
 
     @Override
-    public void setOutputPortal(OutputPortal op) {
+    public void setOutputPortal(ReportDestination op) {
         parent=op;
     }
 

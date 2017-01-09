@@ -16,7 +16,7 @@
  */
 package com.pikatimer.util.fileTransports;
 
-import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.ReportDestination;
 import com.pikatimer.util.FileTransport;
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +37,7 @@ public class LocalTransport implements FileTransport {
     Boolean goodToGo = false;
     Boolean stripAccents = false;
     String basePath;
-    OutputPortal parent;
+    ReportDestination parent;
     StringProperty transferStatus = new SimpleStringProperty("Idle");
 
     @Override
@@ -70,7 +70,7 @@ public class LocalTransport implements FileTransport {
     }
 
     @Override
-    public void setOutputPortal(OutputPortal op) {
+    public void setOutputPortal(ReportDestination op) {
         parent = op; 
         refreshConfig();
     }

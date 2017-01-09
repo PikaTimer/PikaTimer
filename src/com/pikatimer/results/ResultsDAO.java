@@ -70,9 +70,9 @@ public class ResultsDAO {
     private static final TimingDAO timingDAO = TimingDAO.getInstance();
     private static final ParticipantDAO participantDAO = ParticipantDAO.getInstance();
     private static final RaceDAO raceDAO = RaceDAO.getInstance();
-    private static final ObservableList<OutputPortal> outputPortalList = FXCollections.observableArrayList(OutputPortal.extractor());
+    private static final ObservableList<ReportDestination> reportDestinationList = FXCollections.observableArrayList(ReportDestination.extractor());
     
-    private static final BooleanProperty outputPortalListInitialized = new SimpleBooleanProperty(FALSE);
+    private static final BooleanProperty reportDestinationListInitialized = new SimpleBooleanProperty(FALSE);
         
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -645,54 +645,54 @@ public class ResultsDAO {
         s.getTransaction().commit(); 
     }
     
-    public void saveOutputPortal(OutputPortal p) {
+    public void saveReportDestination(ReportDestination p) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.saveOrUpdate(p);
         s.getTransaction().commit();
         //Platform.runLater(() -> {
-        if (!outputPortalList.contains(p)) outputPortalList.add(p);
+        if (!reportDestinationList.contains(p)) reportDestinationList.add(p);
         //});
         
     }
     
-    public void refreshOutputPortalList() { 
-        List<OutputPortal> list = new ArrayList<>();
+    public void refreshReportDestinationList() { 
+        List<ReportDestination> list = new ArrayList<>();
         
-        outputPortalListInitialized.setValue(TRUE);
+        reportDestinationListInitialized.setValue(TRUE);
 
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        System.out.println("Runing the refreshOutputPortalList Query");
+        System.out.println("Runing the refreshReportDestinationList Query");
 
         try {  
-            list=s.createQuery("from OutputPortal").list();
+            list=s.createQuery("from ReportDestination").list();
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
         } 
         s.getTransaction().commit(); 
 
-        System.out.println("Returning the refreshOutputPortalList list: " + list.size());
-        outputPortalList.addAll(list);   
+        System.out.println("Returning the refreshReportDestinationList list: " + list.size());
+        reportDestinationList.addAll(list);   
 
         
 
     }     
     
-    public ObservableList<OutputPortal> listOutputPortals() { 
+    public ObservableList<ReportDestination> listReportDestinations() { 
 
-        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
-        return outputPortalList;
+        if (!reportDestinationListInitialized.get()) refreshReportDestinationList();
+        return reportDestinationList;
         //return list;
     }     
     
-    public OutputPortal getOutputPortalByUUID(String id) {
+    public ReportDestination getReportDestinationByUUID(String id) {
         //System.out.println("Looking for a timingLocation with id " + id);
         // This is ugly. Setup a map for faster lookups
-        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
-        Optional<OutputPortal> result = outputPortalList.stream()
+        if (!reportDestinationListInitialized.get()) refreshReportDestinationList();
+        Optional<ReportDestination> result = reportDestinationList.stream()
                     .filter(t -> Objects.equals(t.getUUID(), id))
                     .findFirst();
         if (result.isPresent()) {
@@ -703,11 +703,11 @@ public class ResultsDAO {
         return null;
     }
     
-    public OutputPortal getOutputPortalByID(Integer id) {
+    public ReportDestination getReportDestinationByID(Integer id) {
         //System.out.println("Looking for a timingLocation with id " + id);
         // This is ugly. Setup a map for faster lookups
-        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
-        Optional<OutputPortal> result = outputPortalList.stream()
+        if (!reportDestinationListInitialized.get()) refreshReportDestinationList();
+        Optional<ReportDestination> result = reportDestinationList.stream()
                     .filter(t -> Objects.equals(t.getID(), id))
                     .findFirst();
         if (result.isPresent()) {
@@ -718,13 +718,13 @@ public class ResultsDAO {
         return null;
     }
 
-    public void removeOutputPortal(OutputPortal op) {
+    public void removeReportDestination(ReportDestination op) {
         
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.delete(op);
         s.getTransaction().commit(); 
-        outputPortalList.remove(op);
+        reportDestinationList.remove(op);
     }
     
     
