@@ -4,16 +4,9 @@ Create a DurationTextField / LocalTimeTextField that "does the right thing"
 Create a DurationCell (or whatever) for inline edits of durations?
 editCell that does not revert on focus change (WTF Oracle)
 
--Fix Result object to calculate and keep split Properties that are based on the start time
--Fix the result object with a proper extractor for display in the tableview
 -Fix result display to show wave start -> actual delta, gun time
 -Fix result display to not freak on split changes (maybe a refresh button?)
--Backup times flag
--Ignore Chip Read flag (ignoring a cooked time is easy, propagating that to the raw is a bit harder)
 -Mandatory split? (if it is mandatory)
--Force participant to the 1st wave of a given race if they are seen at a given timing 
-location? (Good for start lines and really remote locations, but it could be trouble for post run spectators.)
-
 
 
 Overall:
@@ -35,6 +28,7 @@ Logging
   --enable debug output log viewing
   --enable saving debug output log to file
   --enable toggle to set debug level to Normal/Debug/Trace
+
 Internationalization? (Spanish, English, French, German, British, US, etc)
 
 
@@ -48,7 +42,7 @@ Ability to drag/drop splits to reorder
 
 Cumulative vs differential distance for splits specification?
 Ability to override the pace display for a segment: m/s, m/h, k/h, s/100y, s/100m) 
-Ability to set split specific distance unit
+Ability to set split specific distance unit for a split
 Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
 
 Ability to Flag a race as a relay race
@@ -58,10 +52,11 @@ Participants:
   -- store the team id
   -- textfield auto complete for city/state 
   -- textfield for teams pre-populated / with auto complete
+Duplication check on import
 Clean up import from csv (field formatting, etc)
   -- Custom city name map
   -- Zip -> City map
-Validate csv file before iporting. 
+Validate csv file before importing. 
 Error check the fields (age, gender, city, state, bib, etc). 
 Wave/Race assignment based on import field
 Update/Add on enter from any valid field
@@ -105,8 +100,6 @@ Results:
      --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 Wire in a "min time to next split" option to replace hardcoded 5/10 minutes. 
 cleanup the spacing on the tableview, wider names.
-Ability to show/hide splits on TableView 
-Correctly deal with deleted / blank results
 Ability to select multiple and DQ, un-DQ them (with a note)
 Show Gender/AG on results display
 Ability to select multiple results and transfer them to another wave/race
@@ -114,23 +107,13 @@ Ability to select multiple results and transfer them to another wave/race
 
 Reports:
 
-Derived segments / splits (e.g., "total time from split C -> D")
-  -- may overlap with the split "groups" on the races tab
-
-
-Option to strip accent marks on output reports (StringUtils.stripAccents(String input))
-
-Optional banner Text for the page
-
 Auto-print of text with each new page or after X number of runners
 Text output with header/FormFeed after X number of lines. 
 
 Course Record note in overall text/html reports
 Award winner note in overall text/html reports. 
 
-CSS link option for html based reports
-
-Publish to 3rd party results web site / ???????.com? 
+Publish to 3rd party results web site (e.g. RunSignUp.com)? 
 
 
 Team Results
