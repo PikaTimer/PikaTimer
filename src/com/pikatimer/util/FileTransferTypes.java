@@ -38,7 +38,7 @@ public enum FileTransferTypes {
         Map<FileTransferTypes, String> result = new HashMap<>();
         result.put(LOCAL, "Local File");
         //result.put(SCP, "SCP/SFTP");
-        result.put(FTPS, "FTPS");
+        result.put(FTPS, "FTP/FTPS");
         //result.put(FTP,"FTP (Insecure)");
 
         return Collections.unmodifiableMap(result);

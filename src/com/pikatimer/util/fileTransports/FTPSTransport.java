@@ -52,7 +52,8 @@ public class FTPSTransport implements FileTransport{
     Boolean stripAccents = false;
 
     Thread transferThread;
-    FTPSClient ftpClient;
+    FTPSClient ftpsClient;
+    FTPClient ftpClient;
     
     private static final BlockingQueue<String> transferQueue = new ArrayBlockingQueue(100000);
 
@@ -66,6 +67,7 @@ public class FTPSTransport implements FileTransport{
 
     Boolean fatalError = false;
     Boolean needConfigRefresh = true;
+    Boolean encrypted = true;
     Long lastTransferTimestamp = 0L;
 
     public FTPSTransport() {
@@ -78,15 +80,6 @@ public class FTPSTransport implements FileTransport{
 
                     System.out.println("FTPSTransport: new result processing thread started");
                     String filename = null;
-                    
-                    // connect to the remote server
-                    ftpClient = new FTPSClient(false);
-                    ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out), true));
-                    
-                    
-                    
-                    // now let's process files
-                    
                     while(true) {
                         try {
                             System.out.println("FTPSTransport Thread: Waiting for the first file...");
@@ -95,12 +88,11 @@ public class FTPSTransport implements FileTransport{
                             while(true) {
                                 System.out.println("FTPSTransport Thread: Waiting for a file...");
                                 //filename = transferQueue.poll(60, TimeUnit.SECONDS);
-                                if (!ftpClient.isConnected()) Platform.runLater(() -> {transferStatus.set("Idle");});
+                                if (ftpClient == null || !ftpClient.isConnected()) Platform.runLater(() -> {transferStatus.set("Idle");});
                                 else {
                                     ftpClient.sendNoOp();
                                     Platform.runLater(() -> {
-                                        if (ftpClient.getEnabledProtocols() != null) 
-                                        transferStatus.set("Connected FTPS");
+                                        if (encrypted) transferStatus.set("Connected FTPS");
                                         else transferStatus.set("Connected");
                                     });
                                 }
@@ -116,7 +108,7 @@ public class FTPSTransport implements FileTransport{
                                 System.out.println("FTPSTransport Thread: Transfering " + filename);
                                 String contents = transferMap.get(filename);
                                 
-                                while (!ftpClient.isConnected()) {
+                                while (ftpClient == null || !ftpClient.isConnected()) {
                                     if (!fatalError) openConnection();
                                     if (!ftpClient.isConnected()) {
                                         System.out.println("FTPSTransport Thread: Still not connected, sleeping for 10 seconds...");
@@ -128,7 +120,10 @@ public class FTPSTransport implements FileTransport{
                                 //InputStream data = IOUtils.toInputStream(contents, "UTF-8");
                                 InputStream data = IOUtils.toInputStream(contents);
                                 String fn = filename;
-                                Platform.runLater(() -> {transferStatus.set("Transfering " + fn);});
+                                Platform.runLater(() -> { 
+                                    if (encrypted) transferStatus.set("Transfering (Secure) " + fn);
+                                    else transferStatus.set("Transfering " + fn);
+                                });
                                 long startTime = System.nanoTime();
                                 ftpClient.storeFile(filename, data);
                                 long endTime = System.nanoTime();
@@ -179,23 +174,42 @@ public class FTPSTransport implements FileTransport{
             
             if (needConfigRefresh) refreshConfig();
             System.out.println("FTPS Not connected, connecting...");
-            Platform.runLater(() -> {transferStatus.set("Connecting...");});
+            Platform.runLater(() -> {
+                if (encrypted) transferStatus.set("Connecting FTPS...");
+                else transferStatus.set("Connecting...");
+            });
+            // connect to the remote server
+            
+            if (encrypted) {
+                ftpsClient = new FTPSClient(false);
+                ftpClient = ftpsClient;
+            } else {
+                ftpClient = new FTPClient();
+                ftpsClient = null;
+            }
+            
+            ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out), true));
             // Connect to host
             ftpClient.setConnectTimeout(10000); // 10 seconds
             ftpClient.connect(hostname);
             int reply = ftpClient.getReplyCode();
             if (FTPReply.isPositiveCompletion(reply)) {
-                //ftpClient.feat();
+                
                 
                 // Login
-                Platform.runLater(() -> {transferStatus.set("Loging in...");});
+                Platform.runLater(() -> {
+                    if (encrypted) transferStatus.set("Loging in...");
+                    else transferStatus.set("Loging in (insecure)...");
+                });
 
                 if (ftpClient.login(username, password)) {
 
-                    // Set protection buffer size
-                    ftpClient.execPBSZ(0);
-                    // Set data channel protection to private
-                    ftpClient.execPROT("P");
+                    if (encrypted) {
+                        // Set protection buffer size
+                        ftpsClient.execPBSZ(0);
+                        // Set data channel protection to private
+                        ftpsClient.execPROT("P");
+                    }
                     // Enter local passive mode
                     ftpClient.enterLocalPassiveMode();
                     ftpClient.setFileType(FTP.ASCII_FILE_TYPE);
@@ -214,27 +228,31 @@ public class FTPSTransport implements FileTransport{
                         }
                     }
                     Platform.runLater(() -> {transferStatus.set("Connected");});
-//                    String[] enabledProtocols = ftpClient.getEnabledProtocols();
-//                    for (int i = 0; i < enabledProtocols.length; i++){
-//                        System.out.println("FTPSClient Enabled Protocols: " + enabledProtocols[i]);
-//                    }
-                    
-                    
                 } else {
                   System.out.println("FTP login failed");
                   Platform.runLater(() -> {transferStatus.set("Error: Login Failed");});
                   fatalError=true;
-                  ftpClient.disconnect();
+                  try {ftpClient.disconnect();} catch (Exception e) {};
                 }
             } else {
               System.out.println("FTP connect to host failed");
               Platform.runLater(() -> {transferStatus.set("Error: Unable to connect to host");});
 
-              ftpClient.disconnect();
+              try {ftpClient.disconnect();} catch (Exception e) {};
             }
         } catch (IOException ioe) {
-            System.out.println("FTP client received network error");
-            Platform.runLater(() -> {transferStatus.set("Error: Network Error");});
+            if (encrypted) {
+                try {ftpClient.disconnect();} catch (Exception e) {};
+                
+                // odds are we don't support encryption, 
+                // let's disable the encryption and try again
+                encrypted = false;
+                openConnection();
+            } else {
+                System.out.println("FTP client received network error");
+                Platform.runLater(() -> {transferStatus.set("Error: Network Error");});
+            }
+            
 
         }
     }
@@ -282,6 +300,8 @@ public class FTPSTransport implements FileTransport{
         }
         
         stripAccents = parent.getStripAccents();
+        
+        encrypted = true;
                     
         fatalError=false;
         needConfigRefresh = false;
