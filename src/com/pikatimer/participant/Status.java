@@ -27,7 +27,7 @@ import java.util.Map;
     
 public enum Status {
 
-    GOOD("","Running"),
+    GOOD("","Entered"),
     DNS("DNS","Did Not Start"),
     DNF("DNF","Did Not Finish"), 
     DQ("DQ","Disqualified"); 
@@ -44,7 +44,7 @@ public enum Status {
 
     private static Map<Status, String> createMap() {
         Map<Status, String> result = new HashMap<>();
-        result.put(GOOD, "Running");
+        result.put(GOOD, "Entered");
         result.put(DNS, "DNS: Did Not Start");
         result.put(DNF, "DNF: Did Not Finish");
         result.put(DQ, "DQ: Disqualified");
