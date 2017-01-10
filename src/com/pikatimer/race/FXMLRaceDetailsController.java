@@ -124,6 +124,7 @@ public class FXMLRaceDetailsController {
     private ChangeListener<? super Split>  raceSplitsTableViewListener;
     private ChangeListener<? super Boolean> waveStartsCheckBoxListener;
     private ListChangeListener<? super Split> raceSplitsListener;
+    private ListChangeListener<? super Wave> raceWaveListener;
 
     /**
      * Initializes the controller class.
@@ -504,6 +505,7 @@ public class FXMLRaceDetailsController {
             raceSplitsTableView.getSelectionModel().selectedItemProperty().removeListener(raceSplitsTableViewListener);
             waveStartsCheckBox.selectedProperty().removeListener(waveStartsCheckBoxListener);
             raceSplits.removeListener(raceSplitsListener);
+            raceWaves.removeListener(raceWaveListener);
             
         }
         
@@ -701,6 +703,12 @@ public class FXMLRaceDetailsController {
                 }
             };
             waveStartsCheckBox.selectedProperty().addListener(waveStartsCheckBoxListener);
+            
+            raceWaveListener=(ListChangeListener.Change<? extends Wave> w) -> {
+                raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
+            };
+            raceWaves.addListener(raceWaveListener);
+
         
             raceSplitsListener=(ListChangeListener.Change<? extends Split> c) -> {
                 if (ResultsDAO.getInstance().getResults(selectedRace.getID()).size() > 0)splitUpdateResultsButton.visibleProperty().set(true);
