@@ -282,7 +282,7 @@ public class TimingDAO {
                     }
 
                     cookedTimeProcessorSemaphore.release();
-                    resultsDAO.reprocessAll();
+                    resultsDAO.reprocessAllResults();
                     return null;
                 }
         };

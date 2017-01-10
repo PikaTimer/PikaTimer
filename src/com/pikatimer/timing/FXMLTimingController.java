@@ -1231,7 +1231,7 @@ public class FXMLTimingController {
             results.forEach(k -> {
                 if (k.update.get()) {
                     k.w.setWaveStart((LocalTime.MIDNIGHT.plus(k.newStartTime.get())).format(DateTimeFormatter.ISO_LOCAL_TIME));
-                    ResultsDAO.getInstance().reprocessAll(k.w);
+                    ResultsDAO.getInstance().reprocessWaveResults(k.w);
                     RaceDAO.getInstance().updateWave(k.w);
                 }
             });

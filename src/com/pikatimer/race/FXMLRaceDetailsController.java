@@ -278,7 +278,7 @@ public class FXMLRaceDetailsController {
                 Duration newD = DurationParser.parse(t.getNewValue());
                 w.setWaveStart(LocalTime.MIDNIGHT.plus(newD).format(DateTimeFormatter.ISO_LOCAL_TIME));
                 raceDAO.updateWave(w);
-                ResultsDAO.getInstance().reprocessAll(w);
+                ResultsDAO.getInstance().reprocessWaveResults(w);
             } else {
                 w.setWaveStart(t.getOldValue());
             }
@@ -476,7 +476,7 @@ public class FXMLRaceDetailsController {
         splitUpdateResultsButton.visibleProperty().set(false);
         
         splitUpdateResultsButton.setOnAction((event) -> {
-            ResultsDAO.getInstance().reprocessAll(selectedRace);
+            ResultsDAO.getInstance().reprocessRaceResults(selectedRace);
             splitUpdateResultsButton.visibleProperty().set(false);
         });
         
@@ -763,7 +763,7 @@ public class FXMLRaceDetailsController {
         //selectedRace.setRaceStart(raceStartTimeTextField.getText());
         //raceDAO.updateRace(selectedRace);
         raceDAO.updateWave(raceWaves.get(0));
-        ResultsDAO.getInstance().reprocessAll(raceWaves.get(0));
+        ResultsDAO.getInstance().reprocessWaveResults(raceWaves.get(0));
     }
     
     

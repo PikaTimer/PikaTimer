@@ -245,15 +245,15 @@ public class ResultsDAO {
     }
         
         
-    public void reprocessAll(){
+    public void reprocessAllResults(){
         resultsQueue.addAll(resultsMap.keySet());
     }    
     
-    public void reprocessAll(Wave w) {
+    public void reprocessWaveResults(Wave w) {
         participantDAO.listParticipants().stream().filter(p -> p.getWaveIDs().contains(w.getID())).forEach(p2 -> resultsQueue.add(p2.getBib()));
     }
-    public void reprocessAll(Race r) {
-        r.getWaves().stream().forEach(w -> {reprocessAll(w);});
+    public void reprocessRaceResults(Race r) {
+        r.getWaves().stream().forEach(w -> {reprocessWaveResults(w);});
     }
     
     // This is absolutely ugly. I hope it works... 
@@ -661,7 +661,6 @@ public class ResultsDAO {
         
         reportDestinationListInitialized.setValue(TRUE);
 
-
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         System.out.println("Runing the refreshReportDestinationList Query");
@@ -676,8 +675,6 @@ public class ResultsDAO {
 
         System.out.println("Returning the refreshReportDestinationList list: " + list.size());
         reportDestinationList.addAll(list);   
-
-        
 
     }     
     
