@@ -21,6 +21,7 @@ import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.Wave;
+import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.DurationParser;
@@ -1230,6 +1231,7 @@ public class FXMLTimingController {
             results.forEach(k -> {
                 if (k.update.get()) {
                     k.w.setWaveStart((LocalTime.MIDNIGHT.plus(k.newStartTime.get())).format(DateTimeFormatter.ISO_LOCAL_TIME));
+                    ResultsDAO.getInstance().reprocessAll(k.w);
                     RaceDAO.getInstance().updateWave(k.w);
                 }
             });
