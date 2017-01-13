@@ -24,6 +24,7 @@ import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
 import java.io.File;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -33,6 +34,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javax.annotation.PostConstruct;
@@ -54,7 +56,8 @@ public class ImportWizardView1Controller {
     @FXML private CheckBox waveHardCodeCheckBox;
     @FXML private CheckBox waveByAttributeCheckBox; 
     @FXML private ComboBox<Wave> waveComboBox;
-    
+    @FXML private ComboBox<String> duplicateHandlingComboBox;
+    @FXML private HBox duplicateHandlingHBox;
     
     
     ImportWizardData model;
@@ -77,6 +80,21 @@ public class ImportWizardView1Controller {
         fileChooserButton.setOnAction(this::chooseFile);
         
         model.clearExistingProperty().bind(clearExistingCheckBox.selectedProperty());
+        
+        if (ParticipantDAO.getInstance().listParticipants().isEmpty()) {
+            clearExistingCheckBox.visibleProperty().set(false);
+            clearExistingCheckBox.managedProperty().set(false);
+            
+            duplicateHandlingHBox.visibleProperty().set(false);
+            duplicateHandlingHBox.managedProperty().set(false);
+            clearExistingCheckBox.selectedProperty().set(true);
+            
+        } else {
+            duplicateHandlingHBox.disableProperty().bind(clearExistingCheckBox.selectedProperty());
+            duplicateHandlingComboBox.setItems(FXCollections.observableArrayList("Ignore","Merge","Import"));
+            duplicateHandlingComboBox.getSelectionModel().selectFirst();
+            model.duplicateHandlingProperty().bind(duplicateHandlingComboBox.getSelectionModel().selectedItemProperty());
+        }
         
         // Wave assignment options:
         // if only one race, hide it all and just do a straight assignment
@@ -115,36 +133,35 @@ public class ImportWizardView1Controller {
             waveComboBox.setValue(waves.get(0));
             waveByBibCheckBox.setSelected(true);
 
-            fileTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-                if (!newPropertyValue) {
-                    System.out.println("fileTexField out focus");
-                    if (!fileTextField.getText().equals(model.getFileName())) {
-                        File file = new File(fileTextField.getText());
-                        if (file.exists() && file.isFile() && file.canRead()) {
-                            System.out.println("  The file is good...");
-                            fileStatusLabel.setText("");
-
-                            model.nextButtonDisabledProperty().set(false);
-                            model.setFileName(file.getAbsolutePath());
-                        } else {
-                            System.out.println("  Unable to use this file");
-                            if (! file.exists()) fileStatusLabel.setText("File does not exist");
-                            else if (! file.isFile()) fileStatusLabel.setText("The path entered is not a regular file");
-                            else if (!file.canRead()) fileStatusLabel.setText("Unable to read the file");
-
-
-                            model.setFileName(fileTextField.getText());
-                            model.nextButtonDisabledProperty().set(true);
-                        }
-                    }
-                }
-            });
+            
+            
         }
         // TODO:
         // Assign by attribute
         // Cleanup Names
         // Cleanup City / State (by zip?)
         
+        fileTextField.textProperty().addListener((ob, oldT, newT) -> {
+            File file = new File(fileTextField.getText());
+            if (file.exists() && file.isFile() && file.canRead()) {
+                System.out.println("  The file is good...");
+                fileStatusLabel.setText("");
+
+                model.nextButtonDisabledProperty().set(false);
+                model.setFileName(file.getAbsolutePath());
+            } else {
+                System.out.println("  Unable to use this file");
+                if (! file.exists()) fileStatusLabel.setText("File does not exist");
+                else if (! file.isFile()) fileStatusLabel.setText("The path entered is not a regular file");
+                else if (!file.canRead()) fileStatusLabel.setText("Unable to read the file");
+
+
+                model.setFileName(fileTextField.getText());
+                model.nextButtonDisabledProperty().set(true);
+            }
+
+
+        });
         
         
     }
@@ -169,9 +186,9 @@ public class ImportWizardView1Controller {
             );
         File file = fileChooser.showOpenDialog(fileChooserButton.getScene().getWindow());
         if (file != null && file.exists() && file.isFile() && file.canRead()) {
-            model.setFileName(file.getAbsolutePath());
+           // model.setFileName(file.getAbsolutePath());
             fileTextField.setText(file.getAbsolutePath());
-            model.nextButtonDisabledProperty().set(false);
+            //model.nextButtonDisabledProperty().set(false);
         }        
     }
 }

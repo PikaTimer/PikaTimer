@@ -31,6 +31,7 @@ import io.datafx.controller.flow.container.ContainerAnimations;
 import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
 import io.datafx.controller.util.VetoException;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
@@ -84,6 +85,8 @@ public class ImportWizardController {
         closeButton.setDisable(false);
         
         nextButton.disableProperty().bind(model.nextButtonDisabledProperty());
+        
+        //Platform.runLater(() -> nextButton.getScene().setTitle("Import Participants..."));
     }
 
     /**

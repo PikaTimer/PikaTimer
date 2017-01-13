@@ -772,8 +772,10 @@ public class FXMLParticipantController  {
         FlowHandler flowHandler = flow.createHandler();
 
         StackPane pane = flowHandler.start(new DefaultFlowContainer());
+        
         importStage.setScene(new Scene(pane));
         importStage.initModality(Modality.APPLICATION_MODAL);
+        importStage.setTitle("Import Participants...");
         importStage.show(); 
        
     }

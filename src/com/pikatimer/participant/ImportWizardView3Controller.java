@@ -87,37 +87,113 @@ public class ImportWizardView3Controller {
                 int numAdded = 0; 
                 int numToAdd = model.getNumToAdd(); 
                 updateProgress(numAdded,numToAdd);
-               
-               // add check to see if we should clear first
-                if (model.clearExistingProperty().get()) {
-                    updateMessage("Clearing the existing participants...");
-                    participantDAO.blockingClearAll(); 
+                
+                Boolean existingRunners = false;
+                Boolean dupeCheck = false;
+                Boolean mergeDupes = false;
+                
+                if (!participantDAO.listParticipants().isEmpty()) {
+                    existingRunners = true;
+                    // add check to see if we should clear first
+                    System.out.println("Import: dup property is " + model.duplicateHandlingProperty().getValue());
+                     if (model.clearExistingProperty().get()) {
+                         updateMessage("Clearing the existing participants...");
+                         participantDAO.blockingClearAll(); 
+                     } else {
+                         if (model.duplicateHandlingProperty().getValueSafe().equals("Ignore")) {
+                             System.out.println("Import: Ignore Duplicates");
+                             dupeCheck = true;
+                             mergeDupes = false;
+                         }
+                         else if (model.duplicateHandlingProperty().getValueSafe().equals("Merge")) {
+                             System.out.println("Import: Merge Duplicates");
+                             dupeCheck = true;
+                             mergeDupes = true;
+                         }
+                         else if (model.duplicateHandlingProperty().getValueSafe().equals("Import")) {
+                             System.out.println("Import: Import Duplicates");
+                             dupeCheck = false;
+                         }
+                     }
                 }
-               ObservableList<Participant> participantsList =FXCollections.observableArrayList();
+               //ObservableList<Participant> participantsList =FXCollections.observableArrayList();
                 try {
                     ResultSet rs = new Csv().read(model.getFileName(),null,null);
                     ResultSetMetaData meta = rs.getMetaData();
                     
+                    Map<String,Participant> existingMap = new HashMap();
+                    if (dupeCheck) {
+                        participantDAO.listParticipants().forEach(p -> {
+                            String key = p.getFirstName()+p.getLastName() + p.getAge()+p.getSex();
+                            key = key.toLowerCase();
+                            existingMap.put(key, p);
+                            System.out.println("Added Key " + key);
+                        });
+                        
+                    }
+                    System.out.println("ExistingMap size: " + existingMap.size());
+                    
                     while (rs.next()) {
                         numAdded++; 
-                        Map<String,String> p = new HashMap<>();
+                        
+                        Map<String,String> attributes = new HashMap<>();
                         
                         for (int i = 0; i < meta.getColumnCount(); i++) {
-                            if (mapping.get(meta.getColumnLabel(i+1)) != null) {
+                            if (mapping.get(meta.getColumnLabel(i+1)) != null && !"".equals(rs.getString(i+1))) {
                                 //System.out.println(rs.getString(i+1) + " -> " + mapping.get(meta.getColumnLabel(i+1)));
-                                p.put(mapping.get(meta.getColumnLabel(i+1)),rs.getString(i+1)); 
+                                attributes.put(mapping.get(meta.getColumnLabel(i+1)),rs.getString(i+1)); 
                             }
                         }
-                        Participant newPerson = new Participant(p); 
+                        Participant p = new Participant(attributes); 
+                        
+                        String key = p.getFirstName()+p.getLastName() + p.getAge()+p.getSex();
+                        key = key.toLowerCase();
+                        System.out.println("Looking for key " + key);
+                        if (dupeCheck && existingMap.containsKey(key)){
+                            System.out.println("Found existing key");
+                            if (mergeDupes) {
+                                p = existingMap.get(key);
+                                if (attributes.containsKey("bib") && !p.getBib().equals(attributes.get("bib"))) {
+                                    if (participantDAO.getParticipantByBib(attributes.get("bib")) != null) {
+                                        System.out.println("Duplicate bib found!");
+                                        attributes.put("bib", "Dupe: " + attributes.get("bib"));
+                                    }
+                                }
+                                
+                                // This is ugly since updating an existing participant off of the 
+                                // Platform thread will cause issues. 
+                                Participant np = p; // cuz lambdas don't like changes
+                                Platform.runLater(() -> {
+                                    np.setAttributes(attributes);
+                                    participantDAO.updateParticipant(np);
+                                });
+                                
+                                updateMessage("Merging " + p.getFirstName() + " " + p.getLastName() );
+                                updateProgress(numAdded,numToAdd);
+                                continue;
+                            } else {
+                                System.out.println("Duplicate participant found, skipping");
+                                updateMessage("Skipping " + p.getFirstName() + " " + p.getLastName() );
+                                updateProgress(numAdded,numToAdd);
+                                continue;
+                            }
+                        } else {
+                            System.out.println("Did not find an existing person");
+                        }
+                        
+                        if (participantDAO.getParticipantByBib(p.getBib()) != null) {
+                            p.setBib("Dupe " + p.getBib());
+                        }
                         
                         if(model.getWaveAssignByBib()) {
-                            newPerson.setWaves(getWaveByBib(p.get("bib")));
+                            p.setWaves(getWaveByBib(attributes.get("bib")));
                         } else if (model.getWaveAssignByAttribute()) {
                            // todo
                         } else {
-                            
-                            newPerson.addWave(model.getAssignedWave()); 
+                            p.addWave(model.getAssignedWave()); 
                         }
+                        
+                        participantDAO.addParticipant(p);
                         //System.out.println("Adding ...");
                         //TODO: merge vs add
                         //TODO: Cleanup Name Capitalization (if selected)
@@ -126,9 +202,9 @@ public class ImportWizardView3Controller {
                         
                         //System.out.println("Adding " + newPerson.getFirstName() + " " + newPerson.getLastName() );
                         //participantDAO.addParticipant(newPerson);
-                        participantsList.add(newPerson);
+                        
                         updateProgress(numAdded,numToAdd);
-                        updateMessage("Adding " + newPerson.getFirstName() + " " + newPerson.getLastName() );
+                        updateMessage("Adding " + p.getFirstName() + " " + p.getLastName() );
                         
                     }
                 } catch (Exception ex) {
@@ -138,7 +214,7 @@ public class ImportWizardView3Controller {
                 updateMessage("Saving...");
                 
                 // TODO: pass the task object down to the DAO so that it can run updateProgress
-                participantDAO.addParticipant(participantsList);
+                
                 
                 updateMessage("Done! Added " + numAdded + " participants.");
                 

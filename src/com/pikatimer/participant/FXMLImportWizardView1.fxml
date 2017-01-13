@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox spacing="5.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1">
+<VBox spacing="5.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <HBox alignment="CENTER_LEFT" spacing="2.0">
          <children>
@@ -45,6 +45,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       </HBox>
       <Label fx:id="fileStatusLabel" />
       <CheckBox fx:id="clearExistingCheckBox" mnemonicParsing="false" text="Clear existing participants" />
+      <HBox fx:id="duplicateHandlingHBox" alignment="CENTER_LEFT" spacing="4.0">
+         <children>
+            <Label text="Duplicate Handling" />
+            <ComboBox fx:id="duplicateHandlingComboBox" minWidth="-Infinity" prefWidth="85.0" />
+         </children>
+      </HBox>
       <CheckBox fx:id="cleanupNamesCheckBox" mnemonicParsing="false" text="Cleanup Names" />
       <CheckBox fx:id="cleanupCityCheckBox" mnemonicParsing="false" text="Cleanup City / State data" />
       <VBox fx:id="bibAssignmentVBox" spacing="5.0">

@@ -31,13 +31,12 @@ import javafx.beans.property.StringProperty;
  * @author jcgarner
  */
 class ImportWizardData {
-    private final SimpleStringProperty filename = new SimpleStringProperty();
-    private BooleanProperty waveAssignByBib = new SimpleBooleanProperty();
-    private BooleanProperty waveAssignByAttribute = new SimpleBooleanProperty();
-    
-    private BooleanProperty clearExistingAttribute = new SimpleBooleanProperty();
-    
-    private BooleanProperty nextButtonEnabledAttribute = new SimpleBooleanProperty(true);
+    private final StringProperty filename = new SimpleStringProperty();
+    private final BooleanProperty waveAssignByBib = new SimpleBooleanProperty();
+    private final BooleanProperty waveAssignByAttribute = new SimpleBooleanProperty();
+    private final BooleanProperty clearExistingAttribute = new SimpleBooleanProperty();
+    private final BooleanProperty nextButtonEnabledAttribute = new SimpleBooleanProperty(true);
+    private final StringProperty duplicateHandlingAttribute = new SimpleStringProperty();
 
     private Wave assignedWave; 
     private final Map<String, String> attributeMap = new HashMap<>();
@@ -56,11 +55,14 @@ class ImportWizardData {
     public void setFileName(String fName) {
         System.out.println("setFileName: from " + filename.getValueSafe() + " to " + fName);
         filename.setValue(fName);
-        
     }
     public StringProperty fileNameProperty() {
         return filename; 
     }        
+    
+    public StringProperty duplicateHandlingProperty(){
+        return duplicateHandlingAttribute;
+    }
     
     public void setResultsSet(ResultSet r) {
         rs = r;

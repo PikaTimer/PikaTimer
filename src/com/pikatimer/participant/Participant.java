@@ -74,9 +74,9 @@ public class Participant {
     
 
    
-    private final StringProperty firstNameProperty = new SimpleStringProperty();
+    private final StringProperty firstNameProperty = new SimpleStringProperty("");
     private final StringProperty middleNameProperty= new SimpleStringProperty();
-    private final StringProperty lastNameProperty= new SimpleStringProperty();
+    private final StringProperty lastNameProperty= new SimpleStringProperty("");
     private final StringProperty fullNameProperty= new SimpleStringProperty();
     private final StringProperty emailProperty= new SimpleStringProperty(); 
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
@@ -96,19 +96,10 @@ public class Participant {
     private final BooleanProperty dnfProperty = new SimpleBooleanProperty(FALSE);
     private final BooleanProperty dqProperty = new SimpleBooleanProperty(FALSE);
     private final StringProperty noteProperty = new SimpleStringProperty();
-    private Status status; 
+    private Status status = Status.GOOD; 
     private final ObjectProperty<Status> statusProperty = new SimpleObjectProperty(Status.GOOD);
    
     public Participant() {
-        this("","");
-        
-    }
- 
-    public Participant(String firstName, String lastName) {
-
-        
-        setFirstName(firstName);
-        setLastName(lastName);
         // TODO: Fix this to include the middle name if it is set
         fullNameProperty.bind(new StringBinding(){
             {super.bind(firstNameProperty,middleNameProperty, lastNameProperty);}
@@ -140,6 +131,18 @@ public class Participant {
         statusProperty.set(status);
         
     }
+    public Participant(Map<String, String> attribMap) {
+        this();
+        setAttributes(attribMap);
+        
+    }
+    public Participant(String firstName, String lastName) {
+        this();
+        setFirstName(firstName);
+        setLastName(lastName);
+        
+        
+    }
     
     public static ObservableMap<String,String> getAvailableAttributes() {
         ObservableMap<String,String> attribMap = FXCollections.observableMap(new LinkedHashMap() );
@@ -162,9 +165,10 @@ public class Participant {
         return attribMap; 
     }
     
-    public Participant(Map<String, String> attribMap) {
+
+    public void setAttributes(Map<String, String> attribMap) {
         // bulk set routine. Everything is a string so convert as needed
-        this("","");
+        
         attribMap.entrySet().stream().forEach((Map.Entry<String, String> entry) -> {
             if (entry.getKey() != null) {
                 //System.out.println("processing " + entry.getKey() );
