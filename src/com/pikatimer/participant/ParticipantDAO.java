@@ -276,6 +276,7 @@ public class ParticipantDAO {
      } 
     
     public Participant getParticipantByBib(String b) {
+        if (b == null || b.isEmpty()) return null;
         try {
             participantsLoadedLatch.await();
         } catch (InterruptedException ex) {
