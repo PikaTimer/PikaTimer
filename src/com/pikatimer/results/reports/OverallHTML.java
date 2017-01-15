@@ -24,14 +24,12 @@ import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -169,7 +167,6 @@ public class OverallHTML implements RaceReportType{
                         "            {className: 'control', orderable: false, targets:   0}\n" +
                         "        ],"  +
                         "    scrollY: '60vh',\n" +
-                        //"    scrollCollapse: true,\n" +
                         "    scroller:    true,\n" +
                         "    deferRender: true,\n" +
                         "   \"fnInitComplete\": function () {\n" +

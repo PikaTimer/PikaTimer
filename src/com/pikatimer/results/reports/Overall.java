@@ -24,7 +24,6 @@ import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;

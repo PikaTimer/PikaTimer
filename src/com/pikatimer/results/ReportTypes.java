@@ -19,6 +19,7 @@ package com.pikatimer.results;
 import com.pikatimer.results.reports.AgeGroup;
 import com.pikatimer.results.reports.Award;
 import com.pikatimer.results.reports.Overall;
+import com.pikatimer.results.reports.OverallCSV;
 import com.pikatimer.results.reports.OverallHTML;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +33,8 @@ public enum ReportTypes {
     OVERALL, 
     OVERALL_HTML,
     AGEGROUP,
-    AWARD; 
+    AWARD,
+    CSV; 
 
     
     private static final Map<ReportTypes, String> InputMap = createMap();
@@ -43,6 +45,7 @@ public enum ReportTypes {
         result.put(AGEGROUP, "Age Group (Text)");
         result.put(AWARD, "Award (Text)");
         result.put(OVERALL_HTML,"Overall (HTML)");
+        result.put(CSV,"Overall (CSV)");
 
         return Collections.unmodifiableMap(result);
     }
@@ -53,7 +56,7 @@ public enum ReportTypes {
     }
 
     
-    public final  RaceReportType getNewReader() {
+    public final  RaceReportType getReportType() {
                 
         switch(this){
             case OVERALL:
@@ -64,6 +67,8 @@ public enum ReportTypes {
                 return new AgeGroup();
             case AWARD:
                 return new Award();
+            case CSV:
+                return new OverallCSV();
             
         }
         

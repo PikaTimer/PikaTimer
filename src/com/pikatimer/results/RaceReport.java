@@ -230,7 +230,7 @@ public class RaceReport {
         System.out.println("RaceReport.procesResultNow() Called... ");
         if (race != null && reportType != null) {
             if (raceReportType == null) {
-                raceReportType = reportType.getNewReader();
+                raceReportType = reportType.getReportType();
                 raceReportType.init(race);
             }
             System.out.println("RaceReport.procesResult() calling raceReportType.process()");

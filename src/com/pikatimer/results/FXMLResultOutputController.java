@@ -100,7 +100,7 @@ public class FXMLResultOutputController {
                 thisRaceReport.setReportType(newRT);
                 resultsDAO.saveRaceReport(r);
             }
-            RaceReportType rrt = thisRaceReport.getReportType().getNewReader();
+            RaceReportType rrt = thisRaceReport.getReportType().getReportType();
             boolean attributeAdded = false;
             
             // Show or hide options based on what the RaceReportType is capable of handling
