@@ -244,6 +244,9 @@ public class OverallJSON implements RaceReportType{
                     chars.append("\t\t\"last_seen\": \"Never\",\n");
                 }
             }
+            
+            chars.append("\t\t\"start_display\": \"").append(DurationFormatter.durationToString(pr.getChipStartTime(), dispFormat, roundMode)).append("\",\n");
+            
             if (dnf || dq) { 
                 hideTime = true;
             }

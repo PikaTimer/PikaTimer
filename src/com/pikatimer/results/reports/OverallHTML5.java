@@ -115,6 +115,11 @@ public class OverallHTML5 implements RaceReportType{
         report += "<HTML> " +  System.lineSeparator();
         report += "  <HEAD> " +  System.lineSeparator();
         
+        report += "<TITLE> " + event.getEventName();
+        if (RaceDAO.getInstance().listRaces().size() > 1) 
+            report += " " + race.getRaceName() ;
+        report += " " + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</TITLE>" + System.lineSeparator();
+        report += System.lineSeparator();
         report += "<meta name=\"viewport\" content=\"width=device-width; initial-scale=1.0; maximum-scale=1.0; minimum-scale=1.0; user-scalable=0;\" />\n";
         
 // Google Analytics
@@ -141,41 +146,34 @@ public class OverallHTML5 implements RaceReportType{
         // our inline CSS
         report +=   "<link href=\"https://fonts.googleapis.com/css?family=Source+Sans+Pro|Open+Sans\" rel=\"stylesheet\">\n" +
                     "<style>\n" +
-                    
-                    ".col-1 {width: 8.33%;}\n" +
-                    ".col-2 {width: 16.66%;}\n" +
-                    ".col-3 {width: 25%;}\n" +
-                    ".col-4 {width: 33.33%;}\n" +
-                    ".col-5 {width: 41.66%;}\n" +
-                    ".col-6 {width: 50%;}\n" +
-                    ".col-7 {width: 58.33%;}\n" +
-                    ".col-8 {width: 66.66%;}\n" +
-                    ".col-9 {width: 75%;}\n" +
-                    ".col-10 {width: 83.33%;}\n" +
-                    ".col-11 {width: 91.66%;}\n" +
-                    ".col-12 {width: 100%;}\n" +
-
+                    "table.dataTable.display tbody tr.child {\n" +
+                    "    background: white;\n" +
+                    "}\n" +
+                    "table.dataTable.display tbody tr.child:hover {\n" +
+                    "    background: white !important;\n" +
+                    "}" +
                     ".row{padding-bottom: 15px;}\n" +
                     ".row::after {\n" +
                     "    content: \"\";\n" +
                     "    clear: both;\n" +
                     "    display: table;\n" +
                     "}\n" +
-                    "[class*=\"col-\"] {\n" +
-                    "    float: left;\n" +
-                    "}\n" +
+                    ".right {text-align: right;}" +
                     ".event-info {font-family: 'Open Sans'; font-size: 40px; text-align: center;}\n" +
                     ".in-progress {font-family: 'Open Sans'; font-size: 40px; text-align: center; color: red;}\n" +
                     ".participant {float: left; padding-right: 15px;}\n" +
                     ".overall {float: left; padding-right: 15px;}\n" +
                     ".part-name {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".part-stats {font-family: 'Source Sans Pro'; font-size: 14px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".part-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".finish-time {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left;}\n" +
-                    ".finish-stats {font-family: 'Source Sans Pro'; font-size: 14px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".finish-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment {float: left; padding-right: 15px; padding-bottom: 15px}\n" +
                     ".segment-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment-time {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".segment-stats {font-family: 'Source Sans Pro'; font-size: 14px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".segment-stats {font-family: 'Source Sans Pro'; font-size: 18px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".split {float: left; padding-right: 15px; padding-bottom: 15px}\n" +
+                    ".split-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".split-time {font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; white-space: pre-wrap;}\n" +
                     "@media only screen and (max-width: 600px) {\n" +
                     "    /* For mobile phones: */\n" +
                     "    .participant {width: 100%; padding-right: 0px; }\n" +
@@ -251,7 +249,7 @@ public class OverallHTML5 implements RaceReportType{
                                     "			},\n";
             if (showPace) report += "           { \"data\": \"finish_pace\" }\n";
             report +=   "        ],\n" +
-                        "   \"oSearch\": { \"sSearch\": search }," + 
+                        "   \"oSearch\": { \"sSearch\": search },\n" + 
                         "    responsive: {\n" +
                         "            details: {\n" +
                         "                renderer: function ( api, rowIdx, columns ) {\n" +
@@ -295,19 +293,34 @@ public class OverallHTML5 implements RaceReportType{
 //        }
                         if (showSegments) {
                             final StringBuilder chars = new StringBuilder();
-                            chars.append("data += '<div class=\"row\">'; // time\n");
+                            chars.append("data += '<div class=\"row\">';\n");
                             race.getSegments().forEach(seg -> {
                                 chars.append("data += '<div class=\"segment\">'; // time\n");
                                 chars.append("data += '<div class=\"segment-head\">" + seg.getSegmentName()+ "</div>';\n" );
-                                chars.append("data += '<div class=\"segment-time\">' + rData.segments.segment_"+seg.getSegmentName()+ ".display + '</div>';\n");
-                                if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\"> Pace:  ' + rData.segments.segment_"+seg.getSegmentName()+ ".pace + '</div>';\n");
-                                chars.append("data += '<div class=\"segment-stats\">Overall: ' + rData.segments.segment_"+seg.getSegmentName()+ ".oa_place + '   Sex: ' + rData.segments.segment_"+seg.getSegmentName()+ ".sex_place + '   AG: ' + rData.segments.segment_"+seg.getSegmentName()+ ".ag_place + '</div>';\n");
+                                chars.append("data += '<div class=\"segment-time\"Time: >' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].display + '</div>';\n");
+                                if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].pace + '</div>';\n");
+                                chars.append("data += '<div class=\"segment-stats\">Overall: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].oa_place + '   Sex: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].sex_place + '   AG: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].ag_place + '</div>';\n");
                                 chars.append("data += '</div>';\n");
                             });
                             chars.append("data += '</div>';\n");
                             report += chars.toString();
                         }
+                        if (showSplits) {
+                            report += "data += '<div class=\"row\">'; \n";
+                            report += "data += '<div class=\"split\">'; \n";
+                            report += "data += '<div class=\"split-head\">Splits:</div>';\n" ;
+                            report += "data += '<table class=\"split-time\">' ;\n" ;
+                            report += "data += '<tr><td>Start:</td><td>  ' + rData.start_display + '</div>';\n" ;
+                            for (int i = 2; i < race.splitsProperty().size(); i++) {
+                                report += "data += '<tr><td>" + race.splitsProperty().get(i-1).getSplitName() + ":</td><td class=\"right\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].display + '</td></tr>';\n";
+                            }
+                            report += "data += '<tr><td>Finish:</td><td>  ' + rData.finish_display + '</td></tr>';\n";
+                            if (showGun) report += "data += '<tr><td>Gun Time:</td><td> ' + rData.gun_display + '</td></tr>';\n";
+                            report += "data += '</table>';\n";
+                            report += "data += '</div>';\n";
+                            report += "data += '</div>';\n";
 
+                        }
             report +=   "				\n" +
                         "				data += '</div>'; // detail\n" +
                         "				\n" +
