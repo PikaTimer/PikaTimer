@@ -110,8 +110,7 @@ public class OverallJSON implements RaceReportType{
         
         
         
-        report =    "{\n" +
-                    "  \"resultsData\": [\n";
+        report =    "[\n";
         
 
          
@@ -267,8 +266,7 @@ public class OverallJSON implements RaceReportType{
             
         chars.deleteCharAt(chars.lastIndexOf(","));
         report += chars.toString();
-        report +=   "  ]\n" +
-                    "}";
+        report +=   "  ]\n";
 
         
         return report;
