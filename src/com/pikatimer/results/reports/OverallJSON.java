@@ -22,6 +22,8 @@ import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
+import com.pikatimer.timing.CookedTimeData;
+import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import java.time.Duration;
@@ -157,13 +159,13 @@ public class OverallJSON implements RaceReportType{
             
             if (dq) {
                 chars.append("\t\t\"oa_place\": ").append("\"").append("DQ").append("\",\n");
-                chars.append("\t\t\"sex_place\": ").append("\"").append("--").append("\",\n");
-                chars.append("\t\t\"ag_place\": ").append("\"").append("--").append("\",\n");
+                chars.append("\t\t\"sex_place\": ").append("\"").append("~~").append("\",\n");
+                chars.append("\t\t\"ag_place\": ").append("\"").append("~~").append("\",\n");
             }
             else if (inProgress && pr.getChipFinish() == null) {
                 chars.append("\t\t\"oa_place\": ").append("\"").append("Started").append("\",\n");
-                chars.append("\t\t\"sex_place\": ").append("\"").append("--").append("\",\n");
-                chars.append("\t\t\"ag_place\": ").append("\"").append("--").append("\",\n");
+                chars.append("\t\t\"sex_place\": ").append("\"").append("~~").append("\",\n");
+                chars.append("\t\t\"ag_place\": ").append("\"").append("~~").append("\",\n");
                 //hideTime = true;
             } else if (! dnf && ! dq) { 
                 if (!oco) {
@@ -172,13 +174,13 @@ public class OverallJSON implements RaceReportType{
                     chars.append("\t\t\"ag_place\": ").append("\"").append(pr.getAGPlace().toString()).append("\",\n");
                 } else {
                     chars.append("\t\t\"oa_place\": ").append("\"").append("OCO").append("\",\n");
-                chars.append("\t\t\"sex_place\": ").append("\"").append("--").append("\",\n");
-                chars.append("\t\t\"ag_place\": ").append("\"").append("--").append("\",\n");
+                chars.append("\t\t\"sex_place\": ").append("\"").append("~~").append("\",\n");
+                chars.append("\t\t\"ag_place\": ").append("\"").append("~~").append("\",\n");
                 }
             } else {
                 chars.append("\t\t\"oa_place\": ").append("\"").append("DNF").append("\",\n");
-                chars.append("\t\t\"sex_place\": ").append("\"").append("--").append("\",\n");
-                chars.append("\t\t\"ag_place\": ").append("\"").append("--").append("\",\n");
+                chars.append("\t\t\"sex_place\": ").append("\"").append("~~").append("\",\n");
+                chars.append("\t\t\"ag_place\": ").append("\"").append("~~").append("\",\n");
             }
 
             // Insert split stuff here 
@@ -187,9 +189,9 @@ public class OverallJSON implements RaceReportType{
                 chars.append("\t\t\"splits\": {\n");
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
                     chars.append("\t\t\t\"split_").append(race.splitsProperty().get(i-1).getSplitName()).append("\": {\n");
-                    if (hideTime) {
+                    if (hideTime || pr.getSplit(i) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
-                        chars.append("\t\t\t\t\t\"sort\": ").append("\"\"").append("\n");
+                        chars.append("\t\t\t\t\t\"sort\": ").append("\"~~\"").append("\n");
                     }
                     else {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"").append(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)).append("\",\n");
@@ -207,23 +209,40 @@ public class OverallJSON implements RaceReportType{
                 chars.append("\t\t\"segments\": {\n");
                 race.getSegments().forEach(seg -> {
                     chars.append("\t\t\t\"segment_").append(seg.getSegmentName()).append("\": {\n");
-                    if (ht) {
+                    if (ht || pr.getSegmentTime(seg.getID()) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
-                        chars.append("\t\t\t\t\t\"sort\": ").append("\"\"").append("");
+                        chars.append("\t\t\t\t\t\"sort\": ").append("\"~~\"").append(",\n");
+                        chars.append("\t\t\t\t\t\"oa_place\": ").append("\"~~\"").append(",\n");
+                        chars.append("\t\t\t\t\t\"sex_place\": ").append("\"~~\"").append(",\n");
+                        chars.append("\t\t\t\t\t\"ag_place\": ").append("\"~~\"").append("\n");;
                     }
                     else {
                         chars.append("\t\t\t\t\t\"display\": \"").append(DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispFormat, roundMode)).append("\",\n");
-                        chars.append("\t\t\t\t\t\"sort\": \"").append(DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispTimestamp, roundMode)).append("\"");
+                        chars.append("\t\t\t\t\t\"sort\": \"").append(DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispTimestamp, roundMode)).append("\",\n");
+                        chars.append("\t\t\t\t\t\"oa_place\": ").append("\"" + pr.getSegmentOverallPlace(seg.getID()) +"\"").append(",\n");
+                        chars.append("\t\t\t\t\t\"sex_place\": ").append("\"" + pr.getSegmentSexPlace(seg.getID()) +"\"").append(",\n");
+                        chars.append("\t\t\t\t\t\"ag_place\": ").append("\"" + pr.getSegmentAGPlace(seg.getID()) +"\"").append("\n");;
                     }
                     if (showSegmentPace) {
-                        if (ht) chars.append(",\n\t\t\t\t\t\"pace\": ").append("\"\"").append("\n");
-                        else if (pr.getSegmentTime(seg.getID()) != null ) chars.append(",\n\t\t\t\t\t\"pace\": \"").append(pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))).append("\"\n");
-                        else chars.append(",\n\t\t\t\t\t\"pace\": ").append("\"\"").append("\n");
+                        if (ht || pr.getSegmentTime(seg.getID()) == null ) chars.append(",\n\t\t\t\t\t\"pace\": ").append("\"~~\"").append("\n");
+                        else chars.append(",\n\t\t\t\t\t\"pace\": \"").append(pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))).append("\"\n");
                     } else chars.append("\n");
                     chars.append("\t\t\t},\n");
                 });
                 chars.deleteCharAt(chars.lastIndexOf(","));
                 chars.append("\t\t},\n");
+            }
+            if (inProgress) {
+                TimingDAO td = TimingDAO.getInstance();
+                List<CookedTimeData> times = td.getCookedTimesByBib(pr.getParticipant().getBib());
+                if (times != null && !times.isEmpty()) {
+                    times.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
+                    CookedTimeData last_chip = times.get(times.size()-1);
+                    chars.append("\t\t\"last_seen\": \"").append(td.getTimingLocationByID(last_chip.getTimingLocationId()).getLocationName() + " at " + DurationFormatter.durationToString(last_chip.getTimestamp(), dispTimestamp, roundMode)).append("\",\n");
+
+                } else {
+                    chars.append("\t\t\"last_seen\": \"Never\",\n");
+                }
             }
             if (dnf || dq) { 
                 hideTime = true;
@@ -231,7 +250,7 @@ public class OverallJSON implements RaceReportType{
             // chip time
             if (hideTime) {
                 chars.append("\t\t\"finish_display\": ").append("\"\"").append(",\n");
-                chars.append("\t\t\"finish_sort\": ").append("\"--\"").append("");
+                chars.append("\t\t\"finish_sort\": ").append("\"~~\"").append("");
             }
             else {
                 chars.append("\t\t\"finish_display\": \"").append(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode)).append("\",\n");
@@ -243,7 +262,7 @@ public class OverallJSON implements RaceReportType{
 
                 if (hideTime) {
                     chars.append(",\n\t\t\"gun_display\": ").append("\"\"").append(",\n");
-                    chars.append("\t\t\"gun_sort\": ").append("\"--\"").append("");
+                    chars.append("\t\t\"gun_sort\": ").append("\"~~\"").append("");
                 }
                 else {
                     chars.append(",\n\t\t\"gun_display\": \"").append(DurationFormatter.durationToString(pr.getGunFinish(), dispFormat, roundMode)).append("\",\n");
@@ -253,7 +272,7 @@ public class OverallJSON implements RaceReportType{
             
             if (showPace){
                 if (hideTime) {
-                    chars.append(",\n\t\t\"finish_pace\": ").append("\"\"").append("\n");
+                    chars.append(",\n\t\t\"finish_pace\": ").append("\"~~\"").append("\n");
                 }
                 else {
                     chars.append(",\n\t\t\"finish_pace\": \"").append(pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish())).append("\"");
