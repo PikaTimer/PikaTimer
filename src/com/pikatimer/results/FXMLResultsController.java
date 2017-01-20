@@ -184,6 +184,11 @@ public class FXMLResultsController  {
             } 
             
             
+            if (activeRace != null) { // The currently active race
+                resultsGridPane.getChildren().remove(raceTableViewMap.get(activeRace));
+            }
+
+            
             activeRace = raceComboBox.getItems().get(number2.intValue());
             
             
@@ -215,12 +220,10 @@ public class FXMLResultsController  {
                 
             }
             
-            if (number.intValue() > 0) {
-                Race old = raceComboBox.getItems().get(number.intValue());
-                resultsGridPane.getChildren().remove(raceTableViewMap.get(old));
-            }
             resultsGridPane.getChildren().remove(raceTableViewMap.get(activeRace));
             resultsGridPane.add(raceTableViewMap.get(activeRace), 0, 1);
+            
+
             
             
             String rm = activeRace.getStringAttribute("TimeRoundingMode");
