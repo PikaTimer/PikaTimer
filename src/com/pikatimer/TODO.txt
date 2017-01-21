@@ -5,7 +5,6 @@ Create a DurationCell (or whatever) for inline edits of durations?
 editCell that does not revert on focus change (WTF Oracle)
 
 -Fix result display to show wave start -> actual delta, gun time
--Fix result display to not freak on split changes (maybe a refresh button?)
 -Mandatory split? (if it is mandatory)
 
 
@@ -37,11 +36,11 @@ Races:
 Setup Custom AG's (other than just 5 & 10 year increments)?
 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
-Ability to set min/max times for a segment
+Ability to set min/max times for a split
 Ability to drag/drop splits to reorder
 
 Cumulative vs differential distance for splits specification?
-Ability to override the pace display for a segment: m/s, m/h, k/h, s/100y, s/100m) 
+Ability to override the pace display for a segment: (min/mile, min/km, m/s, m/h, k/h, s/100y, s/100m) 
 Ability to set split specific distance unit for a split
 Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
 
@@ -90,16 +89,14 @@ Option to assign any time to the race/wave start time via right mouse click menu
 
 RFID Direct:
     --Continually import times from box (via tcp in a separate task) to a timing point
+    --Auto rewind for race day data upon connect
     --Rewind option for times read from box/outreach
     --Chip sequence gap detection that triggers an automatic rewind 
 
-
-
 Results:
+    --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 
-     --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
 Wire in a "min time to next split" option to replace hardcoded 5/10 minutes. 
-cleanup the spacing on the tableview, wider names.
 Ability to select multiple and DQ, un-DQ them (with a note)
 Show Gender/AG on results display
 Ability to select multiple results and transfer them to another wave/race
@@ -107,7 +104,7 @@ Ability to select multiple results and transfer them to another wave/race
 
 Reports:
 
-Auto-print of text with each new page or after X number of runners
+Auto-print of text with each new page or after X number of runners?
 Text output with header/FormFeed after X number of lines. 
 
 Course Record note in overall text/html reports
@@ -131,6 +128,7 @@ Ordered list (overall, masters, AG) with per group option to pull winners from
 Custom award options with filters
 Team awards
 
+Award report for fastest to a given split or segment time (fastest uphill, fastest downhill, etc). 
 
 Options tab:
 Active.com/RunSignUp/FuseSport Account info profiles
