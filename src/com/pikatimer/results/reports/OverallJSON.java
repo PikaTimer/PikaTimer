@@ -23,9 +23,11 @@ import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
 import com.pikatimer.timing.CookedTimeData;
+import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -191,10 +193,33 @@ public class OverallJSON implements RaceReportType{
                     chars.append("\t\t\t\"split_").append(race.splitsProperty().get(i-1).getSplitName()).append("\": {\n");
                     if (hideTime || pr.getSplit(i) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
+                        chars.append("\t\t\t\t\t\"delta_time\": ").append("\"\"").append(",\n");
+                        if (showSegmentPace) chars.append("\t\t\t\t\t\"pace\": ").append("\"\"").append(",\n");
                         chars.append("\t\t\t\t\t\"sort\": ").append("\"~~\"").append("\n");
                     }
                     else {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"").append(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)).append("\",\n");
+                        
+                        if (i == 2) { // 1st split
+                            chars.append("\t\t\t\t\t\"delta_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)).append("\",\n");
+                            if (showSegmentPace) {
+                                if (hideTime || pr.getSplit(i) == null || race.splitsProperty().get(i-1).getSplitDistance().compareTo(BigDecimal.ZERO) == 0) chars.append(",\n\t\t\t\t\t\"pace\": ").append("\"~~\"").append(",\n");
+                                else chars.append("\t\t\t\t\t\"pace\": \"").append(pace.getPace(race.splitsProperty().get(i-1).getSplitDistance().floatValue(), race.getRaceDistanceUnits(), pr.getSplit(i))).append("\",\n");
+                            }
+                        } else {
+                            Split thisSplit = race.splitsProperty().get(i-1);
+                            Split previousSplit = race.splitsProperty().get(i-2);
+                            if (pr.getSplit(i) == null || pr.getSplit(i-1) == null) 
+                                chars.append("\t\t\t\t\t\"delta_time\": ").append("\"\"").append(",\n");
+                            else chars.append("\t\t\t\t\t\"delta_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getSplit(i).minus(pr.getSplit(i-1)), dispFormat, roundMode)).append("\",\n");
+
+                            if (showSegmentPace) {
+                                if (thisSplit.getSplitDistance().compareTo(previousSplit.getSplitDistance()) == 0 || pr.getSplit(i) == null || pr.getSplit(i-1) == null)
+                                    chars.append("\t\t\t\t\t\"pace\": ").append("\"\"").append(",\n");
+                                else chars.append("\t\t\t\t\t\"pace\": \"").append(pace.getPace(thisSplit.getSplitDistance().subtract(previousSplit.getSplitDistance()).floatValue(), race.getRaceDistanceUnits(), pr.getSplit(i).minus(pr.getSplit(i-1)))).append("\",\n");
+
+                            }
+                        }
                         chars.append("\t\t\t\t\t\"sort\": ").append("\"").append(DurationFormatter.durationToString(pr.getSplit(i), dispTimestamp, roundMode)).append("\"\n");
 
                     }
@@ -208,6 +233,7 @@ public class OverallJSON implements RaceReportType{
                 Boolean ht = hideTime;
                 chars.append("\t\t\"segments\": {\n");
                 race.getSegments().forEach(seg -> {
+                    
                     chars.append("\t\t\t\"segment_").append(seg.getSegmentName()).append("\": {\n");
                     if (ht || pr.getSegmentTime(seg.getID()) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
@@ -252,10 +278,28 @@ public class OverallJSON implements RaceReportType{
             }
             // chip time
             if (hideTime) {
+                chars.append("\t\t\t\t\t\"finish_split_delta\": ").append("\"\"").append(",\n");
+                if (showSegmentPace) chars.append("\t\t\t\t\t\"finish_split_pace\": ").append("\"\"").append(",\n");
                 chars.append("\t\t\"finish_display\": ").append("\"\"").append(",\n");
                 chars.append("\t\t\"finish_sort\": ").append("\"~~\"").append("");
             }
             else {
+                if (showSplits) { 
+                    if (pr.getSplit(race.splitsProperty().size()-1) != null){
+                        // Calc distance and time since last split
+                        Duration last = pr.getChipFinish().minus(pr.getSplit(race.splitsProperty().size()-1));
+                        
+                        chars.append("\t\t\"finish_split_delta\": \"").append(DurationFormatter.durationToString(last, dispFormat, roundMode)).append("\",\n");
+                        if (showSegmentPace) {
+                            if (race.getRaceDistance().compareTo(race.splitsProperty().get(race.splitsProperty().size()-2).getSplitDistance()) != 0 )  
+                                chars.append("\t\t\"finish_split_pace\": \"").append(pace.getPace(race.getRaceDistance().floatValue() - race.splitsProperty().get(race.splitsProperty().size()-2).getSplitDistance().floatValue(), race.getRaceDistanceUnits(), last)).append("\",\n");
+                            else chars.append("\t\t\"finish_split_pace\": ").append("\"\"").append(",\n");
+                        }
+                    } else {
+                        chars.append("\t\t\t\t\t\"finish_split_delta\": ").append("\"\"").append(",\n");
+                        if (showSegmentPace) chars.append("\t\t\t\t\t\"finish_split_pace\": ").append("\"\"").append(",\n");
+                    }
+                }
                 chars.append("\t\t\"finish_display\": \"").append(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode)).append("\",\n");
                 chars.append("\t\t\"finish_sort\": \"").append(DurationFormatter.durationToString(pr.getChipFinish(), dispTimestamp, roundMode)).append("\"");
             }

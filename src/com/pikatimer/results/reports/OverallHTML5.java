@@ -138,10 +138,7 @@ public class OverallHTML5 implements RaceReportType{
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" +
                     "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" +
-                    " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" +
-                    " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
+                    " \n" ;
         
         // our inline CSS
         report +=   "<link href=\"https://fonts.googleapis.com/css?family=Source+Sans+Pro|Open+Sans\" rel=\"stylesheet\">\n" +
@@ -158,9 +155,12 @@ public class OverallHTML5 implements RaceReportType{
                     "    clear: both;\n" +
                     "    display: table;\n" +
                     "}\n" +
-                    ".right {text-align: right;}" +
-                    ".event-info {font-family: 'Open Sans'; font-size: 40px; text-align: center;}\n" +
-                    ".in-progress {font-family: 'Open Sans'; font-size: 40px; text-align: center; color: red;}\n" +
+                    ".right {text-align: right;}\n" +
+                    ".hide {display: none;}\n" +
+                    ".up-half {transform: translateY(-50%); border-top: none !important;}\n" +
+                    ".event-info {font-family: 'Open Sans'; font-size: 36px; text-align: center;}\n" +
+                    ".event-date {font-family: 'Open Sans'; font-size: 24px; text-align: center;}\n" +
+                    ".in-progress {font-family: 'Open Sans'; font-size: 30px; text-align: center; color: red;}\n" +
                     ".participant {float: left; padding-right: 15px;}\n" +
                     ".overall {float: left; padding-right: 15px;}\n" +
                     ".part-name {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left; white-space: pre-wrap;}\n" +
@@ -188,8 +188,105 @@ public class OverallHTML5 implements RaceReportType{
             report += System.lineSeparator();
         }
         report += "<!-- End Stylesheets / JS Indludes-->\n";
+        
+        report += "  </HEAD> " +  System.lineSeparator();
+        report += "  <BODY> " +  System.lineSeparator();
+        
+        if (customHeaders){
+            if (textOnlyHeaders) report += race.getStringAttribute("textHeader");
+            else report += race.getStringAttribute("htmlHeader");
+            report += System.lineSeparator();
+        }
+        
+        report += "<div class=\"event-info\">" + event.getEventName() + System.lineSeparator();;
+        if (RaceDAO.getInstance().listRaces().size() > 1) 
+            report += "<br>" + race.getRaceName();
+        report += "</div>" + System.lineSeparator();
+        
+        report += "<div class=\"event-date\">" + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</div>" + System.lineSeparator();
+        report += System.lineSeparator();
+        
+        if(inProgress) {
+            report += "    <div class=\"in-progress\">" + "*In Progress*" + "</div>" + System.lineSeparator();
+            report += System.lineSeparator();
+        }
+        
+        if (customHeaders){
+            if (textOnlyHeaders) report += race.getStringAttribute("textMessage");
+            else report += race.getStringAttribute("htmlMessage");
+            report += System.lineSeparator();
+        }
+        
+        if(prList.isEmpty()) {
+            report += "    <div class=\"in-progress\">" + "<BR>*No Results Have Been Posted Yet*" + "</div>" + System.lineSeparator();
+            report += System.lineSeparator();
+            if (customHeaders){
+                if (textOnlyHeaders) report += race.getStringAttribute("textFooter");
+                else report += race.getStringAttribute("htmlFooter");
+                report += System.lineSeparator();
+            }
+        } else {
+        // Start the table
+            report += "    <div id=\"loading\" class=\"in-progress right\">" + "<BR>Loading..." + "</div>" + System.lineSeparator();
 
-        // DataTables
+            //report += "<div id=\"results_table\" class=\"hide\">" +  System.lineSeparator();
+            report += "  <TABLE id=\"results\" class=\"display responsive nowrap\" > " +  System.lineSeparator();
+            // print the headder
+            report += "    <thead><tr>" +  System.lineSeparator();
+            report += "      <th></th>"+  System.lineSeparator(); // dummy for control box
+            report += "      <th data-priority=\"10\">OA#</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"20\">SEX#</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"30\">AG#</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"5\">BIB</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"9\">AGE</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"5\">SEX</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"29\">AG</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"1\">Name</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"45\">Country</th>" +  System.lineSeparator(); 
+
+            // Insert split stuff here
+            if (showSplits) {
+                for (int i = 2; i < race.splitsProperty().size(); i++) {
+                    report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
+                }
+            }
+            if (showSegments) {
+                final StringBuilder chars = new StringBuilder();
+                Integer dispLeg = dispFormatLength;
+                race.getSegments().forEach(seg -> {
+                    chars.append("      <th data-priority=\"80\">" + seg.getSegmentName()+ "</th>" +  System.lineSeparator());
+                    if (showSegmentPace) chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator()); // pace.getFieldWidth()+1
+                });
+                report += chars.toString();
+            }
+            // Chip time
+            report += "      <th data-priority=\"1\">Finish</th>" +  System.lineSeparator(); // 9R Need to adjust for the format code
+
+            // gun time
+            if (showGun) report += "      <th data-priority=\"90\">Gun</th>" +  System.lineSeparator(); // 9R ibid
+            // pace
+            if (showPace) report += "      <th data-priority=\"85\">Pace</th>" +  System.lineSeparator(); // 10R
+
+            report += "</tr></thead>" +  System.lineSeparator(); 
+            report += "</table>" +  System.lineSeparator();
+            //report += "</div>" +  System.lineSeparator();
+
+        
+        
+        if (customHeaders){
+            if (textOnlyHeaders) report += race.getStringAttribute("textFooter");
+            else report += race.getStringAttribute("htmlFooter");
+            report += System.lineSeparator();
+        }
+
+        report += "<!-- Start DataTables -->\n";
+
+        report +=   "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" +
+                    " \n" +
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
+
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
                     "	\n" +
                     " var resultsData = " + json.process(prList, rr) +
@@ -310,12 +407,27 @@ public class OverallHTML5 implements RaceReportType{
                             report += "data += '<div class=\"split\">'; \n";
                             report += "data += '<div class=\"split-head\">Splits:</div>';\n" ;
                             report += "data += '<table class=\"split-time\">' ;\n" ;
-                            report += "data += '<tr><td>Start:</td><td>  ' + rData.start_display + '</div>';\n" ;
+                            report += "data += '<thead><tr>';\n";
+                            report += "data += '<th>Split</th>';\n";
+                            report += "data += '<th>Elapsed</th>';\n";
+                            report += "data += '<th>Difference</th>';\n";
+                            if (showSegmentPace) report += "data += '<th class=\"right\">Pace</th>';\n";
+                            report += "data += '</tr></thead>';\n";
+                            report += "data += '<tr><td>Start:</td><td class=\"right\">' + rData.start_display + '</td><td></td>';\n" ;
+                            if (showSegmentPace) report += "data += '<td></td>';\n";
+                            report += "data += '</tr>';\n";
                             for (int i = 2; i < race.splitsProperty().size(); i++) {
-                                report += "data += '<tr><td>" + race.splitsProperty().get(i-1).getSplitName() + ":</td><td class=\"right\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].display + '</td></tr>';\n";
+                                report += "data += '<tr><td>" + race.splitsProperty().get(i-1).getSplitName() + ":</td><td class=\"right\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].display + '</td>';\n";
+                                report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].delta_time + '</td>';\n";
+                                if (showSegmentPace) report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].pace + '</td>';\n";
+                                report += "data += '</tr>';\n";
                             }
-                            report += "data += '<tr><td>Finish:</td><td>  ' + rData.finish_display + '</td></tr>';\n";
-                            if (showGun) report += "data += '<tr><td>Gun Time:</td><td> ' + rData.gun_display + '</td></tr>';\n";
+                            report += "data += '<tr><td>Finish:</td><td class=\"right\">  ' + rData.finish_display + '</td><td class=\"right up-half\">' + rData.finish_split_delta + '</td>';\n";
+                            if (showSegmentPace) report += "data += '<td class=\"right up-half\">' + rData.finish_split_pace + '</td>';\n";
+                            report += "data += '</tr>';\n";
+                            if (showGun) report += "data += '<tr><td>Gun Time:</td><td class=\"right\"> ' + rData.gun_display + '</td><td></td>';\n";
+                            if (showGun && showSegmentPace) report += "data += '<td></td>';\n";
+                            report += "data += '</tr>';\n";
                             report += "data += '</table>';\n";
                             report += "data += '</div>';\n";
                             report += "data += '</div>';\n";
@@ -348,92 +460,17 @@ public class OverallHTML5 implements RaceReportType{
                     "			row.node().click();\n" +
                     "		});\n" +
                     "		\n" +
-                    "	}, 300 );" +
+                    "	}, 300 );\n" +
+                    "   document.getElementById('loading').style.display = 'none';\n" +
+                    //"   document.getElementById('results_table').style.display = 'initial';\n" +
+                    //"   $( $.fn.dataTable.tables(true) ).DataTable().responsive.rebuild();\n" +
+                    //"   $( $.fn.dataTable.tables(true) ).DataTable().responsive.recalc();\n" +
                     "} );\n" +
                     "\n" +
                     "\n" +
                     "	</script>\n";
         report += "<!-- End DataTables -->\n";
-        
-        report += "  </HEAD> " +  System.lineSeparator();
-        report += "  <BODY> " +  System.lineSeparator();
-        
-        if (customHeaders){
-            if (textOnlyHeaders) report += race.getStringAttribute("textHeader");
-            else report += race.getStringAttribute("htmlHeader");
-            report += System.lineSeparator();
-        }
-        
-        report += "    <div class=\"event-info\">" + event.getEventName() + "<br>" + System.lineSeparator();;
-        if (RaceDAO.getInstance().listRaces().size() > 1) 
-            report += race.getRaceName() + "<br>" + System.lineSeparator();
-        
-        report += "    " + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</div>" + System.lineSeparator();
-        report += System.lineSeparator();
-        
-        if(inProgress) {
-            report += "    <div class=\"in-progress\">" + "*In Progress*" + "</div>" + System.lineSeparator();
-            report += System.lineSeparator();
-        }
-        
-        if (customHeaders){
-            if (textOnlyHeaders) report += race.getStringAttribute("textMessage");
-            else report += race.getStringAttribute("htmlMessage");
-            report += System.lineSeparator();
-        }
-        
-// Start the table
-        report += "  <TABLE id=\"results\" class=\"display responsive nowrap\" > " +  System.lineSeparator();
-        // print the headder
-        report += "    <thead><tr>" +  System.lineSeparator();
-        report += "      <th></th>"+  System.lineSeparator(); // dummy for control box
-        report += "      <th data-priority=\"10\">OA#</th>" +  System.lineSeparator();
-        report += "      <th data-priority=\"20\">SEX#</th>" +  System.lineSeparator();
-        report += "      <th data-priority=\"30\">AG#</th>" +  System.lineSeparator();
-        report += "      <th data-priority=\"5\">BIB</th>" +  System.lineSeparator(); 
-        report += "      <th data-priority=\"9\">AGE</th>" +  System.lineSeparator(); 
-        report += "      <th data-priority=\"5\">SEX</th>" +  System.lineSeparator(); 
-        report += "      <th data-priority=\"29\">AG</th>" +  System.lineSeparator(); 
-        report += "      <th data-priority=\"1\">Name</th>" +  System.lineSeparator(); 
-        report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
-        report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
-        report += "      <th data-priority=\"45\">Country</th>" +  System.lineSeparator(); 
- 
-        // Insert split stuff here
-        if (showSplits) {
-            for (int i = 2; i < race.splitsProperty().size(); i++) {
-                report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
-            }
-        }
-        if (showSegments) {
-            final StringBuilder chars = new StringBuilder();
-            Integer dispLeg = dispFormatLength;
-            race.getSegments().forEach(seg -> {
-                chars.append("      <th data-priority=\"80\">" + seg.getSegmentName()+ "</th>" +  System.lineSeparator());
-                if (showSegmentPace) chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator()); // pace.getFieldWidth()+1
-            });
-            report += chars.toString();
-        }
-        // Chip time
-        report += "      <th data-priority=\"1\">Finish</th>" +  System.lineSeparator(); // 9R Need to adjust for the format code
-       
-        // gun time
-        if (showGun) report += "      <th data-priority=\"90\">Gun</th>" +  System.lineSeparator(); // 9R ibid
-        // pace
-        if (showPace) report += "      <th data-priority=\"85\">Pace</th>" +  System.lineSeparator(); // 10R
-        
-        report += "</tr></thead>" +  System.lineSeparator(); 
-        
-        
-        
-        final StringBuilder chars = new StringBuilder();
-        
-        
-        report += "</table>" +  System.lineSeparator();
-        if (customHeaders){
-            if (textOnlyHeaders) report += race.getStringAttribute("textFooter");
-            else report += race.getStringAttribute("htmlFooter");
-            report += System.lineSeparator();
+
         }
         report += "  </BODY> " +  System.lineSeparator();
         report += "</HTML> " +  System.lineSeparator();
