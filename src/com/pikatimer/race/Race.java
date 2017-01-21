@@ -344,6 +344,7 @@ public class Race {
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     public List<Segment> getSegments() {
+        if (segmentsList == null) segmentsList = new ArrayList();
         return segmentsList;
     }
     public void setSegments(List<Segment> s) {
