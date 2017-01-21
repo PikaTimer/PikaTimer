@@ -35,8 +35,9 @@ Current Feature Highlights:
 
 Short Term Pending Features:
 * Ability to directly import times from the RFID Ultra units (no need for RFIDServer)
-* Ability to report on a "segment" (delta between two splits)
 * Bulk bib assignments
+* Post results to social media (Twitter, Facebook, etc)
+* Easy download option from HTML report
 
 Long Term Features:
 * Team Reports / Awards
@@ -49,7 +50,6 @@ Long Term Features:
 * Ability to support lap races
 * Race series support (May be another app that looks to multiple PikaTimer races)
 * Built in web server for satellite systems to enter / view data (race day registration / bib assignments, announcer stations, results lookup stations, etc)
-* Post results to social media (Twitter, Facebook, etc)
 * Sync registrants from Active / RunSignUp / FuseSport / etc
 * Result "embellishments" (Course Records, Awards, Boston Qualifying time notifications, etc).
 * Linux / MacOS native installation apps
