@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<GridPane vgap="5.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLSetupBibMapController">
+<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLSetupBibMapController">
    <columnConstraints>
       <ColumnConstraints hgrow="NEVER" />
       <ColumnConstraints />
@@ -22,11 +22,10 @@
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints valignment="CENTER" />
       <RowConstraints minHeight="10.0" vgrow="ALWAYS" />
-      <RowConstraints vgrow="NEVER" />
       <RowConstraints fillHeight="false" minHeight="10.0" vgrow="NEVER" />
    </rowConstraints>
    <children>
-      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
          <children>
             <TableView fx:id="bibMappingTableView" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="190.0" prefWidth="230.0" VBox.vgrow="ALWAYS">
               <columns>
@@ -46,7 +45,7 @@
             </HBox>
          </children>
       </VBox>
-      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.rowIndex="1">
+      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
          <children>
             <Label text="Search">
                <font>
@@ -63,12 +62,18 @@
             <Font size="18.0" />
          </font>
       </Label>
-      <VBox spacing="2.0" GridPane.rowIndex="3">
+      <VBox spacing="2.0" GridPane.rowIndex="1" GridPane.rowSpan="2">
          <children>
-            <Label text="Add Maping">
+            <Label text="Add Single Maping">
                <font>
                   <Font size="18.0" />
                </font>
+               <padding>
+                  <Insets bottom="5.0" />
+               </padding>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
             </Label>
             <HBox alignment="CENTER_LEFT" spacing="5.0">
                <children>
@@ -92,12 +97,41 @@
                   <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
+            <Label text="Add Repeating Maping">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Label>
+            <HBox alignment="CENTER_RIGHT" spacing="5.0">
+               <children>
+                  <Label text="Start bib">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="startBibTextField" prefHeight="25.0" prefWidth="59.0" promptText="XXXXX" />
+                  <Label text="End bib">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="endBibTextField" onAction="#addMappingButtonAction" prefHeight="25.0" prefWidth="61.0" promptText="XXXXX" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_RIGHT" spacing="5.0">
+               <children>
+                  <Label text="Chip Offset">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="chipOffsetTextField" onAction="#addMappingButtonAction" prefHeight="25.0" prefWidth="61.0" />
+                  <Button fx:id="addRepeatButton" minWidth="-Infinity" mnemonicParsing="false" onAction="#addRepeatingMappingButtonAction" prefWidth="60.0" text="Add" />
+               </children>
+            </HBox>
          </children>
-         <padding>
-            <Insets top="10.0" />
-         </padding>
       </VBox>
-      <HBox alignment="CENTER_RIGHT" spacing="5.0" GridPane.rowIndex="4">
+      <HBox alignment="CENTER_RIGHT" spacing="5.0" GridPane.columnSpan="2" GridPane.rowIndex="3">
          <children>
             <Button fx:id="importButton" mnemonicParsing="false" onAction="#importAction" prefWidth="60.0" text="Import..." />
             <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />

@@ -76,6 +76,12 @@ public class FXMLSetupBibMapController  {
     @FXML private TextField bibTextField;
     @FXML private TextField chipTextField;
     
+    @FXML private TextField startBibTextField;
+    @FXML private TextField endBibTextField;
+    @FXML private TextField chipOffsetTextField;
+
+
+        
     private final ObservableList<ChipMap> chipMapList = FXCollections.observableArrayList();
     FilteredList<ChipMap> filteredchipMapList;
     SortedList<ChipMap> sortedTimeList;
@@ -148,6 +154,37 @@ public class FXMLSetupBibMapController  {
             });
         });  
         
+        // Integers only... 
+        startBibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("startChipTextField Text Changed (newValue: " + newValue + ")");
+            if (!newValue.isEmpty() && ! newValue.matches("^\\d+$")) {
+                    Platform.runLater(() -> { 
+                    int c = startBibTextField.getCaretPosition();
+                    startBibTextField.setText(oldValue);
+                    startBibTextField.positionCaret(c);
+                });
+            }
+        });
+        endBibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("startChipTextField Text Changed (newValue: " + newValue + ")");
+            if (!newValue.isEmpty() && ! newValue.matches("^\\d+$")) {
+                    Platform.runLater(() -> { 
+                    int c = endBibTextField.getCaretPosition();
+                    endBibTextField.setText(oldValue);
+                    endBibTextField.positionCaret(c);
+                });
+            }
+        });
+        chipOffsetTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("startChipTextField Text Changed (newValue: " + newValue + ")");
+            if (!newValue.isEmpty() && ! newValue.matches("^\\d+$")) {
+                    Platform.runLater(() -> { 
+                    int c = chipOffsetTextField.getCaretPosition();
+                    chipOffsetTextField.setText(oldValue);
+                    chipOffsetTextField.positionCaret(c);
+                });
+            }
+        });
         // clean up the bib and chip text fields
         // no leading spaces, no leading zeroes
         // we remove trailing spaces on focus lost
@@ -270,6 +307,41 @@ public class FXMLSetupBibMapController  {
             
             
         }
+    }
+    
+    public void addRepeatingMappingButtonAction(ActionEvent fxevent){
+        
+        if (startBibTextField.getText().isEmpty() || endBibTextField.getText().isEmpty() || chipOffsetTextField.getText().isEmpty()) return;
+        
+        try {
+            Integer start = Integer.parseInt(startBibTextField.getText());
+            Integer end = Integer.parseInt(endBibTextField.getText());
+            Integer offset = Integer.parseInt(chipOffsetTextField.getText());
+            if (start == 0) start = 1;
+            if (end < start ) {
+                Integer tmp = start;
+                start = end;
+                end = tmp;
+            }
+            Integer chip = 1;
+            Integer bib = 1;
+            for(int i = start; i <= end; i++) {
+                bib = i;
+                chip = i + offset;
+                ChipMap newMapping = new ChipMap(chip.toString(),bib.toString());
+                if (chipMapList.contains(newMapping)){
+                    chipMapList.remove(newMapping); 
+                }
+                chipMapList.add(newMapping);
+                mapModified.setValue(true);
+            }
+            
+        } catch (Exception ex){
+            System.out.println(ex.getMessage());
+        }
+        startBibTextField.setText("");
+        endBibTextField.setText("");
+        chipOffsetTextField.setText("");
     }
     public void addMappingButtonAction(ActionEvent fxevent){
         ChipMap newMapping = new ChipMap(chipTextField.getText(),bibTextField.getText());
