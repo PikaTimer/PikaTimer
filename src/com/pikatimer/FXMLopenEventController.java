@@ -31,6 +31,8 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.GridPane;
@@ -111,12 +113,28 @@ public class FXMLopenEventController {
                         jdbcURL += ";TRACE_LEVEL_FILE=0;TRACE_LEVEL_SYSTEM_OUT=0;CACHE_SIZE=131072"; // disable trace options
                         Pikatimer.setJdbcUrl(jdbcURL);
                         //LoadingProgressBar.setProgress(0.15F);
-                        flyway.setDataSource(jdbcURL, "sa", null);
+                        
                         //LoadingProgressBar.setProgress(0.2F);
 
                         // Upgrade the schema (if out of date)
-                        flyway.migrate();
-                        
+                        try {
+                            flyway.setDataSource(jdbcURL, "sa", null);
+                            flyway.migrate();
+                        } catch (Exception ex) {
+                            Platform.runLater(() -> {
+                                Alert alert = new Alert(AlertType.ERROR);
+                                alert.setTitle("Unable to Open Event");
+                                alert.setHeaderText("Unable to Open Event");
+                                alert.setContentText("We had an error opening the event.\nPlease make sure that this event\nis not open in another instance of PikaTimer.");
+
+                                alert.showAndWait();
+                                OpenHBox.setVisible(true);
+                                OpenHBox.setManaged(true);
+                                LoadingVBox.setManaged(false);
+                                LoadingVBox.setVisible(false);
+                            });
+                            return null;
+                        } 
                         //LoadingProgressBar.setProgress(0.25F);
                         //System.out.println("Progress: " + LoadingProgressBar.getProgress());
                         // Get Hibernate up and running and populate the event object.... 
