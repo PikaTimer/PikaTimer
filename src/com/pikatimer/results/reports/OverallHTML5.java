@@ -138,6 +138,7 @@ public class OverallHTML5 implements RaceReportType{
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" +
                     "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" +
+                    "<link rel=\"stylesheet\" href=\"http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css\">\n" +
                     " \n" ;
         
         // our inline CSS
@@ -167,13 +168,17 @@ public class OverallHTML5 implements RaceReportType{
                     ".part-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".finish-time {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left;}\n" +
                     ".finish-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".segment {float: left; padding-right: 15px; padding-bottom: 15px}\n" +
+                    ".segment {float: left; padding-right: 15px; padding-bottom: 10px;}\n" +
                     ".segment-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment-time {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment-stats {font-family: 'Source Sans Pro'; font-size: 18px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".split {float: left; padding-right: 15px; padding-bottom: 15px}\n" +
+                    ".split {float: left; }\n" +
                     ".split-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap;}\n" +
                     ".split-time {font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".share {float: left; padding-right: 15px; padding-bottom: 10px;}\n" +
+                    ".share-title {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".share-link {font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; padding-left: 5px; white-space: pre-wrap;}\n" +
+                    ".share-link a:link {text-decoration: none;}\n" +
                     "@media only screen and (max-width: 600px) {\n" +
                     "    /* For mobile phones: */\n" +
                     "    .participant {width: 100%; padding-right: 0px; }\n" +
@@ -294,7 +299,7 @@ public class OverallHTML5 implements RaceReportType{
                     "$(document).ready(function() {\n" +
                     "var search = \"\";\n" +
                     "	if ( window.location.hash !== \"\" ) {\n" +
-                    "		search = window.location.hash.substring( 1 );\n" +
+                    "		search = decodeURI(window.location.hash.substring( 1 ));\n" +
                     "	}" +
                     "var oTable = $('#results').DataTable({\n" +
                         "   data: resultsData,\n" +
@@ -397,9 +402,9 @@ public class OverallHTML5 implements RaceReportType{
                                 chars.append("data += '<div class=\"segment-time\"Time: >' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].display + '</div>';\n");
                                 if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].pace + '</div>';\n");
                                 chars.append("data += '<div class=\"segment-stats\">Overall: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].oa_place + '   Sex: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].sex_place + '   AG: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].ag_place + '</div>';\n");
-                                chars.append("data += '</div>';\n");
+                                chars.append("data += '</div>';\n"); // segment
                             });
-                            chars.append("data += '</div>';\n");
+                            chars.append("data += '</div>';\n"); // row
                             report += chars.toString();
                         }
                         if (showSplits) {
@@ -429,8 +434,19 @@ public class OverallHTML5 implements RaceReportType{
                             if (showGun && showSegmentPace) report += "data += '<td></td>';\n";
                             report += "data += '</tr>';\n";
                             report += "data += '</table>';\n";
-                            report += "data += '</div>';\n";
-                            report += "data += '</div>';\n";
+                            report += "data += '</div>';\n"; // split
+                            report += "data += '</div>';\n"; // row
+                            report += "data += '    <div class=\"share\" >';\n" +
+                                        "data += '    <div class=\"share-title\">Share:</div>';\n" +
+                                        "data += '    <div class=\"share-link\"><a href=\"http://twitter.com/intent/tweet?text=' + window.location.origin + window.location.pathname + '%23' + rData.bib + encodeURI(encodeURI(' ' + rData.full_name)) + '\" target=\"_blank\">';\n" +
+                                        "data += '<i class=\"fa fa-twitter\" aria-hidden=\"true\"></i> Twitter';\n" +
+                                        "data += '</a></div>';\n" +
+                                        "data += '    <div class=\"share-link\"><a href=\"http://www.facebook.com/sharer.php?u=' + window.location.origin + window.location.pathname + '#' + rData.bib + encodeURI(' ' +rData.full_name) +'\" target=\"_blank\">';\n" +
+                                        "data += '<i class=\"fa fa-facebook\" aria-hidden=\"true\"></i> Facebook';\n" +
+                                        "data += '</a></div>';\n" +
+                                        "data += '  </div>';\n" ;
+                                        
+                            
 
                         }
             report +=   "				\n" +
