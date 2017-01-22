@@ -150,7 +150,7 @@ public class OverallHTML5 implements RaceReportType{
                     "table.dataTable.display tbody tr.child:hover {\n" +
                     "    background: white !important;\n" +
                     "}" +
-                    ".row{padding-bottom: 15px;}\n" +
+                    ".row{padding-bottom: 5px;}\n" +
                     ".row::after {\n" +
                     "    content: \"\";\n" +
                     "    clear: both;\n" +
@@ -168,7 +168,8 @@ public class OverallHTML5 implements RaceReportType{
                     ".part-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".finish-time {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left;}\n" +
                     ".finish-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".segment {float: left; padding-right: 15px; padding-bottom: 10px;}\n" +
+                    ".segment {float: left; padding-right: 15px; }\n" +
+                    ".segment-title {font-family: 'Source Sans Pro'; font-size: 30px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment-time {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment-stats {font-family: 'Source Sans Pro'; font-size: 18px; text-align: left; white-space: pre-wrap;}\n" +
@@ -179,14 +180,17 @@ public class OverallHTML5 implements RaceReportType{
                     ".share-title {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".share-link {font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; padding-left: 5px; white-space: pre-wrap;}\n" +
                     ".share-link a:link {text-decoration: none;}\n" +
-                    ".filter {float:left; padding-right: 2px; font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".toolbar {float:left; padding-right: 2px; font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; white-space: pre-wrap;}\n" +
                     ".up-10 {transform: translateY(-10%);}\n" +
+                    ".bold {font-weight: bold;}\n" +
                     "@media only screen and (max-width: 600px) {\n" +
-                    "    /* For mobile phones: */\n" +
+                    "    /* For smart phones in portrait mode: */\n" +
                     "    .participant {width: 100%; padding-right: 0px; }\n" +
                     "    .overall {width: 100%; padding-right: 0px;}\n" +
                     "    .segment {width: 100%; padding-right: 0px;}\n" +
                     "    .split {width: 100%; padding-right: 0px;}\n" +
+                    "    .toolbar {width:100%; text-align: center; float:none;}\n" +
+                    "    .hide-mobile {display:none}\n" +
                     "}\n" +
                     "</style>\n";
         // Custom CSS 
@@ -312,8 +316,8 @@ public class OverallHTML5 implements RaceReportType{
                         "           { \"data\": \"ag_place\" },\n" +
                         "           { \"data\": \"bib\" },\n" +
                         "           { \"data\": \"age\" },\n" +
-                        "           { \"data\": \"sex\" },\n" +
-                        "           { \"data\": \"ag\" },\n" +
+                        "           { \"data\": \"sex\" },\n" + // If this index changes, change the filter below
+                        "           { \"data\": \"ag\" },\n" +  // ibid
                         "           { \"data\": \"full_name\" },\n" +
                         "           { \"data\": \"city\" },\n" +
                         "           { \"data\": \"state\" },\n" +
@@ -371,6 +375,10 @@ public class OverallHTML5 implements RaceReportType{
                         "                               if ( rData.oa_place == \"DQ\" ) {\n" +
                         "					data += '<div class=\"finish-time\">DISQUALIFIED</div>';\n" +
                         "					data += '<div class=\"finish-stats\">' + rData.note + '</div>';\n" +
+                        "                                       data += '</div>'; // time\n" +
+                        "                                       data += '</div>'; // row\n" +
+                        "                                       data += '</div>'; // detail\n" +
+                       "                                       return data; // row\n" +
                         "                               } else if ( rData.oa_place == \"DNF\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Did Not Finish  :-( </div>';\n" +
                         "                               } else if ( rData.oa_place == \"Started\" ) {\n" +
@@ -381,7 +389,7 @@ public class OverallHTML5 implements RaceReportType{
                         "                                   data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
                         "                                   data += '<div class=\"finish-stats\"> Cutoff: " + race.raceCutoffProperty().getValueSafe() + "</div>';\n" +
                         "				} else {\n" +
-                        "                                   data += '<div class=\"finish-time\">' + rData.finish_display + '</div>';\n";
+                        "                                   data += '<div class=\"finish-time\">Time: ' + rData.finish_display + '</div>';\n";
             if (showGun) report += "                                   data += '<div class=\"finish-stats\">Gun Time: ' + rData.gun_display + '</div>';\n"; 
             report +=   "                                   data += '<div class=\"finish-stats\">Overall: ' + rData.oa_place + '   Sex: ' + rData.sex_place + '   AG: ' + rData.ag_place + '</div>';\n" +
                         "                                   data += '<div class=\"finish-stats\">Pace: ' + rData.finish_pace + '</div>';\n" +
@@ -398,10 +406,15 @@ public class OverallHTML5 implements RaceReportType{
                         if (showSegments) {
                             final StringBuilder chars = new StringBuilder();
                             chars.append("data += '<div class=\"row\">';\n");
+                            chars.append("data += '<div class=\"segment segment-title\">Segments: '; // time\n");
+                            chars.append("data += '</div>';\n");
+                            chars.append("data += '</div>';\n");
+
+                            chars.append("data += '<div class=\"row\">';\n");
                             race.getSegments().forEach(seg -> {
                                 chars.append("data += '<div class=\"segment\">'; // time\n");
                                 chars.append("data += '<div class=\"segment-head\">" + seg.getSegmentName()+ "</div>';\n" );
-                                chars.append("data += '<div class=\"segment-time\"Time: >' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].display + '</div>';\n");
+                                chars.append("data += '<div class=\"segment-time\">Time: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].display + '</div>';\n");
                                 if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].pace + '</div>';\n");
                                 chars.append("data += '<div class=\"segment-stats\">Overall: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].oa_place + '   Sex: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].sex_place + '   AG: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].ag_place + '</div>';\n");
                                 chars.append("data += '</div>';\n"); // segment
@@ -471,7 +484,7 @@ public class OverallHTML5 implements RaceReportType{
                         "   \"fnInitComplete\": function () {\n" +
                         "	this.fnAdjustColumnSizing();\n" +
                         "	$('div.dataTables_filter input').focus();\n" +
-                        "		$(\"div.toolbar\").html('<div class=\"filter\"><div class=\"filter up-10\">Sex: </div><div id=\"filter-index-6\" class=\"filter\"></div><div class=\"filter up-10\">  Age-Group: </div><div id=\"filter-index-7\" class=\"filter\"></div></div>');\n" +
+                        "		$(\"div.toolbar\").html('<Label class=\"up-10 hide-mobile bold\">Filter: </label><label class=\"up-10\">Sex <span id=\"filter-index-6\" ></span></label><label class=\"up-10\">  Age-Group <span id=\"filter-index-7\" ></span></label>');\n" +
                         "\n" +
                         "		this.api().columns([6,7]).every( function () {\n" +
                         "			var column = this;\n" +
