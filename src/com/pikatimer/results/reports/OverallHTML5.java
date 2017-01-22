@@ -136,9 +136,10 @@ public class OverallHTML5 implements RaceReportType{
             report += System.lineSeparator();
         }
         
-        report +=   "<!-- Stylesheets / JS Includes-->\n" +
-                    "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" +
-                    "<link rel=\"stylesheet\" href=\"http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css\">\n" +
+        report +=   "<!-- Stylesheets / JS Includes-->\n" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" ;
+        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.0/sc-1.4.2/datatables.min.css\"/>" ;
+        report +=   "<link rel=\"stylesheet\" href=\"http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css\">\n" +
                     " \n" ;
         
         // our inline CSS
@@ -181,6 +182,7 @@ public class OverallHTML5 implements RaceReportType{
                     ".share-link {font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; padding-left: 5px; white-space: pre-wrap;}\n" +
                     ".share-link a:link {text-decoration: none;}\n" +
                     ".toolbar {float:left; padding-right: 2px; font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".buttons {float:right; padding-right: 2px;}\n " +
                     ".up-10 {transform: translateY(-10%);}\n" +
                     ".bold {font-weight: bold;}\n" +
                     "@media only screen and (max-width: 600px) {\n" +
@@ -282,7 +284,7 @@ public class OverallHTML5 implements RaceReportType{
 
             report += "</tr></thead>" +  System.lineSeparator(); 
             report += "</table>" +  System.lineSeparator();
-            //report += "</div>" +  System.lineSeparator();
+            if (!inProgress) report += "<div id=\"btn\" class=\"buttons\"></div>" +  System.lineSeparator();
 
         
         
@@ -293,9 +295,11 @@ public class OverallHTML5 implements RaceReportType{
         }
 
         report += "<!-- Start DataTables -->\n";
+        
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" ;
+        else  report +=  "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" ;
 
-        report +=   "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" +
-                    " \n" +
+        report +=           " \n" +
                     "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
 
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
@@ -480,15 +484,26 @@ public class OverallHTML5 implements RaceReportType{
                         "    scrollY: '60vh',\n" +
                         "    scroller:    true,\n" +
                         "    deferRender: true,\n" +
-                        "    \"dom\": '<\"toolbar\">frtip',\n" +
-                        "   \"fnInitComplete\": function () {\n" +
+                        "    \"dom\": '<\"toolbar\">frtip',\n" ;
+            if (!inProgress) report +=             "     buttons: [\n" +
+                        "        {\n" +
+                        "            extend: 'csv',\n" +
+                        "            text: 'Export to CSV',\n" +
+                        "            exportOptions: {\n" +
+                        "                modifier: {\n" +
+                        "                    search: 'none'\n" +
+                        "                }\n" +
+                        "            }\n" +
+                        "        }, \n" +
+                        "		'print'\n" +
+                        "    ],\n";
+            report +=   "   \"fnInitComplete\": function () {\n" +
                         "	this.fnAdjustColumnSizing();\n" +
                         "	$('div.dataTables_filter input').focus();\n" +
                         "		$(\"div.toolbar\").html('<Label class=\"up-10 hide-mobile bold\">Filter: </label><label class=\"up-10\">Sex <span id=\"filter-index-6\" ></span></label><label class=\"up-10\">  Age-Group <span id=\"filter-index-7\" ></span></label>');\n" +
                         "\n" +
                         "		this.api().columns([6,7]).every( function () {\n" +
                         "			var column = this;\n" +
-                        "			console.log('Search api for column : ' + this.index());\n" +
                         "			var select = $('<select><option value=\"\"></option></select>')\n" +
                         "				.appendTo( document.getElementById('filter-index-' + this.index()) )\n" +
                         "				.on( 'change', function () {\n" +
@@ -514,11 +529,12 @@ public class OverallHTML5 implements RaceReportType{
                     "		});\n" +
                     "		\n" +
                     "	}, 300 );\n" +
-                    "   document.getElementById('loading').style.display = 'none';\n" +
+                    "   document.getElementById('loading').style.display = 'none';\n";
+        if (!inProgress) report += "   oTable.buttons().container().appendTo( document.getElementById('btn') );\n" ;
                     //"   document.getElementById('results_table').style.display = 'initial';\n" +
                     //"   $( $.fn.dataTable.tables(true) ).DataTable().responsive.rebuild();\n" +
                     //"   $( $.fn.dataTable.tables(true) ).DataTable().responsive.recalc();\n" +
-                    "} );\n" +
+        report += "} );\n" +
                     "\n" +
                     "\n" +
                     "	</script>\n";
