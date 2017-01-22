@@ -179,6 +179,8 @@ public class OverallHTML5 implements RaceReportType{
                     ".share-title {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".share-link {font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; padding-left: 5px; white-space: pre-wrap;}\n" +
                     ".share-link a:link {text-decoration: none;}\n" +
+                    ".filter {float:left; padding-right: 2px; font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".up-10 {transform: translateY(-10%);}\n" +
                     "@media only screen and (max-width: 600px) {\n" +
                     "    /* For mobile phones: */\n" +
                     "    .participant {width: 100%; padding-right: 0px; }\n" +
@@ -465,9 +467,31 @@ public class OverallHTML5 implements RaceReportType{
                         "    scrollY: '60vh',\n" +
                         "    scroller:    true,\n" +
                         "    deferRender: true,\n" +
+                        "    \"dom\": '<\"toolbar\">frtip',\n" +
                         "   \"fnInitComplete\": function () {\n" +
                         "	this.fnAdjustColumnSizing();\n" +
                         "	$('div.dataTables_filter input').focus();\n" +
+                        "		$(\"div.toolbar\").html('<div class=\"filter\"><div class=\"filter up-10\">Sex: </div><div id=\"filter-index-6\" class=\"filter\"></div><div class=\"filter up-10\">  Age-Group: </div><div id=\"filter-index-7\" class=\"filter\"></div></div>');\n" +
+                        "\n" +
+                        "		this.api().columns([6,7]).every( function () {\n" +
+                        "			var column = this;\n" +
+                        "			console.log('Search api for column : ' + this.index());\n" +
+                        "			var select = $('<select><option value=\"\"></option></select>')\n" +
+                        "				.appendTo( document.getElementById('filter-index-' + this.index()) )\n" +
+                        "				.on( 'change', function () {\n" +
+                        "					var val = $.fn.dataTable.util.escapeRegex(\n" +
+                        "						$(this).val()\n" +
+                        "					);\n" +
+                        "\n" +
+                        "					column\n" +
+                        "						.search( val ? '^'+val+'$' : '', true, false )\n" +
+                        "						.draw();\n" +
+                        "				} );\n" +
+                        "\n" +
+                        "			column.data().unique().sort().each( function ( d, j ) {\n" +
+                        "				select.append( '<option value=\"'+d+'\">'+d+'</option>' )\n" +
+                        "			} );\n" +
+                        "		} );" +
                         "   }\n" +
                         "});\n" +
                     "   setTimeout( function () {\n" +
