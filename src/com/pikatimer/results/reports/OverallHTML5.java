@@ -170,12 +170,12 @@ public class OverallHTML5 implements RaceReportType{
                     ".finish-time {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left;}\n" +
                     ".finish-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment {float: left; padding-right: 15px; }\n" +
-                    ".segment-title {font-family: 'Source Sans Pro'; font-size: 30px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".segment-title {font-family: 'Source Sans Pro'; font-size: 30px; text-align: left; white-space: pre-wrap; padding-top: 15px;}\n" +
                     ".segment-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment-time {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
                     ".segment-stats {font-family: 'Source Sans Pro'; font-size: 18px; text-align: left; white-space: pre-wrap;}\n" +
                     ".split {float: left; }\n" +
-                    ".split-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".split-title {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap; padding-top: 15px;}\n" +
                     ".split-time {font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; white-space: pre-wrap;}\n" +
                     ".share {float: left; padding-right: 15px; padding-bottom: 10px;}\n" +
                     ".share-title {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
@@ -246,15 +246,15 @@ public class OverallHTML5 implements RaceReportType{
             report += "  <TABLE id=\"results\" class=\"display responsive nowrap\" > " +  System.lineSeparator();
             // print the headder
             report += "    <thead><tr>" +  System.lineSeparator();
-            report += "      <th></th>"+  System.lineSeparator(); // dummy for control box
-            report += "      <th data-priority=\"10\">OA#</th>" +  System.lineSeparator();
-            report += "      <th data-priority=\"20\">SEX#</th>" +  System.lineSeparator();
-            report += "      <th data-priority=\"30\">AG#</th>" +  System.lineSeparator();
-            report += "      <th data-priority=\"5\">BIB</th>" +  System.lineSeparator(); 
-            report += "      <th data-priority=\"9\">AGE</th>" +  System.lineSeparator(); 
-            report += "      <th data-priority=\"5\">SEX</th>" +  System.lineSeparator(); 
-            report += "      <th data-priority=\"29\">AG</th>" +  System.lineSeparator(); 
-            report += "      <th data-priority=\"1\">Name</th>" +  System.lineSeparator(); 
+            report += "      <th class=\"all\"></th>"+  System.lineSeparator(); // dummy for control box
+            report += "      <th data-priority=\"2\">OA#</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"4\">SEX#</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"6\">AG#</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"20\">BIB</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"21\">AGE</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"3\">SEX</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"5\">AG</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"1\" class=\"all\">Name</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"45\">Country</th>" +  System.lineSeparator(); 
@@ -275,7 +275,7 @@ public class OverallHTML5 implements RaceReportType{
                 report += chars.toString();
             }
             // Chip time
-            report += "      <th data-priority=\"1\">Finish</th>" +  System.lineSeparator(); // 9R Need to adjust for the format code
+            report += "      <th data-priority=\"1\" class=\"all\">Finish</th>" +  System.lineSeparator(); // 9R Need to adjust for the format code
 
             // gun time
             if (showGun) report += "      <th data-priority=\"90\">Gun</th>" +  System.lineSeparator(); // 9R ibid
@@ -393,7 +393,7 @@ public class OverallHTML5 implements RaceReportType{
                         "                                   data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
                         "                                   data += '<div class=\"finish-stats\"> Cutoff: " + race.raceCutoffProperty().getValueSafe() + "</div>';\n" +
                         "				} else {\n" +
-                        "                                   data += '<div class=\"finish-time\">Time: ' + rData.finish_display + '</div>';\n";
+                        "                                   data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Finish Time: </span>' + rData.finish_display + '</div>';\n";
             if (showGun) report += "                                   data += '<div class=\"finish-stats\">Gun Time: ' + rData.gun_display + '</div>';\n"; 
             report +=   "                                   data += '<div class=\"finish-stats\">Overall: ' + rData.oa_place + '   Sex: ' + rData.sex_place + '   AG: ' + rData.ag_place + '</div>';\n" +
                         "                                   data += '<div class=\"finish-stats\">Pace: ' + rData.finish_pace + '</div>';\n" +
@@ -429,7 +429,7 @@ public class OverallHTML5 implements RaceReportType{
                         if (showSplits) {
                             report += "data += '<div class=\"row\">'; \n";
                             report += "data += '<div class=\"split\">'; \n";
-                            report += "data += '<div class=\"split-head\">Splits:</div>';\n" ;
+                            report += "data += '<div class=\"split-title\">Splits:</div>';\n" ;
                             report += "data += '<table class=\"split-time\">' ;\n" ;
                             report += "data += '<thead><tr>';\n";
                             report += "data += '<th>Split</th>';\n";
