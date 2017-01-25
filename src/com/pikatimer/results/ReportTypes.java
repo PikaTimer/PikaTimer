@@ -49,7 +49,7 @@ public enum ReportTypes {
         result.put(AGEGROUP, "Age Group (Text)");
         result.put(AWARD, "Award (Text)");
         result.put(OVERALL_HTML,"Overall (Basic HTML)");
-        result.put(OVERALL_HTML5,"Overall (HTML5/JSON)");
+        result.put(OVERALL_HTML5,"Overall (Resonsive HTML)");
         result.put(CSV,"Overall (CSV)");
         result.put(JSON,"Overall (JSON)");
 

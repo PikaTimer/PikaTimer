@@ -163,17 +163,17 @@ public class OverallHTML5 implements RaceReportType{
                     ".event-info {font-family: 'Open Sans'; font-size: 36px; text-align: center;}\n" +
                     ".event-date {font-family: 'Open Sans'; font-size: 24px; text-align: center;}\n" +
                     ".in-progress {font-family: 'Open Sans'; font-size: 30px; text-align: center; color: red;}\n" +
-                    ".participant {float: left; padding-right: 15px;}\n" +
-                    ".overall {float: left; padding-right: 15px;}\n" +
-                    ".part-name {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".part-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".finish-time {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left;}\n" +
-                    ".finish-stats {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".segment {float: left; padding-right: 15px; }\n" +
-                    ".segment-title {font-family: 'Source Sans Pro'; font-size: 30px; text-align: left; white-space: pre-wrap; padding-top: 15px;}\n" +
-                    ".segment-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".segment-time {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap;}\n" +
-                    ".segment-stats {font-family: 'Source Sans Pro'; font-size: 18px; text-align: left; white-space: pre-wrap;}\n" +
+                    ".participant {float: left; padding-right: 25px;}\n" +
+                    ".overall {float: left; padding-right: 40px;}\n" +
+                    ".part-name {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left; white-space: pre-wrap; margin-left: -2px;}\n" +
+                    ".part-stats {font-family: 'Source Sans Pro'; font-size: 20px; padding-left: 10px; text-align: left; white-space: pre-wrap; border-left-style: solid; border-left-width: medium; border-left-color: gray; padding-left: 4px}\n" +
+                    ".finish-time {font-family: 'Source Sans Pro'; font-size: 36px; text-align: left; margin-left: -2px;}\n" +
+                    ".finish-stats {font-family: 'Source Sans Pro'; font-size: 20px; padding-left: 10px; text-align: left; white-space: pre-wrap; border-left-style: solid; border-left-width: medium; border-left-color: gray; padding-left: 4px}\n" +
+                    ".segment {float: left; padding-right: 40px; }\n" +
+                    ".segment-title {font-family: 'Source Sans Pro'; font-size: 30px; text-align: left; white-space: pre-wrap; padding-top: 15px; margin-left: -2px;}\n" +
+                    ".segment-head {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap; margin-left: -2px;}\n" +
+                    ".segment-time {font-family: 'Source Sans Pro'; font-size: 20px; text-align: left; white-space: pre-wrap; border-left-style: solid; border-left-width: medium; border-left-color: gray; padding-left: 4px}\n" +
+                    ".segment-stats {font-family: 'Source Sans Pro'; font-size: 18px; text-align: left; white-space: pre-wrap; border-left-style: solid; border-left-width: medium; border-left-color: gray; padding-left: 4px}\n" +
                     ".split {float: left; }\n" +
                     ".split-title {font-family: 'Source Sans Pro'; font-size: 24px; text-align: left; white-space: pre-wrap; padding-top: 15px;}\n" +
                     ".split-time {font-family: 'Source Sans Pro'; font-size: 16px; text-align: left; white-space: pre-wrap;}\n" +
@@ -185,14 +185,18 @@ public class OverallHTML5 implements RaceReportType{
                     ".buttons {float:right; padding-right: 2px;}\n " +
                     ".up-10 {transform: translateY(-10%);}\n" +
                     ".bold {font-weight: bold;}\n" +
+                    ".show-mobile {display:none}\n" +
                     "@media only screen and (max-width: 600px) {\n" +
                     "    /* For smart phones in portrait mode: */\n" +
                     "    .participant {width: 100%; padding-right: 0px; }\n" +
+                    "    .part-stats {padding-left: 5px;}\n" +
+                    "    .finish-stats {padding-left: 5px;}\n" +
                     "    .overall {width: 100%; padding-right: 0px;}\n" +
                     "    .segment {width: 100%; padding-right: 0px;}\n" +
                     "    .split {width: 100%; padding-right: 0px;}\n" +
                     "    .toolbar {width:100%; text-align: center; float:none;}\n" +
                     "    .hide-mobile {display:none}\n" +
+                    "    .show-mobile {display:initial}\n" +
                     "}\n" +
                     "</style>\n";
         // Custom CSS 
@@ -250,9 +254,9 @@ public class OverallHTML5 implements RaceReportType{
             report += "      <th data-priority=\"2\">OA#</th>" +  System.lineSeparator();
             report += "      <th data-priority=\"4\">SEX#</th>" +  System.lineSeparator();
             report += "      <th data-priority=\"6\">AG#</th>" +  System.lineSeparator();
-            report += "      <th data-priority=\"20\">BIB</th>" +  System.lineSeparator(); 
-            report += "      <th data-priority=\"21\">AGE</th>" +  System.lineSeparator(); 
-            report += "      <th data-priority=\"3\">SEX</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"20\">Bib</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"21\">Age</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"3\">Sex</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"5\">AG</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"1\" class=\"all\">Name</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
@@ -303,7 +307,8 @@ public class OverallHTML5 implements RaceReportType{
                     "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
 
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
-                    "	\n" +
+                    " // nth(n) function from http://stackoverflow.com/questions/13627308/add-st-nd-rd-and-th-ordinal-suffix-to-a-number \n" + 
+                    "function nth(s){var n = parseInt(s); if (isNaN(n)) return s; return s + ([\"st\",\"nd\",\"rd\"][((n+90)%100-10)%10-1]||\"th\");}\n" +
                     " var resultsData = " + json.process(prList, rr) +
                     "\n" +
                     "$(document).ready(function() {\n" +
@@ -387,7 +392,7 @@ public class OverallHTML5 implements RaceReportType{
                         "					data += '<div class=\"finish-time\">Did Not Finish  :-( </div>';\n" +
                         "                               } else if ( rData.oa_place == \"Started\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Started</div>';\n" +
-                        "                                   data += '<div class=\"finish-stats\">Last Seen: ' + rData.last_seen + '</div>';\n" +
+                        "                                   data += '<div class=\"finish-stats bold\">Last Seen: ' + rData.last_seen + '</div>';\n" +
                         "                               } else if ( rData.oa_place == \"OCO\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Over Cut Off  :-/</div>';\n" +
                         "                                   data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
@@ -395,9 +400,9 @@ public class OverallHTML5 implements RaceReportType{
                         "				} else {\n" +
                         "                                   data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Finish Time: </span>' + rData.finish_display + '</div>';\n";
             if (showGun) report += "                                   data += '<div class=\"finish-stats\">Gun Time: ' + rData.gun_display + '</div>';\n"; 
-            report +=   "                                   data += '<div class=\"finish-stats\">Overall: ' + rData.oa_place + '   Sex: ' + rData.sex_place + '   AG: ' + rData.ag_place + '</div>';\n" +
-                        "                                   data += '<div class=\"finish-stats\">Pace: ' + rData.finish_pace + '</div>';\n" +
-                        "				}" +
+            report +=   "                                   data += '<div class=\"finish-stats\">Overall: ' + nth(rData.oa_place) + '   Sex: ' + nth(rData.sex_place) + '   <span class=\"hide-mobile\">Age Group:</span><span class=\"show-mobile\">AG:</span> ' + nth(rData.ag_place) + '</div>';\n" ;
+            if (showPace) report += "                                   data += '<div class=\"finish-stats\">Pace: ' + rData.finish_pace + '</div>';\n" ;
+            report +=   "				}" +
                         "				data += '</div>'; // time\n" +
                         "				\n" +
                         "                data += '</div>'; // row\n" +
@@ -419,8 +424,8 @@ public class OverallHTML5 implements RaceReportType{
                                 chars.append("data += '<div class=\"segment\">'; // time\n");
                                 chars.append("data += '<div class=\"segment-head\">" + seg.getSegmentName()+ "</div>';\n" );
                                 chars.append("data += '<div class=\"segment-time\">Time: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].display + '</div>';\n");
+                                chars.append("data += '<div class=\"segment-stats\">Overall: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].oa_place) + '   Sex: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].sex_place) + '   AG: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].ag_place) + '</div>';\n");
                                 if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].pace + '</div>';\n");
-                                chars.append("data += '<div class=\"segment-stats\">Overall: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].oa_place + '   Sex: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].sex_place + '   AG: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].ag_place + '</div>';\n");
                                 chars.append("data += '</div>';\n"); // segment
                             });
                             chars.append("data += '</div>';\n"); // row
