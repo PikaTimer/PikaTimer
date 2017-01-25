@@ -44,7 +44,7 @@ import org.hibernate.annotations.GenericGenerator;
  */
 @Entity
 @DynamicUpdate
-@Table(name="output_portal")
+@Table(name="report_destinations")
 public class ReportDestination {
 
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();

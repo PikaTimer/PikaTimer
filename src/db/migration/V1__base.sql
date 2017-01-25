@@ -14,6 +14,17 @@ create table event (
     event_date varchar
 );
 
+create table event_options (
+    event_id int
+);
+
+create table event_options_attributes (
+    event_id int, 
+    index_id int, 
+    attribute varchar, 
+    value varchar
+);
+
 create table race (
     race_id int primary key, 
     race_name varchar, 
@@ -22,8 +33,16 @@ create table race (
     race_bib_start varchar,
     race_bib_end varchar,
     race_cutoff bigint,
-    race_relay boolean
+    race_relay boolean,
+    uuid varchar
 ); 
+
+create table race_attributes (
+    race_id int, 
+    index_id int, 
+    attribute varchar, 
+    value varchar
+);
 
 create table race_waves (
     wave_id int primary key,
@@ -72,6 +91,14 @@ create table race_split (
     cutoff_time bigint
 );
 
+create table race_segment (
+    segment_id int primary key, 
+    race_id int, 
+    start_split_id int, 
+    end_split_id int,
+    segment_name varchar
+);
+
 create table participant ( 
     participant_id int primary key, 
     uuid varchar,
@@ -84,13 +111,13 @@ create table participant (
     sex varchar, 
     city varchar, 
     state varchar, 
+    zip varchar,
     country varchar,
     team_name varchar,
     email varchar,
-    dnf boolean,
-    dnf_note varchar,
-    dq boolean,
-    dq_note varchar
+    status varchar,
+    note varchar,
+    reg_id varchar
 );
 
 create table participant_attributes (part_id int, index_id int, attribute varchar, value varchar); 
@@ -99,7 +126,8 @@ create table timing_location (
     timing_location_id int primary key, 
     timing_location_name varchar,
     filterStartDuration bigint, 
-    filterEndDuration bigint
+    filterEndDuration bigint,
+    AUTO_ASSIGN_TO_RACE_ID int
 );
  
 create table bib2chip (bib2chip_id int, custom_map boolean);
@@ -137,6 +165,7 @@ create table cooked_timing_data (
     timing_loc_id int, 
     timing_loc_input_id int, 
     raw_time_id int, 
+    raw_chip_id varchar,
     bib_id varchar, 
     cooked_time bigint, 
     backup_time boolean, 
@@ -188,7 +217,7 @@ create table race_output_targets (
     output_filename varchar
 );
 
-create table output_portal (
+create table report_destinations (
     id int primary key, 
     uuid varchar,
     target_name varchar,
@@ -199,7 +228,8 @@ create table output_portal (
     password varchar,
     private_key varchar,
     remote_cert varchar,
-    permit_any boolean
+    permit_any boolean,
+    stripAccents boolean
 );
 
 commit;
