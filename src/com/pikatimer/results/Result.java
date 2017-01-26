@@ -253,7 +253,7 @@ public class Result {
     public void recalcTimeProperties(){
         if (pendingRecalc){
             
-//            System.out.println("Result::recalcTimeProperties for bib " + bib.get());
+            System.out.println("Result::recalcTimeProperties for bib " + bib.get());
 //            System.out.println(" StartDuration: " + startDuration.toString());
 //            System.out.println(" waveStartDuration: " + waveStartDuration.toString());
 //            System.out.println(" finishDuration: " + finishDuration.toString());
@@ -278,7 +278,8 @@ public class Result {
                 if (splitPropertyMap.containsKey(splitID)) splitPropertyMap.get(splitID).set(d);
                 else splitPropertyMap.put(splitID, new SimpleObjectProperty(d));
             });    
-            
+            revision.set(revision.get() + 1);
+            //System.out.println("Result revision is now " + revision.getValue().toString());
             pendingRecalc = false;
         }
     }
