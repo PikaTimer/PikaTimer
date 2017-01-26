@@ -12,7 +12,7 @@
    <children>
       <VBox alignment="TOP_CENTER" layoutX="226.0" layoutY="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="100.0" AnchorPane.rightAnchor="100.0" AnchorPane.topAnchor="25.0">
          <children>
-            <Label padding="$null" text="PikaTimer">
+            <Label text="PikaTimer">
                <font>
                   <Font size="48.0" />
                </font>
