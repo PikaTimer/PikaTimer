@@ -362,6 +362,7 @@ public class Participant {
     public void setSex(String s) {
         //Set to an upper case M or F for now
         //TODO: Switch this to the allowable values for a SEX 
+        if (s == null) return;
         if (s.startsWith("M") || s.startsWith("m")) sexProperty.setValue("M");
         else if (s.startsWith("F") || s.startsWith("f")) sexProperty.setValue("F");
         else sexProperty.setValue(s);
