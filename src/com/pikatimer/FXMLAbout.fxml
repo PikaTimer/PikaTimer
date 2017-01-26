@@ -10,35 +10,44 @@
 
 <AnchorPane id="AnchorPane" prefHeight="451.0" prefWidth="711.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.111" fx:controller="com.pikatimer.FXMLAboutController">
    <children>
-      <VBox alignment="TOP_CENTER" layoutX="226.0" layoutY="100.0" AnchorPane.bottomAnchor="50.0" AnchorPane.leftAnchor="100.0" AnchorPane.rightAnchor="100.0" AnchorPane.topAnchor="50.0">
+      <VBox alignment="TOP_CENTER" layoutX="226.0" layoutY="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="100.0" AnchorPane.rightAnchor="100.0" AnchorPane.topAnchor="25.0">
          <children>
-            <Label prefHeight="55.0" prefWidth="207.0" text="PikaTimer">
+            <Label padding="$null" text="PikaTimer">
                <font>
                   <Font size="48.0" />
                </font>
             </Label>
             <Label fx:id="pikaVersionLabel" text="Version 1.0RC1">
                <font>
-                  <Font size="36.0" />
+                  <Font size="30.0" />
                </font>
+               <padding>
+                  <Insets top="-10.0" />
+               </padding>
             </Label>
-            <Label text="Copyright (C) 2017 John Garner">
-               <font>
-                  <Font size="24.0" />
-               </font>
-            </Label>
-            <Label text="Released under the GLP v3 Open Source License  https://www.gnu.org/licenses/gpl-3.0.en.html" textAlignment="CENTER" wrapText="true">
+            <Label text="http://pikatimer.com/">
                <font>
                   <Font size="18.0" />
                </font>
             </Label>
-            <Label text="Built on top of the following OpenSource Projects" textAlignment="CENTER" wrapText="true">
+            <Label text="Released under the GLP v3 Open Source License  https://www.gnu.org/licenses/gpl-3.0.en.html" textAlignment="CENTER" wrapText="true">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
+            </Label>
+            <Label text="Built on top of the following OpenSource Projects:" textAlignment="CENTER" wrapText="true">
                <font>
                   <Font size="14.0" />
                </font>
                <padding>
                   <Insets bottom="5.0" top="10.0" />
                </padding>
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
             </Label>
             <FlowPane alignment="TOP_CENTER" columnHalignment="CENTER" hgap="10.0" vgap="5.0">
                <children>
@@ -53,6 +62,14 @@
                   <Insets />
                </VBox.margin>
             </FlowPane>
+            <Label alignment="CENTER" contentDisplay="BOTTOM" text="Copyright (C) 2017 John Garner">
+               <font>
+                  <Font size="18.0" />
+               </font>
+               <padding>
+                  <Insets top="20.0" />
+               </padding>
+            </Label>
          </children>
       </VBox>
    </children>
