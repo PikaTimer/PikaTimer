@@ -216,6 +216,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                            <font>
                               <Font size="14.0" />
                            </font>
+                           <padding>
+                              <Insets right="5.0" />
+                           </padding>
+                        </Label>
+                        <Label fx:id="withdrawnLabel" text="Withdrawn">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                        <Label fx:id="withdrawnCountLabel" text="0">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
                         </Label>
                      </children>
                      <padding>

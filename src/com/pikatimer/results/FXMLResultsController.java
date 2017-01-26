@@ -8,7 +8,6 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -21,6 +20,7 @@ import com.pikatimer.event.EventDAO;
 import com.pikatimer.event.EventOptions;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.participant.Status;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.timing.FXMLTimingController;
@@ -126,6 +126,8 @@ public class FXMLResultsController  {
     @FXML Label startedCountLabel;
     @FXML Label finishedCountLabel;
     @FXML Label pendingCountLabel;
+    @FXML Label withdrawnLabel;
+    @FXML Label withdrawnCountLabel;
     
     @FXML CheckBox useCustomHeaderCheckBox;
     
@@ -275,14 +277,29 @@ public class FXMLResultsController  {
             
             });
             // Setup the started/finished/pending counters
+            resultsDAO.getResults(activeRace.getID()).addListener((ListChangeListener.Change<? extends Result> c) -> {
+                System.out.println("Race Result List Changed...");
             
-            FilteredList<Result> filteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
+            });
+            
+            FilteredList<Result> finishedFilteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
                 if (res.getFinishDuration().equals(Duration.ZERO)) return false;
+                if (Status.GOOD.equals(participantDAO.getParticipantByBib(res.getBib()).statusProperty().get())) return true;
+                return false;
+            });
+            FilteredList<Result> dnfFilteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
+                System.out.println("DQ/DNF Check: " + res.getBib() + " " + participantDAO.getParticipantByBib(res.getBib()).dnfProperty().get());
+                if (Status.GOOD.equals(participantDAO.getParticipantByBib(res.getBib()).getStatus())) return false;
                 return true;
             });
             startedCountLabel.textProperty().bind(Bindings.size(resultsDAO.getResults(activeRace.getID())).asString());
-            finishedCountLabel.textProperty().bind(Bindings.size(filteredParticipantsList).asString());
-            pendingCountLabel.textProperty().bind(Bindings.subtract(Bindings.size(resultsDAO.getResults(activeRace.getID())), Bindings.size(filteredParticipantsList)).asString());
+            withdrawnCountLabel.textProperty().bind(Bindings.size(dnfFilteredParticipantsList).asString());
+            finishedCountLabel.textProperty().bind(Bindings.size(finishedFilteredParticipantsList).asString());
+            pendingCountLabel.textProperty().bind(Bindings.subtract(Bindings.size(resultsDAO.getResults(activeRace.getID())), Bindings.add(Bindings.size(finishedFilteredParticipantsList), Bindings.size(dnfFilteredParticipantsList))).asString());
+            withdrawnCountLabel.visibleProperty().bind(Bindings.size(dnfFilteredParticipantsList).isNotEqualTo(0));
+            withdrawnCountLabel.managedProperty().bind(Bindings.size(dnfFilteredParticipantsList).isNotEqualTo(0));
+            withdrawnLabel.visibleProperty().bind(Bindings.size(dnfFilteredParticipantsList).isNotEqualTo(0));
+            withdrawnLabel.managedProperty().bind(Bindings.size(dnfFilteredParticipantsList).isNotEqualTo(0));
         });
         
         timeRoundingChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue,  newValue) -> {
