@@ -391,7 +391,8 @@ public class FXMLResultOutputController {
             resultsDAO.saveRaceReportOutputTarget(t);
         });
         
-        destinationChoiceBox.getSelectionModel().select(t.outputDestination());
+        if (t.outputDestination() == null) destinationChoiceBox.getSelectionModel().selectFirst();
+        else destinationChoiceBox.getSelectionModel().select(t.outputDestination());
         destinationChoiceBox.setPrefWidth(150);
         destinationChoiceBox.setMaxWidth(150);
         
