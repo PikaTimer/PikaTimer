@@ -22,6 +22,7 @@ import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.timing.TimingDAO;
+import com.pikatimer.util.PikaFilePathWrapper;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.stage.FileChooser;
@@ -41,6 +42,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.flywaydb.core.Flyway;
+import org.h2.store.fs.FilePath;
 
 /**
  * FXML Controller class
@@ -109,7 +111,8 @@ public class FXMLopenEventController {
                         Flyway flyway = new Flyway();
                         //LoadingProgressBar.setProgress(0.10F);
                         //System.out.println("Progress: " + LoadingProgressBar.getProgress());
-                        jdbcURL = "jdbc:h2:file:" + dbFile.getAbsolutePath().replace(".mv.db", "").replace(".db", "");
+                        FilePath.register(new PikaFilePathWrapper());
+                        jdbcURL = "jdbc:h2:pika:" + dbFile.getAbsolutePath().replace(".pika", "");
                         jdbcURL += ";TRACE_LEVEL_FILE=0;TRACE_LEVEL_SYSTEM_OUT=0;CACHE_SIZE=131072"; // disable trace options
                         Pikatimer.setJdbcUrl(jdbcURL);
                         //LoadingProgressBar.setProgress(0.15F);
@@ -195,7 +198,7 @@ public class FXMLopenEventController {
             new File(System.getProperty("user.home"))
         ); 
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("PikaTimer Events", "*.db"),
+                new FileChooser.ExtensionFilter("PikaTimer Events", "*.pika"),
                 new FileChooser.ExtensionFilter("All files", "*")
             );
         File file = fileChooser.showOpenDialog(rootGridPane.getScene().getWindow());
@@ -204,22 +207,22 @@ public class FXMLopenEventController {
             // does the file end in .mv.db? 
             // Often due to a rename that only preserves the .db part
             // This can go byby once H2 supports a custom file extension. 
-            if (!file.getName().endsWith(".mv.db")) {
-                System.out.println("File does not end in .mv.db: " + file.getAbsolutePath());
-                if (file.getName().endsWith(".db")) {
-                    File renamed = new File(file.getAbsolutePath().replace(".db",".mv.db"));
-                    if(file.renameTo(renamed))file = renamed;
-                } else {
-                    File renamed = new File(file.getAbsolutePath().concat(".mv.db"));
-                    if (file.renameTo(renamed)) file = renamed;
-                }
-                System.out.println("File is now " + file.getAbsolutePath());
-            }
+//            if (!file.getName().endsWith(".mv.db")) {
+//                System.out.println("File does not end in .mv.db: " + file.getAbsolutePath());
+//                if (file.getName().endsWith(".db")) {
+//                    File renamed = new File(file.getAbsolutePath().replace(".db",".mv.db"));
+//                    if(file.renameTo(renamed))file = renamed;
+//                } else {
+//                    File renamed = new File(file.getAbsolutePath().concat(".mv.db"));
+//                    if (file.renameTo(renamed)) file = renamed;
+//                }
+//                System.out.println("File is now " + file.getAbsolutePath());
+//            }
             
             // Save a copy 
             // TODO
             
-            eventFileName.setText(file.getAbsolutePath().replace(".mv.db", ""));
+            eventFileName.setText(file.getAbsolutePath().replace(".pika", ""));
             
             //LoadingLabel.setVisible(true);
             //LoadingProgressBar.setProgress(0.00);
@@ -242,12 +245,12 @@ public class FXMLopenEventController {
         //    );
         //fileChooser.setInitialFileName("*.pika");
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("PikaTimer Events", "*.db"),
+                new FileChooser.ExtensionFilter("PikaTimer Events", "*.pika"),
                 new FileChooser.ExtensionFilter("All files", "*")
             );
         File file = fileChooser.showSaveDialog(rootGridPane.getScene().getWindow());
         if (file != null) {
-            eventFileName.setText(file.getAbsolutePath().replace(".mv.db", "").replace(".db", ""));
+            eventFileName.setText(file.getAbsolutePath().replace(".pika", ""));
             this.openDB(file); 
         }
     }
