@@ -557,6 +557,8 @@ public class FXMLParticipantController  {
             }
         });
         
+        formAddButton.defaultButtonProperty().bind(formAddButton.focusedProperty());
+        formUpdateButton.defaultButtonProperty().bind(formUpdateButton.focusedProperty());
         deleteParticipantsButton.disableProperty().bind(participantTableView.getSelectionModel().selectedItemProperty().isNull());
 
     }
@@ -564,6 +566,7 @@ public class FXMLParticipantController  {
     @FXML
     protected void addPerson(ActionEvent fxevent) {
         // Make sure they actually entered something first
+        System.out.println("addPerson fired");
         if (!firstNameField.getText().isEmpty() && !lastNameField.getText().isEmpty()) {
             Participant p = new Participant(firstNameField.getText(),
                 lastNameField.getText()
@@ -572,6 +575,7 @@ public class FXMLParticipantController  {
             p.setMiddleName(middleNameTextField.getText());
             //p.setEmail(emailField.getText());
             p.setBib(bibTextField.getText());
+            p.setBirthday(birthdayDatePicker.getValue());
             try {
                 p.setAge(Integer.parseUnsignedInt(ageTextField.getText()));
             } catch(NumberFormatException e) {
@@ -656,7 +660,7 @@ public class FXMLParticipantController  {
         // Make the update button visible and hide the add button
         formUpdateButton.setVisible(true);
         formUpdateButton.setManaged(true);
-        formUpdateButton.setDefaultButton(true);
+        //formUpdateButton.setDefaultButton(true);
         formAddButton.setVisible(false);
         formAddButton.setManaged(false);
         bibTextField.requestFocus();
@@ -744,12 +748,12 @@ public class FXMLParticipantController  {
         // set the Update buton to invisible
         formUpdateButton.setVisible(false);
         formUpdateButton.setManaged(false);
-        formUpdateButton.setDefaultButton(false);
+        //formUpdateButton.setDefaultButton(false);
                 
         // make the add button visible
         formAddButton.setVisible(true);
         formAddButton.setManaged(true);
-        formAddButton.setDefaultButton(true);
+        //formAddButton.setDefaultButton(true);
         bibTextField.requestFocus();
     }
     public void resetForm(ActionEvent fxevent){
@@ -761,6 +765,7 @@ public class FXMLParticipantController  {
         
         if (editedParticipant!= null && participantTableView.getSelectionModel().getSelectedItems().contains(editedParticipant)) resetForm();
         removeParticipants(FXCollections.observableArrayList(participantTableView.getSelectionModel().getSelectedItems()));
+        participantTableView.getSelectionModel().clearSelection();
     }
     
     public void importParticipants(ActionEvent fxevent) throws FlowException{
