@@ -277,10 +277,10 @@ public class FXMLResultsController  {
             
             });
             // Setup the started/finished/pending counters
-            resultsDAO.getResults(activeRace.getID()).addListener((ListChangeListener.Change<? extends Result> c) -> {
-                System.out.println("Race Result List Changed...");
-            
-            });
+//            resultsDAO.getResults(activeRace.getID()).addListener((ListChangeListener.Change<? extends Result> c) -> {
+//                System.out.println("Race Result List Changed...");
+//            
+//            });
             
             FilteredList<Result> finishedFilteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
                 if (res.getFinishDuration().equals(Duration.ZERO)) return false;
@@ -288,7 +288,7 @@ public class FXMLResultsController  {
                 return false;
             });
             FilteredList<Result> dnfFilteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
-                System.out.println("DQ/DNF Check: " + res.getBib() + " " + participantDAO.getParticipantByBib(res.getBib()).dnfProperty().get());
+                //System.out.println("DQ/DNF Check: " + res.getBib() + " " + participantDAO.getParticipantByBib(res.getBib()).dnfProperty().get());
                 if (Status.GOOD.equals(participantDAO.getParticipantByBib(res.getBib()).getStatus())) return false;
                 return true;
             });
