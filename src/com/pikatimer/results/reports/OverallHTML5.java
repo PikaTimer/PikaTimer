@@ -118,7 +118,7 @@ public class OverallHTML5 implements RaceReportType{
         report += "<TITLE> " + event.getEventName();
         if (RaceDAO.getInstance().listRaces().size() > 1) 
             report += " " + race.getRaceName() ;
-        report += " " + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</TITLE>" + System.lineSeparator();
+        report += " Results " + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</TITLE>" + System.lineSeparator();
         report += System.lineSeparator();
         report += "<meta name=\"viewport\" content=\"width=device-width; initial-scale=1.0; maximum-scale=1.0; minimum-scale=1.0; user-scalable=0;\" />\n";
         
