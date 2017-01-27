@@ -16,7 +16,9 @@
  */
 package com.pikatimer;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 
 /**
@@ -35,5 +37,16 @@ public class FXMLAboutController{
         // TODO
         pikaVersionLabel.setText("Version " + Pikatimer.VERSION);
     }    
+    
+    @FXML
+    protected void openLink(ActionEvent fxevent) {
+        Hyperlink hyperlink = (Hyperlink)fxevent.getSource();
+        String link = hyperlink.getText();
+        if (link.contains("(")) {
+            link = link.replaceFirst("^.+\\(", "").replaceFirst("\\).*$", "");
+        }
+        System.out.println("Hyperlink pressed: " + link);
+        Pikatimer.getInstance().getHostServices().showDocument(link);
+    }
     
 }

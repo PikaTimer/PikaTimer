@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane id="AnchorPane" prefHeight="451.0" prefWidth="711.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.111" fx:controller="com.pikatimer.FXMLAboutController">
+<AnchorPane id="AnchorPane" prefHeight="451.0" prefWidth="711.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLAboutController">
    <children>
-      <VBox alignment="TOP_CENTER" layoutX="226.0" layoutY="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="100.0" AnchorPane.rightAnchor="100.0" AnchorPane.topAnchor="25.0">
+      <VBox alignment="TOP_CENTER" layoutX="226.0" layoutY="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="50.0" AnchorPane.rightAnchor="50.0" AnchorPane.topAnchor="25.0">
          <children>
             <Label text="PikaTimer">
                <font>
@@ -25,12 +25,12 @@
                   <Insets top="-10.0" />
                </padding>
             </Label>
-            <Label text="http://pikatimer.com/">
+            <Hyperlink onAction="#openLink" text="http://pikatimer.com/">
                <font>
                   <Font size="18.0" />
                </font>
-            </Label>
-            <Label text="Released under the GLP v3 Open Source License  https://www.gnu.org/licenses/gpl-3.0.en.html" textAlignment="CENTER" wrapText="true">
+            </Hyperlink>
+            <Label text="Released under the GLP v3 Open Source License " textAlignment="CENTER" wrapText="true">
                <font>
                   <Font name="System Bold" size="18.0" />
                </font>
@@ -38,6 +38,11 @@
                   <Insets top="10.0" />
                </VBox.margin>
             </Label>
+            <Hyperlink onAction="#openLink" text="https://www.gnu.org/licenses/gpl-3.0.en.html">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Hyperlink>
             <Label text="Built on top of the following OpenSource Projects:" textAlignment="CENTER" wrapText="true">
                <font>
                   <Font size="14.0" />
@@ -49,14 +54,14 @@
                   <Insets top="10.0" />
                </VBox.margin>
             </Label>
-            <FlowPane alignment="TOP_CENTER" columnHalignment="CENTER" hgap="10.0" vgap="5.0">
+            <FlowPane alignment="TOP_CENTER" columnHalignment="CENTER" hgap="5.0">
                <children>
-                  <Label text="Java / JavaFX: (http://www.java.com/)" />
-                  <Label text="H2 Database: (http://h2database.com/)" />
-                  <Label text="Hibernate ORM: (http://hibernate.org/orm/)" />
-                  <Label text="ControlsFX:  (http://fxexperience.com/controlsfx/)" />
-                  <Label text="Apache Commons (http://commons.apache.org)" />
-                  <Label text="DataTables (http://datatables.net)" />
+                  <Hyperlink onAction="#openLink" text="Java / JavaFX: (http://www.java.com/)" />
+                  <Hyperlink onAction="#openLink" text="H2 Database: (http://h2database.com/)" />
+                  <Hyperlink onAction="#openLink" text="Apache Commons (http://commons.apache.org)" />
+                  <Hyperlink onAction="#openLink" text="DataTables (http://datatables.net)" />
+                  <Hyperlink onAction="#openLink" text="Hibernate ORM: (http://hibernate.org/orm/)" />
+                  <Hyperlink onAction="#openLink" text="ControlsFX:  (http://fxexperience.com/controlsfx/)" />
                </children>
                <VBox.margin>
                   <Insets />
