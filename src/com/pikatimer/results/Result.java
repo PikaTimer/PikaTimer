@@ -253,7 +253,7 @@ public class Result {
     public void recalcTimeProperties(){
         if (pendingRecalc){
             
-            System.out.println("Result::recalcTimeProperties for bib " + bib.get());
+            //System.out.println("Result::recalcTimeProperties for bib " + bib.get());
 //            System.out.println(" StartDuration: " + startDuration.toString());
 //            System.out.println(" waveStartDuration: " + waveStartDuration.toString());
 //            System.out.println(" finishDuration: " + finishDuration.toString());
