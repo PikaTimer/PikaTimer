@@ -44,16 +44,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </Button>
          </children>
       </HBox>
-      <VBox>
+      <VBox alignment="TOP_CENTER">
          <children>
             <Label alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="PikaTimer" textAlignment="CENTER" VBox.vgrow="ALWAYS">
                <font>
-                  <Font size="24.0" />
+                  <Font size="48.0" />
                </font>
             </Label>
             <Label fx:id="pikaVersionLabel" alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Version" textAlignment="CENTER">
                <font>
-                  <Font size="24.0" />
+                  <Font size="30.0" />
+               </font>
+            </Label>
+            <Label text="Race Timing Made Simple" textAlignment="CENTER" wrapText="true">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+            </Label>
+            <Label text="Released under the GLP v3 Open Source License " textAlignment="CENTER" wrapText="true">
+               <font>
+                  <Font size="18.0" />
                </font>
             </Label>
          </children>
