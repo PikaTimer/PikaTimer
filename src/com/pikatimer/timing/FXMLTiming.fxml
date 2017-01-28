@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import org.controlsfx.control.CheckComboBox?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane fx:id="timingGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="515.0" prefWidth="754.0" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingController">
+<GridPane fx:id="timingGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="515.0" prefWidth="754.0" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingController">
    <columnConstraints>
       <ColumnConstraints fillWidth="false" hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="250.0" />
       <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="400.0" prefWidth="400.0" />
@@ -149,6 +149,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </VBox>
             <VBox>
                <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Chip -&gt; Bib Mapping" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
+                     <children>
+                        <CheckBox fx:id="customChipBibCheckBox" mnemonicParsing="false" text="Use Custom Chip -&gt; Bib">
+                           <HBox.margin>
+                              <Insets left="5.0" />
+                           </HBox.margin>
+                        </CheckBox>
+                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="customChipMapButton" mnemonicParsing="false" onAction="#setupCustomChipMap" text="Setup" />
+                     </children>
+                     <padding>
+                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
+                     </padding>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox>
+               <children>
                   <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Overrides" textAlignment="CENTER">
                      <font>
                         <Font size="18.0" />
@@ -172,29 +195,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      </children>
                      <padding>
                         <Insets bottom="2.0" top="2.0" />
-                     </padding>
-                  </HBox>
-               </children>
-            </VBox>
-            <VBox>
-               <children>
-                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Chip -&gt; Bib Mapping" textAlignment="CENTER">
-                     <font>
-                        <Font size="18.0" />
-                     </font>
-                  </Label>
-                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
-                     <children>
-                        <CheckBox fx:id="customChipBibCheckBox" mnemonicParsing="false" text="Custom Chip -&gt; Bib">
-                           <HBox.margin>
-                              <Insets left="5.0" />
-                           </HBox.margin>
-                        </CheckBox>
-                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
-                        <Button fx:id="customChipMapButton" mnemonicParsing="false" onAction="#setupCustomChipMap" text="Setup" />
-                     </children>
-                     <padding>
-                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
                      </padding>
                   </HBox>
                </children>
