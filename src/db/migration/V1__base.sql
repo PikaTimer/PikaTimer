@@ -88,6 +88,7 @@ create table race_split (
     split_pace_unit varchar, 
     split_name varchar, 
     short_name varchar, 
+    min_time bigint,
     cutoff_time bigint
 );
 
@@ -96,7 +97,8 @@ create table race_segment (
     race_id int, 
     start_split_id int, 
     end_split_id int,
-    segment_name varchar
+    segment_name varchar,
+    pace_unit varchar
 );
 
 create table participant ( 
@@ -113,7 +115,7 @@ create table participant (
     state varchar, 
     zip varchar,
     country varchar,
-    team_name varchar,
+    team_id int,
     email varchar,
     status varchar,
     note varchar,
