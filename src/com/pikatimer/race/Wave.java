@@ -21,10 +21,8 @@ import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
+import javafx.beans.Observable;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -32,6 +30,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -40,12 +39,9 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.GenericGenerator;
 
 /**
@@ -60,12 +56,13 @@ public class Wave {
     //private final Wave self; 
     private final IntegerProperty IDProperty;
     private Race race; 
+    private final StringProperty raceName = new SimpleStringProperty();
     private final StringProperty waveName;
     private  LocalTime waveStart;
     private final StringProperty waveStartString;
     private  Duration waveMaxStart;
     private final StringProperty waveMaxStartString;
-    private WaveAssignment waveAssignmentMethod;
+    private WaveAssignment waveAssignmentMethod = WaveAssignment.BIB;
     private final StringProperty waveAssignmentMethodProperty;
     private final StringProperty waveAssignmentStart;
     private final StringProperty waveAssignmentEnd; 
@@ -93,9 +90,13 @@ public class Wave {
         this.participants=FXCollections.observableArrayList();
         //raceSplits = FXCollections.observableArrayList();
         //raceWaves = FXCollections.observableArrayList();
+        setWaveStart("07:00:00"); // default start time
         
     }
    
+   public static Callback<Wave, Observable[]> extractor() {
+        return (Wave w) -> new Observable[]{w.waveName,w.waveStartString,w.raceName};
+    }
 //    @Override
 //    public boolean equals(Object w) {
 //        return true; 
@@ -126,6 +127,7 @@ public class Wave {
     }
     public void setRace(Race r) {
         race=r;
+        if (r != null) raceName.bind(r.raceNameProperty());
     }
     
     @Column(name="WAVE_NAME")
@@ -151,8 +153,12 @@ public class Wave {
     public void setWaveStart(String c) {
         if(! c.isEmpty()) {
             //Fix this to watch for parse exceptions
-            waveStart = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
-            waveStartString.set(waveStart.format(DateTimeFormatter.ISO_LOCAL_TIME));
+            try {
+                waveStart = LocalTime.parse(c, DateTimeFormatter.ISO_LOCAL_TIME );
+                waveStartString.set(waveStart.format(DateTimeFormatter.ISO_LOCAL_TIME));
+            } catch (Exception  e){
+                // noop, we just let the old time rule
+            }
         }
     }
     public LocalTime waveStartProperty(){

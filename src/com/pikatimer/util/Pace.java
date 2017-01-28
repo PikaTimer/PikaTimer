@@ -17,6 +17,7 @@
 package com.pikatimer.util;
 
 import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -43,89 +44,84 @@ public enum Pace {
 
     private static Map<Pace, String> createMap() {
         Map<Pace, String> result = new HashMap<>();
-        result.put(MPM, "Minutes per Mile (MM:SS/mile)");
-        result.put(MPK, "Minutes per Kilometer (MM:SS/Kilo");
-        result.put(MPH, "Miles Per Hour (XX mph)");
-        result.put(KPH, "Kilometers per Hour (XX kph)");
-        result.put(MPS, "Meters per Second (XX m/s)");
-        result.put(YPS, "Yards per Second (XX y/s)");
-        result.put(FPS, "Feet per Second (XX f/s)");
-        result.put(MP100M, "Minutes per 100 Meters (MM:SS/100m)");
-        result.put(MP100Y, "Minutes per 100 Yards (MM:SS/100y)");
+        result.put(MPM, "MM:SS/mi (Minutes per Mile)");
+        result.put(MPK, "MM:SS/km (Minutes per Kilometer)");
+        result.put(MPH, "XX.X mph (Miles Per Hour)");
+        result.put(KPH, "XX.X kph (Kilometers per Hour)");
+        result.put(MPS, "XX m/s (Meters per Second)");
+        result.put(YPS, "XX y/s (Yards per Second)");
+        result.put(FPS, "XX f/s (Feet per Second)");
+        result.put(MP100M, "MM:SS/100m (Minutes per 100 Meters)");
+        result.put(MP100Y, "MM:SS/100y (Minutes per 100 Yards)");
         return Collections.unmodifiableMap(result);
     }
-    
-//    private String unit;
-    
-//    private Unit(String s){
-//        unit=s;
-//    }
+
     
     @Override 
     public String toString(){
         return PACE_MAP.get(this);
     }
-//    
-//    public String getValue() {
-//        return unit;
-//    }
-//    
-//    public void setValue(String u) {
-//        unit = u;
-//    
+
+    public String getPace(Float d, Unit u, Duration t){
+        return getPace(d,u,t,this);
+    }
     
-    // TODO: Put in converters so that we can take miles to km, etc
-    
-    // 1ft = 0.3048m
     public static final String getPace(Float d, Unit u, Duration t, Pace p) {
-        BigDecimal dist = new BigDecimal(d);
+        BigDecimal dist;
         
-        switch(u){
-            case KILOMETERS:
-                dist = dist.multiply(BigDecimal.valueOf(0.621371)); 
-                break;
-            case MILES:
-                // do nothing
-                break; 
-            case YARDS:
-                dist = dist.divide(new BigDecimal(1760));
-                break;
-            case METERS:
-                dist = dist.multiply(BigDecimal.valueOf(0.000621371)); 
-                break;
-            case FEET:
-                dist = dist.divide(new BigDecimal(5280));
-                break;
-        }
-         dist = dist.multiply(new BigDecimal(5280));
-        // we now have the distance in feet...
-        String pace = "XX:XX"; 
         switch(p){
-            case MPM:
-                pace = DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(5280L), 0, FALSE, RoundingMode.DOWN); 
+            case MPM: // Minutes per Mile
+                dist = new BigDecimal(u.convertTo(d, Unit.FEET));
+                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(5280L),0, FALSE, RoundingMode.DOWN).replaceFirst("^0", "") + "/mi";
+            case MPK: // Minutes per Kilometer
+                dist = new BigDecimal(u.convertTo(d, Unit.METERS));
+                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(1000L),0, FALSE, RoundingMode.DOWN).replaceFirst("^0", "") + "/km";
+            case MPH: // Miles Per Hour
+                dist = new BigDecimal(u.convertTo(d, Unit.MILES));
+                return dist.divide(BigDecimal.valueOf(t.toMillis()), 8, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(3600000L)).setScale(1, RoundingMode.HALF_UP).toPlainString() + " mph";
+            case KPH: // Kilometers Per Hour
+                dist = new BigDecimal(u.convertTo(d, Unit.KILOMETERS));
+                return dist.divide(BigDecimal.valueOf(t.toMillis()), 8, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(3600000L)).setScale(1, RoundingMode.HALF_UP).toPlainString() + " kph";
+            case MPS: // Meters per Second
+                dist = new BigDecimal(u.convertTo(d, Unit.METERS));
+                return dist.divide(BigDecimal.valueOf(t.toMillis()), 8, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(1000L)).setScale(1, RoundingMode.HALF_UP).toPlainString() + " m/s";
+            case YPS: // Yards per Second
+                dist = new BigDecimal(u.convertTo(d, Unit.YARDS));
+                return dist.divide(BigDecimal.valueOf(t.toMillis()), 8, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(1000L)).setScale(1, RoundingMode.HALF_UP).toPlainString() + " y/s";
+            case FPS: // Feet per Second
+                dist = new BigDecimal(u.convertTo(d, Unit.FEET));
+                return dist.divide(BigDecimal.valueOf(t.toMillis()), 8, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(1000L)).setScale(1, RoundingMode.HALF_UP).toPlainString() + " f/s";
+            case MP100M: // Minutes per 100M
+                dist = new BigDecimal(u.convertTo(d, Unit.METERS));
+                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(100L),0, TRUE, RoundingMode.DOWN).replaceFirst("^0:", "") + "/100M";
+            case MP100Y: // Minutes per 100Y
+                dist = new BigDecimal(u.convertTo(d, Unit.FEET));
+                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(300L),0, TRUE, RoundingMode.DOWN).replaceFirst("^0:", "") + "/100Y";
         }
-        return pace + "/mi";
-
+       return "???";
     }
     
-    public Float toKilometers(Float d){
-            
-        return d;
-    }
-    
-    public Float toMeters(Float d) {
-        switch(this) {
-            
+    public Integer getFieldWidth(){
+        switch(this){
+            case MPM: // Minutes per Mile
+            case MPK: // Minutes per Kilometer
+                // XX:XX/yy
+                return 8;
+            case MPH: // Miles Per Hour
+            case KPH: // Kilometers Per Hour
+            case MPS: // Meters per Second
+            case YPS: // Yards per Second
+            case FPS: // Feet per Second
+                // XX.X yyy
+                return 8;     
+            case MP100M: 
+            case MP100Y:
+                // XX:XX/100y
+                return 10; 
         }
-                
-        return d;
+        return 10;
+    }
 
-    }
-    
-    public Float toYards(Float d){
-        
-        return d;
-    }
 }
     
 

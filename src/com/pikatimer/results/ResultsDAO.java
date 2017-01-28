@@ -18,6 +18,7 @@ package com.pikatimer.results;
 
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.participant.Status;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
@@ -45,13 +46,16 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import org.hibernate.HibernateException;
+import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.Session;
 
 /**
@@ -66,9 +70,9 @@ public class ResultsDAO {
     private static final TimingDAO timingDAO = TimingDAO.getInstance();
     private static final ParticipantDAO participantDAO = ParticipantDAO.getInstance();
     private static final RaceDAO raceDAO = RaceDAO.getInstance();
-    private static final ObservableList<OutputPortal> outputPortalList = FXCollections.observableArrayList(OutputPortal.extractor());
+    private static final ObservableList<ReportDestination> reportDestinationList = FXCollections.observableArrayList(ReportDestination.extractor());
     
-    private static final BooleanProperty outputPortalListInitialized = new SimpleBooleanProperty(FALSE);
+    private static final BooleanProperty reportDestinationListInitialized = new SimpleBooleanProperty(FALSE);
         
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -116,6 +120,11 @@ public class ResultsDAO {
                     
                     results.stream().forEach(r -> {
                         //resultsMap.put(r.getBib() + " " + r.getRaceID(), r);
+                        
+                        //We can do this outside of the UI thread since the UI 
+                        // does not know about it yet... 
+                        r.recalcTimeProperties();
+                        
                         if (!resultsMap.containsKey(r.getBib())) resultsMap.put(r.getBib(), new HashMap());
                         resultsMap.get(r.getBib()).put(r.getRaceID(),r);
                         
@@ -140,16 +149,17 @@ public class ResultsDAO {
                             System.out.println("ResultsDAO ProcessNewResult Thread: Waiting for more bibs to process...");
                             pendingBibs.add(resultsQueue.take());
                             System.out.println("ResultsDAO ProcessNewResult Thread: The wait is over...");
+                            Thread.sleep(10); // Times rarely come in 1 at a time
 
-                            resultsQueue.drainTo(pendingBibs,199);  // 200 total
-                            
-                            System.out.println("ProcessNewResult Thread: Processing: " + pendingBibs.size());
+                            //resultsQueue.drainTo(pendingBibs,299);  // 500 total
+                            resultsQueue.drainTo(pendingBibs);
+                            System.out.println("ResultsDAO ProcessNewResult Thread: Processing: " + pendingBibs.size());
 
-                            List<Result> pending = new ArrayList();
+                            List<Result> pendingResults = new ArrayList();
                             try {
                                 pendingBibs.stream().forEach(pb -> {
                                     processBib(pb);
-                                    if (!resultsMap.get(pb).keySet().isEmpty()) pending.addAll(resultsMap.get(pb).values());
+                                    if (!resultsMap.get(pb).keySet().isEmpty()) pendingResults.addAll(resultsMap.get(pb).values());
                                     
                                 });
                             } catch (Exception e) {
@@ -160,12 +170,12 @@ public class ResultsDAO {
                                 s = HibernateUtil.getSessionFactory().getCurrentSession();
                                 s.beginTransaction();
                                 int count = 0;
-                                Iterator<Result> addIterator = pending.iterator();
+                                Iterator<Result> addIterator = pendingResults.iterator();
                                 while (addIterator.hasNext()) {
                                     Result c = addIterator.next();
                                     if (c.isEmpty() && c.getID() != null) {                                        
                                         s.delete(c);    
-                                        c.setID(null);
+                                        resultsMap.get(c.getBib()).remove(c.getRaceID());
                                     } else {                                        
                                         s.saveOrUpdate(c);                                        
                                     }
@@ -180,7 +190,7 @@ public class ResultsDAO {
                                 e.printStackTrace();
                             } 
 
-                            pending.stream().forEach(r -> {
+                            pendingResults.stream().forEach(r -> {
                                 
                                 if(!raceResultsMap.containsKey(r.getRaceID())) raceResultsMap.put(r.getRaceID(), FXCollections.observableArrayList(Result.extractor()));
 
@@ -191,18 +201,19 @@ public class ResultsDAO {
                                     
                                     if(!r.isEmpty()){
                                         if (!raceResultsMap.get(r.getRaceID()).contains(r)) {
+                                            r.recalcTimeProperties();
                                             raceResultsMap.get(r.getRaceID()).add(r);
                                             //System.out.println("ResultsDAO new/updated result added " + r.getBib() + " from race " + r.getRaceID() + " new total " + raceResultsMap.get(r.getRaceID()).size() );
-                                        }// else r.setUpdated();
+                                        } else r.recalcTimeProperties();
+                                    } else if (raceResultsMap.get(r.getRaceID()).contains(r)){
+                                        raceResultsMap.get(r.getRaceID()).remove(r);
                                     }
-                                    
-                                    r.setUpdated();
                                 });
 
                             });
                             
                             
-                            Thread.sleep(100); // This will limit us to being able to process about 2000 results / second
+                            Thread.sleep(10); 
                         } catch (InterruptedException ex) {
                             Logger.getLogger(ResultsDAO.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -234,12 +245,15 @@ public class ResultsDAO {
     }
         
         
-    public void reprocessAll(){
+    public void reprocessAllResults(){
         resultsQueue.addAll(resultsMap.keySet());
     }    
     
-    public void reprocessAll(Wave w) {
+    public void reprocessWaveResults(Wave w) {
         participantDAO.listParticipants().stream().filter(p -> p.getWaveIDs().contains(w.getID())).forEach(p2 -> resultsQueue.add(p2.getBib()));
+    }
+    public void reprocessRaceResults(Race r) {
+        r.getWaves().stream().forEach(w -> {reprocessWaveResults(w);});
     }
     
     // This is absolutely ugly. I hope it works... 
@@ -262,7 +276,7 @@ public class ResultsDAO {
         Set<Integer> waves = p.getWaveIDs();
         if (waves.isEmpty()) return;
         
-        
+        if (p.getStatus().equals(Status.DNS)) return; // They did not start
         
         Optional<List<TimeOverride>> bibOverrides = timingDAO.getOverridesByBib(bib);
         if (timingDAO.getCookedTimesByBib(bib).isEmpty() && ! bibOverrides.isPresent()) {
@@ -274,10 +288,10 @@ public class ResultsDAO {
             bibOverrides.get().forEach(to -> {
                 if (!to.getRelative()) {
                     overrideMap.put(to.getSplitId(), to.getTimestamp());
-                    //System.out.println("Override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
+                    System.out.println("Override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
                 } else {
                     // we have to convert the relative -> actual time
-                    //System.out.println("Relative override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
+                    System.out.println("Relative override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
 
                     overrideMap.put(to.getSplitId(), to.getTimestamp().negated());
                 }
@@ -285,8 +299,12 @@ public class ResultsDAO {
         }
         
         
-        List<CookedTimeData> timesList = new ArrayList(timingDAO.getCookedTimesByBib(bib));
+        //get a list of times and backup times
+        List<CookedTimeData> allTimesList = new ArrayList(timingDAO.getCookedTimesByBib(bib)); 
+        List<CookedTimeData> timesList = allTimesList.stream().filter(c -> !c.getBackupTime()).collect(Collectors.toList());
+        List<CookedTimeData> backupTimesList = allTimesList.stream().filter(c -> c.getBackupTime()).collect(Collectors.toList());
         timesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
+        backupTimesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
         
         //System.out.println("ResultsDAO.processBib: " + bib + " we have " + timesList.size() + " times");
         
@@ -307,11 +325,11 @@ public class ResultsDAO {
             
             
             Duration waveStart = Duration.between(LocalTime.MIDNIGHT, RaceDAO.getInstance().getWaveByID(i).waveStartProperty());
-            Duration maxWaveStart = waveStart.plus(Duration.ofHours(1)); 
+            Duration maxWaveStart = waveStart.plus(Duration.ofHours(1)); //FIX THIS!
             //System.out.println("ResultsDAO.processBib: " + r.getBib() + " waveStart: " + waveStart + " maxWaveStart" + maxWaveStart);
             List<Split> splits = raceDAO.getWaveByID(i).getRace().getSplits();
             
-            r.setStartWaveStartDuration(waveStart);
+            r.setWaveStartDuration(waveStart);
             
             Iterator<CookedTimeData> times = timesList.iterator();
             Split[] splitArray = splits.toArray(new Split[splits.size()]); 
@@ -331,7 +349,7 @@ public class ResultsDAO {
             if (hasOverrides && overrides[0] != null) {
                 waveStart = overrides[0];
                 r.setStartDuration(waveStart);
-                r.setStartWaveStartDuration(waveStart);
+                r.setWaveStartDuration(waveStart);
                 //System.out.println("Found start time override of " + overrides[0].toString());
                 
                 // Adjust all relative overrides to actual
@@ -386,13 +404,13 @@ public class ResultsDAO {
                         if (overrides[ot] != null && !overrides[ot].isNegative() && overrides[ot].minusMinutes(10).compareTo(ctd.getTimestamp()) < 0) {
                             splitIndex= ot;
                             r.setSplitTime(splitArray[splitIndex].getPosition(), overrides[splitIndex]);
-                            //System.out.println("Found an override for " + splitIndex + " that is too close to the current times");
+                            System.out.println("Found an override for " + splitIndex + " that is too close to the current times");
 
                             // TODO: Fix this 
                             Duration splitMax = overrides[ot].plusMinutes(10); 
 
                             // now consume the rest of the hits at this split until we 
-                            // hit the max
+                            // hit the max//
                             do { 
                                 //System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
                                 if (times.hasNext()) ctd = times.next();
@@ -410,6 +428,13 @@ public class ResultsDAO {
                 } else if (hasOverrides && overrides[splitIndex] != null) {
                     //System.out.println("We have an override for " + splitIndex + " incrementing and moving on.");
                     r.setSplitTime(splitArray[splitIndex].getPosition(), overrides[splitIndex]);
+                    // TODO: Fix this 
+                    Duration splitMax = overrides[splitIndex].plusMinutes(5); 
+                    while (ctd != null && splitMax.compareTo(ctd.getTimestamp()) > 0 ) {
+                        if (times.hasNext()) ctd = times.next();
+                        else ctd = null;
+                    }
+                    
                     splitIndex++; // we pre-filled the split times earlier
                 } else if (ctd.getTimestamp().compareTo(waveStart) < 0 ) {
                     if (times.hasNext()) ctd = times.next();
@@ -477,6 +502,25 @@ public class ResultsDAO {
             }
             
             // we processed every time so far
+            
+            // This should have been done before _unless_ there were no chip times
+            for (int o = 1; o < splits.size(); o++) {
+                if (overrides[o] != null && overrides[o].isNegative()) {
+                    overrides[o] = r.getStartDuration().plus(overrides[o].negated());
+                }
+            }
+            
+            // fill any intermediate splits
+            // ibid
+            if (hasOverrides) {
+                for (int o = 1; o < splits.size()-1; o++) {
+                    if (overrides[o] != null) {
+                        //System.out.println("Found split time override of " + overrides[o].toString() + " for the " + o + " split");
+                        r.setSplitTime(o+1, overrides[o]);
+                    }
+                }
+            }
+
             // do we have an override for the finish?
             if (overrides[splits.size()-1] != null) {
                 
@@ -487,13 +531,101 @@ public class ResultsDAO {
                 //System.out.println("Found finish time override of " + overrides[splits.size()-1].toString());
                 r.setFinishDuration(overrides[splits.size()-1]);
             }
-           // System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+            
+            // Now we are going to walk the times and look for backp times that may be able to fill the gaps.
+            if (backupTimesList.isEmpty()) return;
+            int backupTimeIndex = 0;
+            int maxBackupTimes = backupTimesList.size();
+            CookedTimeData c = backupTimesList.get(backupTimeIndex++);; 
+            
+            //fix the start time
+            if(r.getStartDuration().equals(r.getWaveStartDuration())) {
+                // zero gun time, look for a backup
+                while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxWaveStart) < 0) {
+                    if (r.getStartDuration().compareTo(c.getTimestamp())<0) {
+                        r.setStartDuration(c.getTimestamp());
+                        //System.out.println("Backup start time found for bib " + p.getBib());
+                    }
+                    if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
+                    else break;
+                }
+            }
+            
+            // now fix any intermediate splits
+            
+            Duration lastSeen = r.getStartDuration();
+            //todo next: adjust intermediate splits... 
+            final Participant pa = p;
+            final Result re = r;
+            r.getSplitMap().keySet().forEach(k -> {
+                //.out.println("Bib " + pa.getBib() + " split " + k + " is " + re.getSplitMap().get(k));
+            });
+            
+            for (int si = 2; backupTimeIndex < maxBackupTimes  && si < splits.size() ; si++){
+               // System.out.println("Evaluating si " + si + " for bib "+ p.getBib());
+                if (!r.getSplitTime(si).isZero() ) {
+                    lastSeen = r.getSplitTime(si).plusMinutes(5); //TODO Fix this
+                    //System.out.println(" Previously seen at si " + si + " at " + lastSeen);
+
+                    // consume any backup times older than this
+                    while (lastSeen.compareTo(c.getTimestamp()) > 0){
+                        //System.out.println(" Tossing backup time at " + c.getTimestamp());
+                        if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
+                        else break;
+                    }
+                } else { //we have a blank split
+                    //System.out.println(" Not seen at si " + si + " last seen at " + lastSeen);
+                    Duration nextSeen = Duration.ZERO;
+                    for (int n = si+1; nextSeen.isZero() && n < splits.size()-1; n++){
+                        nextSeen = r.getSplitTime(n);
+                    }
+                    if (nextSeen.isZero()) r.getFinishDuration(); 
+                    //System.out.println(" Seen next at " + nextSeen);
+
+                    while (r.getSplitTime(si).isZero() ){
+                        if (Objects.equals(c.getTimingLocationId(), splitArray[si-1].getTimingLocationID()) ) {
+                            //System.out.println(" Split time found for bib " + p.getBib() + " " + c.getTimestamp() + " " + lastSeen + " " + nextSeen);
+                            if (c.getTimestamp().compareTo(lastSeen) > 0  && (nextSeen.isZero() || c.getTimestamp().compareTo(nextSeen.minusMinutes(5)) < 0)) {
+                                r.setSplitTime(si,c.getTimestamp());
+                                lastSeen=c.getTimestamp();
+                               // System.out.println(" Split match found for bib " + p.getBib() + " at " + lastSeen);
+                            }
+                        }
+                        if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
+                        else break;
+                    }
+                }
+            }
+            
+            
+            if (backupTimeIndex == maxBackupTimes ) return; // out of times
+            
+            // now fix the finish time 
+            if (r.getFinishDuration() == null || r.getFinishDuration().isZero()) { // we need a finish time
+                int finishSplit = splits.size()-1;
+                
+                // find the last time we saw this runner
+                
+                for (int si = 1; si < finishSplit; si++ ){
+                    if (r.getSplitTime(si) != Duration.ZERO) lastSeen = r.getSplitTime(si);
+                }
+                
+                while (r.getFinishDuration() == null || r.getFinishDuration().isZero() ){
+                    if (Objects.equals(c.getTimingLocationId(), splitArray[finishSplit].getTimingLocationID()) ) {
+                        if (c.getTimestamp().compareTo(lastSeen) > 0) r.setFinishDuration(c.getTimestamp());
+                        System.out.println("Finish start time found for bib " + p.getBib());
+                    }
+                    if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
+                    else break;
+                }
+            }
+            
+            System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
             //resultsList.add(r); 
             //resultsMap.put(bib + " " + r.getRaceID(), r);
             
         });
         
-        //return resultsList;
     }
     
     
@@ -513,54 +645,51 @@ public class ResultsDAO {
         s.getTransaction().commit(); 
     }
     
-    public void saveOutputPortal(OutputPortal p) {
+    public void saveReportDestination(ReportDestination p) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.saveOrUpdate(p);
         s.getTransaction().commit();
         //Platform.runLater(() -> {
-        if (!outputPortalList.contains(p)) outputPortalList.add(p);
+        if (!reportDestinationList.contains(p)) reportDestinationList.add(p);
         //});
         
     }
     
-    public void refreshOutputPortalList() { 
-        List<OutputPortal> list = new ArrayList<>();
+    public void refreshReportDestinationList() { 
+        List<ReportDestination> list = new ArrayList<>();
         
-        outputPortalListInitialized.setValue(TRUE);
-
+        reportDestinationListInitialized.setValue(TRUE);
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        System.out.println("Runing the refreshOutputPortalList Query");
+        System.out.println("Runing the refreshReportDestinationList Query");
 
         try {  
-            list=s.createQuery("from OutputPortal").list();
+            list=s.createQuery("from ReportDestination").list();
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
         } 
         s.getTransaction().commit(); 
 
-        System.out.println("Returning the refreshOutputPortalList list: " + list.size());
-        outputPortalList.addAll(list);   
-
-        
+        System.out.println("Returning the refreshReportDestinationList list: " + list.size());
+        reportDestinationList.addAll(list);   
 
     }     
     
-    public ObservableList<OutputPortal> listOutputPortals() { 
+    public ObservableList<ReportDestination> listReportDestinations() { 
 
-        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
-        return outputPortalList;
+        if (!reportDestinationListInitialized.get()) refreshReportDestinationList();
+        return reportDestinationList;
         //return list;
     }     
     
-    public OutputPortal getOutputPortalByUUID(String id) {
+    public ReportDestination getReportDestinationByUUID(String id) {
         //System.out.println("Looking for a timingLocation with id " + id);
         // This is ugly. Setup a map for faster lookups
-        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
-        Optional<OutputPortal> result = outputPortalList.stream()
+        if (!reportDestinationListInitialized.get()) refreshReportDestinationList();
+        Optional<ReportDestination> result = reportDestinationList.stream()
                     .filter(t -> Objects.equals(t.getUUID(), id))
                     .findFirst();
         if (result.isPresent()) {
@@ -571,11 +700,11 @@ public class ResultsDAO {
         return null;
     }
     
-    public OutputPortal getOutputPortalByID(Integer id) {
+    public ReportDestination getReportDestinationByID(Integer id) {
         //System.out.println("Looking for a timingLocation with id " + id);
         // This is ugly. Setup a map for faster lookups
-        if (!outputPortalListInitialized.get()) refreshOutputPortalList();
-        Optional<OutputPortal> result = outputPortalList.stream()
+        if (!reportDestinationListInitialized.get()) refreshReportDestinationList();
+        Optional<ReportDestination> result = reportDestinationList.stream()
                     .filter(t -> Objects.equals(t.getID(), id))
                     .findFirst();
         if (result.isPresent()) {
@@ -586,13 +715,13 @@ public class ResultsDAO {
         return null;
     }
 
-    public void removeOutputPortal(OutputPortal op) {
+    public void removeReportDestination(ReportDestination op) {
         
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.delete(op);
         s.getTransaction().commit(); 
-        outputPortalList.remove(op);
+        reportDestinationList.remove(op);
     }
     
     
@@ -614,93 +743,216 @@ public class ResultsDAO {
     
     
     public void processAllReports(){
-        raceDAO.listRaces().forEach(r -> {processReports(r);});
+        raceDAO.listRaces().forEach(r -> {processReports(r, null);});
     }
     
-    public void processReports(Race r){
-        List<ProcessedResult> results = new ArrayList();
+    public void processReport(RaceReport rr) {
+        processReports(rr.getRace(),rr);
+    }
+    
+    public void processReports(Race r, RaceReport rr){
         
-        Integer splitSize = r.getSplits().size();
-        
-        // get the current results list
-        getResults(r.getID()).forEach(res -> {
-            ProcessedResult pr = new ProcessedResult();
-            
-            // If there is no participant, then bail. 
-            // TODO: Maybe add an option to create a participant on the fly, but
-            // this could gete messy with all of the random RFID chips out there.
-            // Either way, this would be handled on the timing tab, not here. 
-            if(participantDAO.getParticipantByBib(res.getBib()) == null) return; 
-            
-            // Link in the participant
-            pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
-            // Set the AG code (e.g. M30-34) (age and gender are set automagically)
-            pr.setAge(pr.getParticipant().getAge());
-            pr.setAGCode(r.getAgeGroups().ageToAGString(pr.getAge()));
-            
-            // set the start and wave start times
-            Duration chipStartTime = res.getStartDuration();
-            Duration waveStartTime = res.getStartWaveStartDuration();
-            
-            // Set the start duration
-            pr.setChipStartTime(chipStartTime);
-            pr.setWaveStartTime(waveStartTime);
-            
-            //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
-            
-            // Set the finish times
-            if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
-                pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
-                pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
-            }
-            
-            // Set the splits
-            if(r.getSplits().size() > 2) {
-                for (int i = 2; i <  splitSize ; i++) {
-                    //if (res.getSplitTime(i) != null) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
-                    if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+        Task processRaceReports = new Task<Void>() {
+
+                @Override 
+                public Void call() {
+                    try{
+                    List<ProcessedResult> results = new ArrayList();
+
+                    Integer splitSize = r.getSplits().size();
+
+                    // get the current results list
+                    getResults(r.getID()).forEach(res -> {
+                        ProcessedResult pr = new ProcessedResult();
+
+                        // If there is no participant, then bail. 
+                        // TODO: Maybe add an option to create a participant on the fly, but
+                        // this could gete messy with all of the random RFID chips out there.
+                        // Either way, this would be handled on the timing tab, not here. 
+                        if(participantDAO.getParticipantByBib(res.getBib()) == null) return; 
+
+                        // Link in the participant
+                        pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
+                        // Set the AG code (e.g. M30-34) (age and gender are set automagically)
+                        pr.setAge(pr.getParticipant().getAge());
+                        pr.setAGCode(r.getAgeGroups().ageToAGString(pr.getAge()));
+
+                        // set the start and wave start times
+                        Duration chipStartTime = res.getStartDuration();
+                        Duration waveStartTime = res.getWaveStartDuration();
+
+                        // Set the start duration
+                        pr.setChipStartTime(chipStartTime);
+                        pr.setWaveStartTime(waveStartTime);
+                        
+                        // by definition, you cross the start line at zero seconds
+                        pr.setSplit(1, Duration.ZERO); 
+
+                        //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
+
+                        // Set the finish times
+                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
+                            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
+                            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
+                            pr.setSplit(splitSize, pr.getChipFinish());
+                        }
+
+                        // Set the splits
+                        if(r.getSplits().size() > 2) {
+                            for (int i = 2; i <  splitSize ; i++) {
+                                //if (res.getSplitTime(i) != null) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+                                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+                            }
+                        }
+                        
+                        
+                        // set the segment times
+                        r.getSegments().forEach(seg -> {
+                            //System.out.println("Processing segment " + seg.getSegmentName());
+                            if (pr.getSplit(seg.getEndSplitPosition()) != null && pr.getSplit(seg.getStartSplitPosition()) != null) {
+                                pr.setSegmentTime(seg.getID(), pr.getSplit(seg.getEndSplitPosition()).minus(pr.getSplit(seg.getStartSplitPosition())));
+                                //System.out.println("Segment: Bib " + pr.getParticipant().getBib() + " Segment " + seg.getSegmentName() + " Time " + DurationFormatter.durationToString(pr.getSegmentTime(seg.getID())));
+                            }
+                        });
+                        results.add(pr);
+                    });
+
+                    // sort it by finish, then last completed split
+                    results.sort(null); // ProcessedResult iplements the Comparable interface
+
+                    // calculate placement in Overall, Gender, AG
+                    Map<String,Integer> placementCounter = new HashMap();
+                    placementCounter.put("overall", 1);
+                    placementCounter.put("M",1);
+                    placementCounter.put("F",1);
+
+                    results.forEach(pr -> {
+                        pr.setOverall(placementCounter.get("overall"));
+                        placementCounter.put("overall", pr.getOverall()+1);
+
+                        pr.setSexPlace(placementCounter.get(pr.getSex()));
+                        placementCounter.put(pr.getSex(), pr.getSexPlace()+1);
+
+                        placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
+                        pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
+                        placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace()+1);
+                    });
+                    
+                    // now do the same for segments 
+                    r.getSegments().forEach(seg -> {
+                        results.sort((p1, p2) -> {
+                            return ObjectUtils.compare(p1.getSegmentTime(seg.getID()), p2.getSegmentTime(seg.getID()));
+                        });
+                        Map<String,Integer> segPlCounter = new HashMap();
+                        segPlCounter.put("overall", 1);
+                        segPlCounter.put("M",1);
+                        segPlCounter.put("F",1);
+                        
+                        results.forEach(pr -> {
+                            if (pr.getSegmentTime(seg.getID()) == null) return;
+                            
+                            pr.setSegmentOverallPlace(seg.getID(),segPlCounter.get("overall"));
+                            segPlCounter.put("overall", pr.getOverall()+1);
+
+                            pr.setSegmentSexPlace(seg.getID(),segPlCounter.get(pr.getSex()));
+                            segPlCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID())+1);
+
+                            segPlCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
+                            pr.setSegmentAGPlace(seg.getID(),segPlCounter.get(pr.getSex()+pr.getAGCode()));
+                            segPlCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID())+1);
+                        });
+                    });
+                    
+                    // now sort them again 
+                    results.sort(null); 
+                    
+                    // Now deal with ties. Ugh.
+                    if (r.getBooleanAttribute("permitTies") != null && r.getBooleanAttribute("permitTies") && r.getStringAttribute("TimeDisplayFormat") != null) {
+                        String dispFormat = r.getStringAttribute("TimeDisplayFormat");
+                        String roundMode = r.getStringAttribute("TimeRoundingMode");
+                        
+                        System.out.println("Tie Processing: Display Format: " + dispFormat + " Rounding " + roundMode);
+                        
+                        // Overall ties
+                        StringProperty lastResult = new SimpleStringProperty(""); 
+                        placementCounter.clear();
+                        
+
+                        results.forEach(pr -> {
+                            if (pr.getChipFinish() == null) return;
+                            String currentResult = DurationFormatter.durationToString(pr.getChipFinish(),dispFormat,roundMode);
+                            
+                            if (currentResult.equals(lastResult.getValueSafe())) { // we have a tie
+                                System.out.println("We have tie at " + currentResult);
+                                pr.setOverall(placementCounter.get("overall"));
+                                
+                                placementCounter.putIfAbsent(pr.getSex(), pr.getSexPlace());
+                                pr.setSexPlace(placementCounter.get(pr.getSex()));
+                                
+                                placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
+                                pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
+                            } else {
+                               lastResult.set(currentResult);
+                               placementCounter.clear();
+                               placementCounter.put("overall", pr.getOverall()); 
+                               placementCounter.put(pr.getSex(), pr.getSexPlace());
+                               placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
+                            }
+
+                        });
+                        
+                        // segment ties
+                        r.getSegments().forEach(seg -> {
+                            lastResult.set("");
+                            results.sort((p1, p2) -> {
+                                return ObjectUtils.compare(p1.getSegmentTime(seg.getID()), p2.getSegmentTime(seg.getID()));
+                            });
+                            results.forEach(pr -> {
+                                if (pr.getSegmentTime(seg.getID()) == null) return;
+                                
+                                String currentResult = DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()),dispFormat,roundMode);
+
+                                if (currentResult.equals(lastResult.getValueSafe())) { // we have a tie
+                                    System.out.println("We have a segment tie at " + currentResult + " for segID " + seg.getID());
+                                    pr.setSegmentOverallPlace(seg.getID(),placementCounter.get("overall"));
+
+                                    placementCounter.putIfAbsent(pr.getSex(), pr.getSegmentSexPlace(seg.getID()));
+                                    pr.setSegmentSexPlace(seg.getID(),placementCounter.get(pr.getSex()));
+
+                                    placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
+                                    pr.setSegmentAGPlace(seg.getID(),placementCounter.get(pr.getSex()+pr.getAGCode()));
+                                } else {
+                                   lastResult.set(currentResult);
+                                   placementCounter.clear();
+                                   placementCounter.put("overall", pr.getSegmentOverallPlace(seg.getID())); 
+                                   placementCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID()));
+                                   placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
+                                }
+
+                            });
+                        });
+                        
+                        // now sort them again 
+                        results.sort(null); 
+                    }
+
+
+                    // for each report, feed it the results list
+                    if (rr == null) {
+                        r.raceReportsProperty().forEach(rr ->{
+                            rr.processResult(results);
+                        }); 
+                    } else rr.processResultNow(results);
+                    } catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                    return null;
                 }
-            }
-            
-            results.add(pr);
-        });
-        
-        // sort it by finish, then last completed split
-        results.sort(null); // ProcessedResult iplements the Comparable interface
-        
-        // calculate placement in Overall, Gender, AG
-        Map<String,Integer> placementCounter = new HashMap();
-        placementCounter.put("overall", 1);
-        placementCounter.put("M",1);
-        placementCounter.put("F",1);
-        
-        results.forEach(pr -> {
-            pr.setOverall(placementCounter.get("overall"));
-            placementCounter.put("overall", pr.getOverall()+1);
-            
-            pr.setSexPlace(placementCounter.get(pr.getSex()));
-            placementCounter.put(pr.getSex(), pr.getSexPlace()+1);
-            
-            placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
-            pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
-            placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace()+1);
-            
-//            System.out.println("Results: " + r.getRaceName() + ": "
-//                    + pr.getParticipant().fullNameProperty().getValueSafe() 
-//                    + "(" + pr.getSex() + pr.getAGCode() + "): " 
-//                    + DurationFormatter.durationToString(pr.getChipFinish())
-//                    + " O:" + pr.getOverall() + " S:" + pr.getSexPlace() 
-//                    + " AG:" + pr.getAGPlace()
-//            );
-        
-        });
-        
-        
-        // for each report, feed it the results list
-        r.raceReportsProperty().forEach(rr ->{
-            rr.processResult(results);
-        });
-        
+            };
+            Thread processNewResultThread = new Thread(processRaceReports);
+            processNewResultThread.setName("Thread-processRaceReports-" + r.getRaceName());
+            processNewResultThread.setDaemon(true);
+            processNewResultThread.start();
         
     }
     

@@ -16,14 +16,25 @@
  */
 package com.pikatimer.timing;
 
+import com.pikatimer.participant.Participant;
+import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.Race;
+import com.pikatimer.race.RaceDAO;
+import com.pikatimer.race.Wave;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -51,18 +62,25 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="timing_location")
 public class TimingLocation {
     
-   private final IntegerProperty IDProperty;
+   private final IntegerProperty IDProperty = new SimpleIntegerProperty();
    private final StringProperty locationName;
+   private Integer autoAssignRaceID = -1;
+   private final ObjectProperty<Race> raceProperty = new SimpleObjectProperty();
    private final ObservableList<Split> associatedSplits; 
    private final ObservableList<TimingLocationInput> timingInputs; 
    private static final TimingDAO timingDAO = TimingDAO.getInstance();
    
+   private Wave autoWave;
+   private final BooleanProperty cookedTimeReady = new SimpleBooleanProperty(false);
+   List<TimingLocationInput> timingInputList;
+   
    private Duration filterStartDuration;
    private Duration filterEndDuration; 
+   
+   private Map<Integer,TimingLocationInput> inputMap = new HashMap();
 
 
    public TimingLocation() {
-        this.IDProperty = new SimpleIntegerProperty();
         this.locationName = new SimpleStringProperty("Not Yet Set");
         this.associatedSplits = FXCollections.observableArrayList();
         this.timingInputs = FXCollections.observableArrayList();
@@ -96,30 +114,52 @@ public class TimingLocation {
         return locationName;
     }
     
-//    @OneToMany(mappedBy="timingLocation",fetch = FetchType.LAZY)
-//    public List<Split> getSplits() {
-//        //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
-//        return associatedSplits.sorted(); 
-//    }
-//    public void setSplits(List<Split> splits) {
-//        System.out.println("TimingLocation.setSplits(list) called for " + locationName + " with " + splits.size() + " splits"); 
-//        associatedSplits.setAll(splits);
-//        System.out.println(locationName + " now has " + associatedSplits.size() + " splits");
-//    }
-//    public ObservableList<Split> splitsProperty() {
-//        return associatedSplits; 
-//    }
+    @Column(name="AUTO_ASSIGN_TO_RACE_ID")
+    public Integer getAutoAssignRaceID() {
+        
+        return autoAssignRaceID; 
+    }
+    public void setAutoAssignRaceID(Integer id) {
+        
+        if (id == null) id = -1;
+        cookedTimeReady.set(false);
+        autoAssignRaceID = id;
+    }
     
-    @OneToMany(mappedBy="timingLocation",fetch = FetchType.LAZY)
+    public ObjectProperty<Race> autoAssignRaceProperty() {
+        synchronized(cookedTimeReady){
+            if (!cookedTimeReady.get()) {
+                cookedTimeReady.set(true);
+                if (autoAssignRaceID <0) {
+                raceProperty.setValue(null);
+                autoWave = null;
+                } else {
+                    RaceDAO.getInstance().listRaces().forEach(r -> {
+                        if (Objects.equals(r.getID(), autoAssignRaceID)) {
+                            raceProperty.setValue(r);
+                            autoWave = r.getWaves().get(0);
+                        }
+                    });
+                }
+            }
+        }
+        return raceProperty; 
+    }
+
+    // We keep two lists, one observable for JavaFX, one regular for Hibernate
+    @OneToMany(mappedBy="timingLocation",fetch = FetchType.EAGER)
     @Cascade(CascadeType.DELETE)
     public List<TimingLocationInput> getInputs() {
         //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
-        return timingInputs.sorted(); 
+        return timingInputList;
     }
     public void setInputs(List<TimingLocationInput> inputs) {
-        //System.out.println("TimingLocation.setInputs(list) called for " + locationName + " with " + inputs.size() + " splits"); 
-        if (inputs != null) timingInputs.setAll(inputs);
-        
+        //System.out.println("TimingLocation.setInputs(list) called for " + locationName + " with " + inputs.size() + " inputs"); 
+        timingInputList = inputs;
+        if (inputs != null) {
+            timingInputs.setAll(inputs);
+            timingInputs.sort((TimingLocationInput u1, TimingLocationInput u2) -> u1.getID().compareTo(u2.getID()));
+        }
         //System.out.println(locationName + " now has " + timingInputs.size() + " inputs");   
     }
     public ObservableList<TimingLocationInput> inputsProperty() {
@@ -127,14 +167,33 @@ public class TimingLocation {
     }
     public void addInput(TimingLocationInput t){
         System.out.println("TimingLocation.addInput called");
-        timingInputs.add(t);
+        timingInputs.add(t); 
+        timingInputs.sort((TimingLocationInput u1, TimingLocationInput u2) -> u1.getID().compareTo(u2.getID()));
+        timingInputList = new ArrayList(timingInputs); 
         System.out.println(locationName + " now has " + timingInputs.size() + " inputs");
+        
     }
     public void removeInput(TimingLocationInput t){
         timingInputs.remove(t); 
+        timingInputList.remove(t);
+        System.out.println(locationName + " now has " + timingInputList.size() + " inputs");
+
+    }
+    
+    public TimingLocationInput getInputByID(Integer id){
+        ObjectProperty<TimingLocationInput> tmp = new SimpleObjectProperty();
+        timingInputs.forEach(i -> {
+                if (i.getID().equals(id)) tmp.set(i);
+        });
+        return tmp.getValue();
     }
     
     public void cookTime(CookedTimeData c) {
+        synchronized(cookedTimeReady){
+            if (!cookedTimeReady.get()) {
+                autoAssignRaceProperty();
+            }
+        }
         
         // Filter it
         if (!filterStartDuration.isZero() && c.getTimestamp().compareTo(filterStartDuration) < 0) {
@@ -148,6 +207,25 @@ public class TimingLocation {
         } 
         
         c.setTimingLocationId(this.getID());
+        
+        // If this is an auto-assign location, do some auto-assigning
+        if (autoWave != null){
+            System.out.println("TimingLocation::cookTime autoWave is not null...");
+            Participant p = ParticipantDAO.getInstance().getParticipantByBib(c.bibProperty().getValueSafe());
+            if (p != null) {
+                BooleanProperty inRace = new SimpleBooleanProperty(false);
+                p.getWaveIDs().forEach(w -> {
+                    if (autoWave.getRace().getID().equals(RaceDAO.getInstance().getWaveByID(w).getRace().getID())) inRace.setValue(Boolean.TRUE);
+                });
+                if (!inRace.get()) {
+                    System.out.println("TimingLocation::cookTime autoWave assigning " + p.getBib() + " to " + autoWave.getWaveName() );
+
+                    p.setWaves(autoWave);
+                    ParticipantDAO.getInstance().updateParticipant(p);
+                }
+            }
+        }
+        
         // Move to the timing location
         timingDAO.saveCookedTime(c); 
     }
@@ -183,7 +261,10 @@ public class TimingLocation {
     }
     
     public void reprocessReads() {
-        timingInputs.stream().forEach(t -> {t.reprocessReads();});
+        timingInputs.forEach(t -> {
+            System.out.println("TimingLocation::reprocessReads: " + t.getLocationName());
+            t.reprocessReads();
+        });
     }
     
     

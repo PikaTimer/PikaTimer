@@ -17,18 +17,20 @@
 package com.pikatimer.util;
 
 import com.pikatimer.Pikatimer;
+import com.pikatimer.event.EventOptions;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.Wave;
-import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.ReportDestination;
 import com.pikatimer.results.RaceOutputTarget;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.Result;
 import com.pikatimer.timing.Bib2ChipMap;
 import com.pikatimer.timing.CookedTimeData;
 import com.pikatimer.timing.RawTimeData;
+import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.timing.TimingLocation;
@@ -84,6 +86,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(RaceAwards.class);
         cfg.addAnnotatedClass(AgeGroups.class);
         cfg.addAnnotatedClass(Split.class);
+        cfg.addAnnotatedClass(Segment.class);
         cfg.addAnnotatedClass(TimingLocation.class);
         cfg.addAnnotatedClass(TimingLocationInput.class);
         cfg.addAnnotatedClass(Wave.class);
@@ -92,15 +95,16 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(Bib2ChipMap.class);
         cfg.addAnnotatedClass(Result.class);
         cfg.addAnnotatedClass(TimeOverride.class);
-        cfg.addAnnotatedClass(OutputPortal.class);
+        cfg.addAnnotatedClass(ReportDestination.class);
         cfg.addAnnotatedClass(RaceReport.class);
         cfg.addAnnotatedClass(RaceOutputTarget.class);
+        cfg.addAnnotatedClass(EventOptions.class);
         
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");
         cfg.setProperty("hibernate.connection.password", "");
-        cfg.setProperty("hibernate.show_sql", "true");
+        //cfg.setProperty("hibernate.show_sql", "true");
         cfg.setProperty("hibernate.jdbc.batch_size","100"); 
         
         cfg.setProperty("hibernate.enable_lazy_load_no_trans", "true");

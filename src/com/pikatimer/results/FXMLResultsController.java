@@ -8,7 +8,6 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -16,24 +15,32 @@
  */
 package com.pikatimer.results;
 
+import com.pikatimer.event.Event;
+import com.pikatimer.event.EventDAO;
+import com.pikatimer.event.EventOptions;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
-import com.pikatimer.race.AgeGroups;
+import com.pikatimer.participant.Status;
 import com.pikatimer.race.Race;
-import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.RaceDAO;
+import com.pikatimer.timing.FXMLTimingController;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransferTypes;
+import com.pikatimer.util.Pace;
 import java.io.IOException;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.lang.Double.MAX_VALUE;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -43,28 +50,45 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.OverrunStyle;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.Callback;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
 
 
@@ -84,35 +108,29 @@ public class FXMLResultsController  {
     
     @FXML VBox outputDetailsVBox;
     
-    @FXML ChoiceBox<Integer> agIncrementChoiceBox;
-    @FXML TextField agStartTextField;
-    @FXML TextField agMastersStartTextField;
-    
-    @FXML ChoiceBox<String> awardOverallPullChoiceBox;
-    @FXML ChoiceBox<String> awardMastersPullChoiceBox;
-    @FXML ChoiceBox<String> awardAGPullChoiceBox;
-    
-    @FXML ChoiceBox<String> awardOverallChipChoiceBox;
-    @FXML ChoiceBox<String> awardMastersChipChoiceBox;
-    @FXML ChoiceBox<String> awardAGChipChoiceBox;
-   
-    @FXML TextField awardOverallMaleDepthTextField;
-    @FXML TextField awardOverallFemaleDepthTextField; 
-    @FXML TextField awardMastersMaleDepthTextField;
-    @FXML TextField awardMastersFemaleDepthTextField;    
-    @FXML TextField awardAGMaleDepthTextField;
-    @FXML TextField awardAGFemaleDepthTextField;
-
     @FXML Button updateNowButton;
+    
     @FXML ToggleSwitch autoUpdateToggleSwitch;
+    @FXML ChoiceBox<String> updateTimeDelayChoiceBox;
+    @FXML ProgressBar autoUpdateProgressBar;
     
-    @FXML ChoiceBox timeRoundingChoiceBox;
-    @FXML ChoiceBox timeFormatChoiceBox;
+    @FXML ChoiceBox<String> timeRoundingChoiceBox;
+    @FXML ChoiceBox<String>  timeFormatChoiceBox;
+    @FXML ChoiceBox<Pace> paceFormatChoiceBox;
     
-    @FXML ListView<OutputPortal> outputDestinationsListView;
+    @FXML ListView<ReportDestination> outputDestinationsListView;
     @FXML Button addOutputDestinationsButton;
     @FXML Button editOutputDestinationsButton;
     @FXML Button removeOutputDestinationsButton;
+    
+    @FXML Label startedCountLabel;
+    @FXML Label finishedCountLabel;
+    @FXML Label pendingCountLabel;
+    @FXML Label withdrawnLabel;
+    @FXML Label withdrawnCountLabel;
+    
+    @FXML CheckBox useCustomHeaderCheckBox;
+    
     
     final Map<Race,TableView> raceTableViewMap = new ConcurrentHashMap();
     final Map<Race,VBox> raceReportsUIMap = new ConcurrentHashMap();
@@ -122,7 +140,10 @@ public class FXMLResultsController  {
     
     private Race activeRace;
     
-    private final BooleanProperty populateAwardSettingsInProgress = new SimpleBooleanProperty(FALSE);
+    private final Event event = Event.getInstance();
+    private final EventDAO eventDAO = EventDAO.getInstance();
+    private final EventOptions eventOptions = eventDAO.getEventOptions();;
+    //private final BooleanProperty populateAwardSettingsInProgress = new SimpleBooleanProperty(FALSE);
 
     /**
      * Initializes the controller class.
@@ -132,11 +153,22 @@ public class FXMLResultsController  {
         raceComboBox.setItems(raceDAO.listRaces());
         raceComboBox.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
         selectedRaceLabel.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
+        
+        
 
         outputDetailsVBox.setFillWidth(true);
-                
-        initializeAgeGroupSettings();
-        initializeAwardSettings();
+        
+        
+        // Event wide stuff
+        //eventOptions 
+        
+        timeRoundingChoiceBox.setItems(FXCollections.observableArrayList("Down", "Up", "Half"));
+        timeFormatChoiceBox.setItems(FXCollections.observableArrayList("HH:MM:ss","[HH:]MM:ss", "[HH:]MM:ss.S", "[HH:]MM:ss.SS", "[HH:]MM:ss.SSS"));
+        paceFormatChoiceBox.setItems(FXCollections.observableArrayList(Pace.values()));
+        
+        
+        initializeAutoUpdate();
+
 
         initializeOutputDestinations();
         
@@ -149,17 +181,19 @@ public class FXMLResultsController  {
             //System.out.println("raceChoiceBox listener fired: now with number2 set to " + number2.intValue());
             
             if (number2.intValue() == -1 )  {
-                raceComboBox.getSelectionModel().clearAndSelect(0);
+                Platform.runLater(() -> {raceComboBox.getSelectionModel().clearAndSelect(0);});
                 return;
             } 
             
             
+            if (activeRace != null) { // The currently active race
+                resultsGridPane.getChildren().remove(raceTableViewMap.get(activeRace));
+            }
+
+            
             activeRace = raceComboBox.getItems().get(number2.intValue());
             
-            // Populate the AG settings
-            populateAgeGroupSettings(activeRace);
-            // Populate the Awards Settings
-            populateAwardsSettings(activeRace);
+            
             // Populate the Output Settings
             populateOutputDetailsVBox(activeRace);
             
@@ -168,28 +202,131 @@ public class FXMLResultsController  {
             // Populate the results TableView
             if( ! raceTableViewMap.containsKey(activeRace)) {
                 rebuildResultsTableView(activeRace);
-            }
-            activeRace.splitsProperty().addListener( new ListChangeListener() {
- 
-                @Override
-                public void onChanged(ListChangeListener.Change change) {
-                    System.out.println("The list of splits has changed...");
-                    TableView oldTableView = raceTableViewMap.get(activeRace);
-                    rebuildResultsTableView(activeRace);
-                    if (raceComboBox.getSelectionModel().getSelectedItem().equals(activeRace)) {
-                        resultsGridPane.getChildren().remove(oldTableView);
-                        resultsGridPane.add(raceTableViewMap.get(activeRace), 0, 1);
+            
+                activeRace.splitsProperty().addListener( new ListChangeListener() {
+
+                    @Override
+                    public void onChanged(ListChangeListener.Change change) {
+                        System.out.println("The list of splits has changed...");
+                        TableView oldTableView = raceTableViewMap.get(activeRace);
+                        rebuildResultsTableView(activeRace);
+                        if (raceComboBox.getSelectionModel().getSelectedItem().equals(activeRace)) {
+                            resultsGridPane.getChildren().remove(oldTableView);
+                            resultsGridPane.add(raceTableViewMap.get(activeRace), 0, 1);
+                        }
                     }
-                }
-            });
-            if (number.intValue() > 0) {
-                Race old = raceComboBox.getItems().get(number.intValue());
-                resultsGridPane.getChildren().remove(raceTableViewMap.get(old));
+                });
+                
+                
+                
+                
             }
+            
             resultsGridPane.getChildren().remove(raceTableViewMap.get(activeRace));
             resultsGridPane.add(raceTableViewMap.get(activeRace), 0, 1);
             
+
+            
+            
+            String rm = activeRace.getStringAttribute("TimeRoundingMode");
+            System.out.println("TimeRoundingMode: " + rm);
+            if (rm == null) {
+                rm = "Down";
+                activeRace.setStringAttribute("TimeRoundingMode", rm);
+                raceDAO.updateRace(activeRace);
+            }
+            timeRoundingChoiceBox.getSelectionModel().select(rm);
+             
+            String paceName = activeRace.getStringAttribute("PaceDisplayFormat");
+            Pace pace; 
+            if (paceName == null) {
+                pace = Pace.MPM;
+                activeRace.setStringAttribute("PaceDisplayFormat", pace.name());
+                raceDAO.updateRace(activeRace);
+            } else {
+                try {
+                    pace = Pace.valueOf(paceName);
+                } catch (Exception e) {
+                    pace = Pace.MPM;
+                    activeRace.setStringAttribute("PaceDisplayFormat", pace.name());
+                    raceDAO.updateRace(activeRace);
+                }
+            }
+            paceFormatChoiceBox.getSelectionModel().select(pace);
+            
+            String dispFormat = activeRace.getStringAttribute("TimeDisplayFormat");
+            System.out.println("TimeDisplayFormat: " + dispFormat);
+            if (dispFormat == null) {
+                dispFormat =  timeFormatChoiceBox.getItems().get(0);
+                activeRace.setStringAttribute("TimeDisplayFormat", dispFormat);
+                raceDAO.updateRace(activeRace);
+            }
+            timeFormatChoiceBox.getSelectionModel().select(dispFormat);
+            
+            if(activeRace.getBooleanAttribute("useCustomHeaders") == null) {
+                activeRace.setBooleanAttribute("useCustomHeaders", false);
+                raceDAO.updateRace(activeRace);
+            }
+            useCustomHeaderCheckBox.selectedProperty().set(activeRace.getBooleanAttribute("useCustomHeaders"));
+            useCustomHeaderCheckBox.selectedProperty().addListener((ob, oldP, newP) -> {
+                if (activeRace.getBooleanAttribute("useCustomHeaders") == newP) return;
+                
+                if (newP) setupHeaders(null);
+                activeRace.setBooleanAttribute("useCustomHeaders", newP);
+                raceDAO.updateRace(activeRace);
+            
+            });
+            // Setup the started/finished/pending counters
+//            resultsDAO.getResults(activeRace.getID()).addListener((ListChangeListener.Change<? extends Result> c) -> {
+//                System.out.println("Race Result List Changed...");
+//            
+//            });
+            
+            FilteredList<Result> finishedFilteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
+                if (res.getFinishDuration().equals(Duration.ZERO)) return false;
+                if (Status.GOOD.equals(participantDAO.getParticipantByBib(res.getBib()).statusProperty().get())) return true;
+                return false;
+            });
+            FilteredList<Result> dnfFilteredParticipantsList = new FilteredList<>(resultsDAO.getResults(activeRace.getID()), res -> {
+                //System.out.println("DQ/DNF Check: " + res.getBib() + " " + participantDAO.getParticipantByBib(res.getBib()).dnfProperty().get());
+                if (Status.GOOD.equals(participantDAO.getParticipantByBib(res.getBib()).getStatus())) return false;
+                return true;
+            });
+            startedCountLabel.textProperty().bind(Bindings.size(resultsDAO.getResults(activeRace.getID())).asString());
+            withdrawnCountLabel.textProperty().bind(Bindings.size(dnfFilteredParticipantsList).asString());
+            finishedCountLabel.textProperty().bind(Bindings.size(finishedFilteredParticipantsList).asString());
+            pendingCountLabel.textProperty().bind(Bindings.subtract(Bindings.size(resultsDAO.getResults(activeRace.getID())), Bindings.add(Bindings.size(finishedFilteredParticipantsList), Bindings.size(dnfFilteredParticipantsList))).asString());
+            withdrawnCountLabel.visibleProperty().bind(Bindings.size(dnfFilteredParticipantsList).isNotEqualTo(0));
+            withdrawnCountLabel.managedProperty().bind(Bindings.size(dnfFilteredParticipantsList).isNotEqualTo(0));
+            withdrawnLabel.visibleProperty().bind(Bindings.size(dnfFilteredParticipantsList).isNotEqualTo(0));
+            withdrawnLabel.managedProperty().bind(Bindings.size(dnfFilteredParticipantsList).isNotEqualTo(0));
         });
+        
+        timeRoundingChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue,  newValue) -> {
+            Race r = raceComboBox.getValue();
+            if (newValue != null && !newValue.equals(r.getStringAttribute("TimeRoundingMode"))) {
+                System.out.println("EventOptions: TimeRoundingMode changed from " + oldValue + " to " + newValue);
+                r.setStringAttribute("TimeRoundingMode", newValue);
+                raceDAO.updateRace(r);
+            }
+         });
+        timeFormatChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue,  newValue) -> {
+            Race r = raceComboBox.getValue();
+            if (newValue != null && !newValue.equals(r.getStringAttribute("TimeDisplayFormat"))) {
+                System.out.println("Race: TimeDisplayFormat changed from " + oldValue + " to " + newValue);
+                r.setStringAttribute("TimeDisplayFormat", newValue);
+                raceDAO.updateRace(r);
+            }
+         });
+        paceFormatChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue,  newValue) -> {
+            Race r = raceComboBox.getValue();
+            if (newValue != null && !newValue.name().equals(r.getStringAttribute("PaceDisplayFormat"))) {
+                System.out.println("Race: PaceDisplayFormat changed from " + oldValue + " to " + newValue);
+                r.setStringAttribute("PaceDisplayFormat", newValue.name());
+                raceDAO.updateRace(r);
+            }
+         });
+        
         
         raceComboBox.getSelectionModel().clearAndSelect(0);
         
@@ -200,8 +337,10 @@ public class FXMLResultsController  {
         // create a table
                 TableView<Result> table = new TableView();
                 
-                //table.setPadding(new Insets(5));
+                table.setPlaceholder(new Label("No results for the " + r.getRaceName() + " have been entered yet"));
                 
+                //table.setPadding(new Insets(5));
+                table.setTableMenuButtonVisible(true);            
                 
                 // create the columns for the table with 
                 // cellValueFactories convert from the Result data to something we can display
@@ -222,64 +361,81 @@ public class FXMLResultsController  {
                         return p.fullNameProperty();
                     }
                 });
+                // Sex
+                TableColumn<Result,String> sexColumn = new TableColumn("Sex");
+                sexColumn.setPrefWidth(30.0);
+                table.getColumns().add(sexColumn);
+                sexColumn.setCellValueFactory(cellData -> {
+                    Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
+                    if (p == null) { return new SimpleStringProperty("?");
+                    } else {
+                        return p.sexProperty();
+                    }
+                });
                 
                 // start
-                TableColumn<Result,String> startColumn = new TableColumn("Start");
-                table.getColumns().add(startColumn);
-                startColumn.setCellValueFactory(cellData -> {
-                    return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getStartDuration(), 3, Boolean.TRUE));
-                });
-                startColumn.setComparator(new AlphanumericComparator());
+                TableColumn<Result,Duration> startColumn = new TableColumn("Start");
                 
+                startColumn.setCellValueFactory(cellData -> {
+                    //return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getStartDuration(), 3, Boolean.TRUE));
+                    return cellData.getValue().startTimeProperty();
+                });
+                startColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                //startColumn.setComparator(new AlphanumericComparator());
+                startColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(startColumn);
                 
                 // for each split from 2 -> n-2
                 //TableColumn<Result,String> splitColumn;
                 for (int i = 2; i <  r.getSplits().size() ; i++) {
-                    TableColumn<Result,String> splitColumn = new TableColumn();
+                    //TableColumn<Result,String> splitColumn = new TableColumn();
+                    TableColumn<Result,Duration> splitColumn = new TableColumn();
                     table.getColumns().add(splitColumn);
                     int splitID  = i; 
                     //splitColumn.setCellFactory(null);
                     
                     splitColumn.textProperty().bind(r.splitsProperty().get(splitID-1).splitNameProperty());
-
-                    splitColumn.setCellValueFactory(cellData -> {
-                        Duration split = cellData.getValue().getSplitTime(splitID);
-                        
-                        if (split.isZero()) return new SimpleStringProperty("");
-                        return new SimpleStringProperty(DurationFormatter.durationToString(split.minus(cellData.getValue().getStartDuration()), 3, Boolean.TRUE));
+                    
+                    splitColumn.setCellValueFactory(cellData -> {return cellData.getValue().splitTimeByIDProperty(splitID);});
+                    splitColumn.setCellFactory(column -> {
+                        return new DurationTableCell();
                     });
-                    splitColumn.setComparator(new AlphanumericComparator());
+                    splitColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+
+//                    splitColumn.setCellValueFactory(cellData -> {
+//                        Duration split = cellData.getValue().getSplitTime(splitID);
+//                        if (split.isZero()) return new SimpleStringProperty("");
+//                        return new SimpleStringProperty(DurationFormatter.durationToString(split.minus(cellData.getValue().getStartDuration()), 3, Boolean.TRUE));
+//                    });
+//                    splitColumn.setComparator(new AlphanumericComparator());
                 }
                 
                 
                 // finish
                 TableColumn<Result,Duration> finishColumn = new TableColumn("Finish");
-                table.getColumns().add(finishColumn);
                 finishColumn.setCellValueFactory(cellData -> {
                     return cellData.getValue().finishTimeProperty(); 
                 });
                 finishColumn.setCellFactory(column -> {
-			return new TableCell<Result, Duration>() {
-				@Override
-				protected void updateItem(Duration d, boolean empty) {
-					super.updateItem(d, empty);
-					if (d == null || empty ) {
-						setText(null);
-						setStyle("");
-					} else {
-						// Format date.
-                                                setText(DurationFormatter.durationToString(d, 3, Boolean.FALSE));
-					}
-                                        
-				}
-			};
-		});
+                    return new DurationTableCell();
+                });
                 //finishColumn.setComparator(new DurationComparator());
+                finishColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(finishColumn);
                 
                 // gun
-                TableColumn<Result,String> gunColumn = new TableColumn("Gun");
+                TableColumn<Result,Duration> gunColumn = new TableColumn("Gun");
+                gunColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().finishGunTimeProperty(); 
+                });
+                gunColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                gunColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
                 table.getColumns().add(gunColumn);
-                gunColumn.setComparator(new AlphanumericComparator());
+                //gunColumn.setComparator(new AlphanumericComparator());
                 
                 // set the default sort order to the finish time
 		finishColumn.setSortType(SortType.ASCENDING);
@@ -300,24 +456,25 @@ public class FXMLResultsController  {
                         if (newValue == null || newValue.isEmpty()) {
                             return true;
                         }
-                        //System.out.println("Filtered list eval for result " + result.getBib());
-                        // Compare first name and last name of every person with filter text.
-                        String lowerCaseFilter = "(.*)(" + newValue.toLowerCase() + ")(.*)";
+                        
+                        Participant participant = participantDAO.getParticipantByBib(result.getBib());
+                        if (participant == null) { 
+                            System.out.println(" Null participant, bailing...");
+                            return false;
+                        }
+                        String lowerCaseFilter = "(.*)(" + resultsSearchTextField.textProperty().getValueSafe() + ")(.*)";
+                        try {
+                            Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
 
-                        try {    
-                            Participant p = participantDAO.getParticipantByBib(result.getBib());
-                            if (p == null) { 
-                                System.out.println(" Null participant, bailing...");
-                                return false;
-                            }
-
-                            if ((p.fullNameProperty().getValueSafe() + " " + result.getBib() + " ").toLowerCase().matches(lowerCaseFilter)) {
-                                //System.out.println(" Match: " + lowerCaseFilter + " " + p.fullNameProperty().getValueSafe() + " " + result.getBib() );
-                                return true; // Filter matches first/last/email/bib.
+                            if (    pattern.matcher(participant.getFirstName()).matches() ||
+                                    pattern.matcher(participant.getLastName()).matches() ||
+                                    pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
+                                    pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
+                                    pattern.matcher(participant.getBib()).matches()) {
+                                return true; // Filter matches first/last/bib.
                             } 
 
-                        } catch (Exception e) {
-                            //e.printStackTrace();
+                        } catch (PatternSyntaxException e) {
                             return true;
                         }
                         return false; // Does not match.
@@ -337,472 +494,7 @@ public class FXMLResultsController  {
                 raceTableViewMap.put(r, table);
     }
 
-    private void populateAgeGroupSettings(Race r) {
-        System.out.println("populateRaceAGSettings() called...");
-        
-        AgeGroups ageGroups;
-        if (r.getAgeGroups() == null) {
-            ageGroups = new AgeGroups();
-            r.setAgeGroups(ageGroups);
-            raceDAO.updateRace(r);
-        } else {
-            ageGroups = r.getAgeGroups();
-        }
-
-        agStartTextField.setText(ageGroups.getAGStart().toString());
-        agIncrementChoiceBox.getSelectionModel().select(ageGroups.getAGIncrement());
-        agMastersStartTextField.setText(ageGroups.getMasters().toString());
-    }
-
-            
-    private void initializeAgeGroupSettings() {
-        //@FXML ChoiceBox agIncrementChoiceBox;
-        //@FXML TextField agStartTextField;
-        //@FXML TextField agMastersStartTextField;
-        System.out.println("initizlizeRaceAGSettings() called...");
-
-        TextFormatter<String> AGSformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        agStartTextField.setTooltip(new Tooltip("Sets the max age for the first age group. i.e. 1 -> X"));  
-        agStartTextField.setTextFormatter(AGSformatter);
-        
-        
-        agIncrementChoiceBox.setItems(FXCollections.observableArrayList(5, 10));
-        
-        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        agMastersStartTextField.setTooltip(new Tooltip("Sets the starting age for the Masters categories."));  
-        agMastersStartTextField.setTextFormatter(AGMformatter);
-        
-        agStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            Race r = activeRace; 
-
-            if (!newPropertyValue) {
-                //System.out.println("agStart out of focus...");
-                
-                if (agStartTextField.getText().isEmpty()) 
-                    agStartTextField.setText(r.getAgeGroups().getAGStart().toString());
-                
-                Integer st = Integer.parseUnsignedInt(agStartTextField.getText());
-                Integer inc = agIncrementChoiceBox.getSelectionModel().getSelectedItem();
-                
-                // If no change, bail
-                if (st.equals(r.getAgeGroups().getAGStart())) return; 
-                
-                if (st < (inc - 1)) {
-                    st = inc - 1;
-                    agStartTextField.setText(st.toString());
-                } else if ((st+1)%inc != 0) { // oops, the start is not a good value
-                    st = ((st/inc)*inc)-1;
-                    agStartTextField.setText(st.toString()); // now it should be ;-)
-                }
-                r.getAgeGroups().setAGStart(st);
-                raceDAO.updateRace(r);
-
-            }
-        });
-        
-        agIncrementChoiceBox.setOnAction((event) -> {
-            Race r = activeRace;
-            
-            Integer st = Integer.parseUnsignedInt(agStartTextField.getText());
-            Integer inc = agIncrementChoiceBox.getSelectionModel().getSelectedItem();
-
-            // If no change, bail
-            if (inc.equals(r.getAgeGroups().getAGIncrement())) return; 
-
-            if (st < (inc - 1)) {
-                st = inc - 1;
-                agStartTextField.setText(st.toString());
-            } else if ((st+1)%inc != 0) { // oops, the start is not a good value
-                st = ((st/inc)*inc)-1;
-                agStartTextField.setText(st.toString()); // now it should be ;-)
-            }
-            r.getAgeGroups().setAGStart(st);
-            r.getAgeGroups().setAGIncrement(inc);
-            raceDAO.updateRace(r);
-        });
-        
-        agMastersStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            Race r = activeRace; 
-
-            if (!newPropertyValue) {
-                //System.out.println("agStart out of focus...");
-                
-                if (agMastersStartTextField.getText().isEmpty()) 
-                    agMastersStartTextField.setText(r.getAgeGroups().getMasters().toString());
-                
-                Integer m = Integer.parseUnsignedInt(agMastersStartTextField.getText());
-                
-                // If no change, bail
-                if ( ! m.equals(r.getAgeGroups().getMasters())){
-                    r.getAgeGroups().setMasters(m);
-                    raceDAO.updateRace(r);
-                }
-            }
-        });
-        
-    }
     
-    private void initializeAwardSettings() {
-        //    @FXML ChoiceBox awardOverallPullChoiceBox;
-        awardOverallPullChoiceBox.setItems(FXCollections.observableArrayList("Yes","No"));
-        
-        
-        awardOverallPullChoiceBox.setOnAction((event) -> {
-            Race r = activeRace; 
-            RaceAwards a = r.getAwards();
-            
-            if (awardOverallPullChoiceBox.getSelectionModel().isEmpty()) return;
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            
-            Boolean s = awardOverallPullChoiceBox.getSelectionModel().getSelectedItem().equalsIgnoreCase("yes");
-            
-            if (! s.equals(a.getBooleanAttribute("OverallPull"))) {
-                System.out.println("awardOverallPullChoiceBox Changed...");
-                System.out.println(" was " + a.getBooleanAttribute("OverallPull").toString() );
-                System.out.println(" Set to " + awardOverallPullChoiceBox.getSelectionModel().getSelectedItem());
-                a.setBooleanAttribute("OverallPull",s);
-                raceDAO.updateRace(r);
-            }
-        });
-        
-        //    @FXML ChoiceBox awardMastersPullChoiceBox;
-        awardMastersPullChoiceBox.setItems(FXCollections.observableArrayList("Yes","No"));
-        awardMastersPullChoiceBox.setOnAction((event) -> {
-            Race r = activeRace;
-            RaceAwards a = r.getAwards();
-            
-            if (awardMastersPullChoiceBox.getSelectionModel().isEmpty()) return;
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            Boolean s = awardMastersPullChoiceBox.getSelectionModel().getSelectedItem().equalsIgnoreCase("yes");
-            
-            if (! s.equals(a.getBooleanAttribute("MastersPull"))) {
-                System.out.println("awardMastersPullChoiceBox Changed..");
-                a.setBooleanAttribute("MastersPull",s);
-                raceDAO.updateRace(r);
-            }
-        });
-        //    @FXML ChoiceBox awardAGPullChoiceBox;
-        awardAGPullChoiceBox.setItems(FXCollections.observableArrayList("Yes","No"));
-        awardAGPullChoiceBox.setOnAction((event) -> {
-            Race r = activeRace;
-            RaceAwards a = r.getAwards();
-            
-            if (awardAGPullChoiceBox.getSelectionModel().isEmpty()) return;
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            Boolean s = awardAGPullChoiceBox.getSelectionModel().getSelectedItem().equalsIgnoreCase("yes");
-            
-            if (! s.equals(a.getBooleanAttribute("AGPull"))) {
-                a.setBooleanAttribute("AGPull",s);
-                raceDAO.updateRace(r);
-            }
-        });
-
-        //    @FXML ChoiceBox awardOverallChipChoiceBox;
-        awardOverallChipChoiceBox.setItems(FXCollections.observableArrayList("Gun","Chip"));
-        awardOverallChipChoiceBox.setOnAction((event) -> {
-            
-            if (awardOverallChipChoiceBox.getSelectionModel().isEmpty()) return;
-            if (populateAwardSettingsInProgress.getValue()) return;
-            
-            Race r = raceComboBox.getSelectionModel().getSelectedItem();
-            RaceAwards a = r.getAwards();
-            
-            Boolean s = awardOverallChipChoiceBox.getSelectionModel().getSelectedItem().equalsIgnoreCase("chip");
-            
-            if (! s.equals(a.getBooleanAttribute("OverallChip"))) {
-                a.setBooleanAttribute("OverallChip",s);
-                raceDAO.updateRace(r);
-            }
-        });
-        
-        //    @FXML ChoiceBox awardMastersChipChoiceBox;
-        awardMastersChipChoiceBox.setItems(FXCollections.observableArrayList("Gun","Chip"));
-        awardMastersChipChoiceBox.setOnAction((event) -> {
-            if (awardMastersChipChoiceBox.getSelectionModel().isEmpty()) return;
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            Race r = activeRace;
-            RaceAwards a = r.getAwards();
-            
-            Boolean s = awardMastersChipChoiceBox.getSelectionModel().getSelectedItem().equalsIgnoreCase("chip");
-            
-            if (! s.equals(a.getBooleanAttribute("MastersChip"))) {
-                a.setBooleanAttribute("MastersChip",s);
-                raceDAO.updateRace(r);
-            }
-        });
-        
-        //    @FXML ChoiceBox awardAGChipChoiceBox;
-        awardAGChipChoiceBox.setItems(FXCollections.observableArrayList("Gun","Chip"));
-        awardAGChipChoiceBox.setOnAction((event) -> {
-            if (awardAGChipChoiceBox.getSelectionModel().isEmpty()) return;
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            Race r = activeRace;
-            RaceAwards a = r.getAwards();
-            
-            Boolean s = awardAGChipChoiceBox.getSelectionModel().getSelectedItem().equalsIgnoreCase("chip");
-            
-            if (! s.equals(a.getBooleanAttribute("AGChip"))) {
-                a.setBooleanAttribute("AGChip",s);
-                raceDAO.updateRace(r);
-            }
-        });
-        //   
-        //    @FXML TextField awardOverallMaleDepthTextField;
-        TextFormatter<String> OMDformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        awardOverallMaleDepthTextField.setTextFormatter(OMDformatter);
-        awardOverallMaleDepthTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            if (!newPropertyValue) {
-            Race r = activeRace;
-
-            if (awardOverallMaleDepthTextField.getText().isEmpty()) 
-                    awardOverallMaleDepthTextField.setText(r.getAwards().getIntegerAttribute("OverallMaleDepth").toString());
-                
-                Integer m = Integer.parseUnsignedInt(awardOverallMaleDepthTextField.getText());
-                
-                // If no change, bail
-                if ( ! m.equals(r.getAwards().getIntegerAttribute("OverallMaleDepth"))){
-                    r.getAwards().setIntegerAttribute("OverallMaleDepth", m);
-                    System.out.println("awardOverallMaleDepthTextField Changed..");
-                    raceDAO.updateRace(r);
-                }
-            }
-        });
-        
-        //    @FXML TextField awardOverallFemaleDepthTextField; 
-        TextFormatter<String> OFDformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        awardOverallFemaleDepthTextField.setTextFormatter(OFDformatter);
-        awardOverallFemaleDepthTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            if (!newPropertyValue) {
-                Race r = activeRace;
-
-                if (awardOverallFemaleDepthTextField.getText().isEmpty()) 
-                    awardOverallFemaleDepthTextField.setText(r.getAwards().getIntegerAttribute("OverallFemaleDepth").toString());
-                
-                Integer d = Integer.parseUnsignedInt(awardOverallFemaleDepthTextField.getText());
-                
-                // If no change, bail
-                if ( ! d.equals(r.getAwards().getIntegerAttribute("OverallFemaleDepth"))){
-                    r.getAwards().setIntegerAttribute("OverallFemaleDepth", d);
-                    System.out.println("awardOverallFemaleDepthTextField Changed..");
-                    raceDAO.updateRace(r);
-                }
-            }
-        });
-        
-        //    @FXML TextField awardMastersMaleDepthTextField;
-        TextFormatter<String> MMformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        awardMastersMaleDepthTextField.setTextFormatter(MMformatter);
-        awardMastersMaleDepthTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            if (!newPropertyValue) {
-                Race r = activeRace;
-
-                if (awardMastersMaleDepthTextField.getText().isEmpty()) 
-                    awardMastersMaleDepthTextField.setText(r.getAwards().getIntegerAttribute("MastersMaleDepth").toString());
-                
-                Integer d = Integer.parseUnsignedInt(awardMastersMaleDepthTextField.getText());
-                
-                // If no change, bail
-                if ( ! d.equals(r.getAwards().getIntegerAttribute("MastersMaleDepth"))){
-                    r.getAwards().setIntegerAttribute("MastersMaleDepth", d);
-                    System.out.println("awardMastersMaleDepthTextField Changed..");
-                    raceDAO.updateRace(r);
-                }
-            }
-        });
-        
-        //    @FXML TextField awardMastersFemaleDepthTextField;    
-        TextFormatter<String> MFformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        awardMastersFemaleDepthTextField.setTextFormatter(MFformatter);
-        awardMastersFemaleDepthTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            if (!newPropertyValue) {
-                Race r = activeRace;
-
-                if (awardMastersFemaleDepthTextField.getText().isEmpty()) 
-                    awardMastersFemaleDepthTextField.setText(r.getAwards().getIntegerAttribute("MastersFemaleDepth").toString());
-                
-                Integer d = Integer.parseUnsignedInt(awardMastersFemaleDepthTextField.getText());
-                
-                // If no change, bail
-                if ( ! d.equals(r.getAwards().getIntegerAttribute("MastersFemaleDepth"))){
-                    r.getAwards().setIntegerAttribute("MastersFemaleDepth", d);
-                    System.out.println("awardMastersFemaleDepthTextField Changed..");
-                    raceDAO.updateRace(r);
-                }
-            }
-        });
-        
-        //    @FXML TextField awardAGMaleDepthTextField;
-        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        awardAGMaleDepthTextField.setTextFormatter(AGMformatter);
-        awardAGMaleDepthTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            if (!newPropertyValue) {
-                Race r = activeRace;
-
-                if (awardAGMaleDepthTextField.getText().isEmpty()) 
-                    awardAGMaleDepthTextField.setText(r.getAwards().getIntegerAttribute("AGMaleDepth").toString());
-                
-                Integer d = Integer.parseUnsignedInt(awardAGMaleDepthTextField.getText());
-                
-                // If no change, bail
-                if ( ! d.equals(r.getAwards().getIntegerAttribute("AGMaleDepth"))){
-                    r.getAwards().setIntegerAttribute("AGMaleDepth", d);
-                    System.out.println("awardAGMaleDepthTextField Changed..");
-                    raceDAO.updateRace(r);
-                }
-            }
-        });
-        
-        //    @FXML TextField awardAGFemaleDepthTextField;
-        TextFormatter<String> AGFformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        awardAGFemaleDepthTextField.setTextFormatter(AGFformatter);
-        awardAGFemaleDepthTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            if (populateAwardSettingsInProgress.getValue()) return;
-
-            if (!newPropertyValue) {
-                Race r = activeRace;
-
-                if (awardAGFemaleDepthTextField.getText().isEmpty()) 
-                    awardAGFemaleDepthTextField.setText(r.getAwards().getIntegerAttribute("AGFemaleDepth").toString());
-                
-                Integer d = Integer.parseUnsignedInt(awardAGFemaleDepthTextField.getText());
-                
-                // If no change, bail
-                if ( ! d.equals(r.getAwards().getIntegerAttribute("AGFemaleDepth"))){
-                    r.getAwards().setIntegerAttribute("AGFemaleDepth", d);
-                    System.out.println("awardAGFemaleDepthTextField Changed..");
-                    raceDAO.updateRace(r);
-                }
-            }
-        });
-
-
-    }
-
-    private void populateAwardsSettings(Race r) {
-        populateAwardSettingsInProgress.setValue(TRUE);
-        RaceAwards a;
-        
-        // If null, create one and save it
-        if (r.getAwards() == null) {
-            a = new RaceAwards();
-            System.out.println("NULL Awards, adding some...");
-            // Set defaults for all used values
-            a.setBooleanAttribute("OverallPull", TRUE);
-            a.setBooleanAttribute("MastersPull", TRUE);
-            a.setBooleanAttribute("AGPull", TRUE);
-            
-            a.setBooleanAttribute("OverallChip", TRUE);
-            a.setBooleanAttribute("MastersChip", TRUE);
-            a.setBooleanAttribute("AGChip", TRUE);
-            
-            a.setIntegerAttribute("OverallMaleDepth", 5);
-            a.setIntegerAttribute("OverallFemaleDepth", 5);
-            a.setIntegerAttribute("MastersMaleDepth", 3);
-            a.setIntegerAttribute("MastersFemaleDepth", 3);
-            a.setIntegerAttribute("AGMaleDepth", 3);
-            a.setIntegerAttribute("AGFemaleDepth", 3);
-
-
-            
-            r.setAwards(a);
-            raceDAO.updateRace(r);
-        } else {
-            a = r.getAwards();
-        }
-      
-        //    @FXML ChoiceBox awardOverallPullChoiceBox;
-        if (a.getBooleanAttribute("OverallPull")) {   
-            awardOverallPullChoiceBox.setValue("Yes");
-        } else {
-            awardOverallPullChoiceBox.setValue("No");
-        }
-        //    @FXML ChoiceBox awardMastersPullChoiceBox;
-        if (a.getBooleanAttribute("MastersPull")) {   
-            awardMastersPullChoiceBox.setValue("Yes");
-        } else {
-            awardMastersPullChoiceBox.setValue("No");
-        }
-        //    @FXML ChoiceBox awardAGPullChoiceBox;
-        if (a.getBooleanAttribute("AGPull")) {   
-            awardAGPullChoiceBox.setValue("Yes");
-        } else {
-            awardAGPullChoiceBox.setValue("No");
-        }
-            
-        //    @FXML ChoiceBox awardOverallChipChoiceBox;
-        if (a.getBooleanAttribute("OverallChip")) {   
-            awardOverallChipChoiceBox.setValue("Chip");
-        } else {
-            awardOverallChipChoiceBox.setValue("Gun");
-        }
-        //    @FXML ChoiceBox awardMastersChipChoiceBox;
-        if (a.getBooleanAttribute("MastersChip")) {   
-            awardMastersChipChoiceBox.setValue("Chip");
-        } else {
-            awardMastersChipChoiceBox.setValue("Gun");
-        }
-        //    @FXML ChoiceBox awardAGChipChoiceBox;
-        if (a.getBooleanAttribute("AGChip")) {   
-            awardAGChipChoiceBox.setValue("Chip");
-        } else {
-            awardAGChipChoiceBox.setValue("Gun");
-        }
-        //   
-
-        //    @FXML TextField awardOverallMaleDepthTextField;
-        awardOverallMaleDepthTextField.setText(a.getIntegerAttribute("OverallMaleDepth").toString());
-        //    @FXML TextField awardOverallFemaleDepthTextField; 
-        awardOverallFemaleDepthTextField.setText(a.getIntegerAttribute("OverallFemaleDepth").toString());
-        //    @FXML TextField awardMastersMaleDepthTextField;
-        awardMastersMaleDepthTextField.setText(a.getIntegerAttribute("MastersMaleDepth").toString());
-        //    @FXML TextField awardMastersFemaleDepthTextField;    
-        awardMastersFemaleDepthTextField.setText(a.getIntegerAttribute("MastersFemaleDepth").toString());
-        //    @FXML TextField awardAGMaleDepthTextField;
-        awardAGMaleDepthTextField.setText(a.getIntegerAttribute("AGMaleDepth").toString());
-        //    @FXML TextField awardAGFemaleDepthTextField;    
-        awardAGFemaleDepthTextField.setText(a.getIntegerAttribute("AGFemaleDepth").toString());
-        
-        populateAwardSettingsInProgress.setValue(FALSE);
-    }
     
     private void populateOutputDetailsVBox(Race r) {
         //@FXML VBox outputDetailsVBox;
@@ -827,7 +519,6 @@ public class FXMLResultsController  {
                 award.setReportType(ReportTypes.AWARD);
                 r.addRaceReport(award);
                 resultsDAO.saveRaceReport(award);
-
                 
                 raceDAO.updateRace(r);
                 
@@ -838,12 +529,9 @@ public class FXMLResultsController  {
                 try {
                     reportDetails.getChildren().add(tlLoader.load());
                     System.out.println("Showing RaceReport of type " + rr.getReportType().toString());
-
-
                 } catch (IOException ex) {
                     System.out.println("Loader Exception for race reports!");
                     ex.printStackTrace();
-                    
                     Logger.getLogger(FXMLResultOutputController.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 ((FXMLResultOutputController)tlLoader.getController()).setRaceReport(rr);
@@ -859,35 +547,90 @@ public class FXMLResultsController  {
         outputDetailsVBox.getChildren().setAll(raceReportsUIMap.get(r));
     }
     
+    private void initializeAutoUpdate(){
+        autoUpdateToggleSwitch.selectedProperty().set(false);
+        updateTimeDelayChoiceBox.setItems(FXCollections.observableArrayList("30s", "1m", "2m", "5m"));
+        updateTimeDelayChoiceBox.disableProperty().bind(autoUpdateToggleSwitch.selectedProperty().not());
+        autoUpdateProgressBar.disableProperty().bind(autoUpdateToggleSwitch.selectedProperty().not());
+        updateTimeDelayChoiceBox.getSelectionModel().selectLast();
+        
+        Task autoUpdateTask = new Task<Void>() {
+
+            @Override 
+            public Void call() {
+                String delayString = "30s";
+                int delay = 30;
+                int counter = 0;
+                while(true) {
+                    try {
+                        if (autoUpdateToggleSwitch.selectedProperty().not().get()) counter = 0;
+                        
+                        delayString=updateTimeDelayChoiceBox.getSelectionModel().getSelectedItem();
+                        delay = Integer.parseUnsignedInt(delayString.replaceAll("\\D+", ""));
+                        if (delayString.contains("m")) delay = delay * 60;
+                        //System.out.println("Auto-Update timer " + (delay-counter) + "s (" + counter + "/" + delay + ")");
+                        
+                        if (counter >= delay) {
+                            counter = 0;
+                            resultsDAO.processAllReports();
+                            updateMessage("Processing...");
+                        } else counter++;
+                        
+                        updateProgress(counter, delay);
+                        Thread.sleep(1000);
+                        updateMessage((delay-counter) + "s");
+                    } catch (Exception ex) {
+                        System.out.println("AutoUpdateReportsThread Exception: " + ex.getMessage());
+                    }
+
+                }
+            }
+        };
+        Thread processNewResultThread = new Thread(autoUpdateTask);
+        processNewResultThread.setName("Thread-AutoUpdateReportsThread");
+        processNewResultThread.setDaemon(true);
+        processNewResultThread.start();
+        autoUpdateProgressBar.progressProperty().bind(autoUpdateTask.progressProperty());
+    }
+    
     private void initializeOutputDestinations(){
+        
+        
 
         removeOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
         editOutputDestinationsButton.disableProperty().bind(outputDestinationsListView.getSelectionModel().selectedItemProperty().isNull());
-        outputDestinationsListView.setItems(resultsDAO.listOutputPortals());
+        outputDestinationsListView.setItems(resultsDAO.listReportDestinations());
         outputDestinationsListView.setEditable(false);
-        
+        outputDestinationsListView.setCellFactory((ListView<ReportDestination> listView) -> new OutputPortalListCell());
         // If empty, create a default local file output
-        if(resultsDAO.listOutputPortals().isEmpty()) {
-            OutputPortal op = new OutputPortal();
+        if(resultsDAO.listReportDestinations().isEmpty()) {
+            ReportDestination op = new ReportDestination();
             op.setName(System.getProperty("user.home"));
             op.setBasePath(System.getProperty("user.home"));
             op.setOutputProtocol(FileTransferTypes.LOCAL);
             
-            resultsDAO.saveOutputPortal(op);
+            resultsDAO.saveReportDestination(op);
         }
+        
+        outputDestinationsListView.setOnMouseClicked((MouseEvent click) -> {
+            if (click.getClickCount() == 2) {
+                ReportDestination sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
+                editOutputDestination(sp);
+            }
+        });
         
     }
     public void addOutputDestination(ActionEvent fxevent){
-        editOutputDestination(new OutputPortal());
+        editOutputDestination(new ReportDestination());
     }
     
     public void editOutputDestination(ActionEvent fxevent){
-        OutputPortal sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
+        ReportDestination sp = outputDestinationsListView.getSelectionModel().selectedItemProperty().getValue();
         editOutputDestination(sp);
         
     }
     
-    private void editOutputDestination(OutputPortal sp){
+    private void editOutputDestination(ReportDestination sp){
         
         Dialog<Boolean> dialog = new Dialog<>();
         dialog.setTitle("Report Destination");
@@ -908,6 +651,7 @@ public class FXMLResultsController  {
         typeChoiceBox.getItems().setAll(FileTransferTypes.values());
         grid.add(new Label("Type"), 0, 0);
         grid.add(typeChoiceBox, 1, 0);
+        grid.setStyle("-fx-font-size: 14px;");
         
         // Now we create two Grids, one for local files, one for remote
         // We do this so we can easily show one and hide the other as the 
@@ -918,32 +662,7 @@ public class FXMLResultsController  {
         grid.add(localGrid,0,1,2,1); // col 0, row 1, colspan 2, rowspan 1
         grid.add(remoteGrid,0,1,2,1);
         
-        typeChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
-            FileTransferTypes ftt = typeChoiceBox.getItems().get((Integer) number2);
-            if (number2.intValue() < 0) {
-                remoteGrid.managedProperty().setValue(FALSE);
-                remoteGrid.visibleProperty().setValue(FALSE);
-                localGrid.managedProperty().setValue(FALSE);
-                localGrid.visibleProperty().setValue(FALSE);
-                
-            } else if(ftt.equals(FileTransferTypes.LOCAL)) {
-                localGrid.managedProperty().setValue(TRUE);
-                localGrid.visibleProperty().setValue(TRUE);
-                
-                remoteGrid.managedProperty().setValue(FALSE);
-                remoteGrid.visibleProperty().setValue(FALSE);
-            } else {
-                remoteGrid.managedProperty().setValue(TRUE);
-                remoteGrid.visibleProperty().setValue(TRUE);
-                
-                localGrid.managedProperty().setValue(FALSE);
-                localGrid.visibleProperty().setValue(FALSE);
-                
-                dialog.getDialogPane().getScene().getWindow().sizeToScene();
-            }
-        });
-        
-        typeChoiceBox.getSelectionModel().select(sp.getOutputProtocol());
+
 
         // create and populate the localGrid
         TextField filePath = new TextField();
@@ -951,16 +670,16 @@ public class FXMLResultsController  {
         localGrid.add(new Label("Directory"),0,0);
         localGrid.add(filePath,1,0);
         
+        TextField remoteServer = new TextField();
+        remoteServer.setText(sp.getServer());
+        remoteGrid.add(new Label("Server"),0,0);
+        remoteGrid.add(remoteServer,1,0);
+        
         // create and populate the remoteGrid
         TextField remoteDir = new TextField();
         remoteDir.setText(sp.getBasePath());
-        remoteGrid.add(new Label("Path"),0,0);
-        remoteGrid.add(remoteDir,1,0);
-        
-        TextField remoteServer = new TextField();
-        remoteServer.setText(sp.getServer());
-        remoteGrid.add(new Label("Server"),0,1);
-        remoteGrid.add(remoteServer,1,1);
+        remoteGrid.add(new Label("Path"),0,1);
+        remoteGrid.add(remoteDir,1,1);
         
         TextField remoteUsername = new TextField();
         remoteUsername.setText(sp.getUsername());
@@ -972,6 +691,45 @@ public class FXMLResultsController  {
         remoteGrid.add(new Label("Password"),0,3);
         remoteGrid.add(remotePassword,1,3);
         
+        CheckBox stripAccents = new CheckBox("Strip Accents");
+        stripAccents.setSelected(sp.getStripAccents());
+        stripAccents.tooltipProperty().set(new Tooltip("Remove accent marks from files. e.g. é -> e"));
+        grid.add(stripAccents,0,2,2,1);
+        
+        typeChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
+            FileTransferTypes ftt = typeChoiceBox.getItems().get((Integer) number2);
+            if (number2.intValue() < 0) {
+                remoteGrid.managedProperty().setValue(FALSE);
+                remoteGrid.visibleProperty().setValue(FALSE);
+                localGrid.managedProperty().setValue(FALSE);
+                localGrid.visibleProperty().setValue(FALSE);
+            } else if(ftt.equals(FileTransferTypes.LOCAL)) {
+                localGrid.managedProperty().setValue(TRUE);
+                localGrid.visibleProperty().setValue(TRUE);
+                
+                remoteGrid.managedProperty().setValue(FALSE);
+                remoteGrid.visibleProperty().setValue(FALSE);
+                
+                dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(filePath.textProperty().isEmpty());
+            } else {
+                remoteGrid.managedProperty().setValue(TRUE);
+                remoteGrid.visibleProperty().setValue(TRUE);
+                
+                localGrid.managedProperty().setValue(FALSE);
+                localGrid.visibleProperty().setValue(FALSE);
+                
+                BooleanProperty oneEmpty = new SimpleBooleanProperty(false);
+                
+                oneEmpty.bind(Bindings.or(remoteServer.textProperty().isEmpty(), 
+                        remoteDir.textProperty().isEmpty()));
+                
+                dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(oneEmpty);
+            }
+            
+            dialog.getDialogPane().getScene().getWindow().sizeToScene();
+        });
+        
+        typeChoiceBox.getSelectionModel().select(sp.getOutputProtocol());
         
         dialog.getDialogPane().setContent(grid);
 
@@ -989,7 +747,7 @@ public class FXMLResultsController  {
                 sp.setUsername(remoteUsername.getText());
                 sp.setPassword(remotePassword.getText());
                 
-                
+                sp.setStripAccents(stripAccents.selectedProperty().get());
                         
                 return Boolean.TRUE;
             }
@@ -1000,14 +758,14 @@ public class FXMLResultsController  {
         
         result.ifPresent(dialogOK -> {
             if (dialogOK) {
-                resultsDAO.saveOutputPortal(sp);
+                resultsDAO.saveReportDestination(sp);
             }
         });
     }
     public void removeOutputDestination(ActionEvent fxevent){
         // Make sure it is  not in use anywhere, then remove it.
         
-        resultsDAO.removeOutputPortal(outputDestinationsListView.getSelectionModel().getSelectedItem());
+        resultsDAO.removeReportDestination(outputDestinationsListView.getSelectionModel().getSelectedItem());
     }
     
     public void addNewReport(ActionEvent fxevent){
@@ -1037,11 +795,114 @@ public class FXMLResultsController  {
                 Logger.getLogger(FXMLResultOutputController.class.getName()).log(Level.SEVERE, null, ex);
             }
             ((FXMLResultOutputController)tlLoader.getController()).setRaceReport(newRR);
-
         }
-            
-            
-
+    }
+    
+    public void setupHeaders(ActionEvent fxevent){
+                
+        useCustomHeaderCheckBox.selectedProperty().set(true);
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("FXMLSetupHeaders.fxml"));
+        Parent setupHeadersRoot;
+        try {
+            setupHeadersRoot = (Parent) fxmlLoader.load();
+            FXMLSetupHeadersController ctrl = (FXMLSetupHeadersController)fxmlLoader.getController();
+            ctrl.setRace(activeRace);
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Header/Footer Setup");
+            stage.setScene(new Scene(setupHeadersRoot));  
+            stage.showAndWait();
+        } catch (IOException ex) {
+            System.out.println("Loader Error in FXMLSetupHeaders.fxml");
+        }
+    }
+    private class DurationTableCell extends TableCell<Result, Duration> {
+        @Override
+        protected void updateItem(Duration d, boolean empty) {
+            super.updateItem(d, empty);
+            if (d == null || empty) {
+                setText(null);
+            } else if (d.isZero() || d.equals(Duration.ofNanos(Long.MAX_VALUE))){
+                setText("");
+            } else {
+                // Format duration.
+                setText(DurationFormatter.durationToString(d, 3, Boolean.FALSE));
+            }
+        }
+    };
+    
+    private class OutputPortalListCell extends ListCell<ReportDestination> {
+        Label protocolLabel = new Label();
+        Label serverLabel = new Label();
+        Label pathLabel = new Label();
+        Label transferStatusLabel = new Label();
+        Label spring = new Label();
         
+        CheckBox enabledCheckBox = new CheckBox("Enabled");
+        VBox container = new VBox();
+        HBox topLine = new HBox();
+        HBox middleLine = new HBox();
+        HBox bottomLine = new HBox();
+        
+        OutputPortalListCell(){
+            topLine.setSpacing(5);
+            topLine.setStyle("-fx-font-size: 14px;");
+            enabledCheckBox.setStyle("-fx-font-size: 12px;");
+            
+            spring.setMinWidth(1);
+            spring.setPrefWidth(1);
+            spring.setMaxWidth(MAX_VALUE);
+            protocolLabel.setMinWidth(USE_COMPUTED_SIZE);
+            
+            //transferStatusLabel.setMinWidth(1);
+            //transferStatusLabel.setPrefWidth(2);
+            
+            HBox.setHgrow(protocolLabel, Priority.NEVER);
+            HBox.setHgrow(spring, Priority.ALWAYS);
+            topLine.getChildren().addAll(protocolLabel, spring, enabledCheckBox);
+
+            
+            serverLabel.setMinWidth(USE_COMPUTED_SIZE);
+            serverLabel.setPrefWidth(USE_COMPUTED_SIZE);
+            pathLabel.setMinWidth(1);
+            //pathLabel.setPrefWidth(1);
+            pathLabel.setTextOverrun(OverrunStyle.LEADING_ELLIPSIS);
+            
+            //HBox.setHgrow(serverLabel, Priority.NEVER);
+            HBox.setHgrow(pathLabel, Priority.ALWAYS);
+            
+            
+            middleLine.setSpacing(2);
+            middleLine.getChildren().addAll(pathLabel);
+            
+            bottomLine.getChildren().addAll(transferStatusLabel);
+            container.getChildren().addAll(topLine, middleLine,bottomLine);
+            
+            
+            // TODO: Find the right way to constrain a cell to the 
+            // Note that the serverLabel will shrink despite the minWidth setting
+            // The entire thing is beyond frustrating
+            container.setMaxWidth(230);
+            
+        }
+        
+        @Override
+        public void updateItem(ReportDestination op, boolean empty) {
+            super.updateItem(op, empty);
+            if (empty || op == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                setText(null);
+                protocolLabel.setText(op.protocolProperty().getValueSafe());
+                //serverLabel.setText(op.serverProperty().getValueSafe());
+                if (op.getOutputProtocol().equals(FileTransferTypes.LOCAL)) pathLabel.setText(op.basePathProperty().getValueSafe());
+                else pathLabel.setText(op.serverProperty().getValueSafe() + ":" + op.basePathProperty().getValueSafe());
+                enabledCheckBox.selectedProperty().bindBidirectional(op.enabledProperty());
+                transferStatusLabel.setText("Status: " + op.transferStatusProperty().getValueSafe());
+                setGraphic(container);
+                System.out.println("updateItem called: " + op.transferStatusProperty().getValueSafe());
+            }
+        }
     }
 }

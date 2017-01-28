@@ -68,12 +68,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <fx:include fx:id="eventTabPage" source="event/FXMLEvent.fxml" />
               </content>
             </Tab>
-          <Tab closable="false" text="Participants">
-            <content>
-                <fx:include fx:id="participantTabPage" source="participant/FXMLParticipant.fxml" />
-            </content>
-          </Tab>
-
+            <Tab closable="false" text="Awards">
+              <content>
+                  <fx:include fx:id="awardTabPage" source="race/FXMLAwardDetails.fxml" />
+              </content>
+            </Tab>
+            <Tab closable="false" text="Participants">
+              <content>
+                  <fx:include fx:id="participantTabPage" source="participant/FXMLParticipant.fxml" />
+              </content>
+            </Tab>
             <Tab text="Timing">
             <content>
                 <fx:include fx:id="timingTabPage" source="timing/FXMLTiming.fxml" />
@@ -84,9 +88,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <fx:include fx:id="resultsTabPage" source="results/FXMLResults.fxml" /> 
               </content>
             </Tab>
-            <Tab text="Options">
+            <Tab text="About">
               <content>
-                <AnchorPane minHeight="0.0" minWidth="0.0" />
+                <fx:include fx:id="aboutTabPage" source="FXMLAbout.fxml" /> 
               </content>
             </Tab>
         </tabs>

@@ -27,6 +27,8 @@ import java.util.Map;
  */
 public class ProcessedResult implements Comparable<ProcessedResult>{
     Map<Integer,Duration> splitTimes = new HashMap();
+    Map<Integer,Duration> segmentTimes = new HashMap();
+    Map<Integer,Map<String,Integer>> segmentPlacement = new HashMap();
     
     Integer overallPlace;
     Integer genderPlace;
@@ -39,6 +41,7 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     String sex;
     String agCode;
     
+    String lastSeen;
        
     Duration chipFinishTime;
     Duration gunFinishTime;
@@ -139,6 +142,43 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
         if (id > latestSplitID) latestSplitID = id; 
     }
     
+    public String getLastSeen(){
+        return lastSeen;
+    }
+    public void setLastSeen(String l){
+        lastSeen = l;
+    }
+    public Duration getSegmentTime(Integer id) {
+        return segmentTimes.get(id);
+    }
+    public void setSegmentTime(Integer id, Duration time){
+        segmentTimes.put(id,time);
+    }
+    public Integer getSegmentOverallPlace(Integer id){
+        if (segmentPlacement.containsKey(id)) return segmentPlacement.get(id).get("Overall");
+        return null;
+    }
+    public void setSegmentOverallPlace(Integer id, Integer place){
+        segmentPlacement.putIfAbsent(id, new HashMap<>());
+        segmentPlacement.get(id).put("Overall", place);
+    }
+    public Integer getSegmentSexPlace(Integer id){
+        if (segmentPlacement.containsKey(id)) return segmentPlacement.get(id).get("Sex");
+        return null;
+    }
+    public void setSegmentSexPlace(Integer id, Integer place){
+        segmentPlacement.putIfAbsent(id, new HashMap<>());
+        segmentPlacement.get(id).put("Sex", place);
+    }
+    public Integer getSegmentAGPlace(Integer id){
+        if (segmentPlacement.containsKey(id)) return segmentPlacement.get(id).get("AG");
+        return null;
+    }
+    public void setSegmentAGPlace(Integer id, Integer place){
+        segmentPlacement.putIfAbsent(id, new HashMap<>());
+        segmentPlacement.get(id).put("AG", place);
+    }
+    
     @Override
     public int compareTo(ProcessedResult other) {
         
@@ -181,8 +221,13 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
             if (latestSplitID > other.latestSplitID) return -1;
             if (other.latestSplitID > latestSplitID) return 1;
             
-            for (int i = latestSplitID; i == 1; i--) {
-                if (! splitTimes.get(i).equals(other.splitTimes.get(i))) return splitTimes.get(i).compareTo(other.splitTimes.get(i));
+            // Check #2: fastest split
+            // splits start at 1 for the start (which we ignore) 
+            // and MAY BE NULL! (so check for that). 
+            for (int i = latestSplitID; i > 1; i--) {
+                if (splitTimes.get(i) != null && other.splitTimes.get(i) != null && ! splitTimes.get(i).equals(other.splitTimes.get(i))) return splitTimes.get(i).compareTo(other.splitTimes.get(i));
+                if (splitTimes.get(i) != null && other.splitTimes.get(i) == null) return -1;
+                if (splitTimes.get(i) == null && other.splitTimes.get(i) != null) return 1;
             }
             
             

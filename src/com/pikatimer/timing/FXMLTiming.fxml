@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
 Copyright (C) 2016 John Garner
 
@@ -16,16 +17,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<?import javafx.scene.text.*?>
-<?import javafx.geometry.*?>
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.control.cell.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import org.controlsfx.control.CheckComboBox?>
+<?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane fx:id="timingGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="515.0" prefWidth="754.0" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingController">
+<GridPane fx:id="timingGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="515.0" prefWidth="754.0" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingController">
    <columnConstraints>
       <ColumnConstraints fillWidth="false" hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="250.0" />
       <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="400.0" prefWidth="400.0" />
@@ -51,9 +64,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                <children>
                   <HBox alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
-                        <Label text="Search" />
+                        <Label text="Search">
+                           <font>
+                              <Font size="18.0" />
+                           </font></Label>
                         <TextField fx:id="searchTextBox" />
-                        <ComboBox fx:id="searchScopeComboBox" prefWidth="150.0" />
+                        <Label text="Filter">
+                           <font>
+                              <Font size="18.0" />
+                           </font>
+                        </Label>
+                        <CheckComboBox fx:id="searchScopeCheckComboBox" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="129.0" />
                         <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                         <Label fx:id="filteredSizeLabel" text="0" />
                         <Label fx:id="filteredSizeLabel1" text="/" />
@@ -63,12 +84,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <Insets top="5.0" />
                      </padding>
                   </HBox>
-                  <TableView fx:id="timeTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+                  <TableView fx:id="timeTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
                     <columns>
                       <TableColumn fx:id="bibColumn" prefWidth="50.0" text="Bib" />
+                        <TableColumn fx:id="chipColumn" prefWidth="50.0" text="Chip" />
                       <TableColumn fx:id="timeColumn" prefWidth="79.0" text="Time" />
-                        <TableColumn fx:id="nameColumn" prefWidth="144.0" text="Name" />
-                        <TableColumn fx:id="inputColumn" prefWidth="70.0" text="Input" />
+                        <TableColumn fx:id="nameColumn" prefWidth="119.5" text="Name" />
+                        <TableColumn fx:id="locationColumn" prefWidth="94.5" text="Location" />
+                        <TableColumn fx:id="inputColumn" prefWidth="75.0" text="Input" />
                         <TableColumn fx:id="backupColumn" prefWidth="48.0" text="Backup" />
                         <TableColumn fx:id="ignoreColumn" editable="true" prefWidth="60.0" text="Ignore" />
                     </columns>
@@ -95,13 +118,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <ListView fx:id="timingLocListView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
                   <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
-                        <Button fx:id="timingLocRemoveAllButton" mnemonicParsing="false" onAction="#resetTimingLocations" text="Reset" />
+                        <Button mnemonicParsing="false" onAction="#clearAllTimes" text="Clear Times" />
                         <Pane HBox.hgrow="ALWAYS" />
                         <Button fx:id="timingLocAddButton" mnemonicParsing="false" onAction="#addTimingLocation" text="Add" />
                         <Button fx:id="timingLocRemoveButton" mnemonicParsing="false" onAction="#removeTimingLocation" text="Remove" />
                      </children>
                      <padding>
-                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                        <Insets bottom="2.0" top="2.0" />
+                     </padding>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Start Time Trigger Lookup" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
+                     <children>
+                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="startTriggerLookupButton" mnemonicParsing="false" onAction="#startTriggerLookup" text="Lookup" />
+                     </children>
+                     <padding>
+                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
+                     </padding>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Chip -&gt; Bib Mapping" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
+                     <children>
+                        <CheckBox fx:id="customChipBibCheckBox" mnemonicParsing="false" text="Use Custom Chip -&gt; Bib">
+                           <HBox.margin>
+                              <Insets left="5.0" />
+                           </HBox.margin>
+                        </CheckBox>
+                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="customChipMapButton" mnemonicParsing="false" onAction="#setupCustomChipMap" text="Setup" />
+                     </children>
+                     <padding>
+                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
                      </padding>
                   </HBox>
                </children>
@@ -125,34 +189,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <children>
                         <Button fx:id="overrideClearAllButton" mnemonicParsing="false" onAction="#clearAllOverrides" text="Clear All" />
                         <Pane HBox.hgrow="ALWAYS" />
-                        <Button fx:id="overrideAddButton" mnemonicParsing="false" onAction="#addOverride" text="Add" />
                         <Button fx:id="overrideRemoveButton" mnemonicParsing="false" onAction="#removeOverride" text="Remove" />
+                        <Button fx:id="overrideEditButton" mnemonicParsing="false" onAction="#editOverride" text="Edit" />
+                        <Button fx:id="overrideAddButton" mnemonicParsing="false" onAction="#addOverride" text="Add" />
                      </children>
                      <padding>
-                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-                     </padding>
-                  </HBox>
-               </children>
-            </VBox>
-            <VBox>
-               <children>
-                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Chip -&gt; Bib Mapping" textAlignment="CENTER">
-                     <font>
-                        <Font size="18.0" />
-                     </font>
-                  </Label>
-                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
-                     <children>
-                        <CheckBox fx:id="customChipBibCheckBox" mnemonicParsing="false" text="Custom Chip -&gt; Bib">
-                           <HBox.margin>
-                              <Insets left="5.0" />
-                           </HBox.margin>
-                        </CheckBox>
-                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
-                        <Button fx:id="customChipMapButton" mnemonicParsing="false" onAction="#setupCustomChipMap" text="Setup" />
-                     </children>
-                     <padding>
-                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
+                        <Insets bottom="2.0" top="2.0" />
                      </padding>
                   </HBox>
                </children>
@@ -162,30 +204,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" />
          </GridPane.margin>
       </VBox>
-      <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+      <VBox fx:id="timingLocVBox" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
          <children>
-            <HBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">
                <children>
                   <TextField fx:id="timingLocationNameTextField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="200.0" GridPane.columnIndex="1" />
                   <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                  <Button fx:id="addInputButton" alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#addTimingInput" text="Add Input" />
+                  <ToggleSwitch fx:id="assignToRaceToggleSwitch" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minHeight="-Infinity" minWidth="-Infinity" prefWidth="144.0" text="Auto-Assign to Race" textAlignment="RIGHT" />
+                  <ComboBox fx:id="assignToRaceComboBox" prefHeight="25.0" prefWidth="102.0" />
                </children>
                <GridPane.margin>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </GridPane.margin>
             </HBox>
-            <HBox alignment="CENTER_LEFT" prefWidth="200.0" spacing="5.0" VBox.vgrow="NEVER">
+            <HBox alignment="CENTER_LEFT" fillHeight="false" maxWidth="1.7976931348623157E308" spacing="5.0" VBox.vgrow="NEVER">
                <children>
-                  <Label text="Filter Times" />
                   <Label text="Start" HBox.hgrow="NEVER">
                      <HBox.margin>
-                        <Insets left="10.0" />
+                        <Insets />
                      </HBox.margin></Label>
-                  <TextField fx:id="filterStartTextField" prefHeight="25.0" prefWidth="72.0" promptText="HH:MM:SS" />
+                  <TextField fx:id="filterStartTextField" prefHeight="25.0" prefWidth="90.0" promptText="HH:MM:SS.sss" />
                   <Label text="End" />
-                  <TextField fx:id="filterEndTextField" prefHeight="25.0" prefWidth="73.0" promptText="HH:MM:SS" />
+                  <TextField fx:id="filterEndTextField" prefHeight="25.0" prefWidth="90.0" promptText="HH:MM:SS.sss" />
                   <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
-                  <Button mnemonicParsing="false" onAction="#clearAllTimes" text="Clear All" />
+                  <Button fx:id="addInputButton" alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#addTimingInput" text="Add Input" />
                </children>
             </HBox>
          </children>

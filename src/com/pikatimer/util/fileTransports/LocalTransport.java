@@ -16,14 +16,18 @@
  */
 package com.pikatimer.util.fileTransports;
 
-import com.pikatimer.results.OutputPortal;
+import com.pikatimer.results.ReportDestination;
 import com.pikatimer.util.FileTransport;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -31,9 +35,10 @@ import org.apache.commons.io.FilenameUtils;
  */
 public class LocalTransport implements FileTransport {
     Boolean goodToGo = false;
+    Boolean stripAccents = false;
     String basePath;
-    OutputPortal parent;
-    
+    ReportDestination parent;
+    StringProperty transferStatus = new SimpleStringProperty("Idle");
 
     @Override
     public boolean isOK() {
@@ -43,18 +48,29 @@ public class LocalTransport implements FileTransport {
     @Override
     public void save(String filename, String contents) {
         System.out.println("LocalTransport.save called for " + filename);
+        
+        if (stripAccents) contents = StringUtils.stripAccents(contents);
+        
         if (goodToGo && ! basePath.isEmpty()) {
             
             try {
+                Platform.runLater(() -> {transferStatus.set("Saving: " + filename);});
+//                try {
+//                    Thread.sleep(3000);
+//                } catch (InterruptedException ex) {
+//                    Logger.getLogger(LocalTransport.class.getName()).log(Level.SEVERE, null, ex);
+//                }
                 FileUtils.writeStringToFile(new File(FilenameUtils.concat(basePath, filename)), contents);
+                Platform.runLater(() -> {transferStatus.set("Idle");});
             } catch (IOException ex) {
+                Platform.runLater(() -> {transferStatus.set("ERROR! " + filename);});
                 Logger.getLogger(LocalTransport.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
 
     @Override
-    public void setOutputPortal(OutputPortal op) {
+    public void setOutputPortal(ReportDestination op) {
         parent = op; 
         refreshConfig();
     }
@@ -66,6 +82,7 @@ public class LocalTransport implements FileTransport {
             
             File baseDir = new File(basePath);
             
+            stripAccents = parent.getStripAccents();
 
             // does it exist?
             if (!baseDir.exists()) {
@@ -85,6 +102,10 @@ public class LocalTransport implements FileTransport {
         
     }
 
+    @Override
+    public StringProperty statusProperty() {
+        return transferStatus;
+    }
     
     
 }

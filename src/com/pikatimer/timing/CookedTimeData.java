@@ -19,10 +19,14 @@ package com.pikatimer.timing;
 import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.util.Objects;
+import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -41,12 +45,13 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="cooked_timing_data")
 public class CookedTimeData {
     private Duration timestamp;
-    private StringProperty timestampStringProperty = new SimpleStringProperty();
-    private StringProperty bibProperty = new SimpleStringProperty();
-    private StringProperty participantNameProperty = new SimpleStringProperty();
+    private final StringProperty timestampStringProperty = new SimpleStringProperty();
+    private final StringProperty bibProperty = new SimpleStringProperty();
+    private final StringProperty chipProperty = new SimpleStringProperty();
+    //private StringProperty participantNameProperty = new SimpleStringProperty();
     private Integer timingLocationId;
     private Integer timingLocationInputId;
-    private StringProperty timingLocationNameProperty = new SimpleStringProperty();
+    //private StringProperty timingLocationNameProperty = new SimpleStringProperty();
     private Integer cookedTimeId; 
     private final BooleanProperty ignoreTimeBoolean = new SimpleBooleanProperty(Boolean.FALSE);
     private final BooleanProperty backupTimeBoolean = new SimpleBooleanProperty(Boolean.FALSE);
@@ -97,10 +102,23 @@ public class CookedTimeData {
 
     public void setBib(String b) {
         bibProperty.setValue(b);
-        participantNameProperty.setValue("Not yet Implemented");
+        //participantNameProperty.setValue("Not yet Implemented");
     }
     public StringProperty bibProperty() {
         return bibProperty;
+    }
+    
+    @Column(name="raw_chip_id")
+    public String getRawChipID() {
+        return chipProperty.getValue();
+    }
+
+    public void setRawChipID(String  b) {
+        chipProperty.setValue(b);
+        //participantNameProperty.setValue("Not yet Implemented");
+    }
+    public StringProperty rawChipIDProperty() {
+        return chipProperty;
     }
     
     @Column(name="timing_loc_id") 
@@ -112,9 +130,9 @@ public class CookedTimeData {
         //System.out.println("RawTimeData: Setting timingLocationInputId to " + i);
         this.timingLocationId = i;
     }
-    public StringProperty timingLocationNameProperty() {
-        return timingLocationNameProperty;
-    }
+//    public StringProperty timingLocationNameProperty() {
+//        return timingLocationNameProperty;
+//    }
     
     @Column(name="timing_loc_input_id") 
     public Integer getTimingLocationInputId() {
@@ -185,13 +203,17 @@ public class CookedTimeData {
         
         return true;
     }
-
-    @Transient
-    public String getParticipantName() {
-        return participantNameProperty.getValue(); 
+    
+    public static Callback<CookedTimeData, Observable[]> extractor() {
+        return (CookedTimeData ct) -> new Observable[]{ct.bibProperty,ct.ignoreTimeBoolean};
     }
-    public StringProperty participantNameProperty() {
-        return participantNameProperty;
-    }    
+
+//    @Transient
+//    public String getParticipantName() {
+//        return participantNameProperty.getValue(); 
+//    }
+//    public StringProperty participantNameProperty() {
+//        return participantNameProperty;
+//    }    
 
 }

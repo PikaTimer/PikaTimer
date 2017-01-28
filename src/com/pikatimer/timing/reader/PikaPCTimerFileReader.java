@@ -16,74 +16,99 @@
  */
 package com.pikatimer.timing.reader;
 
-import com.pikatimer.timing.TimingListener;
-import com.pikatimer.timing.TimingLocationInput;
-import com.pikatimer.timing.TimingReader;
-import java.io.File;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.scene.layout.Pane;
+import com.pikatimer.timing.RawTimeData;
+import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.DurationParser;
+import java.time.Duration;
+import javafx.application.Platform;
 
 
-/**
- *  Notes: Checkbox for time of day vs time since start. 
- *  If time since start, prompt for start time that is
- * independent of the actual race time. 
- * 
- *  
- */
+
 /**
  *
  * @author jcgarner
  */
-public class PikaPCTimerFileReader implements TimingReader {
-    private TimingLocationInput timingLocationInput;
-    private File sourceFile; 
-    private SimpleStringProperty fileName; 
-    private Pane displayPane; 
-    private final BooleanProperty readingStatus = new SimpleBooleanProperty();
+public class PikaPCTimerFileReader extends NonTailingReader{
+    @Override
+    public void process(String s) {
+        System.out.println("PikaPCTimerFileReader::process: " + s);
+        // the file is either pipe or comma delimited
+        // and we don't care which one since the rest of it is just numbers
+        // and colons 
+        String[] tokens = s.split(",", -1); 
+        // we only care about the following fields:
+        // 0 -- The place
+        // 1 -- bib
+        // 2 -- time (as a string)
+        // 3+ -- it should not be here
+        if (tokens.length < 5 ) {
+            System.out.println("  Unable to parse " + s);
+            return;
+        }
 
-    public PikaPCTimerFileReader(){
+        // numbers only for the bib. 
+        // This also gets rid of the extra spaces and quotes
+        String bib = tokens[4].replaceAll("\\D+", ""); 
         
-    }
+        // one way to get rid of the header line.... 
+        if (bib == null || bib.isEmpty()) { // invalid bib
+            System.out.println("  Empty bib: " + s);
+            return;
+        }
+        if (bib.equals("0")) { // invalid bib
+            System.out.println("  Zero bib: " + s);
+            return;
+        }
+        
+        // strip any extra quotes, spaces, etc
+        String time = tokens[3].replaceAll("\\D+", ""); 
+        time = time.replaceAll("(\\d\\d)(\\d\\d)(\\d\\d)(\\d\\d)", "$1:$2:$3\\.$4");
+        
+        System.out.println("bib: " + bib + " -> " + time);
+        
+        
+        
+        
+        
+        Duration timestamp = offset; // We get this from the NonTailingReader class
+        System.out.println("  Offset is: " + offset);
 
-    @Override
-    public void setTimingListener(TimingListener t) {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 
-    @Override
-    public void showControls(Pane p) {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+        // First look for timestams without a date attached to them
+        if(time.matches("^\\d{1,2}:\\d{2}:\\d{2}\\.\\d{2}$")) {
+            if (DurationParser.parsable(time)){ 
+                timestamp = timestamp.plus(DurationParser.parse(time));
+                //LocalTime timestamp = LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME );
+                RawTimeData rawTime = new RawTimeData();
+                rawTime.setChip(bib);
+                
+                rawTime.setTimestampLong(timestamp.toNanos());
+                String status = "Added raw time: " + bib + " at " + DurationFormatter.durationToString(timestamp, 3);
+                Platform.runLater(() -> {
+                    statusLabel.textProperty().setValue(status);
+                });
+                timingListener.processRead(rawTime); // process it
+            } else {
+                String status = "Unable to parse the time in " + time;
+                System.out.println(status);
+                Platform.runLater(() -> {
+                    statusLabel.textProperty().setValue(status);
+                });
+            }
+        } else {
+            String status="Unable to parse the time: " + time;
+            System.out.println(status);
+            Platform.runLater(() -> {
+                statusLabel.textProperty().setValue(status);
+            });
+            
+        }
 
-    @Override
-    public void readOnce() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
-    @Override
-    public void startReading() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void stopReading() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public BooleanProperty getReadingStatus() {
-        return readingStatus;
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
+    
+   @Override
     public Boolean chipIsBib() {
         return Boolean.TRUE; 
     }
-    
-   
     
 }

@@ -19,10 +19,12 @@ package com.pikatimer.participant;
 import com.pikatimer.results.ResultsDAO;
 import java.util.List; 
 import com.pikatimer.util.HibernateUtil;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -40,13 +42,15 @@ import org.hibernate.Session;
  * @author jcgarner
  */
 public class ParticipantDAO {
-    private static final ObservableList<Participant> participantsList = FXCollections.observableArrayList();
+    private static final ObservableList<Participant> participantsList = FXCollections.observableArrayList(Participant.extractor());
     private static final Map<String,Participant> Bib2ParticipantMap = new HashMap<>();
     private static final Map<Integer,Participant> ID2ParticipantMap = new HashMap<>(); 
     private static final Map<Participant,String> Participant2BibMap = new HashMap<>();
     private static final ResultsDAO resultsDAO = ResultsDAO.getInstance();
     private static final BooleanProperty participantsListInitialized = new SimpleBooleanProperty(false);
     //Semaphore semaphore = new Semaphore(1);
+    
+    private static final CountDownLatch participantsLoadedLatch = new CountDownLatch(1);
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -142,6 +146,7 @@ public class ParticipantDAO {
                     System.out.println(e.getMessage());
                 } 
                 s.getTransaction().commit();
+                participantsLoadedLatch.countDown();
                 return null;
             }
         }; 
@@ -247,6 +252,10 @@ public class ParticipantDAO {
     }  
     
     public void updateParticipant(Participant p) {
+        if (p == null){
+            System.out.println("Cant save NULL!!!");
+            return;
+        }
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction(); 
         s.update(p);
@@ -254,18 +263,33 @@ public class ParticipantDAO {
         if ( ! p.getBib().equals(Participant2BibMap.get(p))) {
             // bib number changed
             System.out.println("bib Number Change... "); 
+            String oldBib = Participant2BibMap.get(p);
             Bib2ParticipantMap.remove(Participant2BibMap.get(p));
             Bib2ParticipantMap.put(p.getBib(), p);
             
             Participant2BibMap.replace(p,p.getBib()); 
+            
+            // Flush out any old results
+            resultsDAO.getResultsQueue().add(oldBib);
         }
         resultsDAO.getResultsQueue().add(p.getBib()); 
      } 
     
     public Participant getParticipantByBib(String b) {
+        if (b == null || b.isEmpty()) return null;
+        try {
+            participantsLoadedLatch.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ParticipantDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return Bib2ParticipantMap.get(b);
     }
     public Participant getParticipantByID(Integer id) {
+        try {
+            participantsLoadedLatch.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ParticipantDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return ID2ParticipantMap.get(id); 
     }
 } 

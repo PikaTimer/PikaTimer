@@ -16,14 +16,8 @@
  */
 package com.pikatimer.event;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.TabPane;
 
@@ -40,6 +34,7 @@ public class Event {
     private LocalDate eventDate = LocalDate.now(); 
     private final long eventID = 1;
     private  TabPane mainTabPane;  
+    private EventOptions eventOptions;
  
 	/**
 	* SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -74,7 +69,7 @@ public class Event {
             return eventName.getValue();
         }
         
-        public SimpleStringProperty getObservableEventName() {
+        public SimpleStringProperty eventNameProperty() {
             return eventName;
          }
         
@@ -87,22 +82,17 @@ public class Event {
             eventDate = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
             eventDateString.set(eventDate.format(DateTimeFormatter.ofPattern("MM/dd/yyyy")));
         }
-        
-//        public Date getEventDate() {
-//            return Date.from(eventDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-//        }
-        
-//        public void setEventDate(Date d) {
-//            Instant instant = Instant.ofEpochMilli(d.getTime());
-//            setEventDate(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
-//
-//        }
-        
+               
         public LocalDate getLocalEventDate() {
             return eventDate;
         }
         
-        public SimpleStringProperty getObservableEventDateString() {
+        public SimpleStringProperty eventDateStringProperty() {
             return eventDateString;
+        }
+        
+        public EventOptions eventOptions(){
+            if (eventOptions == null) eventOptions=EventDAO.getInstance().getEventOptions();
+            return eventOptions;
         }
 }

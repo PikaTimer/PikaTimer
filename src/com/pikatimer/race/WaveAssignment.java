@@ -23,8 +23,8 @@ import com.pikatimer.participant.Participant;
  * @author jcgarner
  */
 public enum WaveAssignment {
-    BIB("By Bib", "Bib"),
-    AG("By Age Group", "AG");
+    BIB("By Bib", "Bib");
+    //AG("By Age Group", "AG");
     
     private final  String longDescription;
     private final  String shortDescription; 

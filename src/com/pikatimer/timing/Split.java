@@ -17,16 +17,19 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.race.Race;
+import com.pikatimer.results.ReportDestination;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Objects;
+import javafx.beans.Observable;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -90,6 +93,9 @@ public class Split {
         this.splitLocationString = new SimpleStringProperty();
     }
    
+    public static Callback<Split, Observable[]> extractor() {
+        return (Split s) -> new Observable[]{s.splitName,s.splitDistanceString,s.splitPosition,s.splitLocationString};
+    }
 
     @Id
     @GenericGenerator(name="split_id" , strategy="increment")

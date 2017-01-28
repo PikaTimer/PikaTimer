@@ -17,10 +17,7 @@
 package com.pikatimer.util;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.math.RoundingMode;
 
 /**
  *
@@ -33,8 +30,8 @@ public enum Unit {
     METERS("Meters", "M"),
     FEET("Feet", "ft");
     
-    private  String longUnit;
-    private  String shortUnit; 
+    private final  String longUnit;
+    private final  String shortUnit; 
     
     
 //    private static final Map<Unit, String> DISTANCE_MAP = createMap();
@@ -64,60 +61,52 @@ public enum Unit {
     public String toShortString(){
         return this.shortUnit; 
     }
-//    
-//    public String getValue() {
-//        return unit;
-//    }
-//    
-//    public void setValue(String u) {
-//        unit = u;
-//    
+
     
-    // TODO: Put in converters so that we can take miles to km, etc
-    
-    // 1ft = 0.3048m
-    public static final Float toMiles(Float d, Unit u) {
+    // convert this to Unit u
+    public Float convertTo(Float d, Unit u){
+        // 1ft = 0.3048m
+        // 1m = 3.28084ft
         BigDecimal dist = new BigDecimal(d);
         
-        switch(u){
+        // Step 1, convert to ft
+        switch(this){
             case KILOMETERS:
-                dist = dist.multiply(BigDecimal.valueOf(0.621371)); 
+                dist = dist.multiply(BigDecimal.valueOf(3280.84)); 
                 break;
             case MILES:
-                // do nothing
+                dist = dist.multiply(new BigDecimal(5280));
                 break; 
             case YARDS:
-                dist = dist.divide(new BigDecimal(1760));
+                dist = dist.multiply(new BigDecimal(3));
                 break;
             case METERS:
-                dist = dist.multiply(BigDecimal.valueOf(0.000621371)); 
+                dist = dist.multiply(BigDecimal.valueOf(3.28084)); 
                 break;
             case FEET:
-                dist = dist.divide(new BigDecimal(5280));
                 break;
         }
         
-        return dist.setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
-
-    }
-    
-    public Float toKilometers(Float d){
-            
-        return d;
-    }
-    
-    public Float toMeters(Float d) {
-        switch(this) {
-            
+        // step 2, convert to the target unit;
+        switch(u){
+            case KILOMETERS:
+                dist = dist.divide(BigDecimal.valueOf(3280.84), 8, RoundingMode.HALF_UP); 
+                break;
+            case MILES:
+                dist = dist.divide(new BigDecimal(5280), 8, RoundingMode.HALF_UP);
+                break; 
+            case YARDS:
+                dist = dist.divide(new BigDecimal(3), 8, RoundingMode.HALF_UP);
+                break;
+            case METERS:
+                dist = dist.divide(BigDecimal.valueOf(3.28084), 8, RoundingMode.HALF_UP); 
+                break;
+            case FEET:
+                break;
         }
-                
-        return d;
-
-    }
-    
-    public Float toYards(Float d){
         
-        return d;
+        // step 3, return to sender
+        return dist.floatValue();
     }
 }
     

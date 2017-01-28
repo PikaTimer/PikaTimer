@@ -16,6 +16,7 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.util.HibernateUtil;
 import java.util.ArrayList;
@@ -23,6 +24,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -34,9 +38,13 @@ import org.hibernate.Session;
  */
 public class RaceDAO {
     private static final ObservableList<Race> raceList =FXCollections.observableArrayList( e -> new Observable[] {e.raceNameProperty()});
-    private static final ObservableList<Wave> waveList =FXCollections.observableArrayList(e -> new Observable[] {e.waveNameProperty()});
+    private static final ObservableList<Wave> waveList =FXCollections.observableArrayList(Wave.extractor());
     private static final Map<Integer,Wave> waveMap = new HashMap();
     private Map<Integer,Split> splitMap = new HashMap();
+    
+    // This is mostly precautionary just in case we put the initial race
+    // loading into a background thread for whatever reason
+    final CountDownLatch racesLoadedLatch = new CountDownLatch(1);
 
     public Split getSplitByID(Integer splitID) {
         return splitMap.get(splitID);
@@ -72,7 +80,7 @@ public class RaceDAO {
         s.beginTransaction();
         s.save(w);
         s.getTransaction().commit();
-        System.out.println("Adding Split id: " + w.getID() + "to" + w.getRace().getRaceName());
+        //System.out.println("Adding Split id: " + w.getID() + "to" + w.getRace().getRaceName());
         updateSplitOrder(r);
         splitMap.put(w.getID(), w);
     }
@@ -82,21 +90,23 @@ public class RaceDAO {
         List<Race> list = new ArrayList<>();
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        System.out.println("RacedAO.refreshRaceList() Starting the query");
+        //System.out.println("RacedAO.refreshRaceList() Starting the query");
         
         try {  
-            list=s.createQuery("from Race").list();
+            list=s.createQuery("from Race order by ID").list();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } 
         s.getTransaction().commit(); 
         
-        System.out.println("RaceDAO::refreshRaceList() Returning the list");
+        //System.out.println("RaceDAO::refreshRaceList() Returning the list");
         if(!raceList.isEmpty())
             raceList.clear();
         raceList.addAll(list);
         splitMap = new HashMap();
         raceList.forEach(r -> r.getSplits().forEach(sp -> splitMap.put(sp.getID(),sp)));
+        
+        racesLoadedLatch.countDown();
     }     
     
     public ObservableList<Race> listRaces() { 
@@ -111,7 +121,7 @@ public class RaceDAO {
         s.beginTransaction();
         s.save(w);
         s.getTransaction().commit();
-        System.out.println("Adding Wave id: " + w.getID() + "to" + w.getRace().getRaceName());
+        //System.out.println("Adding Wave id: " + w.getID() + "to" + w.getRace().getRaceName());
         waveList.add(w); 
         waveMap.put(w.getID(), w);
     }
@@ -120,12 +130,12 @@ public class RaceDAO {
         
         w.getRace().removeWave(w); 
         //refreshWaveList();         
-        System.out.println("removeWaves before: waveList.size()= " + waveList.size());
-        System.out.println("Wave: " + w.idProperty());
+        //System.out.println("removeWaves before: waveList.size()= " + waveList.size());
+        //System.out.println("Wave: " + w.idProperty());
         waveList.forEach(e -> {System.out.println("Possible: " + e.idProperty() + " " + e.equals(w));});
         Boolean res = waveList.remove(w);
         Wave remove = waveMap.remove(w.getID());
-        System.out.println("removeWaves after: waveList.size()= " + waveList.size() + " result: " + res);
+        //System.out.println("removeWaves after: waveList.size()= " + waveList.size() + " result: " + res);
 
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
@@ -143,6 +153,12 @@ public class RaceDAO {
     } 
     
     public Wave getWaveByID(int id) {
+        //System.out.println("getWaveByID: racesLoadedLatch is now " + racesLoadedLatch.getCount());
+        try {
+            racesLoadedLatch.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(RaceDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
         if (waveMap.isEmpty()) refreshWaveList(); 
         return waveMap.get(id); 
     }
@@ -171,14 +187,16 @@ public class RaceDAO {
     } 
     
     public void removeRace(Race r) {
-        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
-        s.beginTransaction();
-        s.delete(r);
-        s.getTransaction().commit(); 
         raceList.remove(r);
         waveList.removeAll(r.getWaves());
         r.getWaves().forEach(w -> waveMap.remove(w.getID()));
         r.getSplits().forEach(sp -> splitMap.remove(sp.getID()));
+        
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(r);
+        s.getTransaction().commit(); 
+        
     }      
     
 
@@ -252,5 +270,22 @@ public class RaceDAO {
             s.update(item);
         });
         s.getTransaction().commit();
+    }
+    
+    public void updateSegment(Segment seg){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        s.saveOrUpdate(seg);
+        s.getTransaction().commit();
+    }
+    public void removeSegment (Segment seg) {
+        
+        Race r = seg.getRace(); 
+        r.removeRaceSegment(seg);
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(seg);
+        s.getTransaction().commit();
+        updateSplitOrder(r);
     }
 }

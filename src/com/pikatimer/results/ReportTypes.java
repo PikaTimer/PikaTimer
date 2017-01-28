@@ -19,7 +19,10 @@ package com.pikatimer.results;
 import com.pikatimer.results.reports.AgeGroup;
 import com.pikatimer.results.reports.Award;
 import com.pikatimer.results.reports.Overall;
+import com.pikatimer.results.reports.OverallCSV;
 import com.pikatimer.results.reports.OverallHTML;
+import com.pikatimer.results.reports.OverallHTML5;
+import com.pikatimer.results.reports.OverallJSON;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,10 +32,13 @@ import java.util.Map;
  * @author jcgarner
  */
 public enum ReportTypes {
-    OVERALL, 
+    OVERALL_HTML5,
     OVERALL_HTML,
+    OVERALL,
     AGEGROUP,
-    AWARD; 
+    AWARD,
+    CSV,
+    JSON;
 
     
     private static final Map<ReportTypes, String> InputMap = createMap();
@@ -42,7 +48,10 @@ public enum ReportTypes {
         result.put(OVERALL, "Overall (Text)");
         result.put(AGEGROUP, "Age Group (Text)");
         result.put(AWARD, "Award (Text)");
-        result.put(OVERALL_HTML,"Overall (HTML)");
+        result.put(OVERALL_HTML,"Overall (Basic HTML)");
+        result.put(OVERALL_HTML5,"Overall (Resonsive HTML)");
+        result.put(CSV,"Overall (CSV)");
+        result.put(JSON,"Overall (JSON)");
 
         return Collections.unmodifiableMap(result);
     }
@@ -52,23 +61,24 @@ public enum ReportTypes {
         return InputMap.get(this);
     }
 
-    
-    public final  RaceReportType getNewReader() {
-                
+    public final  RaceReportType getReportType() {
         switch(this){
             case OVERALL:
                 return new Overall();
             case OVERALL_HTML:
                 return new OverallHTML();
+            case OVERALL_HTML5:
+                return new OverallHTML5();
             case AGEGROUP:
                 return new AgeGroup();
             case AWARD:
                 return new Award();
+            case CSV:
+                return new OverallCSV();
+            case JSON:
+                return new OverallJSON();
             
         }
-        
         return null;
-
     }
-
 }

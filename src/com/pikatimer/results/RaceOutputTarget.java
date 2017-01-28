@@ -48,7 +48,7 @@ public class RaceOutputTarget {
     private Integer outputDestinationID;
     
     private RaceReport raceReport;
-    private OutputPortal outputDestination;
+    private ReportDestination outputDestination;
     
 //    id int primary key, 
 //    uuid varchar,
@@ -106,12 +106,12 @@ public class RaceOutputTarget {
     }
     public void setOutputDestination(Integer id) {
         outputDestinationID = id;
-        //outputDestination=ResultsDAO.getInstance().getOutputPortalByID(id);
+        //outputDestination=ResultsDAO.getInstance().getReportDestinationByID(id);
     }
-    public OutputPortal outputDestination() {
-        //if(outputDestination == null) outputDestination=ResultsDAO.getInstance().getOutputPortalByID(outputDestinationID);
+    public ReportDestination outputDestination() {
+        //if(outputDestination == null) outputDestination=ResultsDAO.getInstance().getReportDestinationByID(outputDestinationID);
         //return outputDestination; 
-        return ResultsDAO.getInstance().getOutputPortalByID(outputDestinationID);
+        return ResultsDAO.getInstance().getReportDestinationByID(outputDestinationID);
     }
     
     //    output_filename varchar
@@ -128,7 +128,7 @@ public class RaceOutputTarget {
     
     public void saveOutput(String s){
         System.out.println("RaceOutputTarget.saveOutput() called");
-        outputDestination = ResultsDAO.getInstance().getOutputPortalByID(outputDestinationID);
+        outputDestination = ResultsDAO.getInstance().getReportDestinationByID(outputDestinationID);
         
         if (outputDestination != null && ! outputFilenameProperty.isEmpty().getValue()) 
             outputDestination.save(outputFilenameProperty.getValue(), s);

@@ -17,13 +17,19 @@
 package com.pikatimer.race;
 
 import com.pikatimer.results.RaceReport;
+import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -33,18 +39,24 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.OrderColumn;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -54,31 +66,38 @@ import org.hibernate.annotations.GenericGenerator;
 public class Race {
     
 
-   private final IntegerProperty IDProperty;
+    private final IntegerProperty IDProperty;
+    private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
 
-   private BigDecimal raceDistance; //
-   private Unit raceUnits; 
-   private final StringProperty raceUnitsProperty; 
-   private final StringProperty raceName;
-   private  Duration raceCutoff; 
-   private final StringProperty raceCutoffProperty; 
-   private final StringProperty raceBibStart;
-   private final StringProperty raceBibEnd;
-   private final BooleanProperty relayRace; 
-   private final StringProperty raceDistanceProperty; 
-   private final ObservableList<Wave> raceWaves; 
-   private List<Wave> raceWavesList;
-   private final ObservableList<Split> raceSplits; 
-   private List<Split> raceSplitList;
-   private List<RaceReport> raceReportsList;
-   private final ObservableList<RaceReport> raceReports;
-   private final Race self; 
-   
-   private RaceAwards awards; 
-   private AgeGroups ageGroups;
+
+    private BigDecimal raceDistance; 
+    private Unit raceUnits; 
+    private final StringProperty raceUnitsProperty; 
+    private final StringProperty raceName;
+    private  Duration raceCutoff; 
+    private final StringProperty raceCutoffProperty; 
+    private final StringProperty raceBibStart;
+    private final StringProperty raceBibEnd;
+    private final BooleanProperty relayRace; 
+    private final StringProperty raceDistanceProperty; 
+    private final ObservableList<Wave> raceWaves; 
+    private List<Wave> raceWavesList;
+    private final ObservableList<Split> raceSplits; 
+    private List<Split> raceSplitList;
+    private List<RaceReport> raceReportsList;
+    private final ObservableList<RaceReport> raceReports;
+    private List<Segment> segmentsList;
+    private final ObservableList<Segment> raceSegments = FXCollections.observableArrayList(Segment.extractor());
+    //private final Race self; 
+
+    private RaceAwards awards; 
+    private AgeGroups ageGroups;
+
+    private Map<String,String> attributes = new HashMap();
+    private Map<String,Integer> intAttributes = new HashMap();
+    private Map<String,Boolean> boolAttributes = new HashMap();
            
     public Race() {
-        this.self = this; 
         this.IDProperty = new SimpleIntegerProperty();
         this.raceUnitsProperty = new SimpleStringProperty();
         this.raceName = new SimpleStringProperty();
@@ -87,36 +106,10 @@ public class Race {
         this.raceCutoffProperty = new SimpleStringProperty();
         this.relayRace = new SimpleBooleanProperty();
         this.raceDistanceProperty = new SimpleStringProperty();
-        this.raceWaves = FXCollections.observableArrayList();
-        this.raceSplits = FXCollections.observableArrayList();
+        this.raceWaves = FXCollections.observableArrayList(Wave.extractor());
+        this.raceSplits = FXCollections.observableArrayList(Split.extractor());
         this.raceReports = FXCollections.observableArrayList();
 
-        // Keep the waves updated as to their position in the list
-//        raceWaves.addListener((Change<? extends Wave> change) -> {
-//            System.out.println("Race::raceWaves(changeListener) for: " + self.getRaceName());
-//            raceWaves.stream().forEach((item) -> {
-//                System.out.println(self.getRaceName() + " has " + item.getWaveName() + " at " + raceWaves.indexOf(item));
-//                item.wavePositionProperty().set(raceWaves.indexOf(item)+1);
-//                //RaceDAO.getInstance().updateWave(item);
-//            });
-//        });
-//        // Keep the splits updated as to their position in the list
-//        raceSplits.addListener((Change<? extends Split> change) -> {
-//            System.out.println("Race::raceSplits(changeListener) for: " + self.getRaceName());
-////            raceSplits.stream().forEach((item) -> {
-////                System.out.println(self.getRaceName() + " has " + item.getSplitName() + " at " + raceSplits.indexOf(item));
-////                item.splitPositionProperty().set(raceSplits.indexOf(item)+1);
-////                Task importTask = new Task<Void>() {
-////                    @Override
-////                    protected Void call() {
-////                        RaceDAO.getInstance().updateSplit(item);
-////                        return null; 
-////                    }
-////                };
-////                new Thread(importTask).start();
-////            });
-//        });
-        
         
     }
         
@@ -223,14 +216,19 @@ public class Race {
         if(c != null) {
             System.out.println("setRaceCutoff " + c.toString());
             raceCutoff = Duration.ofNanos(c);
-            raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff,0)); 
+            if (raceCutoff.isZero()) raceCutoffProperty.set(""); 
+            else raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff, 0, Boolean.TRUE));
+            //raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff,0)); 
         }
+    }
+    public Duration raceCutoffDuration(){
+        return raceCutoff;
     }
     public StringProperty raceCutoffProperty(){
         return raceCutoffProperty;  
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     public List<Wave> getWaves() {
         return raceWavesList;
     }
@@ -250,14 +248,17 @@ public class Race {
     }
     public void addWave(Wave w) {
         raceWaves.add(w);
-        raceWavesList = raceWaves.sorted();
+        if (raceWavesList == null) raceWavesList = new ArrayList();
+        raceWavesList.add(w);
     }
     public void removeWave(Wave w) {
-        raceWaves.remove(w); 
-        raceWavesList = raceWaves.sorted();
+        if (raceWaves.contains(w)){
+            raceWaves.remove(w); 
+            raceWavesList.remove(w);
+        }
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     @OrderBy("split_seq_number")
     public List<Split> getSplits() {
         return raceSplitList;
@@ -315,7 +316,7 @@ public class Race {
         if (ageGroups != null && ageGroups.getRace() != this) ageGroups.setRace(this);
     }
     
-    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     public List<RaceReport> getRaceReports() {
         return raceReportsList;
     }
@@ -340,16 +341,122 @@ public class Race {
         //raceReportsList.remove(w);
         raceReportsList = raceReports.sorted();
     }
+    
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
+    public List<Segment> getSegments() {
+        if (segmentsList == null) segmentsList = new ArrayList();
+        return segmentsList;
+    }
+    public void setSegments(List<Segment> s) {
+        segmentsList = s;
+        if (s == null) System.out.println("Race.setRaceReports(list) called with null list");
+        if (s != null) raceSegments.setAll(s);
+        //System.out.println("Race.setRaceReports(list) " + raceName.getValueSafe() + "( " + IDProperty.getValue().toString() + ")" + " now has " + raceReports.size() + " Reports");
+    }
+    public ObservableList<Segment> raceSegmentsProperty() {
+        return raceSegments.sorted((s1, s2)-> s1.compareTo(s2)); 
+    }
+    public void addRaceSegment(Segment s) {
+        s.setRace(this);
+        raceSegments.add(s);
+        segmentsList = raceSegments.sorted((s1, s2)-> s1.compareTo(s2));
+    }
+    public void removeRaceSegment(Segment s) {
+        raceSegments.remove(s); 
+        segmentsList = raceSegments.sorted((s1, s2)-> s1.compareTo(s2));
+    }
 
+    @Column(name="uuid")
+    public String getUUID() {
+       // System.out.println("Participant UUID is " + uuidProperty.get());
+        return uuidProperty.getValue(); 
+    }
+    public void setUUID(String  uuid) {
+        uuidProperty.setValue(uuid);
+        //System.out.println("Participant UUID is now " + uuidProperty.get());
+    }
+    public StringProperty uuidProperty() {
+        return uuidProperty; 
+    }
+    
+    
+    
+    
+    
+    // The map of attributes -> values
+    // easier than a really wide table of attributes since this thing will just 
+    // grow once we add in custom stuff
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name="attribute", insertable=false,updatable=false)
+    @Column(name="value")
+    @CollectionTable(name="race_attributes", joinColumns=@JoinColumn(name="race_id"))
+    private Map<String, String> getAttributes() {
+        return attributes;
+    }
+    private void setAttributes(Map<String,String> m) {
+        attributes = m;
+    } 
+    
+    @Transient
+    public Set<String> getKnownAttributeNames() {
+        return attributes.keySet();
+    }
 
+    //Overall
+    //male
+    public Integer getIntegerAttribute(String key) {
+        if (!intAttributes.containsKey(key)) {
+            if (attributes.containsKey(key)) {
+                intAttributes.put(key,Integer.parseUnsignedInt(attributes.get(key)));
+            } else {
+                System.out.println("RaceAwards.getIntegerAtrribute key of " + key + " is NULL!");
+                return null;
+            }
+        }
+        return intAttributes.get(key);
+    }
+    public void setIntegerAttribute(String key, Integer n) {
+        intAttributes.put(key,n);
+        attributes.put(key, n.toString());
+    }
+    
+    
+    //Pull, Gun, etc
+     public Boolean getBooleanAttribute(String key) {
+        if (!boolAttributes.containsKey(key)) {
+            if (attributes.containsKey(key)) {
+                boolAttributes.put(key,Boolean.parseBoolean(attributes.get(key)));
+            } else {
+                System.out.println("RaceAwards.getBooleanAtrribute key of " + key + " is NULL!");
+                return null;
+            }
+        }
+        return boolAttributes.get(key);
+    }
+    public void setBooleanAttribute(String key, Boolean n) {
+        boolAttributes.put(key,n);
+        attributes.put(key, n.toString());
+    }
+    
+    public String getStringAttribute(String key) {
+        if (!attributes.containsKey(key)) {
+            return null;
+        }
+        return attributes.get(key);
+    }
+    public void setStringAttribute(String key, String v) {
+        attributes.put(key, v);
+    }
+    
+    
+    
+    
+    
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 53 * hash + Objects.hashCode(this.raceDistance);
-        hash = 53 * hash + Objects.hashCode(this.raceUnitsProperty);
-        hash = 53 * hash + Objects.hashCode(this.raceName);
-        hash = 53 * hash + Objects.hashCode(this.relayRace);
-        hash = 53 * hash + Objects.hashCode(this.raceDistanceProperty);
+        int hash = 5;
+        hash = 89 * hash + Objects.hashCode(this.uuidProperty.getValue());
+
         return hash;
     }
 
@@ -362,24 +469,10 @@ public class Race {
             return false;
         }
         final Race other = (Race) obj;
-        if (!Objects.equals(this.raceDistance, other.raceDistance)) {
-            return false;
+        if (!Objects.equals(this.uuidProperty.getValue(),other.uuidProperty.getValue())) {
+            return false; 
         }
-        if (this.raceUnits != other.raceUnits) {
-            return false;
-        }
-        if (!Objects.equals(this.raceUnitsProperty.getValue(), other.raceUnitsProperty.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.raceName.getValue(), other.raceName.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.relayRace.getValue(), other.relayRace.getValue())) {
-            return false;
-        }
-        if (!Objects.equals(this.raceDistanceProperty.getValue(), other.raceDistanceProperty.getValue())) {
-            return false;
-        }
+
         return true;
     }
 

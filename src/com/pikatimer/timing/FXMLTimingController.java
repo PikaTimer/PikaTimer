@@ -19,31 +19,43 @@ package com.pikatimer.timing;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.RaceDAO;
-import com.pikatimer.timing.reader.PikaRFIDFileReader;
+import com.pikatimer.race.Race;
+import com.pikatimer.race.Wave;
+import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
-import java.io.File;
+import com.pikatimer.util.DurationParser;
+import com.pikatimer.util.DurationStringConverter;
+import com.pikatimer.util.WaveStringConverter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ListChangeListener.Change;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -52,6 +64,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -62,10 +76,16 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import static javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.ChoiceBoxTableCell;
+import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.ColumnConstraints;
@@ -73,8 +93,16 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
+import javafx.scene.text.Font;
+import javafx.stage.Modality;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+import javafx.util.Callback;
 import javafx.util.StringConverter;
+import org.apache.commons.lang3.StringUtils;
+import org.controlsfx.control.CheckComboBox;
+import org.controlsfx.control.PrefixSelectionComboBox;
+import org.controlsfx.control.ToggleSwitch;
 
 /**
  * FXML Controller class
@@ -88,21 +116,26 @@ public class FXMLTimingController {
     @FXML private Button timingLocRemoveAllButton;
     @FXML private Button timingLocAddButton;
     @FXML private Button timingLocRemoveButton;  
+    
+    @FXML private VBox timingLocVBox;
     @FXML private TextField timingLocationNameTextField; 
     
     @FXML private TextField filterStartTextField;
     @FXML private TextField filterEndTextField; 
             
     @FXML private TextField searchTextBox;
+    @FXML private CheckComboBox<TimingLocation> searchScopeCheckComboBox;
     @FXML private Label listSizeLabel;
     @FXML private Label filteredSizeLabel;
     @FXML private TableView<CookedTimeData> timeTableView;
     @FXML private TableColumn bibColumn;
+    @FXML private TableColumn<CookedTimeData,String> chipColumn;
     @FXML private TableColumn timeColumn;
     @FXML private TableColumn<CookedTimeData,String> nameColumn;
+    @FXML private TableColumn<CookedTimeData,String> locationColumn;
     @FXML private TableColumn<CookedTimeData,String> inputColumn;
-    @FXML private TableColumn backupColumn;
-    @FXML private TableColumn ignoreColumn;
+    @FXML private TableColumn<CookedTimeData,Boolean> backupColumn;
+    @FXML private TableColumn<CookedTimeData,Boolean> ignoreColumn;
     @FXML private CheckBox customChipBibCheckBox;
     
     @FXML private TableView<TimeOverride> overrideTableView;
@@ -111,7 +144,15 @@ public class FXMLTimingController {
     @FXML private TableColumn<TimeOverride,String> overrideSplitColumn;
     @FXML private TableColumn<TimeOverride,Boolean> overrideRelativeColumn;
     
+    @FXML private Button overrideEditButton;
+    @FXML private Button overrideRemoveButton;
+    
+    @FXML private ToggleSwitch assignToRaceToggleSwitch;
+    //@FXML private ChoiceBox<Race> assignToRaceChoiceBox;
+    @FXML private ComboBox<Race> assignToRaceComboBox;
+    
     private ObservableList<CookedTimeData> cookedTimeList;
+    FilteredList<CookedTimeData> filteredTimesList;
     private ObservableList<TimingLocation> timingLocationList;
     private TimingLocation selectedTimingLocation;
     private RaceDAO raceDAO;
@@ -175,7 +216,7 @@ public class FXMLTimingController {
                 System.out.println("Timing setOnEditCommit event out of index: " + t.getIndex());
             }
             timingLocAddButton.requestFocus();
-            timingLocAddButton.setDefaultButton(true);
+           // timingLocAddButton.setDefaultButton(true);
         });
 
         timingLocListView.setOnEditCancel((ListView.EditEvent<TimingLocation> t) ->{
@@ -190,49 +231,35 @@ public class FXMLTimingController {
                 System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
             }
             timingLocAddButton.requestFocus();
-            timingLocAddButton.setDefaultButton(true);
+            //timingLocAddButton.setDefaultButton(true);
         });
+        
         
         timingLocRemoveButton.disableProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull());
 
         
-        
+
         
         
         // Deal with the filtering and such. 
         // TODO Only filter on the visible colums 
         // 1. Wrap the ObservableList in a FilteredList (initially display all data).
         cookedTimeList = timingDAO.getCookedTimes();
-        FilteredList<CookedTimeData> filteredTimesList = new FilteredList<>(cookedTimeList, p -> true);
+        filteredTimesList = new FilteredList<>(cookedTimeList, p -> true);
 
         // 2. Set the filter Predicate whenever the filter changes.
         searchTextBox.textProperty().addListener((observable, oldValue, newValue) -> {
-            filteredTimesList.setPredicate(time -> {
-                // If filter text is empty, display all persons.
-                if (newValue == null || newValue.isEmpty()) {
-                    return true;
-                }
-
-                // Compare first name and last name of every person with filter text.
-                String lowerCaseFilter = "(.*)(" + newValue.toLowerCase() + ")(.*)";
-                try {    
-                    String name; 
-                    Participant p = participantDAO.getParticipantByBib(time.getBib());
-                    if (p == null) { 
-                        name="unknown";
-                    } else {
-                        name = p.fullNameProperty().get();
-                    }
-                    if ((time.getBib() + " " + name).toLowerCase().matches(lowerCaseFilter)) {
-                        return true; // Filter matches first/last/email/bib.
-                    }
-
-                } catch (PatternSyntaxException e) {
-                    return true;
-                }
-                return false; // Does not match.
-            });
+            updateFilterPredicate();
         });
+        searchScopeCheckComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends TimingLocation> c) -> {
+            
+            System.out.println("TimingPartController::searchScopeCheckComboBox(changeListener) fired...");
+            updateFilterPredicate();
+            //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
+        });
+        
+        searchScopeCheckComboBox.getItems().setAll(timingLocationList);
+
         // 3. Wrap the FilteredList in a SortedList. 
         SortedList<CookedTimeData> sortedTimeList = new SortedList<>(filteredTimesList);
 
@@ -242,31 +269,79 @@ public class FXMLTimingController {
         // 5. Set the cell factories and stort routines... 
         bibColumn.setCellValueFactory(new PropertyValueFactory<>("bib"));
         bibColumn.setComparator(new AlphanumericComparator());
+        
+        chipColumn.setCellValueFactory(c -> c.getValue().rawChipIDProperty());
+        chipColumn.setComparator(new AlphanumericComparator());
+        
         timeColumn.setCellValueFactory(new PropertyValueFactory<>("timestampString"));
         timeColumn.setComparator(new AlphanumericComparator());
         
         nameColumn.setCellValueFactory(cellData -> {
-            Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
-            if (p == null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getBib());
+            String bib = cellData.getValue().getBib();
+            Participant p = participantDAO.getParticipantByBib(bib);
+            if (p == null) { 
+                if (bib.startsWith("Unmapped")) return new SimpleStringProperty("Unknown Chip");
+                if (cellData.getValue().getRawChipID().equals("0")) return new SimpleStringProperty("START TRIGGER");
+                return new SimpleStringProperty("Unregistered bib: " + bib);
             } else {
                 return p.fullNameProperty();
             }
         });
-        inputColumn.setCellValueFactory(cellData -> {
+        locationColumn.setCellValueFactory(cellData -> {
             TimingLocation t =  timingDAO.getTimingLocationByID(cellData.getValue().getTimingLocationId());
             if (t == null) { return new SimpleStringProperty("Unknown");
             } else {
                 return t.LocationNameProperty();
             }
         });
+        inputColumn.setCellValueFactory(cellData -> {
+            TimingLocation t =  timingDAO.getTimingLocationByID(cellData.getValue().getTimingLocationId());
+            
+            if (t == null) return new SimpleStringProperty("Unknown");
+            else {
+                TimingLocationInput tl = t.getInputByID(cellData.getValue().getTimingLocationInputId());
+                if (tl == null) return new SimpleStringProperty("Unknown");
+                return tl.LocationNameProperty();
+            }
+        });
         
         backupColumn.setCellValueFactory(new PropertyValueFactory<>("backupTime"));
         backupColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        backupColumn.setEditable(false);
+        
         ignoreColumn.setCellValueFactory(new PropertyValueFactory<>("ignoreTime"));
         ignoreColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        
+        
+        ///
+        // FIX THIS if we permit multiple select and a right mouse click to set the ignored state
+        // for multiple times at once.... (use c.getFrom -> c.getTo)
+        // until then this is simpler
+        ///
 
+        sortedTimeList.addListener((ListChangeListener.Change<? extends CookedTimeData> c) -> {
+            while (c.next()) {
+                if (c.wasUpdated()) {
+                    timingDAO.saveCookedTime(sortedTimeList.get(c.getFrom()));
+                    System.out.println("CookedTimeData "+sortedTimeList.get(c.getFrom()).getBib()+" changed value to " +sortedTimeList.get(c.getFrom()).getIgnoreTime());
+                }
+            }
+        });
+//        ///It is not this easy: CheckBoxTableCell does ot fire an onEditCommit action
+//        //Need a change listener for the ignoreColumn. Find the cooked read, flag it as an ignore, reprocess the bib
+//        ignoreColumn.setOnEditCommit((CellEditEvent<CookedTimeData, Boolean> t) -> {
+//            CookedTimeData ct = t.getTableView().getItems().get(t.getTablePosition().getRow());
+//            System.out.println("Ignore flag for CookedTime for bib " + ct.getBib() + " at " + ct.getTimestamp().toString() + " is now " + ct.ignoreTimeProperty().toString());
+//            timingDAO.saveCookedTime(ct);
+//        });
+
+        
+        
+        
+        
         // 6. Add sorted (and filtered) data to the table.
         timeTableView.setItems(sortedTimeList);
+        timeTableView.setPlaceholder(new Label("No times have been entered yet"));
         
         // set the default sort order to the finish time
         timeColumn.setSortType(TableColumn.SortType.DESCENDING);
@@ -283,28 +358,35 @@ public class FXMLTimingController {
         
         // load up the TimingLocationDetailsPane
                     
-         //if there are no timing locations selected in the view then disable the entire right hand side
-         timingDetailsVBox.visibleProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull().not());
+        //if there are no timing locations selected in the view then disable the entire right hand side
+        timingDetailsVBox.visibleProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull().not());
          
-         
-         timingLocListView.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Cha‌​nge<? extends TimingLocation> c) -> { 
-             System.out.println("timingLocListView changed...");
-             //timingLocListView.getSelectionModel().getSelectedItems().forEach(System.out::println); 
-             ObservableList<TimingLocation> selectedTimingLocations = timingLocListView.getSelectionModel().getSelectedItems();
-             
-             timingDetailsVBox.getChildren().clear();
-             
-             if ( selectedTimingLocations.size() == 0 ) {
-                System.out.println("Nothing Selected");
-                //timingLocationDetailsController.selectTimingLocation(null);
-                if (selectedTimingLocation != null) {
-                    timingLocationNameTextField.textProperty().unbindBidirectional(selectedTimingLocation.LocationNameProperty());
-                    selectedTimingLocation=null; 
-                }
-             } else {
+        
+        assignToRaceComboBox.disableProperty().bind(assignToRaceToggleSwitch.selectedProperty().not());
+        assignToRaceComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        assignToRaceComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        assignToRaceToggleSwitch.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        assignToRaceToggleSwitch.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        
+        timingLocListView.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Cha‌​nge<? extends TimingLocation> c) -> { 
+            System.out.println("timingLocListView changed...");
+            //timingLocListView.getSelectionModel().getSelectedItems().forEach(System.out::println); 
+            ObservableList<TimingLocation> selectedTimingLocations = timingLocListView.getSelectionModel().getSelectedItems();
+
+            timingDetailsVBox.getChildren().clear();
+
+            if ( selectedTimingLocations.isEmpty() ) {
+               System.out.println("Nothing Selected");
+               //timingLocationDetailsController.selectTimingLocation(null);
+               if (selectedTimingLocation != null) {
+                   timingLocationNameTextField.textProperty().unbindBidirectional(selectedTimingLocation.LocationNameProperty());
+                   selectedTimingLocation=null; 
+                   timingLocVBox.disableProperty().setValue(true);
+               }
+            } else {
                 System.out.println("We just selected " + selectedTimingLocations.get(0).getLocationName());
                 //timingLocationNameTextField.textProperty().setValue(selectedTimingLocations.get(0).LocationNameProperty().getValue());
-                
+                timingLocVBox.disableProperty().setValue(false);
                 if (selectedTimingLocation != null) {
                     System.out.println("Unbinding timingLocationNameTextField");
                     timingLocationNameTextField.textProperty().unbindBidirectional(selectedTimingLocation.LocationNameProperty());
@@ -312,13 +394,21 @@ public class FXMLTimingController {
                 selectedTimingLocation=selectedTimingLocations.get(0); 
                 timingLocationNameTextField.textProperty().bindBidirectional(selectedTimingLocation.LocationNameProperty());
                 
+                if (selectedTimingLocation.getAutoAssignRaceID() < 0) {
+                    assignToRaceToggleSwitch.setSelected(false);
+                    assignToRaceComboBox.getSelectionModel().clearSelection();
+                } else {
+                    assignToRaceToggleSwitch.setSelected(true);
+                    assignToRaceComboBox.getSelectionModel().select(selectedTimingLocation.autoAssignRaceProperty().getValue());
+                }
+                
                 // Show the filter start/end values
-                filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 0, Boolean.TRUE));
-                filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 0, Boolean.TRUE));
+                filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
                 
                 System.out.println("Selected timing location is now " + selectedTimingLocation.getLocationName());
                 //timingLocationDetailsController.setTimingLocationInput(null); // .selectTimingLocation(selectedTimingLocations.get(0));
-                if (selectedTimingLocation.getInputs().size() == 0 ) { // no inputs yet
+                if (selectedTimingLocation.inputsProperty().isEmpty() ) { // no inputs yet
                     addTimingInput(null);
                 } else { // display all of the inputs
                     System.out.println("Starting the display of inputs for a timing location");
@@ -328,10 +418,10 @@ public class FXMLTimingController {
                     });
                     System.out.println("Done showing inputs for a timing location");
                 }
-             }
-         });
+            }
+        });
          
-        timingLocListView.getSelectionModel().clearAndSelect(0);
+       
         
         timingLocationNameTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
@@ -363,58 +453,155 @@ public class FXMLTimingController {
         filterStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 System.out.println("filterStartTextField out focus");
-                if (filterStartTextField.getText().equals(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 0, Boolean.TRUE))) {
+                Duration newTime;
+                if (DurationParser.parsable(filterStartTextField.getText())){
+                    newTime = DurationParser.parse(filterStartTextField.getText());
+                } else {
+                    filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                    return;
+                }
+                
+                if (selectedTimingLocation.getFilterStartDuration().equals(newTime)) {
+                    filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
                     return; 
                 } else if ( filterStartTextField.getText().isEmpty() ) {
                     // set duration to zero
                     selectedTimingLocation.setFilterStart(0L);
                 } else {
                     // duration is not zero... parse it
-                    LocalTime time = LocalTime.parse(filterStartTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
-                    selectedTimingLocation.setFilterStart(Duration.between(LocalTime.MIDNIGHT, time).toNanos());
+                    selectedTimingLocation.setFilterStart(newTime.toNanos());
                 }
-                selectedTimingLocation.reprocessReads();
                 timingDAO.updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
-                
+                filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                selectedTimingLocation.reprocessReads();
             }
         });
         filterEndTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             if (!newPropertyValue) {
                 System.out.println("filterEndTextField out focus");
+                                        
+                Duration newTime;
+                if (DurationParser.parsable(filterEndTextField.getText())){
+                    newTime = DurationParser.parse(filterEndTextField.getText());
+                } else {
+                    filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                    return;
+                }
                 
-                if (filterEndTextField.getText().equals(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 0, Boolean.TRUE))) {
+                if (selectedTimingLocation.getFilterEndDuration().equals(newTime)) {
+                    filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
                     return; 
                 } else if ( filterEndTextField.getText().isEmpty() ) {
                     // set duration to zero
                     selectedTimingLocation.setFilterEnd(0L);
                 } else {
                     // duration is not zero... parse it
-                    LocalTime time = LocalTime.parse(filterEndTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
-                    selectedTimingLocation.setFilterEnd(Duration.between(LocalTime.MIDNIGHT, time).toNanos());
+                    selectedTimingLocation.setFilterEnd(newTime.toNanos());
                 }
-                
-                selectedTimingLocation.reprocessReads();
                 timingDAO.updateTimingLocation(timingLocListView.getSelectionModel().getSelectedItems().get(0));
-                
+                filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
+                selectedTimingLocation.reprocessReads();
             }
         });
         
+        filterStartTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:([0-5]?([0-9]?(:([0-5]?([0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+            } else {
+                Platform.runLater(() -> {
+                    int c = filterStartTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    filterStartTextField.setText(oldValue);
+                    filterStartTextField.positionCaret(c);
+                });
+                System.out.println("Bad End Filter Time (newValue: " + newValue + ")");
+            }
+                
+        });
         
+        filterEndTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:([0-5]?([0-9]?(:([0-5]?([0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+            } else {
+                Platform.runLater(() -> {
+                    int c = filterEndTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    filterEndTextField.setText(oldValue);
+                    filterEndTextField.positionCaret(c);
+                });
+                System.out.println("Bad End Filter Time (newValue: " + newValue + ")");
+            }
+                
+        });
+        
+        assignToRaceToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) { // Don't auto-assign
+                TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItems().get(0);
+                if (tl != null) {
+                    if (!tl.getAutoAssignRaceID().equals(-1)) {
+                        System.out.println("Everybody at " + tl.getLocationName() + " is no longer auto-assigned");
+                        tl.setAutoAssignRaceID(-1);
+                        timingDAO.updateTimingLocation(tl);
+                        assignToRaceComboBox.getSelectionModel().clearSelection();
+                        //selectedTimingLocation.reprocessReads();
+                    }
+                }
+            } else {
+                // Do nothing. If they select a race to assign the runners to then we will do something.
+            }
+        });
+        assignToRaceComboBox.setItems(RaceDAO.getInstance().listRaces());
+        assignToRaceComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItems().get(0);
+                Race race = assignToRaceComboBox.getSelectionModel().getSelectedItem();
+                if (tl != null && race != null) {
+                    if (!tl.getAutoAssignRaceID().equals(race.getID())) {
+                        System.out.println("Everybody at " + tl.getLocationName() + " now assigned to race " + race.getRaceName());
+                        tl.setAutoAssignRaceID(race.getID());
+                        timingDAO.updateTimingLocation(tl);
+                        selectedTimingLocation.reprocessReads();
+                    }
+                }
+            }
+        });
+
         
         // bib2Chip mappings
         bib2ChipMap = timingDAO.getBib2ChipMap();
         customChipBibCheckBox.setSelected(bib2ChipMap.getUseCustomMap()); 
-            
-        customChipBibCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
-            if (!old_val.equals(new_val)) {
-                System.out.println("Setting bib2ChipMap custom to " + new_val.toString());
-                bib2ChipMap.setUseCustomMap(new_val);
+        //customChipBibCheckBox.selectedProperty().bind(bib2ChipMap.useCustomMapProperty());
+        
+        customChipBibCheckBox.setOnAction(a -> {
+            System.out.println("bib2ChipMap custom checkbox clicked!");
+            if (bib2ChipMap.useCustomMapProperty().get()) {
+                bib2ChipMap.setUseCustomMap(false);
                 timingDAO.saveBib2ChipMap(bib2ChipMap);
+                timingDAO.reprocessAllRawTimes();
+            } else if (!bib2ChipMap.useCustomMapProperty().get() && !bib2ChipMap.getChip2BibMap().isEmpty() ) {
+                bib2ChipMap.setUseCustomMap(true);
+                timingDAO.saveBib2ChipMap(bib2ChipMap);
+                timingDAO.reprocessAllRawTimes();
+            } else {
+                setupCustomChipMap(null);
             }
-        });
+        });    
+//        customChipBibCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+//            if (!old_val.equals(new_val)) {
+//                System.out.println("Setting bib2ChipMap custom to " + new_val.toString());
+//                if (new_val) setupCustomChipMap(null);
+//                //bib2ChipMap.setUseCustomMap(new_val);
+//                //timingDAO.saveBib2ChipMap(bib2ChipMap);
+//            }
+//        });
         
         
         // Override table
+        overrideTableView.setPlaceholder(new Label("No overrides have been entered yet"));
         overrideTableView.setItems(timingDAO.getOverrides());
         overrideBibColumn.setCellValueFactory(cellData -> {
             return cellData.getValue().bibProperty();
@@ -429,8 +616,10 @@ public class FXMLTimingController {
             }
         });
         
+        
         overrideTimeColumn.setCellValueFactory(cellData -> {
-            return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getTimestamp(), 3));
+            return cellData.getValue().timestampStringProperty();
+            //return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getTimestamp(), 3));
         });
         
         overrideRelativeColumn.setCellValueFactory(cellData -> {
@@ -438,7 +627,42 @@ public class FXMLTimingController {
         });
         overrideRelativeColumn.setCellFactory(tc -> new CheckBoxTableCell());
         
+        overrideTableView.setRowFactory((TableView<TimeOverride> tableView1) -> {
+            final TableRow<TimeOverride> row = new TableRow<>();
+
+            row.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                editOverride(overrideTableView.getSelectionModel().getSelectedItem());
+            }
+            });
         
+        
+            return row;
+        
+        });
+        
+        overrideEditButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
+        overrideRemoveButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
+        
+         timingLocListView.getSelectionModel().clearAndSelect(0);
+         
+         timingLocationList.addListener((Change<? extends TimingLocation> change) -> {
+            //waveComboBox.getItems().clear();
+            //Platform.runLater(() -> {
+            System.out.println("TimingController::timingLocationList(changeListener) fired...");
+                
+            // TODO
+            //rework the popup menu for the add/delete
+            searchScopeCheckComboBox.getCheckModel().clearChecks();
+//            while (change.next() ) 
+//                change.getRemoved().forEach(removed -> {
+//                    searchScopeCheckComboBox.getCheckModel().clearCheck(removed);
+//                });
+            searchScopeCheckComboBox.getItems().setAll(timingLocationList);
+            
+
+            //});
+        });
     }    
     
     
@@ -460,7 +684,7 @@ public class FXMLTimingController {
         }
         
         timingLocAddButton.requestFocus();
-        timingLocAddButton.setDefaultButton(true);
+        //timingLocAddButton.setDefaultButton(true);
     }
         
     public void addTimingLocation(ActionEvent fxevent){
@@ -482,17 +706,34 @@ public class FXMLTimingController {
 
     }
     public void removeTimingLocation(ActionEvent fxevent){
-        //TODO: If the location is referenced by a split, 
-        //prompt to reassign the split to a new location or cancel the edit. 
-        timingDAO.removeTimingLocation(timingLocListView.getSelectionModel().getSelectedItem());
-        //timingLocAddButton.requestFocus();
-        //timingLocAddButton.setDefaultButton(true);
+        final TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItem();
+        
+        // If the location is referenced by a split, 
+        // toss up a warning and leave it alone
+        final StringProperty splitsUsing = new SimpleStringProperty();
+        raceDAO.listRaces().forEach(r -> {
+            r.getSplits().forEach(s -> {
+                if (s.getTimingLocation().equals(tl)) splitsUsing.set(splitsUsing.getValueSafe() + r.getRaceName() + " " + s.getSplitName() + "\n");
+            });
+        });
+        
+        if (splitsUsing.isEmpty().get()) {
+            timingDAO.removeTimingLocation(tl);;
+            timingLocAddButton.requestFocus();
+            //timingLocAddButton.setDefaultButton(true);
+        } else {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Unable to Remove Timing Location");
+            alert.setHeaderText("Unable to remove the " + tl.getLocationName() + " timing location.");
+            alert.setContentText("The timing location is in use by the following splits:\n" + splitsUsing.getValueSafe());
+            alert.showAndWait();
+        }
     }
     
     public void addTimingInput(ActionEvent fxevent){
         TimingLocationInput tli = new TimingLocationInput();
         tli.setTimingLocation(selectedTimingLocation);
-        tli.setLocationName(selectedTimingLocation.getLocationName() + " Input " + selectedTimingLocation.getInputs().size()+1);
+        tli.setLocationName("New " + selectedTimingLocation.getLocationName() + " Input " + (selectedTimingLocation.inputsProperty().size()+1));
         timingDAO.addTimingLocationInput(tli);
         showTimingInput(tli);
         //timingLocationDetailsController.selectTimingLocation(selectedTimingLocation);
@@ -517,11 +758,11 @@ public class FXMLTimingController {
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Clear Timing Data...");
         alert.setHeaderText("Clear Timing Data:");
-        alert.setContentText("Do you want to clear the times for just this imput or all inputs?.");
+        alert.setContentText("Do you want to clear the times for all locations or just the " + selectedTimingLocation.getLocationName()+ " location?");
 
-        ButtonType allButtonType = new ButtonType("All");
+        ButtonType allButtonType = new ButtonType("All Times");
         
-        ButtonType currentButtonType = new ButtonType("Current",ButtonData.YES);
+        ButtonType currentButtonType = new ButtonType(selectedTimingLocation.getLocationName() + " Times",ButtonData.YES);
         ButtonType cancelButtonType = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE);
 
         alert.getButtonTypes().setAll(cancelButtonType, allButtonType,  currentButtonType );
@@ -542,67 +783,34 @@ public class FXMLTimingController {
     }
 
     public void setupCustomChipMap(ActionEvent fxevent){
-        FileChooser fileChooser = new FileChooser();
-        File sourceFile;
-        Map<String,String> bibMap = new ConcurrentHashMap();
-        final BooleanProperty chipFirst = new SimpleBooleanProperty(false);
         
-        fileChooser.setTitle("Select Bib -> Chip File");
         
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home"))); 
-        
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt","*.csv"),
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv"), 
-                new FileChooser.ExtensionFilter("All files", "*")
-            );
-        
-        sourceFile = fileChooser.showOpenDialog(customChipBibCheckBox.getScene().getWindow());
-        if (sourceFile != null) {
-            try {            
-                    Optional<String> fs = Files.lines(sourceFile.toPath()).findFirst();
-                    String[] t = fs.get().split(",", -1);
-                    if (t.length != 2) return; 
-                    
-                    if(t[0].toLowerCase().contains("chip")) {
-                        chipFirst.set(true);
-                        System.out.println("Found a chip -> bib file");
-                    } else if (t[0].toLowerCase().contains("bib")) {
-                        chipFirst.set(false);
-                        System.out.println("Found a bib -> chip file");
-                    } else {
-                        bibMap.put(t[0], t[1]);
-                        System.out.println("No header in file");
-                        System.out.println("Mapped chip " + t[0] + " to " + t[1]);
-                    }
-                    Files.lines(sourceFile.toPath())
-                        .map(s -> s.trim())
-                        .filter(s -> !s.isEmpty())
-                        .skip(1)
-                        .forEach(s -> {
-                            //System.out.println("readOnce read " + s); 
-                            String[] tokens = s.split(",", -1);
-                            if(chipFirst.get()) {
-                                bibMap.put(tokens[0], tokens[1]);
-                                System.out.println("Mapped chip " + tokens[0] + " to " + tokens[1]);
-                            } else {
-                                bibMap.put(tokens[1], tokens[0]);
-                                System.out.println("Mapped chip " + tokens[1] + " to " + tokens[0]);
-                            }
-                        });
-                    System.out.println("Found a total of " + bibMap.size() + " mappings");
-                    bib2ChipMap.setChip2BibMap(bibMap);
-                    timingDAO.updateBib2ChipMap(bib2ChipMap);
-                } catch (IOException ex) {
-                    Logger.getLogger(PikaRFIDFileReader.class.getName()).log(Level.SEVERE, null, ex);
-                    // We had an issue reading the file.... 
-                }
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("FXMLSetupBibMap.fxml"));
+        Parent chipMapRoot;
+        try {
             
-            
+            chipMapRoot = (Parent) fxmlLoader.load();
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Chip to Bib Map Setup");
+            stage.setScene(new Scene(chipMapRoot));  
+            stage.showAndWait();
+        } catch (IOException ex) {
+            Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
         }
+            
+        customChipBibCheckBox.setSelected(bib2ChipMap.getUseCustomMap()); 
     }
     
     public void addOverride(ActionEvent fxevent){
+        editOverride(new TimeOverride());
+    }
+    
+    public void editOverride(ActionEvent fxevent){
+        editOverride(overrideTableView.getSelectionModel().getSelectedItem());
+    }
+    
+    public void editOverride(TimeOverride o){
         // Open a Dialog box and ask for four things:
         // 1) Bib
         // 2) split (based on the bib)
@@ -610,7 +818,7 @@ public class FXMLTimingController {
         // 4) if that time is based on the time of day or a duration from the start
         // 
         // The dialog modifies a timeOverride object on the fly....
-        
+        if (o == null) return;
         
         
         BooleanProperty bibOK = new SimpleBooleanProperty(false);
@@ -621,14 +829,25 @@ public class FXMLTimingController {
         allOK.bind(Bindings.and(bibOK, timeOK));
         // Create the custom dialog.
         Dialog<TimeOverride> dialog = new Dialog();
-        dialog.setTitle("Add Override");
-        dialog.setHeaderText("Add Override");
-
+        if (o.getID() == null) {
+            dialog.setTitle("Add Override");
+            dialog.setHeaderText("Add Override");
+        } else {
+            dialog.setTitle("Edit Override");
+            dialog.setHeaderText("Edit Override");
+        }
         // Set the button types.
-        ButtonType createButtonType = new ButtonType("Create", ButtonData.OK_DONE);
+        ButtonType createButtonType;
+        
+        if (o.getID() == null) {
+            createButtonType = new ButtonType("Create", ButtonData.OK_DONE);
+        } else {
+            createButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+        }
+        
         dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
 
-        // Create the username and password labels and fields.
+        // Create the various labels and fields.
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -638,16 +857,17 @@ public class FXMLTimingController {
 
         TextField bibTextField = new TextField();
         bibTextField.setPromptText("Bib");
+        
         bibTextField.setPrefWidth(50.0);
         Label participantLabel = new Label();
-        ComboBox<Split> splitComboBox = new ComboBox();
+        PrefixSelectionComboBox<Split> splitComboBox = new PrefixSelectionComboBox();
         splitComboBox.setVisibleRowCount(5);
         bibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             Participant p = participantDAO.getParticipantByBib(newValue);
             if (p != null) {
                 participantLabel.setText(p.fullNameProperty().getValueSafe());
                 ObservableList<Split> splitList = FXCollections.observableArrayList();
-                p.wavesProperty().forEach(w -> {
+                p.wavesObservableList().forEach(w -> {
                     splitList.addAll(w.getRace().getSplits());
                 });
                 splitComboBox.setItems(splitList);
@@ -662,54 +882,40 @@ public class FXMLTimingController {
         
         
         
+        CheckBox typeCheckBox = new CheckBox("Relative to start time");
+        typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
+        typeCheckBox.disableProperty().setValue(Boolean.TRUE);
         
         TextField timeTextField = new TextField();
         timeTextField.setPromptText("HH:MM:SS.sss");
         timeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                     //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
             timeOK.setValue(false);
-
-            if (newValue.matches("([3-9]|[012]:)")) {
-                //Integer pos = raceStartTimeTextField.getCaretPosition();
-                timeTextField.setText("0" + newValue);
-                Platform.runLater(() -> {
-                    timeTextField.positionCaret(newValue.length()+2);
-                });
-            } else if (    newValue.isEmpty() || 
-                    newValue.matches("([012]|[01][0-9]|2[0-3])") || 
-                    newValue.matches("([01][0-9]|2[0-3]):[0-5]?") || 
-                    newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9]:[0-5]?") ){
-                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
-                timeOK.setValue(false);
-            } else if(newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]*)?)?") ) { // Looks like a time, lets check
-                System.out.println("Testing Time (newValue: " + newValue + ")");
             
-                try {
-                    if (!newValue.isEmpty()) {
-                        //LocalTime.parse(raceStartTimeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME );
-                        LocalTime.parse(timeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
-                        timeOK.setValue(true);
-                    }
-                } catch (Exception e) {
-                    timeTextField.setText(oldValue);
-                    System.out.println("Exception Bad Time (newValue: " + newValue + ")");
-                    e.printStackTrace();
-                    
-                }
+            if (typeCheckBox.isSelected() && DurationParser.parsable(newValue)) timeOK.setValue(Boolean.TRUE);
+            if (!typeCheckBox.isSelected() && DurationParser.parsable(newValue, false)) timeOK.setValue(Boolean.TRUE);
+
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]*(:?([0-5]?([0-9]?(:([0-5]?([0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
             } else {
-                timeTextField.setText(oldValue);
-                System.out.println("Bad Time (newValue: " + newValue + ")");
+                Platform.runLater(() -> {
+                    int c = timeTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    timeTextField.setText(oldValue);
+                    timeTextField.positionCaret(c);
+                });
+                System.out.println("Bad End Filter Time (newValue: " + newValue + ")");
             }
                 
         });
         
         
-        CheckBox typeCheckBox = new CheckBox("Relative to start time");
-        typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
-        typeCheckBox.disableProperty().setValue(Boolean.TRUE);
+        
+        
 
         splitComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (splitComboBox.getSelectionModel().getSelectedIndex() == 0) {
+            if (splitComboBox.getSelectionModel().getSelectedItem() != null && splitComboBox.getSelectionModel().getSelectedItem().getPosition() == 1) {
                 typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
                 typeCheckBox.disableProperty().setValue(Boolean.TRUE);
             } else {
@@ -735,14 +941,35 @@ public class FXMLTimingController {
 
         //grid.setMinSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
         dialog.getDialogPane().setContent(grid);
+        
+        if (o.getID() != null) {
+            Platform.runLater(() -> { 
+                bibTextField.setText(o.getBib());
+                
+                
+                timeTextField.setText(DurationFormatter.durationToString(o.getTimestamp(), 3, Boolean.TRUE).replaceFirst("^(\\d:)", "0$1"));
+                try{
+                    ObservableList<Split> splitList = FXCollections.observableArrayList();
+                    splitList.addAll(splitComboBox.getItems().stream().filter(e -> e.getID().equals(o.getSplitId())).findFirst().get());
+                    splitComboBox.setItems(splitList);
+                    splitComboBox.getSelectionModel().selectFirst();
+                } catch (Exception e) {}
+                
+                typeCheckBox.setSelected(o.getRelative());
+                
+                bibTextField.setEditable(false);
+                splitComboBox.setEditable(false);
+                
+            });
+        }
 
-        // Convert the result to a username-password-pair when the login button is clicked.
+        // Convert the result to a TimeOverride
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == createButtonType) {
-                TimeOverride o = new TimeOverride();
                 o.setBib( bibTextField.textProperty().getValueSafe());
                 o.setSplitId(splitComboBox.getValue().getID());
-                o.setTimestamp(Duration.between(LocalTime.MIN,LocalTime.parse(timeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME)));
+                if (typeCheckBox.isSelected()) o.setTimestamp(DurationParser.parse(timeTextField.getText(), false));
+                else o.setTimestamp(DurationParser.parse(timeTextField.getText(), true));
                 o.setRelative(typeCheckBox.isSelected());
                 return o;
             }
@@ -771,7 +998,7 @@ public class FXMLTimingController {
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Clear Overrides...");
         alert.setHeaderText("Delete Overrides:");
-        alert.setContentText("Do you want to delete all overrides?.");
+        alert.setContentText("Do you want to delete all overrides?");
 
         //ButtonType allButtonType = new ButtonType("All");
         
@@ -786,6 +1013,320 @@ public class FXMLTimingController {
             timingDAO.clearAllOverrides(); 
         }
  
+    }
+    
+    public void startTriggerLookup(ActionEvent fxevent){
+        
+        // Check to see if we have any START_TIMEs to map
+        // Wrap it in a new list to avoid the list being modified while we stream/filter it. 
+        List<CookedTimeData> cTimes = new ArrayList(timingDAO.getCookedTimes()); 
+        List<CookedTimeData> cookedTimes = cTimes.stream().filter(c -> !c.ignoreTimeProperty().getValue()).collect(Collectors.toList());
+        
+        // For each timing location look for Zero chips at that split
+        Map<Integer,ObservableList<Duration>> startTimesByLocation = new HashMap();
+        timingDAO.listTimingLocations().forEach(tl -> {
+            Integer tlID = tl.getID();
+            List<Duration> startTimes = cookedTimes.stream().filter(p -> p.getRawChipID().equals("0") && p.getTimingLocationId().equals(tlID)).map(c -> c.getTimestamp()).collect(Collectors.toList());
+            startTimes.sort((p1, p2) -> p1.compareTo(p2));
+            if (!startTimes.isEmpty()) startTimesByLocation.put(tlID, FXCollections.observableArrayList(startTimes));
+        });
+        startTimesByLocation.keySet().forEach(k -> {
+            startTimesByLocation.get(k).forEach(d -> {
+                System.out.println("Found Start: TL#" + k + " -> " + DurationFormatter.durationToString(d));
+            });
+        });
+        // for each race/wave, see if we have any start times
+        Map<Integer,List<Wave>> wavesByLocation = new HashMap();
+        BooleanProperty startsFound = new SimpleBooleanProperty(false);
+        RaceDAO.getInstance().listRaces().forEach(race -> {
+            if (race.getSplits() == null || race.getSplits().isEmpty()) {
+                System.out.println(" RACE HAS NO SPLITS!!! " + race.getRaceName());
+                return;
+            }
+            Integer tlID = race.getSplits().get(0).getTimingLocationID();
+            if (!wavesByLocation.containsKey(tlID)) wavesByLocation.put(tlID, race.getWaves());
+            else wavesByLocation.get(tlID).addAll(race.getWaves());
+            if (!startTimesByLocation.isEmpty()) startsFound.set(true);
+        });
+        
+        if (!startsFound.get()) {
+            // No start times, complain and bail
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("No Start Times...");
+            alert.setHeaderText("No Start Times Found");
+            alert.setContentText("No Start times (typically a \"0\" chip) were\nfound at any of the start timing locations!");
+
+            alert.showAndWait();
+            return;
+        }
+        
+        
+        
+
+        // Create the base dialog
+        Dialog<List<WaveStartTime>> dialog = new Dialog();
+        dialog.resizableProperty().set(true);
+        dialog.getDialogPane().setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight()-150);
+        dialog.setTitle("Lookup Start Times");
+        dialog.setHeaderText("Lookup Start Times");
+        ButtonType okButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+        
+        // Create a scrollPane to put the tables and such in
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setStyle("-fx-font-size: 16px;"); // Make the scroll bar a bit larger
+        VBox scrollVBox = new VBox();
+        scrollVBox.setStyle("-fx-font-size: 12px;"); // Make everything normal again
+        scrollVBox.fillWidthProperty().set(true);
+        scrollPane.setContent(scrollVBox);
+        scrollPane.fitToWidthProperty().set(true);
+        // For each start location, create a table and a list of possible start times
+        
+        List<WaveStartTime> waveStartMasterList = new ArrayList();
+        
+        wavesByLocation.keySet().forEach(tlID -> {
+                VBox locationVBox = new VBox();
+                locationVBox.fillWidthProperty().set(true);
+                scrollVBox.getChildren().add(locationVBox);
+                if (wavesByLocation.keySet().size()>1) {
+                    Label locLabel = new Label(timingDAO.getTimingLocationByID(tlID).getLocationName() + " Timing Location");
+                    locLabel.setFont(new Font(16));
+                    locationVBox.getChildren().add(locLabel);
+                }
+                if(!startTimesByLocation.containsKey(tlID)) { // no start times
+                    Label noStarts = new Label("No start times found at this location");
+                    locationVBox.getChildren().add(noStarts);
+                } else {
+                    TableView<WaveStartTime> waveTable = new TableView();
+                    waveTable.setFixedCellSize(30);
+                    int size = wavesByLocation.get(tlID).size();
+                    if (size >= 6) {
+                        waveTable.prefHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
+                        waveTable.minHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
+                        waveTable.maxHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
+                    } else {
+                        waveTable.prefHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
+                        waveTable.minHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
+                        waveTable.maxHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
+                    }
+                    
+                    waveTable.maxWidthProperty().setValue(Double.MAX_VALUE);
+                    waveTable.setEditable(true);
+                    waveTable.columnResizePolicyProperty().setValue(CONSTRAINED_RESIZE_POLICY);
+                    
+                    TableColumn<WaveStartTime,String> waveColumn = new TableColumn("Race/Wave");
+                    waveColumn.setCellValueFactory(c -> c.getValue().wName);
+                    waveColumn.setEditable(false);
+                    
+                    TableColumn<WaveStartTime,String> oldTimeColumn = new TableColumn("Current");
+                    oldTimeColumn.setPrefWidth(110);
+                    oldTimeColumn.setMinWidth(oldTimeColumn.getPrefWidth());
+                    oldTimeColumn.setMaxWidth(oldTimeColumn.getPrefWidth());
+                    oldTimeColumn.setCellValueFactory(c -> c.getValue().wStart);
+                    oldTimeColumn.setEditable(false);
+                    
+                    TableColumn<WaveStartTime,Duration> newTimeColumn = new TableColumn("New");
+                    newTimeColumn.setPrefWidth(110);
+                    newTimeColumn.setMinWidth(newTimeColumn.getPrefWidth());
+                    newTimeColumn.setMaxWidth(newTimeColumn.getPrefWidth());
+                    newTimeColumn.setCellValueFactory(c -> c.getValue().newStartTime);
+                    newTimeColumn.setCellFactory(ComboBoxTableCell.forTableColumn(new DurationStringConverter(), startTimesByLocation.get(tlID)));
+                    newTimeColumn.setOnEditCommit((TableColumn.CellEditEvent<WaveStartTime, Duration> t) -> {
+                        WaveStartTime s = t.getTableView().getItems().get(t.getTablePosition().getRow());
+                        s.setNewDuration(t.getNewValue());
+                    });
+
+                    TableColumn<WaveStartTime,Boolean> updateColumn = new TableColumn("Update");
+                    updateColumn.setCellValueFactory(c -> c.getValue().update);
+                    updateColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+                    updateColumn.setEditable(true);
+                    waveTable.getColumns().addAll(waveColumn,oldTimeColumn,newTimeColumn,updateColumn);
+
+                    // create a list of waves for this location
+                    ObservableList<WaveStartTime> waveStarts = FXCollections.observableArrayList();
+                    wavesByLocation.get(tlID).forEach(w -> {
+                        waveStarts.add(new WaveStartTime(w));
+                    });
+                    waveStartMasterList.addAll(waveStarts);
+                    
+                    // match up the waves with the best possible start time
+                    // we start looking 1 minute before the scheduled start and go from there
+                    // and match to the closes to the scheduled start 
+                    waveStarts.sort((w1, w2) -> w1.orgStartTime.compareTo(w2.orgStartTime));
+                    
+                    int maxWaveIndex = waveStarts.size();
+                    List<Duration> startTimes = startTimesByLocation.get(tlID); // already sorted
+                    int startIndex = 0;
+                    int maxStartIndex = startTimes.size();
+                    
+                    // Loop through the waves
+                    for (int waveIndex = 0; waveIndex < maxWaveIndex; waveIndex++){
+                        WaveStartTime w = waveStarts.get(waveIndex);
+                        Duration d = w.orgStartTime;
+                        Long millis = null; 
+                        
+                        System.out.println("Looking for a start trigger for " + w.wName.get() + " at " + DurationFormatter.durationToString(w.orgStartTime,3));
+                        // loop through the unprocessed start times
+                        for (int i = startIndex; i < maxStartIndex; i++) {
+                            
+                            // If it is exactly equal to the existing, stop
+                            if (startTimes.get(i).equals(w.orgStartTime)) {
+                                w.newStartTime.set(startTimes.get(i));
+                                w.update.set(false); // unset the update flag
+                                startIndex = i+1;
+                                System.out.println("  Exact Match at " + DurationFormatter.durationToString(w.newStartTime.get(),3));
+                                break;
+                            }
+                            // otherwise, if we have not assigned a time yet 
+                            // or the new time is closer than the old one... 
+                            if (millis == null || startTimes.get(i).minus(d).abs().toMillis() < millis) { 
+                                millis = startTimes.get(i).minus(d).abs().toMillis();
+                                System.out.println("  Possible Match of " + DurationFormatter.durationToString(startTimes.get(i),3) + " within " + millis + " millis away");
+                                // if the new time is closer to the next wave bail
+                                if (waveIndex+1 < maxWaveIndex && 
+                                        millis > waveStarts.get(waveIndex+1).orgStartTime.minus(startTimes.get(i)).abs().toMillis()) {
+                                    System.out.println("  But it is closer to the next time of " + DurationFormatter.durationToString(waveStarts.get(waveIndex+1).orgStartTime,3));
+                                    System.out.println("  which is only " + waveStarts.get(waveIndex+1).orgStartTime.minus(startTimes.get(i)).abs().toMillis() + " millis away");
+                                    break;
+                                } 
+                                w.newStartTime.set(startTimes.get(i));
+                                w.update.set(true);
+                                startIndex = i+1;
+                            } else {
+                                System.out.println("  Possible Match of " + DurationFormatter.durationToString(startTimes.get(i),3) + " is " + startTimes.get(i).minus(d).abs().toMillis() + " millis away");
+                                break;
+                            }
+                        }
+                    }
+                    
+
+
+                    waveTable.setItems(waveStarts);
+                    locationVBox.getChildren().add(waveTable);
+                }
+            
+        });
+        
+
+    
+        
+
+
+        
+        dialog.getDialogPane().setContent(scrollPane);
+        
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                return waveStartMasterList;
+            }
+            return null;
+        });
+        
+        Platform.runLater(() -> { dialog.setY((Screen.getPrimary().getVisualBounds().getHeight()-dialog.getHeight())/2); });
+        Optional<List<WaveStartTime>> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            // Walk the map
+            List<WaveStartTime> results = result.get();
+            results.forEach(k -> {
+                if (k.update.get()) {
+                    k.w.setWaveStart((LocalTime.MIDNIGHT.plus(k.newStartTime.get())).format(DateTimeFormatter.ISO_LOCAL_TIME));
+                    ResultsDAO.getInstance().reprocessWaveResults(k.w);
+                    RaceDAO.getInstance().updateWave(k.w);
+                }
+            });
+        }
+    }
+    
+    private void updateFilterPredicate(){
+        filteredTimesList.setPredicate(cookedRead -> {
+            // If filter text is empty, display all persons.
+           // System.out.println("filteredParticpantsList.predicateProperty changing...");
+            //System.out.println("...filterField="+filterField.textProperty().getValue());
+            //System.out.println("...searchWaveComboBox=" + searchWaveComboBox.getCheckModel().getCheckedItems().size());
+            if (searchTextBox.textProperty().getValueSafe().isEmpty() && searchScopeCheckComboBox.getCheckModel().getCheckedItems().isEmpty()) {
+                //System.out.println("...both are empty: true");
+                return true;
+            }
+
+            BooleanProperty waveFilterMatch = new SimpleBooleanProperty(false);
+
+            if (!searchScopeCheckComboBox.getCheckModel().getCheckedItems().isEmpty()) {
+                searchScopeCheckComboBox.getCheckModel().getCheckedItems().forEach(tl -> {
+                        if (tl != null && tl.getID().equals(cookedRead.getTimingLocationId())) waveFilterMatch.set(true);
+                    }); 
+            } else {
+                //System.out.println("...searchWaveComboBox is empty: true");
+
+                waveFilterMatch.set(true);
+            }
+
+            if (searchTextBox.textProperty().getValueSafe().isEmpty() && waveFilterMatch.getValue()) {
+                //System.out.println("...filterField is empty and wave matches");
+                return true;
+            } else if (!waveFilterMatch.getValue()) {
+                //System.out.println("...filterField is empty and wave does not match");
+                return false;
+            } 
+
+            // Compare first name and last name of every person with filter text.
+            String lowerCaseFilter = "(.*)(" + searchTextBox.textProperty().getValueSafe() + ")(.*)";
+            try {
+                Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
+
+                String name; 
+                Participant p = participantDAO.getParticipantByBib(cookedRead.getBib());
+                if (p == null) { 
+                    if (cookedRead.getBib().startsWith("Unmapped")) name="Unknown Chip";
+                    else if (cookedRead.getRawChipID().equals("0")) name="START TRIGGER";
+                    else name="Unregistered bib: " + cookedRead.getBib();
+                } else {
+                    name =  StringUtils.stripAccents(p.fullNameProperty().get());
+                }
+                
+
+                if (    pattern.matcher(name).matches() ||
+                        pattern.matcher(cookedRead.getRawChipID()).matches() ||
+                        pattern.matcher(cookedRead.getBib()).matches()) {
+                    return true; // Filter matches first/last/bib.
+                } 
+
+            } catch (PatternSyntaxException e) {
+                
+                return true;
+            }
+            return false; // Does not match.
+        });
+    }
+
+    private static class WaveStartTime {
+        public Wave w;
+        public StringProperty wName = new SimpleStringProperty();
+        public StringProperty wStart = new SimpleStringProperty();
+        public ObjectProperty<Duration> newStartTime = new SimpleObjectProperty(Duration.ZERO);
+        public BooleanProperty update = new SimpleBooleanProperty(false);
+        public Duration orgStartTime;
+                
+        public WaveStartTime() {
+        }
+        public WaveStartTime(Wave w){
+            this.setWave(w);
+        }
+        
+        public void setWave(Wave wave){
+            w=wave;
+            wName.setValue(WaveStringConverter.getString(w));
+            wStart.bind(w.waveStartStringProperty());
+            newStartTime.setValue(Duration.between(LocalTime.MIDNIGHT, w.waveStartProperty()));
+            orgStartTime=newStartTime.get();
+        }
+        
+        public void setNewDuration(Duration d){
+            newStartTime.set(d);
+            if (orgStartTime.equals(d)) update.set(false);
+            else update.set(true);
+        }
+        
     }
     
 }

@@ -16,10 +16,8 @@
  */
 package com.pikatimer.timing;
 
-import com.pikatimer.timing.reader.PikaOutreachDirectReader;
-import com.pikatimer.timing.reader.PikaOutreachFileReader;
 import com.pikatimer.timing.reader.PikaPCTimerFileReader;
-import com.pikatimer.timing.reader.PikaRFIDDirectReader;
+import com.pikatimer.timing.reader.PikaRaceTimerFileReader;
 import com.pikatimer.timing.reader.PikaRFIDFileReader;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,59 +30,36 @@ import java.util.Map;
 public enum TimingInputTypes {
 
 
-    OutreachDirect, 
-    OutreachFile,
+    RFIDFile,
     PCTimer, 
-    RFIDDirect, 
-    RFIDFile; 
+    RaceTimer; 
 
     
     private static final Map<TimingInputTypes, String> InputMap = createMap();
 
     private static Map<TimingInputTypes, String> createMap() {
         Map<TimingInputTypes, String> result = new HashMap<>();
-        //result.put(OutreachDirect, "Outreach (Direct)");
-        //result.put(OutreachFile, "Outreach (File)");
-        result.put(PCTimer, "PC Timer");
-        //result.put(RFIDDirect, "RFID (Direct)");
-        result.put(RFIDFile, "RFID (File)");
+
+        result.put(RFIDFile, "RFIDServer / Outreach File");
+        result.put(PCTimer, "PC Timer (Race Director)");
+        result.put(RaceTimer, "Race Timer");
 
         return Collections.unmodifiableMap(result);
     }
-    
-//    private String unit;
-    
-//    private Unit(String s){
-//        unit=s;
-//    }
+
     
     @Override 
     public String toString(){
         return InputMap.get(this);
     }
-//    
-//    public String getValue() {
-//        return unit;
-//    }
-//    
-//    public void setValue(String u) {
-//        unit = u;
-//    
-    
-    // TODO: Put in converters so that we can take miles to km, etc
-    
-    // 1ft = 0.3048m
+
     public final  TimingReader getNewReader() {
                 
         switch(this){
-            case OutreachDirect:
-                return new PikaOutreachDirectReader();
-            case OutreachFile:
-                return new PikaOutreachFileReader();
             case PCTimer:
                 return new PikaPCTimerFileReader();
-            case RFIDDirect:
-                return new PikaRFIDDirectReader();
+            case RaceTimer:
+                return new PikaRaceTimerFileReader();
             case RFIDFile:
                 return new PikaRFIDFileReader();
         }

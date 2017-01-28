@@ -26,7 +26,7 @@ import com.pikatimer.results.RaceReportType;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
-import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
@@ -46,18 +46,57 @@ public class Award implements RaceReportType {
     Race race;
     IntegerProperty fullNameLength = new SimpleIntegerProperty(10);
     List<ProcessedResult> prList;
+    
+    
 
+    Map<String,Boolean> supportedOptions = new HashMap();
+    
+    public Award(){
+        supportedOptions.put("hideCustomHeaders", false);
+    }
+    
+    @Override
+    public Boolean optionSupport(String feature) {
+        return supportedOptions.containsKey(feature);
+    }
+    
     @Override
     public void init(Race r) {
         race = r;
+
     }
     
     @Override
     public String process(List<ProcessedResult> resList, RaceReport rr) {
         System.out.println("Award.process() Called... ");
-
-        prList = new ArrayList(resList); // our own copy to screw with
         race = rr.getRace(); 
+        supportedOptions.keySet().forEach(k -> supportedOptions.put(k, rr.getBooleanAttribute(k)));
+        
+        Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
+        String dispFormat = race.getStringAttribute("TimeDisplayFormat");
+        String roundMode = race.getStringAttribute("TimeRoundingMode");
+        String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
+
+        Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
+        if (customHeaders && supportedOptions.get("hideCustomHeaders")) customHeaders = false;
+        
+        // Take the list we recieved and filter all DNF's, DQ's, and folks 
+        // with no finish times. 
+        // The result our own copy to screw with
+        prList = new ArrayList(
+                resList.stream().filter(p -> p.getChipFinish() != null)
+                    .filter(p -> p.getParticipant().getDNF() != true)
+                    .filter(p -> p.getParticipant().getDQ() != true)
+                    .filter(p -> {
+                        if (cutoffTime.isZero()) return true;
+                        if (    cutoffTime.compareTo(p.getChipFinish()) >= 0 ||
+                                cutoffTimeString.equals(DurationFormatter.durationToString(p.getChipFinish(), dispFormat, roundMode))
+                            ) return true;
+                        return false;
+                    })
+                    .collect(Collectors.toList())
+                ); 
+        
         
         String report = new String();
         
@@ -66,15 +105,8 @@ public class Award implements RaceReportType {
         
         Event event = Event.getInstance();  // fun with singletons... 
         
-        rr.getKnownAttributeNames().forEach(s -> {System.out.println("Award: Known Attribute: " + s);});
+        //rr.getKnownAttributeNames().forEach(s -> {System.out.println("Award: Known Attribute: " + s);});
 
-        // We really don't care about these in this context
-        // Boolean showDQ = rr.getBooleanAttribute("showDQ");
-        // Boolean inProgress = rr.getBooleanAttribute("inProgress");
-        // Boolean showSplits = rr.getBooleanAttribute("showSplits");
-        // Boolean showDNF = rr.getBooleanAttribute("showDNF");
-        // Boolean showPace = rr.getBooleanAttribute("showPace");
-        // Boolean showGun = rr.getBooleanAttribute("showGun");
         
         // what is the longest name?
         fullNameLength.setValue(10);
@@ -84,7 +116,11 @@ public class Award implements RaceReportType {
         });
         fullNameLength.setValue(fullNameLength.getValue() + 1);
        
-        
+        if (customHeaders && race.getStringAttribute("textHeader") != null && !race.getStringAttribute("textHeader").isEmpty()) {
+            report += race.getStringAttribute("textHeader");
+            report += System.lineSeparator();
+        }
+                
         report += StringUtils.center(event.getEventName(),80) + System.lineSeparator();
         if (RaceDAO.getInstance().listRaces().size() > 1) 
             report += StringUtils.center(race.getRaceName(),80) + System.lineSeparator();
@@ -94,7 +130,10 @@ public class Award implements RaceReportType {
         report += StringUtils.center("***Awards***",80) + System.lineSeparator();
             report += System.lineSeparator();
         
-        
+        if (customHeaders && race.getStringAttribute("textMessage") != null && !race.getStringAttribute("textMessage").isEmpty()) {
+            report += race.getStringAttribute("textMessage");
+            report += System.lineSeparator();
+        }
             
         // Sort out who gets what
         Boolean pull = awardParams.getBooleanAttribute("OverallPull");
@@ -107,32 +146,16 @@ public class Award implements RaceReportType {
         List<ProcessedResult> overall; // a filtered and sorted list
         if (chip) overall = prList.stream()
                 .filter(p -> p.getSex().equalsIgnoreCase("F"))
-                .filter(p -> p.getChipFinish() != null)
                 .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
                 .collect(Collectors.toList());
         else overall = prList.stream()
                 .filter(p -> p.getSex().equalsIgnoreCase("F"))
-                .filter(p -> p.getGunFinish() != null)
                 .sorted((p1, p2) -> p1.getGunFinish().compareTo(p2.getGunFinish()))
                 .collect(Collectors.toList());
         
         report += outputHeader();
         report += printWinners(overall, depth, pull, chip);
-//        for (int i = 0; i < depth; i++) {
-//            report += StringUtils.center(Integer.toString(i+1),6); // 4R chars 
-//            report += StringUtils.rightPad(overall.get(i).getParticipant().fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
-//            report += StringUtils.leftPad(overall.get(i).getParticipant().getBib(),5); // 5R chars for the bib #
-//            report += StringUtils.leftPad(overall.get(i).getAge().toString(),4); // 4R for the age
-//            report += StringUtils.leftPad(overall.get(i).getSex(),4); // 4R for the sex
-//            report += StringUtils.leftPad(overall.get(i).getAGCode(),6); //6L for the AG Group
-//            report += StringUtils.rightPad(overall.get(i).getParticipant().getCity(),18); // 18L for the city
-//            report += StringUtils.leftPad(overall.get(i).getParticipant().getState(),4); // 4C for the state code
-//            if (chip) report += StringUtils.leftPad(DurationFormatter.durationToString(overall.get(i).getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8); // 9R Need to adjust for the format code
-//            else report += StringUtils.leftPad(DurationFormatter.durationToString(overall.get(i).getGunFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8);
-//            if (pull) prList.remove(overall.get(i));
-//            report += System.lineSeparator();
-//
-//        }
+
         
         report += System.lineSeparator();
         report += System.lineSeparator();
@@ -153,22 +176,7 @@ public class Award implements RaceReportType {
         
         report += outputHeader();
         report += printWinners(overall, depth, pull, chip);
-//        for (int i = 0; i < depth; i++) {
-//            report += StringUtils.center(Integer.toString(i+1),6); // 4R chars 
-//            report += StringUtils.rightPad(overall.get(i).getParticipant().fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
-//            report += StringUtils.leftPad(overall.get(i).getParticipant().getBib(),5); // 5R chars for the bib #
-//            report += StringUtils.leftPad(overall.get(i).getAge().toString(),4); // 4R for the age
-//            report += StringUtils.leftPad(overall.get(i).getSex(),4); // 4R for the sex
-//            report += StringUtils.leftPad(overall.get(i).getAGCode(),6); //6L for the AG Group
-//            report += StringUtils.rightPad(overall.get(i).getParticipant().getCity(),18); // 18L for the city
-//            report += StringUtils.leftPad(overall.get(i).getParticipant().getState(),4); // 4C for the state code
-//            if (chip) report += StringUtils.leftPad(DurationFormatter.durationToString(overall.get(i).getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8); // 9R Need to adjust for the format code
-//            else report += StringUtils.leftPad(DurationFormatter.durationToString(overall.get(i).getGunFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8);
-//            
-//            report += System.lineSeparator();
-//            if (pull) prList.remove(overall.get(i));
-//            
-//        }            
+            
         report += System.lineSeparator();
         report += System.lineSeparator();
 
@@ -279,10 +287,20 @@ public class Award implements RaceReportType {
         
         report += chars.toString();
         
+        if (customHeaders && race.getStringAttribute("textFooter") != null && !race.getStringAttribute("textFooter").isEmpty()) {
+            report += race.getStringAttribute("textFooter");
+            report += System.lineSeparator();
+        }
+        
         return report;
       }
     
     private String outputHeader(){
+        String dispFormat = race.getStringAttribute("TimeDisplayFormat");
+        Integer dispFormatLength;  // add a space
+        if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
+        else dispFormatLength = dispFormat.length()+1;
+        
         String report = new String();
         // print the headder
         report += "Place"; // 4R chars 
@@ -293,19 +311,41 @@ public class Award implements RaceReportType {
         report += " AG   "; //6L for the AG Group
         report += " City               "; // 18L for the city
         report += " ST "; // 4C for the state code
-        report += " Time"; // 9R Need to adjust for the format code
+        report += StringUtils.leftPad(" Time",dispFormatLength); // Need to adjust for the format code
         report += System.lineSeparator();
 
         return report;
     }
     
     private String printWinners(List<ProcessedResult> overall, int depth, boolean pull, boolean chip) {
+        String dispFormat = race.getStringAttribute("TimeDisplayFormat");
+        String roundMode = race.getStringAttribute("TimeRoundingMode");
+        Integer dispFormatLength;  // add a space
+        if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
+        else dispFormatLength = dispFormat.length()+1;
+        
+        Boolean permitTies = race.getBooleanAttribute("permitTies") != null && race.getBooleanAttribute("permitTies");
+        //System.out.println("Award::printWinners: permitTies is " + permitTies);
+        
         String report = new String();
         if (overall.size() < depth) depth = overall.size();
         
+        Integer currentPlace = 0;
+        String lastTime = "";
+        String currentTime;
+        
         for (int i = 0; i < depth; i++) {
             //if (overall.size() < i || overall.get(i) == null) break;
-            report += StringUtils.center(Integer.toString(i+1),6); // 4R chars 
+            if (chip) currentTime = DurationFormatter.durationToString(overall.get(i).getChipFinish(), dispFormat, roundMode);
+            else currentTime = DurationFormatter.durationToString(overall.get(i).getGunFinish(), dispFormat, roundMode);
+            
+            //System.out.println("Award::printWinners: Comparing previous " + lastTime + " to " + currentTime);
+            if (permitTies && !lastTime.equals(currentTime)) currentPlace++;
+            else if (!permitTies) currentPlace++;
+            
+            lastTime = currentTime;
+            
+            report += StringUtils.center(currentPlace.toString(),6); // 4R chars 
             report += StringUtils.rightPad(overall.get(i).getParticipant().fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
             report += StringUtils.leftPad(overall.get(i).getParticipant().getBib(),5); // 5R chars for the bib #
             report += StringUtils.leftPad(overall.get(i).getAge().toString(),4); // 4R for the age
@@ -314,13 +354,35 @@ public class Award implements RaceReportType {
             report += " ";
             report += StringUtils.rightPad(overall.get(i).getParticipant().getCity(),18); // 18L for the city
             report += StringUtils.leftPad(overall.get(i).getParticipant().getState(),4); // 4C for the state code
-            if (chip) report += StringUtils.leftPad(DurationFormatter.durationToString(overall.get(i).getChipFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8); // 9R Need to adjust for the format code
-            else report += StringUtils.leftPad(DurationFormatter.durationToString(overall.get(i).getGunFinish(), 0, Boolean.FALSE, RoundingMode.DOWN), 8);
+            report += StringUtils.leftPad(currentTime, dispFormatLength);
             if (pull) prList.remove(overall.get(i));
             report += System.lineSeparator();
-
+            
+        }
+        
+        if (permitTies && depth < overall.size()){
+            int i = depth;
+            if (chip) currentTime = DurationFormatter.durationToString(overall.get(depth).getChipFinish(), dispFormat, roundMode);
+            else currentTime = DurationFormatter.durationToString(overall.get(depth).getGunFinish(), dispFormat, roundMode);
+            
+            if(lastTime.equals(currentTime)) {
+                report += StringUtils.center(currentPlace.toString(),6); // 4R chars 
+                report += StringUtils.rightPad(overall.get(i).getParticipant().fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
+                report += StringUtils.leftPad(overall.get(i).getParticipant().getBib(),5); // 5R chars for the bib #
+                report += StringUtils.leftPad(overall.get(i).getAge().toString(),4); // 4R for the age
+                report += StringUtils.leftPad(overall.get(i).getSex(),4); // 4R for the sex
+                report += StringUtils.leftPad(overall.get(i).getAGCode(),6); //6L for the AG Group
+                report += " ";
+                report += StringUtils.rightPad(overall.get(i).getParticipant().getCity(),18); // 18L for the city
+                report += StringUtils.leftPad(overall.get(i).getParticipant().getState(),4); // 4C for the state code
+                report += StringUtils.leftPad(currentTime, dispFormatLength);
+                if (pull) prList.remove(overall.get(i));
+                report += System.lineSeparator();
+            }
         }
         
         return report;
     }
+
+    
 }

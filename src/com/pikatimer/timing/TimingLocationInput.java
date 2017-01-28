@@ -17,6 +17,7 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.util.DurationFormatter;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -76,14 +77,15 @@ public class TimingLocationInput implements TimingListener{
     private TimingInputTypes timingInputType; 
     private Map<String, String> attributes = new ConcurrentHashMap<>(8, 0.9f, 1);
     private TimingReader timingReader;
-    private BooleanProperty tailFileBooleanProperty;
-    private BooleanProperty timingReaderInitialized; 
+    private final BooleanProperty tailFileBooleanProperty;
+    private final BooleanProperty timingReaderInitialized; 
     private static final TimingDAO timingDAO = TimingDAO.getInstance();
     private Button inputButton;
     private TextField inputTextField; 
+    private final BooleanProperty isBackup = new SimpleBooleanProperty(false);
     private final BooleanProperty skewInput;
     private Duration skewDuration; 
-    private Semaphore processRead = new Semaphore(1);
+    private final Semaphore processRead = new Semaphore(1);
 
     private final IntegerProperty readCountProperty = new SimpleIntegerProperty();
     private Set<RawTimeData> rawTimeSet;
@@ -97,7 +99,7 @@ public class TimingLocationInput implements TimingListener{
         timingReaderInitialized = new SimpleBooleanProperty();
         skewInput = new SimpleBooleanProperty();
         //attributes = new ConcurrentHashMap <>();
-        skewDuration = Duration.ofNanos(0);
+        skewDuration = Duration.ZERO;
         skewInput.setValue(Boolean.FALSE);
 
         
@@ -133,7 +135,7 @@ public class TimingLocationInput implements TimingListener{
         return tailFileBooleanProperty;
     }
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "TIMING_LOCATION_ID",nullable=false)
     public TimingLocation getTimingLocation() {
         return timingLocation;
@@ -159,7 +161,7 @@ public class TimingLocationInput implements TimingListener{
         return timingInputType;
     }
     public void setTimingInputType(TimingInputTypes t) {
-        
+        System.out.println("TimingLocationInput::setTimingInputType now " + t);
         if (t != null && (timingInputType == null || ! timingInputType.equals(t)) ){
             
             // If we already have a reader
@@ -331,7 +333,7 @@ public class TimingLocationInput implements TimingListener{
         // Mark it as our own
         r.setTimingLocationInputId(IDProperty.getValue());
         
-        
+        if (rawTimeSet == null) getRawTimeSet();
         // is it a duplicate?
         
         // if so, just return
@@ -363,6 +365,12 @@ public class TimingLocationInput implements TimingListener{
                 
         // mark it as our own
         c.setTimingLocationInputId(this.IDProperty.intValue());
+        
+        // set link the cooked time to the parent raw time
+        c.setRawChipID(r.getChip());
+        
+        // set the backup flag
+        c.setBackupTime(getIsBackup());
         
         // skew it
         if(skewInput.getValue()) {
@@ -399,9 +407,11 @@ public class TimingLocationInput implements TimingListener{
             });
         }
     }
+    
+    @Override
     public void clearReads() {
         if(rawTimeSet != null && !rawTimeSet.isEmpty()) {
-            clearLocalReads();
+            //clearLocalReads();
             // Delete all from the DB
             // This will trigger a removal of all cooked times associated with 
             // this instance. 
@@ -410,7 +420,7 @@ public class TimingLocationInput implements TimingListener{
     }
     
     public void reprocessReads() {
-        System.out.println("ReprocessAll called... ");
+        System.out.println("TimingLocationInput::reprocessReads() for " + this.getLocationName());
         TimingLocationInput tli = this; 
         
 
@@ -421,13 +431,18 @@ public class TimingLocationInput implements TimingListener{
             @Override public Void call() {
                 try {
                     // set the processReadSemaphore to pause the processRead()
+                    System.out.println("TimingLocationInput::reprocessReads() Task started for " + tli.getLocationName());
                     processRead.acquire();
 
                     // clear out all cooked times for our location
+                    
+                    System.out.println("TimingLocationInput::reprocessReads() Task deleting times for " + tli.getLocationName());
 
                     timingDAO.blockingClearCookedTimes(tli);
+                    
+                    System.out.println("TimingLocationInput::reprocessReads() Task reprocessing " + getRawTimeSet().size() + " reads at " + tli.getLocationName() + ".");
 
-                    rawTimeSet.stream().forEach( r -> {
+                    getRawTimeSet().stream().forEach( r -> {
                         // for everything in our rawTimeSet, reprocess the read 
 
                         tli.processReadStage2(r);
@@ -436,8 +451,12 @@ public class TimingLocationInput implements TimingListener{
                     });
 
                     //resume processing of new times. 
+                    System.out.println("TimingLocationInput::reprocessReads() Task done for " + tli.getLocationName() + ".");
+
                     processRead.release();
-                } catch (InterruptedException ex) {
+                } catch (Exception ex) {
+                    System.out.println("TimingLocationInput::reprocessReads() exception for " + tli.getLocationName());
+                    ex.printStackTrace();
                     Logger.getLogger(TimingLocationInput.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 //when done, resume processRead()
@@ -454,10 +473,24 @@ public class TimingLocationInput implements TimingListener{
         timingReader.stopReading();
     }
 
+    @Column(name="backup")
+    public Boolean getIsBackup() {
+        //System.out.println("returning isBackup()");
+        return isBackup.getValue();
+    }
+    public void setIsBackup(Boolean i) {
+        if (i != null) { 
+            isBackup.setValue(i);
+        }
+    }
+     
+    public BooleanProperty backupProperty(){
+        return isBackup;
+    }
     
     @Column(name="skew")
     public Boolean getSkewLocationTime() {
-        System.out.println("returning SkewLocation()");
+        //System.out.println("returning SkewLocation()");
         return skewInput.getValue();
     }
     public void setSkewLocationTime(Boolean i) {
@@ -482,19 +515,40 @@ public class TimingLocationInput implements TimingListener{
     }
     @Transient
     public String getSkewString() {
-        String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
-        System.out.println("Returning skew duration string of " + durationString + " for " + skewDuration);
-        return durationString; 
+        //String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
+        String skewDurationString = DurationFormatter.durationToString(skewDuration, 3, false);
+        System.out.println("Returning skew duration string of " + skewDurationString + " for " + skewDuration);
+        return skewDurationString; 
     }
-    public void setSkewString(String text) {
-        String durationString = new BigDecimalStringConverter().toString(BigDecimal.valueOf(skewDuration.toNanos()).divide(BigDecimal.valueOf(1000000000L)));
-        if (!durationString.equals(text)) {
-            skewDuration = Duration.ofNanos(new BigDecimalStringConverter().fromString(text).multiply(new BigDecimal(1000000000L)).longValue());
-            System.out.println("Skew duration is now " + skewDuration);
-        }
-    }
+//    public void setSkewString(String text) {
+//        
+//        // check for null/blank/zero
+//        if (text == null || text.isEmpty() || text.equals("0")) {
+//            skewDuration = Duration.ZERO;
+//        } else {
+//            skewDuration = Duration.ofNanos(new BigDecimalStringConverter().fromString(text).multiply(new BigDecimal(1000000000L)).longValue());
+//            System.out.println("Skew duration is now " + skewDuration);
+//        }
+//    }
     @Transient
     public Duration getSkew() {
         return skewDuration; 
+    }
+    public void setSkew(Duration s){
+        skewDuration = s;
+    }
+    
+    @Transient
+    private Set<RawTimeData> getRawTimeSet(){
+        if (rawTimeSet == null) {
+                
+            rawTimeSet = Collections.newSetFromMap(new ConcurrentHashMap<>()); 
+
+            rawTimeSet.addAll(timingDAO.getRawTimes(this));
+            System.out.println("TimingLocationInput.initializeReader: Read in " + rawTimeSet.size() + " existing times"); 
+            readCountProperty.set(rawTimeSet.size());
+        } 
+        
+        return rawTimeSet;
     }
 }

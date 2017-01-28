@@ -16,35 +16,49 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.event.Event;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import static java.lang.Boolean.FALSE;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import javafx.beans.binding.Bindings;
+import javafx.beans.Observable;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.binding.StringBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.util.Callback;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -60,9 +74,9 @@ public class Participant {
     
 
    
-    private final StringProperty firstNameProperty = new SimpleStringProperty();
+    private final StringProperty firstNameProperty = new SimpleStringProperty("");
     private final StringProperty middleNameProperty= new SimpleStringProperty();
-    private final StringProperty lastNameProperty= new SimpleStringProperty();
+    private final StringProperty lastNameProperty= new SimpleStringProperty("");
     private final StringProperty fullNameProperty= new SimpleStringProperty();
     private final StringProperty emailProperty= new SimpleStringProperty(); 
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
@@ -73,47 +87,88 @@ public class Participant {
     private final StringProperty cityProperty= new SimpleStringProperty();
     private final StringProperty stateProperty= new SimpleStringProperty();
     private final StringProperty countryProperty= new SimpleStringProperty();
-    private LocalDate birthdayProperty; 
-    private final ObservableList<Wave> waves = FXCollections.observableArrayList();   
+    private final StringProperty zipProperty = new SimpleStringProperty();
+    private LocalDate birthday; 
+    private final ObjectProperty<LocalDate> birthdayProperty = new SimpleObjectProperty();
+    private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());   
+    private final ObjectProperty<ObservableList<Wave>> wavesProperty = new SimpleObjectProperty(waves);
     private Set<Integer> waveIDSet = new HashSet(); 
-    private final BooleanProperty DNFProperty = new SimpleBooleanProperty(FALSE);
-    private final StringProperty DNFNoteProperty = new SimpleStringProperty();
-    private final BooleanProperty DQProperty = new SimpleBooleanProperty(FALSE);
-    private final StringProperty DQNoteProperty = new SimpleStringProperty();
+    private final BooleanProperty dnfProperty = new SimpleBooleanProperty(FALSE);
+    private final BooleanProperty dqProperty = new SimpleBooleanProperty(FALSE);
+    private final StringProperty noteProperty = new SimpleStringProperty();
+    private Status status = Status.GOOD; 
+    private final ObjectProperty<Status> statusProperty = new SimpleObjectProperty(Status.GOOD);
    
     public Participant() {
-        this("","");
+        // TODO: Fix this to include the middle name if it is set
+        fullNameProperty.bind(new StringBinding(){
+            {super.bind(firstNameProperty,middleNameProperty, lastNameProperty);}
+            @Override
+            protected String computeValue() {
+                return (firstNameProperty.getValueSafe() + " " + middleNameProperty.getValueSafe() + " " + lastNameProperty.getValueSafe()).replaceAll("( )+", " ");
+            }
+        });
+        
+        //Convenience properties for the getDNF and getDQ status checks
+        dnfProperty.bind(new BooleanBinding(){
+            {super.bind(statusProperty);}
+            @Override
+            protected boolean computeValue() {
+                if (statusProperty.getValue().equals(Status.DNF)) return true;
+                return false; 
+            }
+        });
+        dqProperty.bind(new BooleanBinding(){
+            {super.bind(statusProperty);}
+            @Override
+            protected boolean computeValue() {
+                if (statusProperty.getValue().equals(Status.DQ)) return true;
+                return false; 
+            }
+        });
+        
+        status = Status.GOOD;
+        statusProperty.set(status);
         
     }
- 
-    public Participant(String firstName, String lastName) {
-
+    public Participant(Map<String, String> attribMap) {
+        this();
+        setAttributes(attribMap);
         
+    }
+    public Participant(String firstName, String lastName) {
+        this();
         setFirstName(firstName);
         setLastName(lastName);
-        // TODO: Fix this to include the middle name if it is set
-        fullNameProperty.bind(Bindings.concat(firstNameProperty, " ",middleNameProperty," ", lastNameProperty));
+        
+        
     }
     
-    public static ObservableMap getAvailableAttributes() {
-        ObservableMap<String,String> attribMap = FXCollections.observableHashMap();
+    public static ObservableMap<String,String> getAvailableAttributes() {
+        ObservableMap<String,String> attribMap = FXCollections.observableMap(new LinkedHashMap() );
+        
         attribMap.put("bib", "Bib");
         attribMap.put("first", "First Name");
         attribMap.put("middle", "Middle Name");
         attribMap.put("last", "Last Name");
         attribMap.put("age", "Age");
+        attribMap.put("birth","Birthday");
         attribMap.put("sex-gender", "Sex");
         attribMap.put("city", "City");
         attribMap.put("state", "State");
+        attribMap.put("zip","Zip Code");
         attribMap.put("country", "Country");
+        attribMap.put("status","Status");
+        attribMap.put("note","Note");
         attribMap.put("email", "EMail");
-        // routine to add custom attributes based on db lookup
+        // TODO: routine to add custom attributes based on db lookup
         return attribMap; 
     }
     
-    public Participant(Map<String, String> attribMap) {
+
+    public void setAttributes(Map<String, String> attribMap) {
         // bulk set routine. Everything is a string so convert as needed
-        this("","");
+        
         attribMap.entrySet().stream().forEach((Map.Entry<String, String> entry) -> {
             if (entry.getKey() != null) {
                 //System.out.println("processing " + entry.getKey() );
@@ -123,21 +178,83 @@ public class Participant {
                  case "middle": this.setMiddleName(entry.getValue()); break;
                  case "last": this.setLastName(entry.getValue()); break;
                  
-                     
-                 // TODO: catch bad integers 
-                 case "age": this.setAge(Integer.parseUnsignedInt(entry.getValue())); break; 
+                 case "birth": 
+                     this.setBirthday(entry.getValue()); 
+                     //set the age too if we were able to parse the birthdate
+                     break;
+                 case "age": 
+                     //Setting the birthdate will also set the age, so if the age is already set just skip it.
+                     try {
+                        if (this.birthday == null) this.setAge(Integer.parseUnsignedInt(entry.getValue())); 
+                     } catch (Exception e) {
+                         System.out.println("Unable to parse age " + entry.getValue() );
+                     }
+                     break; 
                      
                  // TODO: map to selected sex translator
                  case "sex-gender": this.setSex(entry.getValue()); break; 
+                 
+                 
                      
                  case "city": this.setCity(entry.getValue()); break; 
                  case "state": this.setState(entry.getValue()); break; 
+                 case "country": this.setCountry(entry.getValue()); break;
+                 case "zip": this.setZip(entry.getValue()); break;
+                 
+                 case "note": this.setNote(entry.getValue()); break;
+                 
+                 case "status": 
+                     try {
+                         this.setStatus(Status.valueOf(entry.getValue()));
+                     } catch (Exception e){
+                         
+                     }
+                         
                  case "email": this.setEmail(entry.getValue()); break; 
                      
                  // TODO: Team value
              }
             }
         });
+    }
+    
+    public String getNamedAttribute(String attribute) {
+        
+        if (attribute != null) {
+                //System.out.println("processing " + entry.getKey() );
+            switch(attribute) {
+                case "bib": return this.bibProperty.getValueSafe();
+                case "first": return this.firstNameProperty.getValueSafe();
+                case "middle": return this.middleNameProperty.getValueSafe();
+                case "last": return this.lastNameProperty.getValueSafe();
+
+                // TODO: catch bad integers 
+                case "birth": if (this.birthday != null) return birthday.format(DateTimeFormatter.ISO_DATE); else return "";
+                    
+                case "age":  if (this.ageProperty.getValue() != null) return this.ageProperty.getValue().toString(); else return "";
+                     
+
+                // TODO: map to selected sex translator
+                case "sex-gender": return this.sexProperty.getValueSafe();
+
+                case "city": return this.cityProperty.getValueSafe();
+                case "state": return this.stateProperty.getValueSafe();
+                case "country": return this.countryProperty.getValueSafe();
+                case "zip": return this.zipProperty.getValueSafe();
+
+                case "note": return this.noteProperty.getValueSafe();
+
+                case "status": if (status != null) return status.name(); else return Status.GOOD.name();
+
+
+                case "email": return this.emailProperty.getValueSafe();  
+                
+                
+                
+                // TODO: Team value
+            }
+        }
+        return "";
     }
     
     @Id
@@ -196,15 +313,8 @@ public class Participant {
     }
     public void setMiddleName(String mName) {
         middleNameProperty.setValue(mName);
-        if ( mName != null && mName.length()>0 ) {
-            fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", Bindings.createStringBinding(() -> 
-        middleNameProperty.get().substring(0,1), middleNameProperty), " ", lastNameProperty));
-        } else {
-            fullNameProperty.bind(Bindings.concat(firstNameProperty, " ", lastNameProperty));
-        }
-
     }
-    public StringProperty lastMiddleProperty() {
+    public StringProperty middleNameProperty() {
         return middleNameProperty;
     }
     
@@ -250,7 +360,12 @@ public class Participant {
         return sexProperty.getValueSafe();
     }
     public void setSex(String s) {
-        sexProperty.setValue(s);
+        //Set to an upper case M or F for now
+        //TODO: Switch this to the allowable values for a SEX 
+        if (s == null) return;
+        if (s.startsWith("M") || s.startsWith("m")) sexProperty.setValue("M");
+        else if (s.startsWith("F") || s.startsWith("f")) sexProperty.setValue("F");
+        else sexProperty.setValue(s);
     }
     public StringProperty sexProperty() {
         return sexProperty;
@@ -278,77 +393,126 @@ public class Participant {
         return stateProperty;
     }
     
+    @Column(name="ZIP")
+    public String getZip() {
+        return zipProperty.getValueSafe();
+    }
+    public void setZip(String s) {
+        zipProperty.setValue(s);
+    }
+    public StringProperty zipProperty(){
+        return zipProperty;
+    }
+    
+    @Column(name="COUNTRY")
+    public String getCountry() {
+        return countryProperty.getValueSafe();
+    }
+    public void setCountry(String s) {
+        countryProperty.setValue(s);
+    }
+    public StringProperty countryProperty(){
+        return countryProperty;
+    }
+    
     @Column(name="BIRTHDAY",nullable=true)
     public String getBirthday() {
-        if (birthdayProperty != null) {
+        if (birthday != null) {
             //return Date.from(birthdayProperty.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-            return birthdayProperty.toString();
+            return birthday.toString();
         } else {
             return null; 
         }
     }
     public void setBirthday(LocalDate d) {
         if (d != null) {
-            birthdayProperty = d;
+            birthday = d;
+            birthdayProperty.setValue(d);
         }
     }    
     public void setBirthday(String d) {
+        //System.out.println("Birthdate String: " + d);
         if (d != null) {
-            birthdayProperty = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
+            //Try and parse the date
+            // First try the ISO_LOCAL_DATE (YYYY-MM-DD)
+            // Then try and catch localized date strings such as MM/DD/YYYY 
+            // finally a last ditch effort for things like MM.DD.YYYY
+            try{
+                birthday = LocalDate.parse(d,DateTimeFormatter.ISO_LOCAL_DATE);
+                //System.out.println("Parsed via ISO_LOCAL_DATE: " + d);
+            } catch (Exception e){
+                try {
+                    birthday = LocalDate.parse(d,DateTimeFormatter.ofPattern("M/d/yyyy"));
+                   // System.out.println("Parsed via M/d/yyyy: " + d);
+                } catch (Exception e2){ 
+                    try {
+                        birthday = LocalDate.parse(d,DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT));
+                        //System.out.println("FormatStyle.SHORT: " + d);
+                    } catch (Exception e3) {
+                        //System.out.println("Unble to parse date: " + d);
+                    }
+                }
+            }
+           
+            if (this.birthday != null) {
+                birthdayProperty.setValue(birthday);
+                this.setAge(Period.between(this.birthday, Event.getInstance().getLocalEventDate()).getYears());
+                //System.out.println("Parsed Date: " + d + " -> " + getAge());
+            }
+
             //Instant instant = Instant.ofEpochMilli(d.getTime());
             //setBirthday(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toLocalDate());
         }
     }
-    public LocalDate birthdayProperty() {
+    public ObjectProperty<LocalDate> birthdayProperty() {
         return birthdayProperty;
     }
     
     
-    @Column(name="dnf", nullable=true)
+    @Transient
     public Boolean getDNF() {
-        return DNFProperty.getValue();
-    }
-    public void setDNF(Boolean s) {
-        DNFProperty.setValue(s);
+        return dnfProperty.getValue();
     }
     public BooleanProperty dnfProperty(){
-        return DNFProperty;
+        return dnfProperty;
     }
             
-    @Column(name="dnf_note", nullable=true)
-    public String getDNFNote() {
-        return DNFNoteProperty.getValueSafe();
-    }
-    public void setDNFNote(String s) {
-        DNFNoteProperty.setValue(s);
-    }
-    public StringProperty dnfNoteProperty(){
-        return DNFNoteProperty;
-    }
-    
-    @Column(name="dq", nullable=true)
+    @Transient
     public Boolean getDQ() {
-        return DQProperty.getValue();
-    }
-    public void setDQ(Boolean s) {
-        DQProperty.setValue(s);
+        return dqProperty.getValue();
     }
     public BooleanProperty dqProperty(){
-        return DQProperty;
-    }
-            
-    @Column(name="dq_note", nullable=true)
-    public String getDQNote() {
-        return DQNoteProperty.getValueSafe();
-    }
-    public void setDQNote(String s) {
-        DQNoteProperty.setValue(s);
-    }
-    public StringProperty dqNoteProperty(){
-        return DQNoteProperty;
+        return dqProperty;
     }
             
             
+    @Column(name="note", nullable=true)
+    public String getNote() {
+        return noteProperty.getValueSafe();
+    }
+    public void setNote(String s) {
+        noteProperty.setValue(s);
+    }
+    public StringProperty noteProperty(){
+        return noteProperty;
+    }        
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name="status")
+    public Status getStatus() {
+        return status;
+    }
+    public void setStatus(Status s) {
+        
+        if (s != null && (status == null || ! status.equals(s)) ){
+            
+            status = s;
+            statusProperty.set(status);
+        }
+    }
+    public ObjectProperty<Status> statusProperty(){
+        return statusProperty;
+    }
             
     @ElementCollection(fetch = FetchType.EAGER)
     @Column(name="wave_id", nullable=false)
@@ -391,7 +555,7 @@ public class Participant {
             waveIDSet.add(w.getID()); 
         }
     }
-    public ObservableList<Wave> wavesProperty() {
+    public ObservableList<Wave> wavesObservableList() {
         waves.clear();
         waveIDSet.stream().forEach(id -> {
             if (RaceDAO.getInstance().getWaveByID(id) == null) System.out.println("Null WAVE!!! " + id);
@@ -400,6 +564,13 @@ public class Participant {
         return waves; 
     }
     
+    public ObjectProperty<ObservableList<Wave>> wavesProperty(){
+        return wavesProperty;
+    }
+    
+    public static Callback<Participant, Observable[]> extractor() {
+        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.wavesProperty,p.statusProperty};
+    }
 
     @Override
     public int hashCode() {

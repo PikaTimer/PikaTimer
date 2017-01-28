@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -58,6 +60,9 @@ public class TimingDAO {
         
         private static ObservableList<TimeOverride> overrideList;
         private  Map<String,List<TimeOverride>> overrideMap = new ConcurrentHashMap(); 
+        
+        Semaphore cookedTimeProcessorSemaphore = new Semaphore(1);
+        private static final CountDownLatch locationsLoadedLatch = new CountDownLatch(1);
 
     public List<CookedTimeData> getCookedTimesByBib(String bib) {
         if (cookedTimeBibMap.containsKey(bib))
@@ -99,6 +104,7 @@ public class TimingDAO {
         return list; 
     }
     
+      
     public void saveRawTimes(RawTimeData r) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
@@ -124,6 +130,7 @@ public class TimingDAO {
     }
     
     public void clearRawTimes(TimingLocation tl) {
+        if (tl == null || tl.inputsProperty().isEmpty()) return;
         tl.getInputs().stream().forEach(tli -> {
             clearRawTimes(tli);
         });
@@ -138,7 +145,7 @@ public class TimingDAO {
         // and add them to the cookedTimesList;
         
         if (cookedTimeList == null) {
-            cookedTimeList =FXCollections.observableArrayList();
+            cookedTimeList =FXCollections.observableArrayList(CookedTimeData.extractor());
             
             Task fetchCookedFromDB = new Task<Void>() {
                 
@@ -161,7 +168,7 @@ public class TimingDAO {
                     });
                     cookedTimes.stream().forEach(c -> {
                         if (!cookedTimeBibMap.containsKey(c.getBib())) cookedTimeBibMap.put(c.getBib(), new ArrayList());
-                        cookedTimeBibMap.get(c.getBib()).add(c);
+                        if (!c.ignoreTimeProperty().get()) cookedTimeBibMap.get(c.getBib()).add(c);
                     });
                     
                     return null; 
@@ -178,11 +185,14 @@ public class TimingDAO {
                     
                     while(true) {
                         List<CookedTimeData> pending = new ArrayList();
+                        List<CookedTimeData> newTimes = new ArrayList();
                         try {
+                            cookedTimeProcessorSemaphore.acquire();
                             pending.add(cookedTimeQueue.take());
                         
-                            cookedTimeQueue.drainTo(pending,199);  // 200 total
-                            
+                            //cookedTimeQueue.drainTo(pending,499);  // 500 total
+                            Thread.sleep(10); // Times rarely come in 1 at a time
+                            cookedTimeQueue.drainTo(pending);
                             System.out.println("ProcessNewCooked Thread: Processing: " + pending.size());
 
                             int i=1;
@@ -192,7 +202,14 @@ public class TimingDAO {
                             Iterator<CookedTimeData> addIterator = pending.iterator();
                             while (addIterator.hasNext()) {
                                 CookedTimeData c = addIterator.next();
-                                s.save(c); 
+//                                if (c.getID() != null ) // previously saved
+//                                    Platform.runLater(() -> {
+//                                        cookedTimeList.remove(c); // remove for now to prevent duplicate entries
+//                                    });
+                                if (c.getID() == null) newTimes.add(c);
+                                
+                                s.saveOrUpdate(c); 
+                                
                                 if ( ++count % 20 == 0 ) {
                                     //flush a batch of updates and release memory:
                                     s.flush();
@@ -203,18 +220,20 @@ public class TimingDAO {
                             s.getTransaction().commit(); 
 
                             Platform.runLater(() -> {
-                                cookedTimeList.addAll(pending);
+                                cookedTimeList.addAll(newTimes);
                             });
                             pending.stream().forEach(c -> {
                                 if (!cookedTimeBibMap.containsKey(c.getBib())) cookedTimeBibMap.put(c.getBib(), new ArrayList());
-                                cookedTimeBibMap.get(c.getBib()).add(c);
+                                if (c.ignoreTimeProperty().get()) cookedTimeBibMap.get(c.getBib()).remove(c);
+                                else cookedTimeBibMap.get(c.getBib()).add(c);
                                 resultsQueue.add(c.getBib());
                             });
                             
-                            Thread.sleep(100); // This will limit us to being able to process about 2000 times / second
+                            Thread.sleep(100); // This will limit us to being able to process about 5000 times / second
                         } catch (InterruptedException ex) {
                             Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
                         }
+                        cookedTimeProcessorSemaphore.release();
                     }
 
                 }
@@ -238,25 +257,32 @@ public class TimingDAO {
         Task clearTimes = new Task<Void>() {
                 
                 @Override public Void call() {
-                   
-                    Session s=HibernateUtil.getSessionFactory().getCurrentSession();
-                    s.beginTransaction();
-                    System.out.println("Deleting all cooked times");
+                    try {
+                        cookedTimeProcessorSemaphore.acquire();
+                    
+                        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+                        s.beginTransaction();
+                        System.out.println("Deleting all cooked times");
 
-                    try {  
-                        s.createQuery("delete from CookedTimeData").executeUpdate();
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    } 
-                    s.getTransaction().commit(); 
+                        try {  
+                            s.createQuery("delete from CookedTimeData").executeUpdate();
+                        } catch (Exception e) {
+                            System.out.println(e.getMessage());
+                        } 
+                        s.getTransaction().commit(); 
 
-                    // Now go and clean up the cooked times observable list
-                    Platform.runLater(() -> {
-                        cookedTimeList.clear();
-                    });
+                        // Now go and clean up the cooked times observable list
+                        Platform.runLater(() -> {
+                            cookedTimeList.clear();
+                        });
 
-                    cookedTimeBibMap.clear();
-                    resultsDAO.reprocessAll();
+                        cookedTimeBibMap.clear();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+                    cookedTimeProcessorSemaphore.release();
+                    resultsDAO.reprocessAllResults();
                     return null;
                 }
         };
@@ -299,6 +325,8 @@ public class TimingDAO {
             System.out.println(e.getMessage());
         } 
         s.getTransaction().commit(); 
+        System.out.println("Done deleting all cooked times for " + tli.getLocationName());
+
     
     }
     
@@ -319,7 +347,7 @@ public class TimingDAO {
         return cookedTimeBibMap;
     }
     
-    public BlockingQueue<CookedTimeData> getCookedTimeQueue () {
+    public BlockingQueue<CookedTimeData> getCookedTimeQueue() {
         return cookedTimeQueue; 
     }
     
@@ -354,7 +382,7 @@ public class TimingDAO {
             refreshTimingLocationList();
         }
     
-    public void refreshTimingLocationList() { 
+    private void refreshTimingLocationList() { 
 
         List<TimingLocation> list = new ArrayList<>();
         
@@ -364,7 +392,7 @@ public class TimingDAO {
         System.out.println("Runing the refreshTimingLocationList Query");
         
         try {  
-            list=s.createQuery("from TimingLocation").list();
+            list=s.createQuery("from TimingLocation order by id").list();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } 
@@ -374,6 +402,7 @@ public class TimingDAO {
         if(!timingLocationList.isEmpty())
             timingLocationList.clear();
         timingLocationList.addAll(list);
+        locationsLoadedLatch.countDown();
     }     
     
     public ObservableList<TimingLocation> listTimingLocations() { 
@@ -384,8 +413,14 @@ public class TimingDAO {
     }     
     
     public TimingLocation getTimingLocationByID(Integer id) {
-        //System.out.println("Looking for a timingLocation with id " + id);
-        // This is ugly. Setup a map for faster lookups
+        try {
+            //System.out.println("Looking for a timingLocation with id " + id);
+            // This is ugly. Setup a map for faster lookups
+            locationsLoadedLatch.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(TimingDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            
         Optional<TimingLocation> result = timingLocationList.stream()
                     .filter(t -> Objects.equals(t.getID(), id))
                     .findFirst();
@@ -408,61 +443,71 @@ public class TimingDAO {
     }      
     
     public void clearAllRawTimes() {
-        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
-        s.beginTransaction();
-        System.out.println("Deleting all Raw times");
+//        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+//        s.beginTransaction();
+//        System.out.println("Deleting all Raw times");
+//        
+//        try {  
+//            s.createQuery("delete from RawTimeData").executeUpdate();
+//        } catch (Exception e) {
+//            System.out.println(e.getMessage());
+//        } 
+//        s.getTransaction().commit();
         
-        try {  
-            s.createQuery("delete from RawTimeData").executeUpdate();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        } 
-        s.getTransaction().commit();
+        //Clearing the raw times also clears the associated cooked times
+        timingLocationList.forEach(t -> clearRawTimes(t));
         
     }
     
     public void clearAllTimes() {
         clearAllRawTimes();
-        clearAllCookedTimes();
+        //clearAllCookedTimes();
     }
     
-    public void clearAll() {
-        clearAllTimes(); 
-        removeTimingLocations(timingLocationList);
+    public void reprocessAllRawTimes(){
+        timingLocationList.forEach(t -> {
+            System.out.println("TimingDAO::reprocessAllRawTimes: " + t.getLocationName());
+            t.reprocessReads();
+        });
     }
-    private void removeTimingLocations(ObservableList<TimingLocation> removeList) {
-        
-        Task task;
-        task = new Task<Void>() {
-            @Override public Void call() {
-                int max = removeList.size();
-                int i=1;
-                Session s=HibernateUtil.getSessionFactory().getCurrentSession();
-                s.beginTransaction();
-                int count = 0;
-                Iterator<TimingLocation> deleteMeIterator = removeList.iterator();
-                while (deleteMeIterator.hasNext()) {
-                    TimingLocation p = deleteMeIterator.next();
-                    
-                    s.delete(p); 
-                    if ( ++count % 20 == 0 ) {
-                        //flush a batch of updates and release memory:
-                        s.flush();
-                        s.clear();
-                    }
-                    updateProgress(i++, max);
-                }
-                s.getTransaction().commit(); 
-                
-                Platform.runLater(() -> {
-                    refreshTimingLocationList();
-                });
-                
-                return null;
-            }
-        };
-        new Thread(task).start();
-    }   
+    
+//    public void clearAll() {
+//        clearAllTimes(); 
+//        removeTimingLocations(timingLocationList);
+//    }
+//    private void removeTimingLocations(ObservableList<TimingLocation> removeList) {
+//        
+//        Task task;
+//        task = new Task<Void>() {
+//            @Override public Void call() {
+//                int max = removeList.size();
+//                int i=1;
+//                Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+//                s.beginTransaction();
+//                int count = 0;
+//                Iterator<TimingLocation> deleteMeIterator = removeList.iterator();
+//                while (deleteMeIterator.hasNext()) {
+//                    TimingLocation p = deleteMeIterator.next();
+//                    
+//                    s.delete(p); 
+//                    if ( ++count % 20 == 0 ) {
+//                        //flush a batch of updates and release memory:
+//                        s.flush();
+//                        s.clear();
+//                    }
+//                    updateProgress(i++, max);
+//                }
+//                s.getTransaction().commit(); 
+//                
+//                Platform.runLater(() -> {
+//                    refreshTimingLocationList();
+//                });
+//                
+//                return null;
+//            }
+//        };
+//        new Thread(task).start();
+//    }   
     public void blockingClearAll() {
         clearAllTimes(); 
         blockingRemoveTimingLocations(timingLocationList);
@@ -533,13 +578,13 @@ public class TimingDAO {
       
     }
     
-    public void timingLocationInputPauseReader(TimingLocationInput tl) {
-        //Set a flag so that the 
-    }
-    public void timingLocationInputStartReader(TimingLocationInput tl) {
-        
-        
-    }   
+//    public void timingLocationInputPauseReader(TimingLocationInput tl) {
+//        //Set a flag so that the 
+//    }
+//    public void timingLocationInputStartReader(TimingLocationInput tl) {
+//        
+//        
+//    }   
     
     public String getBibFromChip(String c) {
         if (bib2ChipMap == null) {
@@ -547,6 +592,7 @@ public class TimingDAO {
         }
         return bib2ChipMap.getBibFromChip(c);
     }
+    
     public Bib2ChipMap getBib2ChipMap() {
         if (bib2ChipMap != null) return bib2ChipMap;
         
@@ -593,7 +639,7 @@ public class TimingDAO {
         // and add them to the cookedTimesList;
         
         if (overrideList == null) {
-            overrideList =FXCollections.observableArrayList();
+            overrideList =FXCollections.observableArrayList(TimeOverride.extractor());
             
             Task fetchOverrideFromDB = new Task<Void>() {
                 
@@ -648,11 +694,31 @@ public class TimingDAO {
         // Just in case.... This will make sure we initialized the overrideList
         getOverrides();
         
-        Platform.runLater(() -> {
-            overrideList.add(o);
+        
+        
+        if (!overrideMap.containsKey(o.getBib())) overrideMap.put(o.getBib(), new ArrayList()); 
+        
+        
+        // If this is an edit, don't add it again
+        if (!overrideMap.get(o.getBib()).contains(o)) {
+            // if this is an overwrite, remove the old one first
+            try {
+                TimeOverride old = overrideList.stream().filter(e -> e.getSplitId().equals(o.getSplitId())).findFirst().get();
+                deleteOverride(old);
+            }
+            catch (Exception e) {
+
+            }
+            overrideMap.get(o.getBib()).add(o);
+        }
+        
+        if (!overrideList.contains(o)) Platform.runLater(() -> {
+             overrideList.add(o);
         });
-        if (!overrideMap.containsKey(o.getBib())) overrideMap.put(o.getBib(), new ArrayList());
-        overrideMap.get(o.getBib()).add(o);
+        
+        // Check to see if this one replaces another
+        
+        
         resultsQueue.add(o.getBib());
     }
     
