@@ -376,6 +376,7 @@ public class OverallHTML5 implements RaceReportType{
                         "				data += '<div class=\"row\">';\n" +
                         "				data += '<div class=\"participant\">' // personal\n" +
                         "				data += '<div class=\"part-name\">' + rData.full_name + '</div>';\n" +
+                        "				data += '<div class=\"part-stats\">Bib: ' + rData.bib + '</div>';\n" +
                         "				data += '<div class=\"part-stats\">Age: ' + rData.age + '   Sex: ' + rData.sex + '   AG: ' + rData.ag + '</div>';\n" +
                         "				data += '<div class=\"part-stats\">' + rData.city + ', ' + rData.state + '</div>';\n" +
                         "				data += '<div class=\"part-stats\">' + rData.country + '</div>';\n" +
