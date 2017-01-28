@@ -800,7 +800,7 @@ public class FXMLResultsController  {
     
     public void setupHeaders(ActionEvent fxevent){
                 
-        
+        useCustomHeaderCheckBox.selectedProperty().set(true);
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("FXMLSetupHeaders.fxml"));
         Parent setupHeadersRoot;
         try {
