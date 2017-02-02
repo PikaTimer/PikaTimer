@@ -16,11 +16,27 @@
  */
 package com.pikatimer.timing.reader;
 
+import com.pikatimer.event.Event;
+import com.pikatimer.timing.RawTimeData;
 import com.pikatimer.timing.TimingListener;
 import com.pikatimer.timing.TimingReader;
+import com.pikatimer.util.DurationFormatter;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -43,6 +59,11 @@ public class PikaRFIDDirectReader implements TimingReader {
 
     protected TimingListener timingListener;
     protected String ultra_ip;
+    
+    Thread ultraConnectionThread;
+    InputStream input = null;
+    DataOutputStream ultraOutput = null;
+    private static final BlockingQueue<String> commandResultQueue = new ArrayBlockingQueue(10);
 
     private Pane displayPane; 
     private Button inputButton;
@@ -59,9 +80,15 @@ public class PikaRFIDDirectReader implements TimingReader {
     protected final BooleanProperty connectedStatus = new SimpleBooleanProperty();
 
     private Boolean connectToUltra = false;
+    
+    private int lastRead = -1;
+    
+    Semaphore okToSend = new Semaphore(1);
 
     
     public PikaRFIDDirectReader() {
+        
+        
         
     }
 
@@ -88,6 +115,9 @@ public class PikaRFIDDirectReader implements TimingReader {
             batteryProgressBar = new ProgressBar();
             connectToggleSwitch = new ToggleSwitch("Connect");
             connectToggleSwitch.selectedProperty().set(false);
+            readToggleSwitch = new ToggleSwitch("Read");
+            readToggleSwitch.selectedProperty().set(false);
+            readToggleSwitch.disableProperty().bind(connectedStatus.not());
             statusLabel = new Label("");
             inputButton = new Button("Discover...");
             ultraIPTextField = new TextField();
@@ -95,6 +125,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             //displayVBox.setPadding(new Insets(5, 5, 5, 5));
             
             connectToggleSwitch.selectedProperty().bindBidirectional(connectedStatus);
+            readToggleSwitch.selectedProperty().bindBidirectional(readingStatus);
             
             ultraIPTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
                 if (newPropertyValue) return;
@@ -112,7 +143,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             });
             
             displayHBox.setSpacing(5);
-            displayHBox.getChildren().addAll(ultraIPTextField, inputButton, connectToggleSwitch); 
+            displayHBox.getChildren().addAll(ultraIPTextField, inputButton, connectToggleSwitch,readToggleSwitch); 
             displayVBox.getChildren().addAll(displayHBox, statusLabel); 
             
             // Set the action for the inputButton
@@ -137,7 +168,19 @@ public class PikaRFIDDirectReader implements TimingReader {
                 }
             });
             //connectToggleSwitch.selectedProperty().bindBidirectional(connectedStatus);
-            
+            readToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
+                if(newValue) {
+                    if (connectToUltra) {
+                        System.out.println("PikaRFIDDirectReader: readToggleSwitch event: calling startReading()");
+                        startReading();
+                    }
+                } else {
+                    if (connectToUltra) {
+                        System.out.println("PikaRFIDDirectReader: readToggleSwitch event: calling stopReading()");
+                        stopReading();
+                    }
+                }
+            });
             ultraIPTextField.textProperty().setValue(ultra_ip);
             // set the action for the inputTextField
             
@@ -159,14 +202,105 @@ public class PikaRFIDDirectReader implements TimingReader {
 
     @Override
     public void startReading() {
-        readingStatus.setValue(Boolean.TRUE);
+        Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                        try {
+                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                                aquired=true;
+                                System.out.println("Sending command 'R'");
+
+                                ultraOutput.writeChars("R" + Character.toString ((char) 10));
+                                ultraOutput.flush();
+                                getReadStatus();
+                            } else {
+                                // timeout
+                                System.out.println("Timeout with command 'R'");
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                        } finally {
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+        };
+        new Thread(ultraCommand).start();
     }
 
     @Override
     public void stopReading() {
-        readingStatus.setValue(Boolean.FALSE);
+        Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                        try {
+                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                                aquired = true;
+                                System.out.println("Sending command 'S'");
+                                ultraOutput.writeChars("S" + Character.toString ((char) 10) + "N" + Character.toString ((char) 10));
+                                ultraOutput.flush();
+                                getReadStatus();
+                            } else {
+                                // timeout
+                                System.out.println("Timeout with command 'S'");
+                            }
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                        } catch (IOException ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+                        } finally {
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+        };
+        new Thread(ultraCommand).start();
     }
 
+    private void getReadStatus(){
+        Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                        try {
+                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                                aquired = true;
+                                ultraOutput.writeChars("?" + Character.toString ((char) 10));
+                                ultraOutput.flush();
+                                String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                if (result != null) {
+                                    System.out.println("Reading Status : " + result);
+                                    Platform.runLater(() -> {
+                                        if (result.substring(2, 3).startsWith("1")) readingStatus.setValue(Boolean.TRUE);
+                                        else readingStatus.setValue(Boolean.FALSE);
+                                    });
+                                } else {
+                                // timeout
+                                System.out.println("Timeout with command '?'");
+                            }
+                            } else {
+                                // timeout
+                                System.out.println("Timeout waiting to send command '?");
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                        } finally {
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+        };
+        new Thread(ultraCommand).start();
+    }
+        
     @Override
     public BooleanProperty getReadingStatus() {
         return readingStatus; 
@@ -179,13 +313,9 @@ public class PikaRFIDDirectReader implements TimingReader {
     
     private void connect() {
         connectToUltra = true;
-        
-        
-        
+        lastRead = -1;
         Task ultraConnection = new Task<Void>() {
-                
                 @Override public Void call() {
-                    
                     while(connectToUltra) {
                         Platform.runLater(() -> {
                             statusLabel.setText("Connecting to " + ultra_ip + "...");
@@ -199,17 +329,19 @@ public class PikaRFIDDirectReader implements TimingReader {
                         ) {
                             connectToUltra = true; // we got here so we have a good connection
                             ultraSocket.setSoTimeout(20000); // 20 seconds. In theory we get a voltage every 10
-                            
+                            ultraOutput = new DataOutputStream(output);
                             Platform.runLater(() -> {
                                 connectedStatus.setValue(true);
                                 statusLabel.setText("Connected to " + ultra_ip);
                             });
                             int read = -255; 
                             String line = "";
-                            while (read != 100) { // 1,Connected is sent on initial connect. 100 == 'd'
+                            while (read != 10) { // 1,Connected,<stuff>\n is sent on initial connect. 10 == \n
                                 read = input.read();
                                 System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
                             } 
+                            
+                            onConnectSetup();
                             
                             while(connectToUltra) {
                                 read = -255; 
@@ -240,28 +372,135 @@ public class PikaRFIDDirectReader implements TimingReader {
                     
                     return null; 
                 }
-
-            
             }; 
-            new Thread(ultraConnection).start();
+            ultraConnectionThread  = new Thread(ultraConnection);
+            ultraConnectionThread.setName("Thread-Ultra-" + ultra_ip);
+            ultraConnectionThread.setDaemon(true);
+            ultraConnectionThread.start();
         
-}
+    }
     
     private void disconnect(){
         statusLabel.setText("Disconecting from " + ultra_ip + "...");
         connectToUltra = false;
     }
     
-    private String queryUltra(String s){
-        return "";
-    }
-    private void setUltra(String setting, String value){
-        
-    }
+    
+
+    
     private void processLine(String line) {
         System.out.println("Read Line: " + line);
+        Platform.runLater(() -> {
+            statusLabel.setText("Read Line: " + line);
+        });
+        switch(line.substring(0, 1)){
+            case "0": // chip time
+            case "1":
+                processRead(line);
+                break;
+            
+            case "S": // status 
+                System.out.println("Status: " + line);
+                
+                commandResultQueue.offer(line);
+                break;
+            case "V": // voltage
+                System.out.println("Voltage: " + line);
+                getReadStatus();
+                break;
+            case "U": // command response
+                System.out.println("Response: " + line);
+                break;
+            default: // unknown command response
+                System.out.println("Unknown: \"" + line.substring(0, 0) + "\" " + line);
+                break;
+        }
     }
     private void processRead(String r){
+        System.out.println("Chip Read: " + r);
+        String[] tokens = r.split(",", -1);
+        // 0,11055,1170518701,698,1,-71,0,2,1,0000000000000000,0,29319
+        // 0 -- junk
+        // 1 -- chip
+        // 2 -- time
+        // 3 -- milis
+        // 4 -- antenna / port
+        // 5 -- RSSI (signal strength)
+        // 6 -- is Rewind? (0 is live, 1 is memorex)
+        // 7 -- Reader A or B (1 or 2)
+        // 8 -- UltraID (zeroes)
+        // 9 -- MTB Downhill Start Time
+        // 10 -- LogID
+        
+        if (tokens.length < 11 ) {
+            System.out.println("  Chip read is missing data: " + r);
+        }
+        
+        String chip = tokens[1];
+        String port = tokens[4];
+        //String antenna = tokens[x];
+        //String rewind = tokens[x];
+        String rewind = tokens[6];
+        String logNo = tokens[10];
+        
+        if (rewind.equals("0") && lastRead > 0 ) {
+            if (lastRead != (Integer.parseInt(logNo) - 1)) {
+                System.out.println("Missing a read: Last " + lastRead + " Current: " + logNo);
+            }
+        }
+        
+        System.out.println("  Chip: " + chip);
+        
+        // make sure we have what we need...
+        if (port.equals("0") && ! chip.equals("0")) { // invalid combo
+            System.out.println("Non Start time: " + chip);
+            return;
+        } else if (!port.matches("[1234]") && !chip.equals("0")){
+            System.out.println("Invalid Port: " + port);
+            return;
+        }
+        
+        LocalDate origin = LocalDate.parse("1980-01-01",DateTimeFormatter.ISO_LOCAL_DATE); 
+        LocalDateTime read_ldt = LocalDateTime.of(origin, LocalTime.MIDNIGHT);
+        Long seconds = Long.parseLong(tokens[2]);
+        Long millis = Long.parseLong(tokens[3]);
+        read_ldt = read_ldt.plusSeconds(seconds);
+        
+        LocalDateTime event_ldt = LocalDateTime.of(Event.getInstance().getLocalEventDate(), LocalTime.MIN);
+        
+        Duration timestamp = Duration.between(event_ldt,read_ldt).plusMillis(millis);
+        
+        // if it is before the event date, just return
+        if (timestamp.isNegative()) {
+            String status = "Read Timestamp of " + timestamp + " is in the past, ignoring";
+            Platform.runLater(() -> {
+                statusLabel.textProperty().setValue(status);
+            });
+            System.out.println(status);
+        } else {
+            RawTimeData rawTime = new RawTimeData();
+            rawTime.setChip(chip);
+            rawTime.setTimestampLong(timestamp.toNanos());
+            String status = "Added raw time: " + tokens[1] + " at " + DurationFormatter.durationToString(timestamp, 3);
+            Platform.runLater(() -> {
+                statusLabel.textProperty().setValue(status);
+            });
+            timingListener.processRead(rawTime); // process it
+        }
+        
+    }
+    
+    private void onConnectSetup() {
+        // Get the reading status
+        getReadStatus();
+        // get the timezone
+         
+        // get the time 
+        
+        // get the antenna status
+        
+        // get the Ultra ID
+        
         
     }
 
