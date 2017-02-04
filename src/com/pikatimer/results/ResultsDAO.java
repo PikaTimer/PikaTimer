@@ -350,6 +350,7 @@ public class ResultsDAO {
                 waveStart = overrides[0];
                 r.setStartDuration(waveStart);
                 r.setWaveStartDuration(waveStart);
+                r.setSplitTime(0, waveStart);
                 //System.out.println("Found start time override of " + overrides[0].toString());
                 
                 // Adjust all relative overrides to actual
@@ -437,6 +438,7 @@ public class ResultsDAO {
                     
                     splitIndex++; // we pre-filled the split times earlier
                 } else if (ctd.getTimestamp().compareTo(waveStart) < 0 ) {
+                    if (splitIndex == 0) r.setSplitTime(splitIndex, ctd.getTimestamp());
                     if (times.hasNext()) ctd = times.next();
                     else ctd = null;
                     //System.out.println("ResultsDAO.processBib: tossing ctd's that were before the wave start");
@@ -449,7 +451,7 @@ public class ResultsDAO {
                          // or we find a different locationID
                         do { 
                             //System.out.println("ResultsDAO.processBib: start time: " + ctd.getTimestamp());
-
+                            r.setSplitTime(splitIndex, ctd.getTimestamp());
                             r.setStartDuration(ctd.getTimestamp());
                             if (times.hasNext()) ctd = times.next();
                             else ctd = null;

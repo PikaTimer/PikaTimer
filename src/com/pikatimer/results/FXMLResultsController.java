@@ -374,18 +374,52 @@ public class FXMLResultsController  {
                 });
                 
                 // start
-                TableColumn<Result,Duration> startColumn = new TableColumn("Start");
+                TableColumn<Result,Duration> startColumn = new TableColumn("Start (TOD)");
                 
                 startColumn.setCellValueFactory(cellData -> {
-                    //return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getStartDuration(), 3, Boolean.TRUE));
                     return cellData.getValue().startTimeProperty();
                 });
                 startColumn.setCellFactory(column -> {
                     return new DurationTableCell();
                 });
-                //startColumn.setComparator(new AlphanumericComparator());
                 startColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
                 table.getColumns().add(startColumn);
+                
+                // Wave start
+                TableColumn<Result,Duration> waveStartColumn = new TableColumn("Wave (TOD)");
+                
+                waveStartColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().waveStartTimeProperty();
+                });
+                waveStartColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                waveStartColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(waveStartColumn);
+                
+                // Start Last Seen
+                TableColumn<Result,Duration> waveStartLastSeenColumn = new TableColumn("Start (Last Seen)");
+                
+                waveStartLastSeenColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().splitTimeByIDProperty(0);
+                });
+                waveStartLastSeenColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                waveStartLastSeenColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(waveStartLastSeenColumn);
+                
+                // Seen to Wave delta start
+                TableColumn<Result,Duration> startDeltaColumn = new TableColumn("Start Offset");
+                
+                startDeltaColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().startOffsetProperty();
+                });
+                startDeltaColumn.setCellFactory(column -> {
+                    return new DurationTableCell().showZeros();
+                });
+                startDeltaColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(startDeltaColumn);
                 
                 // for each split from 2 -> n-2
                 //TableColumn<Result,String> splitColumn;
@@ -412,6 +446,18 @@ public class FXMLResultsController  {
 //                    splitColumn.setComparator(new AlphanumericComparator());
                 }
                 
+                // finish TOD
+                
+                TableColumn<Result,Duration> finishTODColumn = new TableColumn("Finish (TOD)");
+                finishTODColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().finishTODProperty(); 
+                });
+                finishTODColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                //finishColumn.setComparator(new DurationComparator());
+                finishTODColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(finishTODColumn);
                 
                 // finish
                 TableColumn<Result,Duration> finishColumn = new TableColumn("Finish");
@@ -817,17 +863,23 @@ public class FXMLResultsController  {
         }
     }
     private class DurationTableCell extends TableCell<Result, Duration> {
+        Boolean showZero = false;
         @Override
         protected void updateItem(Duration d, boolean empty) {
             super.updateItem(d, empty);
             if (d == null || empty) {
                 setText(null);
             } else if (d.isZero() || d.equals(Duration.ofNanos(Long.MAX_VALUE))){
-                setText("");
+                if (showZero && d.isZero()) setText("0:00:00.000");
+                else setText("");
             } else {
                 // Format duration.
-                setText(DurationFormatter.durationToString(d, 3, Boolean.FALSE));
+                setText(DurationFormatter.durationToString(d, 3, Boolean.TRUE));
             }
+        }
+        public DurationTableCell showZeros(){
+            showZero = true;
+            return this;
         }
     };
     
