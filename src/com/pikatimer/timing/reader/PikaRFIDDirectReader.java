@@ -127,20 +127,64 @@ public class PikaRFIDDirectReader implements TimingReader {
             connectToggleSwitch.selectedProperty().bindBidirectional(connectedStatus);
             readToggleSwitch.selectedProperty().bindBidirectional(readingStatus);
             
-            ultraIPTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-                if (newPropertyValue) return;
-                if (!newPropertyValue && !ultra_ip.equals(ultraIPTextField.textProperty().getValueSafe())) {
-                    
-                    ultra_ip = ultraIPTextField.textProperty().getValueSafe();
-                    
-                    // save the ip 
-                    timingListener.setAttribute("RFIDDirect:ultra_ip", ultra_ip);
+            ultraIPTextField.disableProperty().bind(connectToggleSwitch.selectedProperty()); // no changes when connected
+            
+            // This is way more complicated than it should be...
+            ultraIPTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                Boolean revert = false;
+                if (newValue.isEmpty()) connectToggleSwitch.disableProperty().set(true);
+                if (ultra_ip == null || ultra_ip.equals(newValue)) {
+                    connectToggleSwitch.disableProperty().set(false);
+                    return;
+                }
+                if (newValue.matches("[\\d\\.]+")) { // numbers and dots only for the inital pass
+                    String octets[] = newValue.split("\\.");
+                    if (octets.length != 4) connectToggleSwitch.disableProperty().set(true);
+                    if (octets.length > 4){ // too many octets, cut a few and it will be fine
+                        revert = true;
+                    } else {
+                        Boolean validIP = true;
+                        for(String octet: octets) {
+                            try {
+                                Integer o = Integer.parseInt(octet);
+                                System.out.println("Octet : " + o);
+                                if (o > 255) {
+                                    validIP = false;
+                                    revert = true;
+                                }
+                            } catch (Exception e){
+                                System.out.println("Octet Exception: " + e.getLocalizedMessage());
 
-                        
-                } else {
-                    System.out.println("No change in ip address");
+                                validIP = false;
+                            }
+                        }
+                        if (validIP && octets.length == 4) {
+                            System.out.println("Valid IP : " + ultra_ip);
+                            connectToggleSwitch.disableProperty().set(false);
+                            // save the ip if it is new
+                            if (!ultra_ip.equals(newValue)) {
+                                ultra_ip = newValue;
+                                timingListener.setAttribute("RFIDDirect:ultra_ip", ultra_ip);
+                                System.out.println("Valid IP : " + ultra_ip);
+                            }
+                        }
+                        else{
+                            connectToggleSwitch.disableProperty().set(true);
+                        }
+                    }
+                } else { //just say no
+                    revert = true;
+                }
+                if (revert) {
+                        connectToggleSwitch.disableProperty().set(true);
+                        Platform.runLater(() -> { 
+                        int c = ultraIPTextField.getCaretPosition();
+                        ultraIPTextField.setText(oldValue);
+                        ultraIPTextField.positionCaret(c);
+                    }); 
                 }
             });
+            
             
             displayHBox.setSpacing(5);
             displayHBox.getChildren().addAll(ultraIPTextField, inputButton, connectToggleSwitch,readToggleSwitch); 
@@ -210,10 +254,14 @@ public class PikaRFIDDirectReader implements TimingReader {
                             if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
                                 aquired=true;
                                 System.out.println("Sending command 'R'");
+                                Platform.runLater(() -> {
+                                    statusLabel.setText("Starting Readers...");
+                                });
 
                                 ultraOutput.writeChars("R" + Character.toString ((char) 10));
                                 ultraOutput.flush();
-                                getReadStatus();
+                                Thread.sleep(5000); // give the readers 5 seconds to start before we check
+                                getReadStatus(); 
                             } else {
                                 // timeout
                                 System.out.println("Timeout with command 'R'");
@@ -240,9 +288,13 @@ public class PikaRFIDDirectReader implements TimingReader {
                         try {
                             if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
                                 aquired = true;
-                                System.out.println("Sending command 'S'");
+                                Platform.runLater(() -> {
+                                    statusLabel.setText("Stopping Readers...");
+                                });
+                                System.out.println("Sending command 'S\\nN\\n'");
                                 ultraOutput.writeChars("S" + Character.toString ((char) 10) + "N" + Character.toString ((char) 10));
                                 ultraOutput.flush();
+                                Thread.sleep(5000); // give the readers 5 seconds to stop before we check
                                 getReadStatus();
                             } else {
                                 // timeout
@@ -280,6 +332,15 @@ public class PikaRFIDDirectReader implements TimingReader {
                                         if (result.substring(2, 3).startsWith("1")) readingStatus.setValue(Boolean.TRUE);
                                         else readingStatus.setValue(Boolean.FALSE);
                                     });
+                                    if (statusLabel.getText().equals("Starting Readers...") && readingStatus.get()) {
+                                        Platform.runLater(() -> {
+                                            statusLabel.setText("Waiting for a chip read...");
+                                        });
+                                    } else if (!readingStatus.get()){
+                                        Platform.runLater(() -> {
+                                            statusLabel.setText("Connected: Readers stopped");
+                                        });
+                                    }
                                 } else {
                                 // timeout
                                 System.out.println("Timeout with command '?'");
@@ -338,7 +399,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                             String line = "";
                             while (read != 10) { // 1,Connected,<stuff>\n is sent on initial connect. 10 == \n
                                 read = input.read();
-                                System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
+                                //System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
                             } 
                             
                             onConnectSetup();
@@ -353,7 +414,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                                         System.out.println("End of stream!" + Integer.toHexString(read));
                                     } if (read != 10) {
                                         line = line +  Character.toString ((char) read);
-                                        System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
+                                        //System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
                                     } else {
                                         processLine(line);
                                     }
@@ -390,9 +451,9 @@ public class PikaRFIDDirectReader implements TimingReader {
     
     private void processLine(String line) {
         System.out.println("Read Line: " + line);
-        Platform.runLater(() -> {
-            statusLabel.setText("Read Line: " + line);
-        });
+//        Platform.runLater(() -> {
+//            statusLabel.setText("Read Line: " + line);
+//        });
         switch(line.substring(0, 1)){
             case "0": // chip time
             case "1":
@@ -410,6 +471,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                 break;
             case "U": // command response
                 System.out.println("Response: " + line);
+                commandResultQueue.offer(line);
                 break;
             default: // unknown command response
                 System.out.println("Unknown: \"" + line.substring(0, 0) + "\" " + line);
@@ -438,6 +500,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         
         String chip = tokens[1];
         String port = tokens[4];
+        String reader = tokens[7];
         //String antenna = tokens[x];
         //String rewind = tokens[x];
         String rewind = tokens[6];
@@ -481,7 +544,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             RawTimeData rawTime = new RawTimeData();
             rawTime.setChip(chip);
             rawTime.setTimestampLong(timestamp.toNanos());
-            String status = "Added raw time: " + tokens[1] + " at " + DurationFormatter.durationToString(timestamp, 3);
+            String status = "Added raw time: " + tokens[1] + " at " + DurationFormatter.durationToString(timestamp, 3) + " Reader: " + reader + " Port: " + port;
             Platform.runLater(() -> {
                 statusLabel.textProperty().setValue(status);
             });
@@ -499,10 +562,10 @@ public class PikaRFIDDirectReader implements TimingReader {
         
         // get the antenna status
         
-        // get the Ultra ID
+        // Do we have a 2nd reader?
         
-        
-    }
+        // Auto-Rewind the day's times
+}
 
     private void discover() {
         
