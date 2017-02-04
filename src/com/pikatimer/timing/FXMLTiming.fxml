@@ -210,7 +210,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                <children>
                   <TextField fx:id="timingLocationNameTextField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="200.0" GridPane.columnIndex="1" />
                   <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-                  <ToggleSwitch fx:id="assignToRaceToggleSwitch" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minHeight="-Infinity" minWidth="-Infinity" prefWidth="144.0" text="Auto-Assign to Race" textAlignment="RIGHT" />
+                  <ToggleSwitch fx:id="assignToRaceToggleSwitch" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxHeight="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="18.0" prefWidth="144.0" text="Auto-Assign to Race" textAlignment="RIGHT" />
                   <ComboBox fx:id="assignToRaceComboBox" prefHeight="25.0" prefWidth="102.0" />
                </children>
                <GridPane.margin>
