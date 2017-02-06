@@ -17,6 +17,7 @@
 package com.pikatimer.timing.reader;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.timing.FXMLTimingController;
 import com.pikatimer.timing.RawTimeData;
 import com.pikatimer.timing.TimingListener;
 import com.pikatimer.timing.TimingReader;
@@ -26,31 +27,52 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Screen;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -370,7 +392,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                             Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
 
                         } finally {
-                            if (aquired) System.out.println("Rleasing transmit lock");
+                            if (aquired) System.out.println("Relasing transmit lock");
                             if (aquired) okToSend.release();
                         }
                     }
@@ -408,12 +430,12 @@ public class PikaRFIDDirectReader implements TimingReader {
                         try (
                             Socket ultraSocket = new Socket(ultra_ip, 23); 
                             InputStream input = ultraSocket.getInputStream();
-                            OutputStream output = ultraSocket.getOutputStream();
+                            OutputStream rawOutput = ultraSocket.getOutputStream();
                         ) {
                             connectToUltra = true; // we got here so we have a good connection
                             success = true;
                             ultraSocket.setSoTimeout(20000); // 20 seconds. In theory we get a voltage every 10
-                            ultraOutput = new DataOutputStream(new BufferedOutputStream(output));
+                            ultraOutput = new DataOutputStream(new BufferedOutputStream(rawOutput));
                             Platform.runLater(() -> {
                                 connectedStatus.setValue(true);
                                 statusLabel.setText("Connected to " + ultra_ip);
@@ -610,9 +632,159 @@ public class PikaRFIDDirectReader implements TimingReader {
 }
 
     private void discover() {
-        rewind(1000,2000);
+        System.out.println("Starting discover...");
+        ObservableList<Ultra> ultras = FXCollections.observableArrayList(); 
+        BooleanProperty scanCompleted = new SimpleBooleanProperty(false);
+        // start a discovery task in a background thread
+        Task ultraSearch = new Task<Void>() {
+                @Override public Void call() {
+                    try {
+                        InetAddress local = Inet4Address.getLocalHost();
+                        String[] localIP = local.getHostAddress().split("\\.");
+                        
+                        String subnet = localIP[0] + "." + localIP[1] + "." + localIP[2];
+
+                        ForkJoinPool forkJoinPool = new ForkJoinPool(256);
+                        int timeout=16000;
+                        for (int i = 1; i < 255; i++) {
+                            String host=subnet + "." + i;
+                            int lastOctet = i;
+                            forkJoinPool.submit(() -> {
+                               
+                                //System.out.println("Trying " + host);
+                                int tries = 4;
+                                try{
+                                    while (tries-- > 0) {
+                                        //System.out.println("Trying " + host + "(" + tries + ")");
+                                        try{
+                                            Socket ultraSocket = new Socket();
+                                            ultraSocket.connect(new InetSocketAddress(host,23), 4000);
+                                            if (ultraSocket.isConnected()) {
+                                                System.out.println("Connected to " + host);
+                                                Ultra u = new Ultra(host);
+                                                if (!ultras.contains(u)) Platform.runLater(() -> {ultras.add(u);});
+                                                tries = 0;
+                                            } 
+                                            ultraSocket.close();
+                                        } catch (Exception e){
+                                            //System.out.println(e);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    //System.out.println("Unable to connect to " + host);
+                                }
+                            });
+                         }
+                        int increment = 100;
+                        for (int i = 0; i< timeout; i+=increment){
+                            updateProgress(i,timeout);
+                            System.out.println(i);
+                            Thread.sleep(increment);
+                        }
+                        forkJoinPool.shutdown();
+                        forkJoinPool.awaitTermination(1, TimeUnit.SECONDS);
+                        System.out.println("Done scanning for Ultras");
+                        Platform.runLater(() -> {scanCompleted.set(true);});
+                    } catch (Exception ex) {
+                        Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    ultras.forEach(u -> {System.out.println("Found " + u.IP.getValueSafe());});
+                    return null;
+                }
+        };
+        new Thread(ultraSearch).start();
+        
+        ProgressBar progress = new ProgressBar();
+        progress.progressProperty().bind(ultraSearch.progressProperty());
+
+        
+        ListView<Ultra> ultraListView = new ListView();
+        ultraListView.setItems(ultras);
+       
+        
+        // open a dialog
+        Dialog<Ultra> dialog = new Dialog();
+        dialog.resizableProperty().set(true);
+        dialog.getDialogPane().setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight()-150);
+        dialog.setTitle("Discover Available Ultras");
+        dialog.setHeaderText("Discover Available Ultras");
+        ButtonType selectButtonType = new ButtonType("Select", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(selectButtonType, ButtonType.CANCEL);
+        
+        // Create a scrollPane to put the tables and such in
+        VBox mainVBox = new VBox();
+        mainVBox.setStyle("-fx-font-size: 16px;"); // Make the scroll bar a bit larger
+        VBox progressVBox = new VBox();
+        progressVBox.setAlignment(Pos.CENTER);
+        progressVBox.getChildren().add(new Label("Searching for Ultras..."));
+        progressVBox.visibleProperty().bind(scanCompleted.not());
+        progressVBox.managedProperty().bind(scanCompleted.not());
+        progressVBox.getChildren().add(progress);
+        progress.setMaxWidth(500);
+       
+        progressVBox.setPrefHeight(150);
+
+        VBox ultraListVBox = new VBox();
+        ultraListVBox.setStyle("-fx-font-size: 16px;"); // Make everything normal again
+        ultraListVBox.fillWidthProperty().set(true);
+        ultraListVBox.setAlignment(Pos.CENTER);
+        ultraListVBox.getChildren().add(new Label("Select an Ultra..."));
+        ultraListVBox.getChildren().add(ultraListView);
+        
+        Label notFound = new Label("No Ultras were found!. \n Check network settings and try again.");
+        notFound.visibleProperty().bind(Bindings.size(ultras).isEqualTo(0));
+        notFound.managedProperty().bind(Bindings.size(ultras).isEqualTo(0));
+        ultraListView.visibleProperty().bind(Bindings.size(ultras).greaterThanOrEqualTo(1));
+        ultraListView.managedProperty().bind(Bindings.size(ultras).greaterThanOrEqualTo(1));
+        
+        ultraListVBox.setPrefHeight(150);
+
+        ultraListVBox.getChildren().add(notFound);
+        ultraListVBox.visibleProperty().bind(scanCompleted);
+        ultraListVBox.managedProperty().bind(scanCompleted);
+        mainVBox.getChildren().add(progressVBox);
+        mainVBox.getChildren().add(ultraListVBox);
+        dialog.getDialogPane().setContent(mainVBox);
+        
+        
+        dialog.getDialogPane().getScene().getWindow().sizeToScene();
+        
+        Node createButton = dialog.getDialogPane().lookupButton(selectButtonType);
+        createButton.disableProperty().bind(ultraListView.getSelectionModel().selectedItemProperty().isNull());
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == selectButtonType) {
+                return ultraListView.getSelectionModel().getSelectedItem();
+            }
+            return null;
+        });
+
+        Optional<Ultra> result = dialog.showAndWait();
+
+        
+        if (result.isPresent()) {
+            ultra_ip = result.get().IP.getValueSafe();
+            ultraIPTextField.setText(ultra_ip);
+            connectToggleSwitch.selectedProperty().set(true);
+        }
+        
     }
 
+    private void rewind(){
+        // open a dialog box 
+        // start date / time
+        // end date / time
+
+        //Default to event date / 00:00 for the start time, event date 23:59:00 for the end time
+        
+        
+        // if 'rewind' 
+        
+        // convert to seconds since Jan 1, 1980
+        
+        // issue rewind command
+        
+    }
     //Auto-Rewind
     private void rewind(Integer lastRead, Integer currentRead) {
            Task ultraCommand = new Task<Void>() {
@@ -623,11 +795,11 @@ public class PikaRFIDDirectReader implements TimingReader {
                             if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
                                 aquired=true;
                                 System.out.println("AutoRewind from " + lastRead + " to " + currentRead);
-                                //600[FromRecordNo][0x0D][ToRecordNo] 
 
                                 Platform.runLater(() -> {
                                     statusLabel.setText("AutoRewind from " + lastRead + " to " + currentRead);
                                 });
+                                
                                 ultraOutput.flush();
                                 
                                 String command = "600";
@@ -637,12 +809,6 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 command += Character.toString ((char) 13) ;
 
                                 ultraOutput.writeBytes(command);
-//                                ultraOutput.writeByte(0);
-//                                ultraOutput.writeByte(0);
-//                                ultraOutput.writeBytes(lastRead.toString());
-//                                ultraOutput.writeByte(13);
-//                                ultraOutput.writeBytes(currentRead.toString());
-//                                ultraOutput.writeByte(13);
                                 ultraOutput.flush();
 
                             } else {
@@ -660,5 +826,52 @@ public class PikaRFIDDirectReader implements TimingReader {
                 }
         };
         new Thread(ultraCommand).start();
+    }
+
+    private static class Ultra {
+
+        @Override
+        public int hashCode() {
+            int hash = 7 + IP.hashCode() + MAC.hashCode();
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Ultra other = (Ultra) obj;
+            if (!this.IP.getValueSafe().equals(other.IP.getValueSafe()) ) {
+                return false;
+            }
+            if (!this.MAC.getValueSafe().equals(other.MAC.getValueSafe()) ) {
+                return false;
+            }
+            return true;
+        }
+        public StringProperty IP  = new SimpleStringProperty();
+        public StringProperty MAC  = new SimpleStringProperty();
+        public Ultra() {
+            
+        }
+        public Ultra(String host){
+            IP.set(host);
+        }
+        public StringProperty ipProperty() {
+            return IP;
+        }
+        public StringProperty macProperty(){
+            return MAC;
+        }
+        public String toString(){
+            return IP.getValueSafe();
+        }
     }
 }
