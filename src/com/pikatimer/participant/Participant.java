@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
@@ -44,6 +45,7 @@ import javafx.beans.property.StringProperty;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.util.Callback;
@@ -91,6 +93,7 @@ public class Participant {
     private LocalDate birthday; 
     private final ObjectProperty<LocalDate> birthdayProperty = new SimpleObjectProperty();
     private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());   
+    private final IntegerProperty wavesChangedCounterProperty = new SimpleIntegerProperty(0);
     private final ObjectProperty<ObservableList<Wave>> wavesProperty = new SimpleObjectProperty(waves);
     private Set<Integer> waveIDSet = new HashSet(); 
     private final BooleanProperty dnfProperty = new SimpleBooleanProperty(FALSE);
@@ -124,6 +127,13 @@ public class Participant {
             protected boolean computeValue() {
                 if (statusProperty.getValue().equals(Status.DQ)) return true;
                 return false; 
+            }
+        });
+        
+        waves.addListener(new ListChangeListener<Wave>() {
+            @Override
+            public void onChanged(Change<? extends Wave> c) {
+                Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
             }
         });
         
@@ -532,12 +542,15 @@ public class Participant {
         waves.setAll(w);
         waveIDSet = new HashSet();
         waves.stream().forEach(n -> {waveIDSet.add(n.getID());});
+        Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
     }
     public void setWaves(Set<Wave> w){
         System.out.println("SetWaves(Set) called with " + w.size());
         waves.setAll(w);
         waveIDSet = new HashSet();
         waves.stream().forEach(n -> {waveIDSet.add(n.getID());});
+        Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
+
     }
     public void setWaves(Wave w) {
         System.out.println("Participant.setWaves(Wave w)");
@@ -545,6 +558,8 @@ public class Participant {
         
         waveIDSet = new HashSet();
         waveIDSet.add(w.getID()); 
+        Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
+
     }
     public void addWave(Wave w) {
         //System.out.println("Participant.addWave(Wave w)");
@@ -554,6 +569,7 @@ public class Participant {
             waves.add(w); 
             waveIDSet.add(w.getID()); 
         }
+        Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
     }
     public ObservableList<Wave> wavesObservableList() {
         waves.clear();
@@ -567,9 +583,12 @@ public class Participant {
     public ObjectProperty<ObservableList<Wave>> wavesProperty(){
         return wavesProperty;
     }
+    public IntegerProperty wavesChangedCounterProperty(){
+        return wavesChangedCounterProperty;
+    }
     
     public static Callback<Participant, Observable[]> extractor() {
-        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.wavesProperty,p.statusProperty};
+        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.wavesProperty,p.wavesChangedCounterProperty,p.statusProperty};
     }
 
     @Override
