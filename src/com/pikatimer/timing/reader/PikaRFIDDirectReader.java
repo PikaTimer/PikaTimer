@@ -168,7 +168,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             ultraIPTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                 Boolean revert = false;
                 if (newValue.isEmpty()) connectToggleSwitch.disableProperty().set(true);
-                if (ultra_ip == null || ultra_ip.equals(newValue)) {
+                if (ultra_ip == null || newValue.isEmpty() || ultra_ip.equals(newValue)) {
                     connectToggleSwitch.disableProperty().set(false);
                     return;
                 }
@@ -647,16 +647,16 @@ public class PikaRFIDDirectReader implements TimingReader {
                         String subnet = localIP[0] + "." + localIP[1] + "." + localIP[2];
 
                         ForkJoinPool forkJoinPool = new ForkJoinPool(256);
-                        int timeout=16000;
+                        int timeout=12000;
                         for (int i = 1; i < 255; i++) {
                             String host=subnet + "." + i;
                             int lastOctet = i;
                             forkJoinPool.submit(() -> {
                                
                                 //System.out.println("Trying " + host);
-                                int tries = 4;
+                                int tries = 3;
                                 try{
-                                    while (tries-- > 0) {
+                                    while (tries-- >= 0) {
                                         //System.out.println("Trying " + host + "(" + tries + ")");
                                         try{
                                             Socket ultraSocket = new Socket();
@@ -665,7 +665,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                                                 System.out.println("Connected to " + host);
                                                 Ultra u = new Ultra(host);
                                                 if (!ultras.contains(u)) Platform.runLater(() -> {ultras.add(u);});
-                                                tries = 0;
+                                                tries = -1;
                                             } 
                                             ultraSocket.close();
                                         } catch (Exception e){
@@ -680,7 +680,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                         int increment = 100;
                         for (int i = 0; i< timeout; i+=increment){
                             updateProgress(i,timeout);
-                            System.out.println(i);
+                            //System.out.println(i);
                             Thread.sleep(increment);
                         }
                         forkJoinPool.shutdown();
@@ -778,6 +778,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         if (result.isPresent()) {
             ultra_ip = result.get().IP.getValueSafe();
             ultraIPTextField.setText(ultra_ip);
+            timingListener.setAttribute("RFIDDirect:ultra_ip", ultra_ip);
             connectToggleSwitch.selectedProperty().set(true);
         }
         
