@@ -58,6 +58,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -69,6 +70,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -720,9 +722,14 @@ public class PikaRFIDDirectReader implements TimingReader {
         progressVBox.visibleProperty().bind(scanCompleted.not());
         progressVBox.managedProperty().bind(scanCompleted.not());
         progressVBox.getChildren().add(progress);
+        Label foundCount = new Label();
+        foundCount.textProperty().bind(Bindings.concat("Found ", Bindings.size(ultras).asString()));
+        
+        progressVBox.getChildren().add(foundCount);
+
         progress.setMaxWidth(500);
        
-        progressVBox.setPrefHeight(150);
+        progressVBox.setPrefHeight(100);
 
         VBox ultraListVBox = new VBox();
         ultraListVBox.setStyle("-fx-font-size: 16px;"); // Make everything normal again
@@ -737,7 +744,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         ultraListView.visibleProperty().bind(Bindings.size(ultras).greaterThanOrEqualTo(1));
         ultraListView.managedProperty().bind(Bindings.size(ultras).greaterThanOrEqualTo(1));
         
-        ultraListVBox.setPrefHeight(150);
+        ultraListVBox.setPrefHeight(100);
 
         ultraListVBox.getChildren().add(notFound);
         ultraListVBox.visibleProperty().bind(scanCompleted);
@@ -746,7 +753,16 @@ public class PikaRFIDDirectReader implements TimingReader {
         mainVBox.getChildren().add(ultraListVBox);
         dialog.getDialogPane().setContent(mainVBox);
         
-        
+        ultraListView.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent click) {
+
+                if (click.getClickCount() == 2) {
+                   dialog.setResult(ultraListView.getSelectionModel().getSelectedItem());
+                   //dialog.close();
+                }
+            }
+        });
         dialog.getDialogPane().getScene().getWindow().sizeToScene();
         
         Node createButton = dialog.getDialogPane().lookupButton(selectButtonType);
