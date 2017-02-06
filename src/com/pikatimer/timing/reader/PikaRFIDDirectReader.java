@@ -753,16 +753,13 @@ public class PikaRFIDDirectReader implements TimingReader {
         mainVBox.getChildren().add(ultraListVBox);
         dialog.getDialogPane().setContent(mainVBox);
         
-        ultraListView.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent click) {
-
-                if (click.getClickCount() == 2) {
-                   dialog.setResult(ultraListView.getSelectionModel().getSelectedItem());
-                   //dialog.close();
-                }
+        // If they double click on an ultra, select it and close the dialog box
+        ultraListView.setOnMouseClicked((MouseEvent click) -> {
+            if (click.getClickCount() == 2) {
+                dialog.setResult(ultraListView.getSelectionModel().getSelectedItem());
             }
         });
+        
         dialog.getDialogPane().getScene().getWindow().sizeToScene();
         
         Node createButton = dialog.getDialogPane().lookupButton(selectButtonType);
