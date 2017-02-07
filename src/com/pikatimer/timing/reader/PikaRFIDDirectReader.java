@@ -22,6 +22,7 @@ import com.pikatimer.timing.RawTimeData;
 import com.pikatimer.timing.TimingListener;
 import com.pikatimer.timing.TimingReader;
 import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.DurationParser;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -64,6 +65,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -83,6 +85,8 @@ import org.controlsfx.control.ToggleSwitch;
  */
 public class PikaRFIDDirectReader implements TimingReader {
 
+    LocalDateTime EPOC = LocalDateTime.of(LocalDate.parse("1980-01-01",DateTimeFormatter.ISO_LOCAL_DATE),LocalTime.MIDNIGHT);
+    
     protected TimingListener timingListener;
     protected String ultra_ip;
     
@@ -93,6 +97,7 @@ public class PikaRFIDDirectReader implements TimingReader {
 
     private Pane displayPane; 
     private Button discoverButton;
+    private Button rewindButton;
     protected TextField ultraIPTextField; 
     protected TextField readsFileTextField;
     protected Label statusLabel; 
@@ -106,6 +111,7 @@ public class PikaRFIDDirectReader implements TimingReader {
     protected final BooleanProperty connectedStatus = new SimpleBooleanProperty();
 
     private Boolean connectToUltra = false;
+    private Boolean externalInitiated = false;
     
     private int lastRead = -1;
     
@@ -155,6 +161,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             Label ipLabel = new Label("Ultra IP:");
             statusLabel = new Label("");
             discoverButton = new Button("Discover...");
+            rewindButton = new Button("Rewind...");
             ultraIPTextField = new TextField();
             displayVBox.setSpacing(5); 
             //displayVBox.setPadding(new Insets(5, 5, 5, 5));
@@ -225,16 +232,22 @@ public class PikaRFIDDirectReader implements TimingReader {
             displayHBox.setAlignment(Pos.CENTER_LEFT);
             displayHBox.getChildren().addAll(ipLabel,ultraIPTextField, discoverButton, connectToggleSwitch,readToggleSwitch); 
             displayVBox.setAlignment(Pos.CENTER_LEFT);
-            displayVBox.getChildren().addAll(displayHBox, statusLabel); 
+            displayVBox.getChildren().addAll(displayHBox, statusLabel, rewindButton); 
             
             // Set the action for the discoverButton
             discoverButton.setOnAction((event) -> {
                 discover();
             });
             discoverButton.disableProperty().bind(connectedStatus);
+            
+            rewindButton.setOnAction((event) -> {
+                rewind();
+            });
+            rewindButton.disableProperty().bind(connectedStatus.not());
+            
             batteryProgressBar.visibleProperty().bind(connectToggleSwitch.selectedProperty());
-
             batteryProgressBar.setMaxHeight(30.0);
+            
             connectToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
                 if(newValue) {
                     if (!connectToUltra) {
@@ -248,19 +261,20 @@ public class PikaRFIDDirectReader implements TimingReader {
                     }
                 }
             });
-            //connectToggleSwitch.selectedProperty().bindBidirectional(connectedStatus);
+            
             readToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
                 if(newValue) {
-                    if (connectToUltra) {
+                    if (connectToUltra && !externalInitiated) {
                         System.out.println("PikaRFIDDirectReader: readToggleSwitch event: calling startReading()");
                         startReading();
                     }
                 } else {
-                    if (connectToUltra) {
+                    if (connectToUltra && !externalInitiated) {
                         System.out.println("PikaRFIDDirectReader: readToggleSwitch event: calling stopReading()");
                         stopReading();
                     }
                 }
+                externalInitiated = false;
             });
             ultraIPTextField.textProperty().setValue(ultra_ip);
             // set the action for the inputTextField
@@ -369,15 +383,26 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
                                 if (result != null) {
                                     System.out.println("Reading Status : " + result);
-                                    Platform.runLater(() -> {
-                                        if (result.substring(2, 3).startsWith("1")) readingStatus.setValue(Boolean.TRUE);
-                                        else readingStatus.setValue(Boolean.FALSE);
-                                    });
-                                    if (statusLabel.getText().equals("Starting Readers...") && readingStatus.get()) {
+                                    Boolean currentStatus = readingStatus.getValue();
+                                    Boolean newStatus = false;
+                                    if (result.substring(2, 3).startsWith("1")) newStatus = true;
+                                    else newStatus = false;
+                                    if (newStatus != currentStatus){
+                                        externalInitiated = true;
                                         Platform.runLater(() -> {
-                                            statusLabel.setText("Waiting for a chip read...");
+                                            if (result.substring(2, 3).startsWith("1")) readingStatus.setValue(Boolean.TRUE);
+                                            else readingStatus.setValue(Boolean.FALSE);
                                         });
-                                    } else if (!readingStatus.get()){
+                                    }
+                                    if (statusLabel.getText().equals("Starting Readers...") && newStatus) {
+                                        Platform.runLater(() -> {
+                                            statusLabel.setText("Connected: Waiting for a chip read...");
+                                        });
+                                    } else if (statusLabel.getText().equals("Connected: Readers stopped") && newStatus){
+                                        Platform.runLater(() -> {
+                                            statusLabel.setText("Connected: Waiting for a chip read...");
+                                        });
+                                    } else if (!newStatus){
                                         Platform.runLater(() -> {
                                             statusLabel.setText("Connected: Readers stopped");
                                         });
@@ -566,12 +591,11 @@ public class PikaRFIDDirectReader implements TimingReader {
         if (rewind.equals("0")) {
             int currentRead=Integer.parseInt(logNo);
             if (lastRead + 1 == currentRead || lastRead < 0 ) {
-                System.out.println("No missing reads: Last " + lastRead + " Current: " + logNo);
-
+                //System.out.println("No missing reads: Last " + lastRead + " Current: " + logNo);
                 lastRead = currentRead;
             }
             else {
-                System.out.println("Missing a read: Last " + lastRead + " Current: " + logNo);
+                //System.out.println("Missing a read: Last " + lastRead + " Current: " + logNo);
                 // auto-rewind
                 rewind(lastRead,currentRead);
                 lastRead = currentRead;
@@ -589,11 +613,11 @@ public class PikaRFIDDirectReader implements TimingReader {
             return;
         }
         
-        LocalDate origin = LocalDate.parse("1980-01-01",DateTimeFormatter.ISO_LOCAL_DATE); 
-        LocalDateTime read_ldt = LocalDateTime.of(origin, LocalTime.MIDNIGHT);
+        //LocalDate origin = LocalDate.parse("1980-01-01",DateTimeFormatter.ISO_LOCAL_DATE); 
+        //LocalDateTime read_ldt = LocalDateTime.of(origin, LocalTime.MIDNIGHT);
         Long seconds = Long.parseLong(tokens[2]);
         Long millis = Long.parseLong(tokens[3]);
-        read_ldt = read_ldt.plusSeconds(seconds);
+        LocalDateTime read_ldt = EPOC.plusSeconds(seconds);
         
         LocalDateTime event_ldt = LocalDateTime.of(Event.getInstance().getLocalEventDate(), LocalTime.MIN);
         
@@ -610,7 +634,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             RawTimeData rawTime = new RawTimeData();
             rawTime.setChip(chip);
             rawTime.setTimestampLong(timestamp.toNanos());
-            String status = "Added raw time: " + tokens[1] + " at " + DurationFormatter.durationToString(timestamp, 3) + " Reader: " + reader + " Port: " + port;
+            String status = "Read of chip " + chip + " at " + DurationFormatter.durationToString(timestamp, 3) + " Reader: " + reader + " Port: " + port;
             Platform.runLater(() -> {
                 statusLabel.textProperty().setValue(status);
             });
@@ -665,6 +689,10 @@ public class PikaRFIDDirectReader implements TimingReader {
                                                 System.out.println("Connected to " + host);
                                                 Ultra u = new Ultra(host);
                                                 if (!ultras.contains(u)) Platform.runLater(() -> {ultras.add(u);});
+                                                // TODO:
+                                                // Work with RFIDTiming to get info on the box
+                                                // MAC, Type, etc. 
+                                                
                                                 tries = -1;
                                             } 
                                             ultraSocket.close();
@@ -729,12 +757,12 @@ public class PikaRFIDDirectReader implements TimingReader {
 
         progress.setMaxWidth(500);
        
-        progressVBox.setPrefHeight(100);
+        progressVBox.setPrefHeight(175);
 
         VBox ultraListVBox = new VBox();
         ultraListVBox.setStyle("-fx-font-size: 16px;"); // Make everything normal again
         ultraListVBox.fillWidthProperty().set(true);
-        ultraListVBox.setAlignment(Pos.CENTER);
+        ultraListVBox.setAlignment(Pos.CENTER_LEFT);
         ultraListVBox.getChildren().add(new Label("Select an Ultra..."));
         ultraListVBox.getChildren().add(ultraListView);
         
@@ -744,7 +772,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         ultraListView.visibleProperty().bind(Bindings.size(ultras).greaterThanOrEqualTo(1));
         ultraListView.managedProperty().bind(Bindings.size(ultras).greaterThanOrEqualTo(1));
         
-        ultraListVBox.setPrefHeight(100);
+        ultraListVBox.setPrefHeight(1750);
 
         ultraListVBox.getChildren().add(notFound);
         ultraListVBox.visibleProperty().bind(scanCompleted);
@@ -786,17 +814,158 @@ public class PikaRFIDDirectReader implements TimingReader {
 
     private void rewind(){
         // open a dialog box 
+        Dialog<RewindData> dialog = new Dialog();
+        dialog.setTitle("Rewind");
+        dialog.setHeaderText("Rewind timing data...");
+        ButtonType rewindButtonType = new ButtonType("Rewind", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(rewindButtonType, ButtonType.CANCEL);
+        
+        VBox rewindVBox = new VBox();
+        rewindVBox.setStyle("-fx-font-size: 16px;");
+        
         // start date / time
+        HBox startHBox = new HBox();
+        startHBox.setSpacing(5.0);
+        Label startLabel = new Label("From:");
+        startLabel.setMinWidth(40);
+        DatePicker startDate = new DatePicker();
+        TextField startTime = new TextField();
+        startHBox.getChildren().addAll(startLabel,startDate,startTime);
+        
         // end date / time
+        HBox endHBox = new HBox();
+        endHBox.setSpacing(5.0);
+        Label endLabel = new Label("To:");
+        endLabel.setMinWidth(40);
+        DatePicker endDate = new DatePicker();
+        TextField endTime = new TextField();
+        endHBox.getChildren().addAll(endLabel,endDate,endTime);
+        
+        rewindVBox.getChildren().addAll(startHBox,endHBox);
+        dialog.getDialogPane().setContent(rewindVBox);
 
+        
+        BooleanProperty startTimeOK = new SimpleBooleanProperty(false);
+        BooleanProperty endTimeOK = new SimpleBooleanProperty(false);
+        BooleanProperty allOK = new SimpleBooleanProperty(false);
+       
+        allOK.bind(Bindings.and(endTimeOK, startTimeOK));
+        
+        
+        startTime.textProperty().addListener((observable, oldValue, newValue) -> {
+            startTimeOK.setValue(false);
+            if (DurationParser.parsable(newValue)) startTimeOK.setValue(Boolean.TRUE);
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]*(:?([0-5]?([0-9]?(:([0-5]?([0-9]?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good start Time (newValue: " + newValue + ")");
+            } else {
+                Platform.runLater(() -> {
+                    int c = startTime.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    startTime.setText(oldValue);
+                    startTime.positionCaret(c);
+                });
+                System.out.println("Bad start time (newValue: " + newValue + ")");
+            }
+        });
+        endTime.textProperty().addListener((observable, oldValue, newValue) -> {
+            endTimeOK.setValue(false);
+            if (DurationParser.parsable(newValue)) endTimeOK.setValue(Boolean.TRUE);
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]*(:?([0-5]?([0-9]?(:([0-5]?([0-9]?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good start Time (newValue: " + newValue + ")");
+            } else {
+                Platform.runLater(() -> {
+                    int c = endTime.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    endTime.setText(oldValue);
+                    endTime.positionCaret(c);
+                });
+                System.out.println("Bad end time (newValue: " + newValue + ")");
+            }
+        });
+        
         //Default to event date / 00:00 for the start time, event date 23:59:00 for the end time
+        startDate.setValue(Event.getInstance().getLocalEventDate());
+        startTime.setText("00:00:00");
+        endDate.setValue(Event.getInstance().getLocalEventDate());
+        endTime.setText("23:59:59");
         
         
-        // if 'rewind' 
+        Node createButton = dialog.getDialogPane().lookupButton(rewindButtonType);
+        createButton.disableProperty().bind(allOK.not());
         
-        // convert to seconds since Jan 1, 1980
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == rewindButtonType) {
+                RewindData result = new RewindData();
+                result.startDate = startDate.getValue();
+                result.startTime = DurationParser.parse(startTime.getText());
+                result.endDate = endDate.getValue();
+                result.endTime = DurationParser.parse(endTime.getText());
+                return result;
+            }
+            return null;
+        });
+
+        Optional<RewindData> result = dialog.showAndWait();
+
         
-        // issue rewind command
+        if (result.isPresent()) {
+            RewindData rwd= result.get();
+            // convert the date/time to seconds since 1/1/1980
+            
+            Long startTimestamp = Duration.between(EPOC, LocalDateTime.of(rwd.startDate, LocalTime.ofSecondOfDay(rwd.startTime.getSeconds()))).getSeconds();
+            Long endTimestamp = Duration.between(EPOC, LocalDateTime.of(rwd.endDate, LocalTime.ofSecondOfDay(rwd.endTime.getSeconds()))).getSeconds();
+            
+            System.out.println("Rewind from " + startTimestamp + " to " + endTimestamp);
+            // issue the rewind command via a background thread
+            
+            Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                        try {
+                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                                aquired=true;
+                                String status = "Rewind from " + 
+                                        rwd.startDate.format(DateTimeFormatter.ISO_LOCAL_DATE) + " " + startTime.getText() + " to " +
+                                        rwd.endDate.format(DateTimeFormatter.ISO_LOCAL_DATE) + " " + endTime.getText();
+                                
+                                System.out.println(status);
+                                Platform.runLater(() -> {
+                                    statusLabel.setText(status);
+                                });
+                                ultraOutput.flush();
+                                
+                                String command = "800";
+                                command += startTimestamp.toString() ;
+                                command += Character.toString ((char) 13) ;
+                                command += endTimestamp.toString();
+                                command += Character.toString ((char) 13) ;
+
+                                ultraOutput.writeBytes(command);
+                                ultraOutput.flush();
+
+                            } else {
+                                // timeout
+                                System.out.println("Timeout with AutoRewind command");
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                        } finally {
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+            };
+            new Thread(ultraCommand).start();
+            
+            
+            
+        }
+        
         
     }
     //Auto-Rewind
@@ -838,8 +1007,8 @@ public class PikaRFIDDirectReader implements TimingReader {
                     }
                     return null;
                 }
-        };
-        new Thread(ultraCommand).start();
+            };
+            new Thread(ultraCommand).start();
     }
 
     private static class Ultra {
@@ -886,6 +1055,16 @@ public class PikaRFIDDirectReader implements TimingReader {
         }
         public String toString(){
             return IP.getValueSafe();
+        }
+    }
+
+    private static class RewindData {
+        public LocalDate startDate;
+        public LocalDate endDate;
+        public Duration startTime;
+        public Duration endTime;
+
+        public RewindData() {
         }
     }
 }
