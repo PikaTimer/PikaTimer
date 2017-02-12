@@ -27,36 +27,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<GridPane fx:id="baseGridPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingLocationInputController">
+<GridPane fx:id="baseGridPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingLocationInputController">
    <children>
-      <Pane fx:id="readerPane" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
-         <children>
-            <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
-               <children>
-                  <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0">
-                     <children>
-                      
-                                          <TextField fx:id="timingLocationInputDataTextField" layoutX="182.0" layoutY="42.0" maxWidth="1.7976931348623157E308" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
-                        <Button fx:id="inputChooserButton" mnemonicParsing="false" prefWidth="50.0" text="File...">
-                           <padding>
-                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                           </padding>
-                        </Button>
-                     </children>
-                  </HBox>
-                  <Label text="status" />
-               </children>
-            </VBox>
-         </children>
-         <GridPane.margin>
-            <Insets left="5.0" right="5.0" />
-         </GridPane.margin>
-      </Pane>
       <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="2">
          <children>
             <Label alignment="TOP_LEFT" text="Reads" GridPane.columnIndex="2">
@@ -141,6 +117,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </GridPane.margin>
       </Button>
+      <VBox fx:id="readerVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+         <children>
+            <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0">
+               <children>
+                
+                                          <TextField fx:id="timingLocationInputDataTextField" layoutX="182.0" layoutY="42.0" maxWidth="1.7976931348623157E308" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="inputChooserButton" mnemonicParsing="false" prefWidth="50.0" text="File...">
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </Button>
+               </children>
+            </HBox>
+            <Label text="status" />
+         </children>
+         <GridPane.margin>
+            <Insets bottom="5.0" top="5.0" />
+         </GridPane.margin>
+      </VBox>
    </children>
    <columnConstraints>
       <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="104.5" minWidth="33.0" prefWidth="97.5" />
@@ -149,7 +144,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
    </columnConstraints>
    <rowConstraints>
       <RowConstraints fillHeight="false" vgrow="NEVER" />
-      <RowConstraints fillHeight="false" minHeight="60.0" vgrow="ALWAYS" />
+      <RowConstraints fillHeight="false" maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
       <RowConstraints valignment="CENTER" vgrow="NEVER" />
       <RowConstraints valignment="CENTER" vgrow="NEVER" />
       <RowConstraints maxHeight="10.0" minHeight="10.0" prefHeight="10.0" valignment="CENTER" vgrow="NEVER" />
