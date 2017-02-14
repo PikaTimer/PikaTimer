@@ -17,6 +17,7 @@
 package com.pikatimer;
 
 import java.io.File;
+import java.util.prefs.Preferences;
 
 /**
  *
@@ -29,6 +30,7 @@ public class PikaPreferences {
     */
     
     private File recentFile;
+    Preferences prefs = Preferences.userRoot().node("PikaTimer");
     
     private static class SingletonHolder { 
             private static final PikaPreferences INSTANCE = new PikaPreferences();
@@ -46,6 +48,8 @@ public class PikaPreferences {
         return recentFile;
     }
     
-    
+    public Preferences getGlobalPreferences(){
+        return prefs;
+    }
     
 }
