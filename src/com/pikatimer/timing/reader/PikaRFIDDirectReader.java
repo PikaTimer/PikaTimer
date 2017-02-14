@@ -38,12 +38,17 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Month;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -60,23 +65,35 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import static javafx.scene.layout.Region.USE_PREF_SIZE;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Screen;
+import javafx.util.Pair;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -101,11 +118,27 @@ public class PikaRFIDDirectReader implements TimingReader {
     protected TextField ultraIPTextField; 
     protected TextField readsFileTextField;
     protected Label statusLabel; 
+    protected Label lastReadLabel;
     private HBox displayHBox; 
     private VBox displayVBox; 
     private ProgressBar batteryProgressBar;
     private ToggleSwitch connectToggleSwitch;
     private ToggleSwitch readToggleSwitch;
+    
+    CheckBox fileLabel = new CheckBox("Save to File:");
+    TextField fileTextField = new TextField();
+    Button fileButton = new Button("Select...");
+            
+    ChoiceBox reader1ModeChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Start", "Finish"));
+    Spinner<Integer> gatingFactor = new Spinner<>(1, 20, 3);    
+    
+    Button setClockButton = new Button("Sync Time...");
+    Label modeLabel = new Label("Reader Mode:");
+    Label gatingLabel = new Label("Gating:");
+            
+    private Map<String,String> ultraSettings = new HashMap();
+    private UltraClock ultraClock = new UltraClock();
+
     
     protected final BooleanProperty readingStatus = new SimpleBooleanProperty();
     protected final BooleanProperty connectedStatus = new SimpleBooleanProperty();
@@ -113,15 +146,14 @@ public class PikaRFIDDirectReader implements TimingReader {
     private Boolean connectToUltra = false;
     private Boolean externalInitiated = false;
     
+    protected final BooleanProperty clockIssues = new SimpleBooleanProperty(false);
+    
     private int lastRead = -1;
     
     Semaphore okToSend = new Semaphore(1);
 
     
     public PikaRFIDDirectReader() {
-        
-        
-        
     }
 
     @Override
@@ -147,22 +179,39 @@ public class PikaRFIDDirectReader implements TimingReader {
             batteryProgressBar = new ProgressBar();
             connectToggleSwitch = new ToggleSwitch("Connect");
             connectToggleSwitch.selectedProperty().set(false);
-            connectToggleSwitch.maxHeight(18);
-            connectToggleSwitch.minHeight(18);
-            connectToggleSwitch.prefHeight(18);
+//            connectToggleSwitch.maxHeight(USE_PREF_SIZE);
+//            connectToggleSwitch.prefHeight(18);
+            connectToggleSwitch.minWidth(30);
+            connectToggleSwitch.prefWidth(30);
+            connectToggleSwitch.maxWidth(30);
+            
+//            connectToggleSwitch.maxWidth(USE_PREF_SIZE);
+//            connectToggleSwitch.setStyle("-fx-text-alignment: right;");
+            
+            
+            connectToggleSwitch.setPadding(new Insets(3, 0, 0, 0)); // this is a hack to get around a ToggleSwitch bug
 
             readToggleSwitch = new ToggleSwitch("Read");
             readToggleSwitch.selectedProperty().set(false);
             readToggleSwitch.disableProperty().bind(connectedStatus.not());
-            readToggleSwitch.maxHeight(18);
-            readToggleSwitch.minHeight(18);
-            readToggleSwitch.prefHeight(18);
+            readToggleSwitch.setPadding(new Insets(3, 0, 0, 0)); // this is a hack to get around a ToggleSwitch bug
+            HBox switchHBox = new HBox();
+            switchHBox.maxHeight(18);
+            switchHBox.prefWidth(30);
+            switchHBox.maxWidth(30);
+            switchHBox.setSpacing(5);
+            switchHBox.getChildren().addAll(connectToggleSwitch,readToggleSwitch);
             
             Label ipLabel = new Label("Ultra IP:");
-            statusLabel = new Label("");
+            statusLabel = new Label("Disconnected");
+            statusLabel.setPrefWidth(200);
+            lastReadLabel = new Label("");
+            lastReadLabel.setPrefWidth(300);
             discoverButton = new Button("Discover...");
             rewindButton = new Button("Rewind...");
             ultraIPTextField = new TextField();
+            ultraIPTextField.setPrefWidth(90);
+            ultraIPTextField.setMinWidth(USE_PREF_SIZE);
             displayVBox.setSpacing(5); 
             //displayVBox.setPadding(new Insets(5, 5, 5, 5));
             
@@ -226,13 +275,43 @@ public class PikaRFIDDirectReader implements TimingReader {
                     }); 
                 }
             });
+            TitledPane settingsTitlePane = new TitledPane();
+            VBox settingsVBox = new VBox();
+            settingsVBox.setSpacing(4);
             
+            HBox fileHBox = new HBox();
+            fileHBox.setSpacing(4);
+            fileHBox.setAlignment(Pos.CENTER_LEFT);
+
+            fileHBox.getChildren().addAll(fileLabel,fileTextField,fileButton);
             
+            HBox advancedHBox = new HBox();
+            advancedHBox.setSpacing(4);
+            advancedHBox.setAlignment(Pos.CENTER_LEFT);
+
+            gatingFactor.setMaxWidth(60);
+            gatingFactor.setEditable(true);
+            advancedHBox.getChildren().addAll(setClockButton,modeLabel,reader1ModeChoiceBox,gatingLabel,gatingFactor);
+            
+            advancedHBox.disableProperty().bind(connectedStatus.and(readingStatus).or(connectedStatus.not()));
+            
+            settingsVBox.getChildren().addAll(fileHBox,advancedHBox);
+            
+            settingsTitlePane.setText("Advanced Settings");
+            settingsTitlePane.setContent(settingsVBox);
+            settingsTitlePane.setExpanded(false);
+            HBox statusHBox = new HBox();
+            statusHBox.getChildren().addAll(statusLabel,lastReadLabel);
+            statusHBox.setSpacing(5);
+            
+            Label strut = new Label();
+            strut.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(strut, Priority.ALWAYS);
             displayHBox.setSpacing(5);
             displayHBox.setAlignment(Pos.CENTER_LEFT);
-            displayHBox.getChildren().addAll(ipLabel,ultraIPTextField, discoverButton, connectToggleSwitch,readToggleSwitch); 
+            displayHBox.getChildren().addAll(ipLabel,ultraIPTextField, discoverButton, switchHBox,strut, rewindButton); 
             displayVBox.setAlignment(Pos.CENTER_LEFT);
-            displayVBox.getChildren().addAll(displayHBox, statusLabel, rewindButton); 
+            displayVBox.getChildren().addAll(displayHBox,statusHBox ,settingsTitlePane); 
             
             // Set the action for the discoverButton
             discoverButton.setOnAction((event) -> {
@@ -434,6 +513,231 @@ public class PikaRFIDDirectReader implements TimingReader {
         return readingStatus; 
     }
 
+    public void getSettings(CountDownLatch latch){
+        
+        Task ultraCommand = new Task<Void>() {
+            @Override public Void call() {
+                if (connectedStatus.get()) {
+                    Boolean aquired = false;
+                    try {
+                        if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                            aquired = true;
+
+                            String command = "r";
+                            ultraOutput.writeBytes(command);
+
+                            ultraOutput.flush();
+                            String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                            if (result != null) {
+                                // result is HH:MM:SS DD-MM-YYYY
+                                String[] dateTime = result.split(" ");
+                                String[] d = dateTime[1].split("-");
+                                if (d[1].length() == 1) d[1] = "0" + d[1];
+                                if (d[0].length() == 1) d[0] = "0" + d[0];
+                                String[] t = dateTime[0].split(":");
+                                if (t[2].length() == 1) t[2] = "0" + t[2];
+                                if (t[1].length() == 1) t[1] = "0" + t[1];
+                                if (t[0].length() == 1) t[0] = "0" + t[0];
+                                String time = t[0] + ":" + t[1] + ":" + t[2];
+                                String date = d[2] + "-" + d[1] + "-" + d[0];
+                                ultraClock.date = LocalDate.parse(date);
+                                ultraClock.time = LocalTime.parse(time);
+                                ultraClock.takenAt = LocalTime.now();
+                                ultraClock.takenAt = ultraClock.takenAt.minusNanos(ultraClock.takenAt.getNano());
+
+                            } else {
+                            // timeout
+                                System.out.println("Timeout with command 't'");
+                                return null;
+                            }
+
+                            System.out.println("getClock(): Sending tz (0x23) command");
+
+                            ultraOutput.flush();
+
+                            ultraOutput.writeBytes("U");
+//                            ultraOutput.writeByte(35);  // 0x23
+//                            ultraOutput.writeBytes("-9".toString());
+
+                            ultraOutput.writeByte(10);
+
+                            ultraOutput.flush();
+                            do {
+                                result = commandResultQueue.poll(5, TimeUnit.SECONDS);
+                                if (result != null) {
+                                    byte[] r = result.getBytes();
+                                    if (result.length() > 2) {
+                                        ultraSettings.put(String.format("%02X", r[1]), result.substring(2));
+                                        System.out.println("Settings: " + String.format("%02X", r[1]) + " -> " +result.substring(2));
+                                    } else if (result.equals("U2")) result= null; // 
+                                }
+                            } while(result != null);
+                            
+                            
+                            
+                            
+                            //Gating Factor
+                            try{
+                                if (!ultraSettings.containsKey("1E")) System.out.println("We don't know what the gating is");
+                                else {
+                                    Integer gating =Integer.parseInt(ultraSettings.get("1E"));
+                                    Platform.runLater(() -> gatingFactor.getValueFactory().setValue(gating));
+                                    System.out.println("Setting the gating factor to " + gating);
+                                }
+                            } catch (Exception e){
+                                Platform.runLater(() -> gatingFactor.getValueFactory().setValue(5));
+                                System.out.println("Gating parse error, setting the gating factor to 5");
+                            }
+                            
+                            // reader mode
+                            try{
+                                byte[] setting = ultraSettings.get("14").getBytes();
+                                if (setting[0] == (byte) 0) Platform.runLater(() -> reader1ModeChoiceBox.getSelectionModel().select("Start"));
+                                else Platform.runLater(() -> reader1ModeChoiceBox.getSelectionModel().select("Finish"));
+                            } catch (Exception e){
+                                Platform.runLater(() -> gatingFactor.getValueFactory().setValue(5));
+                            }
+                        } else {
+                            // timeout
+                            System.out.println("Timeout waiting to send command '?'");
+                            return null;
+                        }
+                    } catch (Exception ex) {
+                        Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                    } finally {
+                        if (aquired) System.out.println("Relasing transmit lock");
+                        if (aquired) okToSend.release();
+                    }
+                } else return null;
+
+
+                ultraClock.tzHalfOffsetSupport = false;
+        
+                if (latch != null) latch.countDown();
+                
+                return null;
+            }
+        };
+        new Thread(ultraCommand).start();
+    }
+    
+    public void setClock(LocalDateTime time, Integer tz, Boolean gps){
+        Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                        try {
+                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                                aquired = true;
+                                Boolean commit=false;
+                                Boolean restartInterface=false;
+                                if (time != null) {
+                                    System.out.println("setClock(): Sending t command");
+                                    // t[0x20]HH:MM:SS DD-MM-YYYY  
+                                    LocalDateTime adjTime = time.minusNanos(time.getNano()); // strip the nanoseconds
+                                    String[] date = time.format(DateTimeFormatter.ISO_LOCAL_DATE).split("-"); // YYYY-MM-DD
+                                    String newTime = adjTime.format(DateTimeFormatter.ISO_LOCAL_TIME) + " " +
+                                        date[2] + "-" + date[1] + "-" + date[0]; // flip the ISO_LOCAL_DATE arouond
+                                    String command = "t " + newTime;
+                                    ultraOutput.writeBytes(command);
+                                    //ultraOutput.writeUTF("?");
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command 't'");
+                                    }
+                                }
+                                if (tz != null){
+                                    System.out.println("setClock(): Sending tz (0x23) command");
+                                    // t[0x20]HH:MM:SS DD-MM-YYYY  
+                                    ultraOutput.flush();
+
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(35);  // 0x23
+                                    ultraOutput.writeBytes(tz.toString());
+                                    ultraOutput.writeByte(255);
+                                    
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                        restartInterface=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command 't'");
+                                    }
+                                }
+                                if (gps != null){
+                                    System.out.println("setClock(): Sending auto-gps (0x22) command");
+                                    // t[0x20]HH:MM:SS DD-MM-YYYY  
+                                    ultraOutput.flush();
+
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(34);  // 0x22
+                                    if (gps) ultraOutput.writeByte(1);
+                                    else ultraOutput.writeByte(0);
+                                    ultraOutput.writeByte(255);
+                                    
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command 't'");
+                                    }
+                                }
+                                if (commit){
+                                    System.out.println("setClock(): Sending auto-gps (0x22) command");
+                                    // t[0x20]HH:MM:SS DD-MM-YYYY  
+                                    ultraOutput.flush();
+
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command 't'");
+                                    }
+                                }
+                                if (restartInterface){ // This will result in a disconnect
+                                    System.out.println("setClock(): Sending auto-gps (0x22) command");
+                                    // t[0x20]HH:MM:SS DD-MM-YYYY  
+                                    ultraOutput.flush();
+
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(45);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    
+                                }
+                            } else {
+                                // timeout
+                                System.out.println("Timeout waiting to send command '?'");
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                        } finally {
+                            if (aquired) System.out.println("Relasing transmit lock");
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+        };
+        new Thread(ultraCommand).start();
+        
+    }
+    
     @Override
     public Boolean chipIsBib() {
         return Boolean.FALSE; 
@@ -446,6 +750,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         lastRead = -1;
         Task ultraConnection = new Task<Void>() {
                 Boolean success = false;
+                Boolean firstConnect = true;
                 @Override public Void call() {
                     Boolean socketError = false;
                     while(connectToUltra) {
@@ -474,7 +779,10 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 //System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
                             } 
                             
-                            onConnectSetup();
+                            if (firstConnect) {
+                                onConnectSetup();
+                                firstConnect = false;
+                            }
                             
                             while(connectToUltra) {
                                 read = -255; 
@@ -536,26 +844,39 @@ public class PikaRFIDDirectReader implements TimingReader {
     
     private void processLine(String line) {
         System.out.println("Read Line: " + line);
+        
+        String type = "unknown";
+        if (line.startsWith("0,")) type="chip";
+        else if (line.startsWith("1,")) type="chip";
+        else if (line.startsWith("V")) type="voltage";
+        else if (line.startsWith("S")) type="status";
+        else if (line.startsWith("U")) type="command";
+        else if (line.startsWith("u")) type="command"; // general command
+        else if (line.substring(0,8).matches("^\\d+:\\d+:\\d+.*")) type = "time"; //time ens with a special char
+        else System.out.println("Unknown line: \"" + line + "\"");
 
-        switch(line.substring(0, 1)){
-            case "0": // chip time
-            case "1":
+        switch(type){
+            case "chip": // chip time
                 processRead(line);
                 break;
-            case "S": // status 
+            case "status": // status 
                 System.out.println("Status: " + line);
                 commandResultQueue.offer(line);
                 break;
-            case "V": // voltage
+            case "voltage": // voltage
                 System.out.println("Voltage: " + line);
                 getReadStatus();
                 break;
-            case "U": // command response
-                System.out.println("Response: " + line);
+            case "time": // command response
+                System.out.println("Time: " + line.substring(0,19));
+                commandResultQueue.offer(line.substring(0,19));
+                break;
+            case "command": // command response
+                System.out.println("Command response recieved");
                 commandResultQueue.offer(line);
                 break;
             default: // unknown command response
-                System.out.println("Unknown: \"" + line.substring(0, 0) + "\" " + line);
+                System.out.println("Unknown: \"" + line.substring(0, 1) + "\" " + line);
                 break;
         }
     }
@@ -627,7 +948,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         if (timestamp.isNegative()) {
             String status = "Read Timestamp of " + timestamp + " is before the event date, ignoring";
             Platform.runLater(() -> {
-                statusLabel.textProperty().setValue(status);
+                lastReadLabel.textProperty().setValue(status);
             });
             System.out.println(status);
         } else {
@@ -636,8 +957,13 @@ public class PikaRFIDDirectReader implements TimingReader {
             rawTime.setTimestampLong(timestamp.toNanos());
             String status = "Read of chip " + chip + " at " + DurationFormatter.durationToString(timestamp, 3) + " Reader: " + reader + " Port: " + port;
             Platform.runLater(() -> {
-                statusLabel.textProperty().setValue(status);
+                lastReadLabel.textProperty().setValue(status);
             });
+            if (statusLabel.getText().equals("Connected: Waiting for a chip read...") ){
+                Platform.runLater(() -> {
+                    statusLabel.setText("Connected: ");
+                });
+            }
             timingListener.processRead(rawTime); // process it
         }
         
@@ -646,15 +972,16 @@ public class PikaRFIDDirectReader implements TimingReader {
     private void onConnectSetup() {
         // Get the reading status
         getReadStatus();
-        // get the timezone
-         
-        // get the time 
         
-        // get the antenna status
+        // set the clock
         
-        // Do we have a 2nd reader?
+//        Integer offset = TimeZone.getDefault().getOffset(System.currentTimeMillis())/3600000;
+//        setClock(LocalDateTime.now(), offset, true);
+        CountDownLatch latch = new CountDownLatch(1);
+        getSettings(latch);
+        clockIssuesCheck(latch);
+                
         
-        // Auto-Rewind the day's times
 }
 
     private void discover() {
@@ -968,6 +1295,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         
         
     }
+    
     //Auto-Rewind
     private void rewind(Integer lastRead, Integer currentRead) {
            Task ultraCommand = new Task<Void>() {
@@ -1001,6 +1329,100 @@ public class PikaRFIDDirectReader implements TimingReader {
                         } catch (Exception ex) {
                             Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
 
+                        } finally {
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+            };
+            new Thread(ultraCommand).start();
+    }
+    
+    private void clockIssuesCheck(CountDownLatch latch){
+        Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                       
+                        try {
+                            if (latch != null) latch.await();
+                            // time check
+                            Boolean timeOK=true;
+                            Boolean tzOK=true;
+                            // TZ check
+                            Integer localTZ = TimeZone.getDefault().getOffset(System.currentTimeMillis())/3600000;
+                            Integer ultraTZ = Integer.parseInt(ultraSettings.get("23"));
+                            System.out.println("Timezone check: Local :" + localTZ + " ultra: " + ultraTZ);
+                            String issues = "";
+                            if (!localTZ.equals(ultraTZ))  {
+                                timeOK=false;
+                                issues = "Timezone mismatch: Local: " + localTZ + " ultra: " + ultraTZ +"\n";
+                            } else {
+                                tzOK=false; // flip this out so that the setClock below won't adjust the TZ
+                                              // adjusting the TZ requires a network reader interface reset. 
+                            }
+                            
+                            if (!LocalDate.now().equals(ultraClock.date)) {
+                                timeOK=false;
+                                issues += "Clock Date Mismatch: Local: "+ LocalDate.now() + " ultra: " + ultraClock.date+"\n";
+                            }
+                            System.out.println("Date check: Local :" + LocalDate.now() + " ultra: " + ultraClock.date);
+
+                            if (Duration.between(ultraClock.time, ultraClock.takenAt).abs().getSeconds() > 60) {
+                                timeOK=false;
+                                issues += "Clock Time Mismatch: Local: "+ ultraClock.takenAt + " ultra: " + ultraClock.time+"\n";
+                            }
+                             System.out.println("Time check: Local :" + ultraClock.takenAt + " ultra: " + ultraClock.time);
+                             
+                            if (!timeOK) {
+                                
+                                System.out.println("Time issues!!!");
+                                
+                                if (readingStatus.get()) {
+                                    issues += "\nThese cannot be fixed when the Ultra is in 'Read' mode. \n" +
+                                            "Either stop the reader and use the \"Sync Clock\" option "
+                                            + "under the \"Advanced Settings\" area to fix the clock " +
+                                            " or use the skew option on the reader input to adjust the time. "; 
+                                    String timeIssues = issues;
+                                    Platform.runLater(() -> {
+                                        Alert alert = new Alert(AlertType.WARNING);
+                                        alert.setTitle("Ultra Clock Issues");
+                                        alert.setHeaderText("Issues detected with the clock...");
+                                        alert.setContentText(timeIssues);
+                                        alert.showAndWait();
+                                    });
+                                } else {
+                                    issues += "\n Do you want PikaTimer to fix these for you?";
+                                    String timeIssues = issues;
+                                    Boolean goodTZ = tzOK;
+                                    Platform.runLater(() -> {
+                                        Dialog<Boolean> dialog = new Dialog();
+                                        dialog.setTitle("Ultra Clock Issues");
+                                        dialog.setHeaderText("Issues detected with the clock...");
+                                        dialog.setContentText(timeIssues);
+                                        ButtonType fixButtonType = new ButtonType("Fix", ButtonBar.ButtonData.OK_DONE);
+                                        dialog.getDialogPane().getButtonTypes().addAll(fixButtonType, ButtonType.CANCEL);
+
+                                        dialog.setResultConverter(dialogButton -> {
+                                            if (dialogButton == fixButtonType) {
+                                                return Boolean.TRUE;
+                                            }
+                                            return null;
+                                        });
+                                        Optional<Boolean> result = dialog.showAndWait();
+
+                                        if (result.isPresent()) {
+                                            if (goodTZ) setClock(LocalDateTime.now(),null,true);
+                                            else setClock(LocalDateTime.now(),localTZ,true);
+                                        }
+                                    });
+                                }
+                            }
+                            else System.out.println("Time loogs good");
+                            // now let's populate the settings box
+                        } catch (Exception ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
                         } finally {
                             if (aquired) okToSend.release();
                         }
@@ -1065,6 +1487,16 @@ public class PikaRFIDDirectReader implements TimingReader {
         public Duration endTime;
 
         public RewindData() {
+        }
+    }
+
+    private static class UltraClock {
+        public LocalDate date;
+        public LocalTime time;
+        public Duration tzOffset;
+        public Boolean tzHalfOffsetSupport;
+        public LocalTime takenAt;
+        public UltraClock() {
         }
     }
 }
