@@ -90,6 +90,8 @@ public class FXMLopenEventController {
         
         PikaPreferences.getInstance().setRecentFile(dbFile); // stash this for future use
         globalPrefs.put("PikaEventHome", dbFile.getParent());
+        System.setProperty("user.dir", dbFile.getParent());
+        
         OpenHBox.setVisible(false);
         OpenHBox.setManaged(false);
 

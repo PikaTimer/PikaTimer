@@ -52,4 +52,16 @@ public class PikaPreferences {
         return prefs;
     }
     
+    public File getCWD(){
+        File cwd = new File(prefs.get("PikaEventHome", System.getProperty("user.home")));
+        if (!cwd.exists() ) {
+            // we have a problem
+            cwd= new File(System.getProperty("user.home"));
+        } else if (cwd.exists() && cwd.isFile()){
+            cwd = new File(cwd.getParent());
+           
+        }
+        return cwd;
+    }
+    
 }
