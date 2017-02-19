@@ -34,4 +34,6 @@ public interface TimingListener {
     
     public void clearReads();
     
+    public String getLocationName();
+    
 }
