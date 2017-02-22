@@ -98,6 +98,7 @@ public class PikaRFIDFileReader extends TailingReader {
                 Platform.runLater(() -> {
                     statusLabel.textProperty().setValue(status);
                 });
+                return;
             }
         }
 
