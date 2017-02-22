@@ -16,6 +16,7 @@
  */
 package com.pikatimer.timing.reader;
 
+import com.pikatimer.PikaPreferences;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.timing.TimingListener;
@@ -39,6 +40,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
@@ -61,9 +63,11 @@ public abstract class NonTailingReader implements TimingReader{
     protected Boolean fileValid = false;
     private Pane displayPane; 
     private Button inputButton;
+    private Button rereadButton;
     protected TextField inputTextField; 
     protected Label statusLabel = new Label("");
-    private HBox displayHBox; 
+    private HBox displayHBox1; 
+    private HBox displayHBox2; 
     private VBox displayVBox; 
     private ChoiceBox offsetChoiceBox;
     protected Tailer tailer;
@@ -87,7 +91,7 @@ public abstract class NonTailingReader implements TimingReader{
             fileChooser.setInitialDirectory(sourceFile.getParentFile()); 
             fileChooser.setInitialFileName(sourceFile.getName());
         } else {
-            fileChooser.setInitialDirectory(new File(System.getProperty("user.home"))); 
+            fileChooser.setInitialDirectory(PikaPreferences.getInstance().getCWD()); 
         }
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Text Files", "*.txt","*.csv"),
@@ -141,11 +145,14 @@ public abstract class NonTailingReader implements TimingReader{
         
         if (displayPane == null) {
             // initialize our display
-            displayHBox = new HBox();
+            displayHBox1 = new HBox();
+            displayHBox2 = new HBox();
             displayVBox = new VBox();
             
-            inputButton = new Button("Open...");
+            inputButton = new Button("Select File...");
+            rereadButton = new Button("Reread");
             inputTextField = new TextField();
+            Label offsetLabel = new Label("Times in File are relative to ");
             offsetChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Race Start","Time of Day"));
             
             displayVBox.setSpacing(5); 
@@ -157,12 +164,12 @@ public abstract class NonTailingReader implements TimingReader{
                     // if we are auto-importing, stop that
                     readingStatus.set(false);
                     
-                    sourceFile = new File(inputTextField.textProperty().getValueSafe());
-                    fileName.setValue(sourceFile.getAbsolutePath());
+                    sourceFile = new File(inputTextField.textProperty().getValueSafe()).getAbsoluteFile();
+                    fileName.setValue(sourceFile.getPath());
 
                     
                     // save the filename 
-                    timingListener.setAttribute("NonTailingReader:filename", sourceFile.getAbsolutePath());
+                    timingListener.setAttribute("NonTailingReader:filename", inputTextField.textProperty().getValueSafe());
 
                     // read the file
                     if (!sourceFile.exists() || !sourceFile.canRead() || !sourceFile.isFile()){
@@ -178,17 +185,24 @@ public abstract class NonTailingReader implements TimingReader{
                 }
             });
             
-            displayHBox.setSpacing(5);
-            displayHBox.getChildren().addAll(inputTextField, inputButton, offsetChoiceBox); 
-            displayVBox.getChildren().addAll(displayHBox, statusLabel); 
+            displayHBox1.setSpacing(5);
+            displayHBox1.setAlignment(Pos.CENTER_LEFT);
+            displayHBox1.getChildren().addAll(inputTextField, inputButton, rereadButton); 
+            displayHBox2.setSpacing(5);
+            displayHBox2.setAlignment(Pos.CENTER_LEFT);
+            displayHBox2.getChildren().addAll(offsetLabel, offsetChoiceBox); 
+            displayVBox.getChildren().addAll(displayHBox1, displayHBox2,statusLabel); 
             
             // Set the action for the inputButton
             inputButton.setOnAction((event) -> {
-                // Button was clicked, do something...
                 selectInput();
             });
+            rereadButton.setOnAction((event) -> {
+                readOnce();
+            });
             
-            
+            rereadButton.visibleProperty().bind(inputTextField.textProperty().isEmpty().not());
+            rereadButton.managedProperty().bind(inputTextField.textProperty().isEmpty().not());
             
             inputTextField.textProperty().setValue(fileName.getValueSafe());
             // set the action for the inputTextField
@@ -247,7 +261,7 @@ public abstract class NonTailingReader implements TimingReader{
     public void readOnce() {
         
         if (!fileValid) {
-            statusLabel.setText("Invalid File Specified");
+            statusLabel.setText("No Such File or Unable to open file: " + fileName.getValueSafe());
             return;
         }
         
@@ -284,8 +298,8 @@ public abstract class NonTailingReader implements TimingReader{
         String filename = timingListener.getAttribute("NonTailingReader:filename");
         if (filename != null) {
             System.out.println("NonTailingReader: Found existing file setting: " + filename);
-            sourceFile = new File(filename);
-            fileName.setValue(sourceFile.getAbsolutePath());
+            sourceFile = new File(filename).getAbsoluteFile();
+            fileName.setValue(filename);
             if (!sourceFile.exists() || !sourceFile.canRead() || !sourceFile.isFile()){
                 statusLabel.setText("No Such File or Unable to open file: " + fileName.getValueSafe());
                 fileValid = false;
