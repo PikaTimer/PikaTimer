@@ -44,6 +44,7 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -372,6 +373,18 @@ public class FXMLResultsController  {
                         return p.sexProperty();
                     }
                 });
+                // AgeGroup
+                TableColumn<Result,Number> agColumn = new TableColumn("AG");
+                agColumn.setPrefWidth(40.0);
+                table.getColumns().add(agColumn);
+                agColumn.setCellFactory(column -> new AgeGroupTableCell());
+                agColumn.setCellValueFactory(cellData -> {
+                    Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
+                    if (p == null) { return new SimpleIntegerProperty();
+                    } else {
+                        return p.ageProperty();
+                    }
+                });
                 
                 // start
                 TableColumn<Result,Duration> startColumn = new TableColumn("Start (TOD)");
@@ -508,20 +521,39 @@ public class FXMLResultsController  {
                             System.out.println(" Null participant, bailing...");
                             return false;
                         }
-                        String lowerCaseFilter = "(.*)(" + resultsSearchTextField.textProperty().getValueSafe() + ")(.*)";
-                        try {
-                            Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
+                        String searchString = resultsSearchTextField.textProperty().getValueSafe().toLowerCase().replaceAll("\\s","");
+                        if (searchString.contains(":")) {
+                            String[] keyValue = searchString.split(":", 2);
+                            if (keyValue.length < 2) return true;
+                            switch (keyValue[0]) {
+                                case "bib":  
+                                        if (participant.getBib().equalsIgnoreCase(keyValue[1])) return true;
+                                        else return false;
+                                case "sex": ;
+                                        if (participant.getSex().equalsIgnoreCase(keyValue[1])) return true;
+                                        else return false;
+                                case "ag": 
+                                        String ag = r.getAgeGroups().ageToAGString(participant.getAge());
+                                        if (ag.equalsIgnoreCase(keyValue[1])) return true;
+                                        else if ((participant.getSex()+ag).equalsIgnoreCase(keyValue[1])) return true;
+                                        else return false;
+                            }
+                        } else {
+                            String lowerCaseFilter = "(.*)(" + resultsSearchTextField.textProperty().getValueSafe() + ")(.*)";
+                            try {
+                                Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
 
-                            if (    pattern.matcher(participant.getFirstName()).matches() ||
-                                    pattern.matcher(participant.getLastName()).matches() ||
-                                    pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
-                                    pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
-                                    pattern.matcher(participant.getBib()).matches()) {
-                                return true; // Filter matches first/last/bib.
-                            } 
+                                if (    pattern.matcher(participant.getFirstName()).matches() ||
+                                        pattern.matcher(participant.getLastName()).matches() ||
+                                        pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
+                                        pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
+                                        pattern.matcher(participant.getBib()).matches()) {
+                                    return true; // Filter matches first/last/bib.
+                                } 
 
-                        } catch (PatternSyntaxException e) {
-                            return true;
+                            } catch (PatternSyntaxException e) {
+                                return true;
+                            }
                         }
                         return false; // Does not match.
                     });
@@ -881,6 +913,28 @@ public class FXMLResultsController  {
             showZero = true;
             return this;
         }
+    };
+    
+    
+    private class AgeGroupTableCell extends TableCell<Result, Number> {
+        @Override
+        protected void updateItem(Number d, boolean empty) {
+            super.updateItem(d, empty);
+            if (d == null || empty) {
+                setText(null);
+            } else {
+                // Format duration.
+                Result r = (Result)getTableRow().getItem();
+                if (r == null) {
+                    setText("");
+                    return;
+                }
+                Race race = raceDAO.getRaceByID(r.getRaceID());
+                if (race == null) setText("");
+                else setText(race.getAgeGroups().ageToAGString(d.intValue()));
+            }
+        }
+
     };
     
     private class OutputPortalListCell extends ListCell<ReportDestination> {

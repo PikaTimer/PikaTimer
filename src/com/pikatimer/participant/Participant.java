@@ -365,6 +365,7 @@ public class Participant {
         return ageProperty; 
     }
     
+    
     @Column(name="SEX")
     public String getSex() {
         return sexProperty.getValueSafe();

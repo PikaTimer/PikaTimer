@@ -24,10 +24,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.Observable;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.hibernate.Session;
@@ -161,6 +164,14 @@ public class RaceDAO {
         }
         if (waveMap.isEmpty()) refreshWaveList(); 
         return waveMap.get(id); 
+    }
+    
+    public Race getRaceByID (int id){
+        ObjectProperty<Race> result = new SimpleObjectProperty();
+        listRaces().forEach(r -> {
+            if (r.getID().intValue() == id) result.set(r);
+        });
+        return result.get();
     }
     
     
