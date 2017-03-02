@@ -159,7 +159,10 @@ public class ResultsDAO {
                             try {
                                 pendingBibs.stream().forEach(pb -> {
                                     processBib(pb);
-                                    if (!resultsMap.get(pb).keySet().isEmpty()) pendingResults.addAll(resultsMap.get(pb).values());
+                                    if (!resultsMap.get(pb).keySet().isEmpty()) {
+                                        //System.out.println("ResultsDAO ProcessNewResult Thread: resultsMap has " + resultsMap.get(pb).size() + " entries");
+                                        pendingResults.addAll(resultsMap.get(pb).values());
+                                    }
                                     
                                 });
                             } catch (Exception e) {
@@ -173,10 +176,12 @@ public class ResultsDAO {
                                 Iterator<Result> addIterator = pendingResults.iterator();
                                 while (addIterator.hasNext()) {
                                     Result c = addIterator.next();
-                                    if (c.isEmpty() && c.getID() != null) {                                        
+                                    if (c.isEmpty() && c.getID() != null) {    
+                                        //System.out.println("Deleting " + c.getBib());
                                         s.delete(c);    
                                         resultsMap.get(c.getBib()).remove(c.getRaceID());
-                                    } else {                                        
+                                    } else {                    
+                                        //System.out.println("Saving " + c.getBib());
                                         s.saveOrUpdate(c);                                        
                                     }
                                     if (++count % 20 == 0) {
@@ -258,7 +263,7 @@ public class ResultsDAO {
     
     // This is absolutely ugly. I hope it works... 
     private void processBib(String bib){
-        //System.out.println("ResultsDAO.processBib: " + bib);
+        System.out.println("ResultsDAO.processBib: " + bib);
         //List<Result> resultsList = new ArrayList<>();
         
         if (!resultsMap.containsKey(bib)) {
@@ -309,17 +314,17 @@ public class ResultsDAO {
         //System.out.println("ResultsDAO.processBib: " + bib + " we have " + timesList.size() + " times");
         
         waves.forEach(i -> {
-            //System.out.println("Processing waveID " + i); 
+            System.out.println("Processing waveID " + i); 
             
             Boolean hasOverrides = false;
-            
-            Result r = resultsMap.get(bib).get(i);
+            Race race = raceDAO.getWaveByID(i).getRace();
+            Result r = resultsMap.get(bib).get(race.getID());
             
             if (r == null ) {
                 r = new Result();
                 r.setBib(bib);
-                r.setRaceID(raceDAO.getWaveByID(i).getRace().getID());
-                resultsMap.get(bib).put(i, r);
+                r.setRaceID(race.getID());
+                resultsMap.get(bib).put(r.getRaceID(), r);
             }
             
             
@@ -327,7 +332,7 @@ public class ResultsDAO {
             Duration waveStart = Duration.between(LocalTime.MIDNIGHT, RaceDAO.getInstance().getWaveByID(i).waveStartProperty());
             Duration maxWaveStart = waveStart.plus(Duration.ofHours(1)); //FIX THIS!
             //System.out.println("ResultsDAO.processBib: " + r.getBib() + " waveStart: " + waveStart + " maxWaveStart" + maxWaveStart);
-            List<Split> splits = raceDAO.getWaveByID(i).getRace().getSplits();
+            List<Split> splits = race.getSplits();
             
             r.setWaveStartDuration(waveStart);
             
@@ -535,6 +540,8 @@ public class ResultsDAO {
             }
             
             // Now we are going to walk the times and look for backp times that may be able to fill the gaps.
+            System.out.println("ResultsDAO.processBib: Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+
             if (backupTimesList.isEmpty()) return;
             int backupTimeIndex = 0;
             int maxBackupTimes = backupTimesList.size();
