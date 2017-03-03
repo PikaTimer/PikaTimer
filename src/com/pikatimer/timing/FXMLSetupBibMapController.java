@@ -40,10 +40,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
@@ -69,6 +71,7 @@ public class FXMLSetupBibMapController  {
     @FXML private Button addButton;
     @FXML private Button saveButton;
     @FXML private Button clearAllButton;
+    @FXML private Button addRepeatButton;
     
     @FXML private TextField searchTextField;
     @FXML private Label mapCountLabel;
@@ -227,6 +230,15 @@ public class FXMLSetupBibMapController  {
                 bibTextField.setText(bibTextField.getText().replaceFirst("^[ 0]*", "").replaceFirst(" *$", ""));
             }
         });
+        
+        // This is stupid
+        deleteButton.defaultButtonProperty().bind(deleteButton.focusedProperty());
+        importButton.defaultButtonProperty().bind(importButton.focusedProperty());
+        addButton.defaultButtonProperty().bind(addButton.focusedProperty());
+        saveButton.defaultButtonProperty().bind(saveButton.focusedProperty());
+        clearAllButton.defaultButtonProperty().bind(clearAllButton.focusedProperty());
+        addRepeatButton.defaultButtonProperty().bind(addRepeatButton.focusedProperty());
+        
     }
     
     public void deleteAction(ActionEvent fxevent){
@@ -265,9 +277,10 @@ public class FXMLSetupBibMapController  {
                     } else {
                         ChipMap newMapping = new ChipMap(t[0],t[1]);
                         if (chipMapList.contains(newMapping)){
-                            chipMapList.remove(newMapping); 
+                            chipMapList.get(chipMapList.indexOf(newMapping)).bibProperty.set(newMapping.bibProperty.get());
+                        } else {
+                            chipMapList.add(newMapping);
                         }
-                        chipMapList.add(newMapping);
                         mapModified.setValue(true);    
                         
                         System.out.println("No header in file");
@@ -291,9 +304,10 @@ public class FXMLSetupBibMapController  {
                             }
                             
                             if (chipMapList.contains(newMapping)){
-                                chipMapList.remove(newMapping); 
+                                chipMapList.get(chipMapList.indexOf(newMapping)).bibProperty.set(newMapping.bibProperty.get());
+                            } else {
+                                chipMapList.add(newMapping);
                             }
-                            chipMapList.add(newMapping);
                             mapModified.setValue(true);
                             
                             
@@ -330,9 +344,10 @@ public class FXMLSetupBibMapController  {
                 chip = i + offset;
                 ChipMap newMapping = new ChipMap(chip.toString(),bib.toString());
                 if (chipMapList.contains(newMapping)){
-                    chipMapList.remove(newMapping); 
+                    chipMapList.get(chipMapList.indexOf(newMapping)).bibProperty.set(newMapping.bibProperty.get());
+                } else {
+                    chipMapList.add(newMapping);
                 }
-                chipMapList.add(newMapping);
                 mapModified.setValue(true);
             }
             
@@ -346,9 +361,10 @@ public class FXMLSetupBibMapController  {
     public void addMappingButtonAction(ActionEvent fxevent){
         ChipMap newMapping = new ChipMap(chipTextField.getText(),bibTextField.getText());
         if (chipMapList.contains(newMapping)){
-            chipMapList.remove(newMapping); 
+            chipMapList.get(chipMapList.indexOf(newMapping)).bibProperty.set(newMapping.bibProperty.get());
+        } else {
+            chipMapList.add(newMapping);
         }
-        chipMapList.add(newMapping);
         mapModified.setValue(true);  
         
         chipTextField.setText("");
@@ -371,7 +387,28 @@ public class FXMLSetupBibMapController  {
         timingDAO.getBib2ChipMap().setChip2BibMap(bibMap);
         
         timingDAO.saveBib2ChipMap(timingDAO.getBib2ChipMap());
-        timingDAO.reprocessAllRawTimes();
+        
+        
+        Task reprocessAllRawTimes = new Task<Void>() {
+            @Override public Void call() {
+                System.out.println("Starting reprocessAllRawTimes()");
+                timingDAO.reprocessAllRawTimes();
+                System.out.println("Done with reprocessAllRawTimes()");
+                return null;
+            }
+        };
+        Thread reprocessAllRawTimesThread = new Thread(reprocessAllRawTimes);
+        reprocessAllRawTimesThread.setName("Thread-reprocessAllRawTimes");
+        reprocessAllRawTimesThread.setPriority(1);
+        reprocessAllRawTimesThread.start();
+        
+        if (TimingDAO.getInstance().getCookedTimes().size() > 1000 ){
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Reprocessing...");
+            alert.setHeaderText("Reprocessing All Times...");
+            alert.setContentText("PikaTimer may be unresponsive for a while if there are a large number of existing times");
+            alert.showAndWait();
+        }
         mapModified.setValue(false);
         ((Node) fxevent.getSource()).getScene().getWindow().fireEvent(
             new WindowEvent((
