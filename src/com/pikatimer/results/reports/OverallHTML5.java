@@ -112,8 +112,11 @@ public class OverallHTML5 implements RaceReportType{
         String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
         
        
-        report += "<HTML> " +  System.lineSeparator();
+        report += "<HTML lang=\"en\" xml:lang=\"en\" > " +  System.lineSeparator();
         report += "  <HEAD> " +  System.lineSeparator();
+        report +=   " <meta charset=\"UTF-8\">\n" +
+                    "<meta name=\"google\" content=\"notranslate\">\n" +
+                    "<meta http-equiv=\"Content-Language\" content=\"en\">\n\n";
         
         report += "<TITLE> " + event.getEventName();
         if (RaceDAO.getInstance().listRaces().size() > 1) 
@@ -137,8 +140,8 @@ public class OverallHTML5 implements RaceReportType{
         }
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" ;
-        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" ;
-        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.0/sc-1.4.2/datatables.min.css\"/>" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.css\"/>\n" ;
+        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.1/sc-1.4.2/datatables.min.css\"/>" ;
         report +=   "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css\">\n" +
                     " \n" ;
         
@@ -300,8 +303,8 @@ public class OverallHTML5 implements RaceReportType{
 
         report += "<!-- Start DataTables -->\n";
         
-        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" ;
-        else  report +=  "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" ;
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
+        else  report +=  "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
 
         report +=           " \n" +
                     "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
