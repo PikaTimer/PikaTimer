@@ -443,7 +443,7 @@ public class ResultsDAO {
                     
                     splitIndex++; // we pre-filled the split times earlier
                 } else if (ctd.getTimestamp().compareTo(waveStart) < 0 ) {
-                    if (splitIndex == 0) r.setSplitTime(splitIndex, ctd.getTimestamp());
+                    if (splitIndex == 0 && ctd.getTimingLocationId().equals(splitArray[splitIndex].getTimingLocationID())) r.setSplitTime(splitIndex, ctd.getTimestamp());
                     if (times.hasNext()) ctd = times.next();
                     else ctd = null;
                     //System.out.println("ResultsDAO.processBib: tossing ctd's that were before the wave start");
