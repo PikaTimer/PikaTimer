@@ -209,11 +209,12 @@ public class FXMLParticipantController  {
             });
             
             Menu assignWave = new Menu("Assign");
-            RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+            //RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+            RaceDAO.getInstance().listWaves().sorted(new AlphanumericComparator()).stream().forEach(w -> {
                 MenuItem m = new MenuItem(w.toString());
                 m.setOnAction(e -> {
                     participantTableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
-                        p.setWaves(w);
+                        p.setWaves((Wave)w);
                         participantDAO.updateParticipant(p);
 
                     });
@@ -223,11 +224,12 @@ public class FXMLParticipantController  {
             
             RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
                 assignWave.getItems().clear();
-                RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                //RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                RaceDAO.getInstance().listWaves().sorted(new AlphanumericComparator()).stream().forEach(w -> {
                     MenuItem m = new MenuItem(w.toString());
                     m.setOnAction(e -> {
                         participantTableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
-                            p.setWaves(w);
+                            p.setWaves((Wave)w);
                             participantDAO.updateParticipant(p);
 
                         });
