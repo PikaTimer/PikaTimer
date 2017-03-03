@@ -444,22 +444,22 @@ public class OverallHTML5 implements RaceReportType{
                             report += "data += '<th>Split</th>';\n";
                             report += "data += '<th>Elapsed</th>';\n";
                             report += "data += '<th>Difference</th>';\n";
-                            if (showSegmentPace) report += "data += '<th class=\"right\">Pace</th>';\n";
+                            if (showPace) report += "data += '<th class=\"right\">Pace</th>';\n";
                             report += "data += '</tr></thead>';\n";
                             report += "data += '<tr><td>Start:</td><td class=\"right\">' + rData.start_display + '</td><td></td>';\n" ;
-                            if (showSegmentPace) report += "data += '<td></td>';\n";
+                            if (showPace) report += "data += '<td></td>';\n";
                             report += "data += '</tr>';\n";
                             for (int i = 2; i < race.splitsProperty().size(); i++) {
                                 report += "data += '<tr><td>" + race.splitsProperty().get(i-1).getSplitName() + ":</td><td class=\"right\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].display + '</td>';\n";
                                 report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].delta_time + '</td>';\n";
-                                if (showSegmentPace) report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].pace + '</td>';\n";
+                                if (showPace) report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].pace + '</td>';\n";
                                 report += "data += '</tr>';\n";
                             }
                             report += "data += '<tr><td>Finish:</td><td class=\"right\">  ' + rData.finish_display + '</td><td class=\"right up-half\">' + rData.finish_split_delta + '</td>';\n";
-                            if (showSegmentPace) report += "data += '<td class=\"right up-half\">' + rData.finish_split_pace + '</td>';\n";
+                            if (showPace) report += "data += '<td class=\"right up-half\">' + rData.finish_split_pace + '</td>';\n";
                             report += "data += '</tr>';\n";
                             if (showGun) report += "data += '<tr><td>Gun Time:</td><td class=\"right\"> ' + rData.gun_display + '</td><td></td>';\n";
-                            if (showGun && showSegmentPace) report += "data += '<td></td>';\n";
+                            if (showGun && showPace) report += "data += '<td></td>';\n";
                             report += "data += '</tr>';\n";
                             report += "data += '</table>';\n";
                             report += "data += '</div>';\n"; // split
