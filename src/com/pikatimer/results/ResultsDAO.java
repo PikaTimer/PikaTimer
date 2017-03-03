@@ -194,13 +194,12 @@ public class ResultsDAO {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             } 
-
+                            
                             pendingResults.stream().forEach(r -> {
-                                
                                 if(!raceResultsMap.containsKey(r.getRaceID())) raceResultsMap.put(r.getRaceID(), FXCollections.observableArrayList(Result.extractor()));
-
-                                Platform.runLater(() -> {
-                                    
+                            });
+                            Platform.runLater(() -> {
+                                pendingResults.stream().forEach(r -> {
                                     //This causes the AAIOB error due to a java bug until we fix the extractor and the tableview to only display properties
                                     //if (r.isEmpty() && raceResultsMap.get(r.getRaceID()).contains(r)) raceResultsMap.get(r.getRaceID()).remove(r);
                                     
@@ -218,7 +217,7 @@ public class ResultsDAO {
                             });
                             
                             
-                            Thread.sleep(10); 
+                            Thread.sleep(100); 
                         } catch (InterruptedException ex) {
                             Logger.getLogger(ResultsDAO.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -231,6 +230,7 @@ public class ResultsDAO {
             Thread processNewResultThread = new Thread(processNewResult);
             processNewResultThread.setName("Thread-ProcessNewResultThread");
             processNewResultThread.setDaemon(true);
+            processNewResultThread.setPriority(1);
             processNewResultThread.start();
             
      
@@ -263,7 +263,7 @@ public class ResultsDAO {
     
     // This is absolutely ugly. I hope it works... 
     private void processBib(String bib){
-        System.out.println("ResultsDAO.processBib: " + bib);
+        //System.out.println("ResultsDAO.processBib: " + bib);
         //List<Result> resultsList = new ArrayList<>();
         
         if (!resultsMap.containsKey(bib)) {
@@ -314,7 +314,7 @@ public class ResultsDAO {
         //System.out.println("ResultsDAO.processBib: " + bib + " we have " + timesList.size() + " times");
         
         waves.forEach(i -> {
-            System.out.println("Processing waveID " + i); 
+            //System.out.println("Processing waveID " + i); 
             
             Boolean hasOverrides = false;
             Race race = raceDAO.getWaveByID(i).getRace();
@@ -540,7 +540,7 @@ public class ResultsDAO {
             }
             
             // Now we are going to walk the times and look for backp times that may be able to fill the gaps.
-            System.out.println("ResultsDAO.processBib: Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+            //System.out.println("ResultsDAO.processBib: Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
 
             if (backupTimesList.isEmpty()) return;
             int backupTimeIndex = 0;
@@ -629,7 +629,7 @@ public class ResultsDAO {
                 }
             }
             
-            System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+            //System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
             //resultsList.add(r); 
             //resultsMap.put(bib + " " + r.getRaceID(), r);
             
@@ -961,6 +961,7 @@ public class ResultsDAO {
             Thread processNewResultThread = new Thread(processRaceReports);
             processNewResultThread.setName("Thread-processRaceReports-" + r.getRaceName());
             processNewResultThread.setDaemon(true);
+            processNewResultThread.setPriority(1);
             processNewResultThread.start();
         
     }
