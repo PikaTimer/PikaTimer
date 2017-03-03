@@ -208,14 +208,10 @@ public class PikaRFIDDirectReader implements TimingReader {
             batteryProgressBar = new ProgressBar();
             connectToggleSwitch = new ToggleSwitch("Connect");
             connectToggleSwitch.selectedProperty().set(false);
-//            connectToggleSwitch.maxHeight(USE_PREF_SIZE);
-//            connectToggleSwitch.prefHeight(18);
-            connectToggleSwitch.minWidth(30);
-            connectToggleSwitch.prefWidth(30);
+
             connectToggleSwitch.maxWidth(30);
-            
-//            connectToggleSwitch.maxWidth(USE_PREF_SIZE);
-//            connectToggleSwitch.setStyle("-fx-text-alignment: right;");
+            HBox.setHgrow(connectToggleSwitch, Priority.NEVER);
+
             
             
             connectToggleSwitch.setPadding(new Insets(3, 0, 0, 0)); // this is a hack to get around a ToggleSwitch bug
@@ -224,6 +220,9 @@ public class PikaRFIDDirectReader implements TimingReader {
             readToggleSwitch.selectedProperty().set(false);
             readToggleSwitch.disableProperty().bind(connectedStatus.not());
             readToggleSwitch.setPadding(new Insets(3, 0, 0, 0)); // this is a hack to get around a ToggleSwitch bug
+            readToggleSwitch.maxWidth(30);
+            HBox.setHgrow(readToggleSwitch, Priority.NEVER);
+            
             HBox switchHBox = new HBox();
             switchHBox.maxHeight(18);
             switchHBox.prefWidth(30);
