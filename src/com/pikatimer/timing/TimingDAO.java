@@ -241,6 +241,7 @@ public class TimingDAO {
             Thread processNewCookedThread = new Thread(processNewCooked);
             processNewCookedThread.setName("Thread-ProcessNewCookedThread");
             processNewCookedThread.setDaemon(true);
+            processNewCookedThread.setPriority(1);
             processNewCookedThread.start();
         }
     
@@ -288,6 +289,7 @@ public class TimingDAO {
         };
         Thread clearAllCookedThread = new Thread(clearTimes);
         clearAllCookedThread.setName("Thread-clearAllCookedThread");
+        clearAllCookedThread.setPriority(1);
         clearAllCookedThread.start();
                     
     }
@@ -339,8 +341,9 @@ public class TimingDAO {
                 return null;
             }
         };
-        Thread processNewCookedThread = new Thread(clearTimes);
-        processNewCookedThread.start();
+        Thread clearCookedThread = new Thread(clearTimes);
+        clearCookedThread.setPriority(1);
+        clearCookedThread.start();
     }
     
     public Map<String,List<CookedTimeData>> getCookedTimesMap() {
