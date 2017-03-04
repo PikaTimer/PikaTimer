@@ -859,16 +859,19 @@ public class ResultsDAO {
                         
                         results.forEach(pr -> {
                             if (pr.getSegmentTime(seg.getID()) == null) return;
+                            //System.out.println("Segment " + seg.getID() + " runner: " + pr.participant.fullNameProperty().get() + " time: " + DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()),r.getStringAttribute("TimeDisplayFormat"),r.getStringAttribute("TimeRoundingMode")));
+                            //System.out.println("  This: Overall: " + segPlCounter.get("overall") + " Sex: " + segPlCounter.get(pr.getSex()) );
                             
                             pr.setSegmentOverallPlace(seg.getID(),segPlCounter.get("overall"));
-                            segPlCounter.put("overall", pr.getOverall()+1);
+                            segPlCounter.put("overall", segPlCounter.get("overall")+1);
 
                             pr.setSegmentSexPlace(seg.getID(),segPlCounter.get(pr.getSex()));
-                            segPlCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID())+1);
+                            segPlCounter.put(pr.getSex(), segPlCounter.get(pr.getSex())+1);
 
                             segPlCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
                             pr.setSegmentAGPlace(seg.getID(),segPlCounter.get(pr.getSex()+pr.getAGCode()));
-                            segPlCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID())+1);
+                            segPlCounter.put(pr.getSex()+pr.getAGCode(),segPlCounter.get(pr.getSex()+pr.getAGCode())+1);
+                            //System.out.println("  Next: Overall: " + segPlCounter.get("overall") + " Sex: " + segPlCounter.get(pr.getSex()) );
                         });
                     });
                     
