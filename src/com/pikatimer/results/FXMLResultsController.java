@@ -45,6 +45,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -383,6 +384,18 @@ public class FXMLResultsController  {
                     if (p == null) { return new SimpleIntegerProperty();
                     } else {
                         return p.ageProperty();
+                    }
+                });
+                
+                // status
+                TableColumn<Result,Status> statusColumn = new TableColumn("Status");
+                table.getColumns().add(statusColumn);
+                statusColumn.setCellValueFactory(cellData -> {
+                    Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
+                    
+                    if (p == null) { return new SimpleObjectProperty();
+                    } else {
+                        return p.statusProperty();
                     }
                 });
                 
