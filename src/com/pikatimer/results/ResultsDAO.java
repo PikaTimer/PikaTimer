@@ -785,7 +785,7 @@ public class ResultsDAO {
                         // Set the AG code (e.g. M30-34) (age and gender are set automagically)
                         pr.setAge(pr.getParticipant().getAge());
                         pr.setAGCode(r.getAgeGroups().ageToAGString(pr.getAge()));
-
+                        
                         // set the start and wave start times
                         Duration chipStartTime = res.getStartDuration();
                         Duration waveStartTime = res.getWaveStartDuration();
@@ -798,9 +798,14 @@ public class ResultsDAO {
                         pr.setSplit(1, Duration.ZERO); 
 
                         //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
-
-                        // Set the finish times
-                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
+                        
+                        // if they are DQ'ed then we don't care what their time is
+                        if (pr.getParticipant().getDQ()) {
+                            results.add(pr);
+                            return;
+                        }
+                        // Set the finish times unless they are a DNF
+                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero() && ! pr.getParticipant().getDNF()){
                             pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
                             pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
                             pr.setSplit(splitSize, pr.getChipFinish());
@@ -815,8 +820,8 @@ public class ResultsDAO {
                         }
                         
                         
-                        // set the segment times
-                        r.getSegments().forEach(seg -> {
+                        // set the segment times unless they are a DNF
+                        if (!pr.getParticipant().getDNF()) r.getSegments().forEach(seg -> {
                             //System.out.println("Processing segment " + seg.getSegmentName());
                             if (pr.getSplit(seg.getEndSplitPosition()) != null && pr.getSplit(seg.getStartSplitPosition()) != null) {
                                 pr.setSegmentTime(seg.getID(), pr.getSplit(seg.getEndSplitPosition()).minus(pr.getSplit(seg.getStartSplitPosition())));
