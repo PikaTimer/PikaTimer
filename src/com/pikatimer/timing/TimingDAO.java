@@ -706,7 +706,7 @@ public class TimingDAO {
         if (!overrideMap.get(o.getBib()).contains(o)) {
             // if this is an overwrite, remove the old one first
             try {
-                TimeOverride old = overrideList.stream().filter(e -> e.getSplitId().equals(o.getSplitId())).findFirst().get();
+                TimeOverride old = overrideMap.get(o.getBib()).stream().filter(e -> e.getSplitId().equals(o.getSplitId())).findFirst().get();
                 deleteOverride(old);
             }
             catch (Exception e) {
