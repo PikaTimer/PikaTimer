@@ -108,7 +108,7 @@ public class FTPSTransport implements FileTransport{
                                 System.out.println("FTPSTransport Thread: Transfering " + filename);
                                 String contents = transferMap.get(filename);
                                 
-                                while (ftpClient == null || !ftpClient.isConnected()) {
+                                while (fatalError || ftpClient == null || !ftpClient.isConnected()) {
                                     if (!fatalError) openConnection();
                                     if (!ftpClient.isConnected()) {
                                         System.out.println("FTPSTransport Thread: Still not connected, sleeping for 10 seconds...");
@@ -225,9 +225,11 @@ public class FTPSTransport implements FileTransport{
                             ftpClient.disconnect();
                         } else {
                             ftpClient.changeWorkingDirectory(basePath);
+                            fatalError=false;
                         }
                     }
                     Platform.runLater(() -> {transferStatus.set("Connected");});
+                    fatalError=false;
                 } else {
                   System.out.println("FTP login failed");
                   Platform.runLater(() -> {transferStatus.set("Error: Login Failed");});
