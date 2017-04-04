@@ -18,6 +18,7 @@ package com.pikatimer.util;
 
 import com.pikatimer.util.fileTransports.FTPSTransport;
 import com.pikatimer.util.fileTransports.LocalTransport;
+import com.pikatimer.util.fileTransports.SFTPTransport;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +29,7 @@ import java.util.Map;
  */
 public enum FileTransferTypes {
     LOCAL,
-    //SCP,
+    SFTP,
     FTPS;
     //FTP;
     
@@ -37,9 +38,8 @@ public enum FileTransferTypes {
     private static Map<FileTransferTypes, String> createMap() {
         Map<FileTransferTypes, String> result = new HashMap<>();
         result.put(LOCAL, "Local File");
-        //result.put(SCP, "SCP/SFTP");
+        result.put(SFTP, "SFTP");
         result.put(FTPS, "FTP/FTPS");
-        //result.put(FTP,"FTP (Insecure)");
 
         return Collections.unmodifiableMap(result);
     }
@@ -55,12 +55,10 @@ public enum FileTransferTypes {
         switch(this){
             case LOCAL:
                 return new LocalTransport();
-//            case SCP:
-//                return new SCPTransport();
+            case SFTP:
+                return new SFTPTransport();
             case FTPS:
                 return new FTPSTransport();
-//            case FTP:
-//                return new FTPTransport();
         }
         
         return null;
