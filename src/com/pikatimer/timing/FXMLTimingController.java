@@ -269,12 +269,15 @@ public class FXMLTimingController {
         // 5. Set the cell factories and stort routines... 
         bibColumn.setCellValueFactory(new PropertyValueFactory<>("bib"));
         bibColumn.setComparator(new AlphanumericComparator());
+        bibColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
         
         chipColumn.setCellValueFactory(c -> c.getValue().rawChipIDProperty());
         chipColumn.setComparator(new AlphanumericComparator());
+        chipColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
         
         timeColumn.setCellValueFactory(new PropertyValueFactory<>("timestampString"));
         timeColumn.setComparator(new AlphanumericComparator());
+        timeColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
         
         nameColumn.setCellValueFactory(cellData -> {
             String bib = cellData.getValue().getBib();
@@ -306,8 +309,10 @@ public class FXMLTimingController {
         });
         
         backupColumn.setCellValueFactory(new PropertyValueFactory<>("backupTime"));
-        backupColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        //backupColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        backupColumn.setCellFactory(column -> new BackupFlagTableCell());
         backupColumn.setEditable(false);
+        backupColumn.setStyle( "-fx-alignment: CENTER;");
         
         ignoreColumn.setCellValueFactory(new PropertyValueFactory<>("ignoreTime"));
         ignoreColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
@@ -1299,6 +1304,27 @@ public class FXMLTimingController {
         });
     }
 
+        private class BackupFlagTableCell extends TableCell<CookedTimeData, Boolean> {
+        @Override
+        protected void updateItem(Boolean d, boolean empty) {
+            super.updateItem(d, empty);
+            if (d == null || empty) {
+                setText(null);
+            } else {
+                // Format duration.
+                CookedTimeData t = (CookedTimeData)getTableRow().getItem();
+                if (t == null) {
+                    setText("");
+                    return;
+                }
+                
+                if (! t.getBackupTime()) setText("-");
+                else setText("X");
+            }
+        }
+
+    };
+        
     private static class WaveStartTime {
         public Wave w;
         public StringProperty wName = new SimpleStringProperty();
