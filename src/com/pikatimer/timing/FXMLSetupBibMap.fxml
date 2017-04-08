@@ -82,7 +82,7 @@
                         <Font size="14.0" />
                      </font>
                   </Label>
-                  <TextField fx:id="chipTextField" prefHeight="25.0" prefWidth="59.0" promptText="XXXXX" />
+                  <TextField fx:id="chipTextField" prefHeight="25.0" prefWidth="75.0" promptText="XXXXX" />
                   <Label text="Bib">
                      <font>
                         <Font size="14.0" />
@@ -109,13 +109,13 @@
                         <Font size="14.0" />
                      </font>
                   </Label>
-                  <TextField fx:id="startBibTextField" prefHeight="25.0" prefWidth="59.0" promptText="XXXXX" />
+                  <TextField fx:id="startBibTextField" prefHeight="25.0" prefWidth="59.0" promptText="XXXXX" HBox.hgrow="SOMETIMES" />
                   <Label text="End bib">
                      <font>
                         <Font size="14.0" />
                      </font>
                   </Label>
-                  <TextField fx:id="endBibTextField" onAction="#addMappingButtonAction" prefHeight="25.0" prefWidth="61.0" promptText="XXXXX" />
+                  <TextField fx:id="endBibTextField" onAction="#addMappingButtonAction" prefHeight="25.0" prefWidth="61.0" promptText="XXXXX" HBox.hgrow="SOMETIMES" />
                </children>
             </HBox>
             <HBox alignment="CENTER_RIGHT" spacing="5.0">
@@ -125,7 +125,7 @@
                         <Font size="14.0" />
                      </font>
                   </Label>
-                  <TextField fx:id="chipOffsetTextField" onAction="#addMappingButtonAction" prefHeight="25.0" prefWidth="61.0" />
+                  <TextField fx:id="chipOffsetTextField" onAction="#addMappingButtonAction" prefHeight="25.0" prefWidth="76.0" HBox.hgrow="SOMETIMES" />
                   <Button fx:id="addRepeatButton" minWidth="-Infinity" mnemonicParsing="false" onAction="#addRepeatingMappingButtonAction" prefWidth="60.0" text="Add" />
                </children>
             </HBox>
