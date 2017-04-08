@@ -190,7 +190,7 @@ public class OverallJSON implements RaceReportType{
             // do stuff
                 chars.append("\t\t\"splits\": {\n");
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    chars.append("\t\t\t\"split_").append(race.splitsProperty().get(i-1).getSplitName()).append("\": {\n");
+                    chars.append("\t\t\t\"split_").append(i-1).append("_").append(race.splitsProperty().get(i-1).getSplitName()).append("\": {\n");
                     if (hideTime || pr.getSplit(i) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
                         chars.append("\t\t\t\t\t\"delta_time\": ").append("\"\"").append(",\n");
