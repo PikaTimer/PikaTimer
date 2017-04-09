@@ -23,7 +23,7 @@ import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.participant.Status;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
-import com.pikatimer.timing.FXMLTimingController;
+import com.pikatimer.race.Wave;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransferTypes;
@@ -33,6 +33,8 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Double.MAX_VALUE;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,15 +52,14 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ListChangeListener.Change;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -67,18 +68,24 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
@@ -86,10 +93,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
 
@@ -581,7 +586,194 @@ public class FXMLResultsController  {
                 // 5. Add sorted (and filtered) data to the table.
                 table.setItems(sortedResultsList);
                 
-                // save it
+                // 6. Add a context menu
+                
+                // Setup the context menu and actions
+                table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+                table.setRowFactory((TableView<Result> tableView1) -> {
+                    final TableRow<Result> row = new TableRow<>();
+                    final ContextMenu rowMenu = new ContextMenu();
+
+                    // For future 
+//                    row.setOnMouseClicked(event -> {
+//                        if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+//                            editParticipant(participantTableView.getSelectionModel().getSelectedItem());
+//                        }
+//                    });
+
+                    // Context menu
+                    
+                    // Context menu
+                    MenuItem clearMenuItem = new MenuItem("Clear DQ/DNF/DNS Flag");
+                    clearMenuItem.setOnAction((ActionEvent event) -> {
+                        // Dialog
+                        List<Participant> perps = new ArrayList();
+                        table.getSelectionModel().getSelectedItems().forEach(res -> {
+                            if (res != null && ParticipantDAO.getInstance().getParticipantByBib(res.getBib()) != null)
+                                perps.add(ParticipantDAO.getInstance().getParticipantByBib(res.getBib()));
+                        });
+                        
+                        perps.forEach(perp -> {
+                            perp.setStatus(Status.GOOD);
+                            participantDAO.updateParticipant(perp);
+                        });
+                    });
+                    
+                    
+                    
+                    MenuItem dqMenuItem = new MenuItem("DQ: Disqulify");
+                    dqMenuItem.setOnAction((ActionEvent event) -> {
+                        // Dialog
+                        List<Participant> perps = new ArrayList();
+                        table.getSelectionModel().getSelectedItems().forEach(res -> {
+                            if (res != null && ParticipantDAO.getInstance().getParticipantByBib(res.getBib()) != null)
+                                perps.add(ParticipantDAO.getInstance().getParticipantByBib(res.getBib()));
+                        });
+                        
+                        // Open a dialog
+                        TextInputDialog dialog = new TextInputDialog();
+                        dialog.setTitle("DQ Participants");
+                        dialog.setHeaderText("You are about to Disqualify " + perps.size() + " participant(s)");
+                        dialog.setContentText("Please enter a reason:");
+
+                        // Traditional way to get the response value.
+                        Optional<String> result = dialog.showAndWait();
+                                                
+                        result.ifPresent(reason -> {
+                            // if yes, dq with note
+                            perps.forEach(perp -> {
+                                perp.setStatus(Status.DQ);
+                                perp.setNote(reason);
+                                participantDAO.updateParticipant(perp);
+                            });
+                        });
+                    });
+
+                    MenuItem dnfMenuItem = new MenuItem("DNF: Did Not Finish");
+                    dnfMenuItem.setOnAction((ActionEvent event) -> {
+                        // Dialog
+                        List<Participant> perps = new ArrayList();
+                        table.getSelectionModel().getSelectedItems().forEach(res -> {
+                            if (res != null && ParticipantDAO.getInstance().getParticipantByBib(res.getBib()) != null)
+                                perps.add(ParticipantDAO.getInstance().getParticipantByBib(res.getBib()));
+                        });
+                        
+                        // Open a dialog
+                        TextInputDialog dialog = new TextInputDialog();
+                        dialog.setTitle("Set DNF Flag");
+                        dialog.setHeaderText("You are about to flag " + perps.size() + " participant(s)\nas not having finished");
+                        dialog.setContentText("Please enter a note (optional):");
+
+                        // Traditional way to get the response value.
+                        Optional<String> result = dialog.showAndWait();
+                                                
+                        result.ifPresent(reason -> {
+                            // if yes, dq with note
+                            perps.forEach(perp -> {
+                                perp.setStatus(Status.DQ);
+                                perp.setNote(reason);
+                                participantDAO.updateParticipant(perp);
+                            });
+                        });
+                    });
+
+                    MenuItem dnsMenuItem = new MenuItem("DNS: Did Not Start");
+                    dnsMenuItem.setOnAction((ActionEvent event) -> {
+                        // Dialog
+                        List<Participant> perps = new ArrayList();
+                        table.getSelectionModel().getSelectedItems().forEach(res -> {
+                            if (res != null && ParticipantDAO.getInstance().getParticipantByBib(res.getBib()) != null)
+                                perps.add(ParticipantDAO.getInstance().getParticipantByBib(res.getBib()));
+                        });
+                        
+                        // Open a dialog
+                        TextInputDialog dialog = new TextInputDialog("Did not start");
+                        dialog.setTitle("Set DNS Flag");
+                        dialog.setHeaderText("You are about to flag " + perps.size() + " participant(s)\nas not having started");
+                        dialog.setContentText("Please enter a optional note (optional):");
+
+                        // Traditional way to get the response value.
+                        Optional<String> result = dialog.showAndWait();
+                                                
+                        result.ifPresent(reason -> {
+                            // if yes, dq with note
+                            perps.forEach(perp -> {
+                                perp.setStatus(Status.DNS);
+                                perp.setNote(reason);
+                                participantDAO.updateParticipant(perp);
+                            });
+                        });
+                    });
+
+                    Menu assignWaveMenu = new Menu("Re-Assign");
+                    //RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                    RaceDAO.getInstance().listWaves().sorted(new AlphanumericComparator()).stream().forEach(w -> {
+                        MenuItem m = new MenuItem(w.toString());
+                        m.setOnAction(e -> {
+                            table.getSelectionModel().getSelectedItems().stream().forEach(res -> {
+                                if (res != null ){
+                                    Participant part = ParticipantDAO.getInstance().getParticipantByBib(res.getBib());
+                                    part.setWaves((Wave)w);
+                                    participantDAO.updateParticipant(part);
+                                }
+                            });
+                        });
+                        assignWaveMenu.getItems().add(m);
+                    });
+
+                    RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
+                        assignWaveMenu.getItems().clear();
+                        //RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                        RaceDAO.getInstance().listWaves().sorted(new AlphanumericComparator()).stream().forEach(w -> {
+                            MenuItem m = new MenuItem(w.toString());
+                            m.setOnAction(e -> {
+                                table.getSelectionModel().getSelectedItems().stream().forEach(res -> {
+                                    if (res != null ){
+                                        Participant part = ParticipantDAO.getInstance().getParticipantByBib(res.getBib());
+                                        part.setWaves((Wave)w);
+                                        participantDAO.updateParticipant(part);
+                                    }
+                                });
+                            });
+                            assignWaveMenu.getItems().add(m);
+                        });
+                    });
+                    
+                    Menu statusMenu = new Menu("Status");
+                    statusMenu.getItems().addAll(dqMenuItem, dnfMenuItem, dnsMenuItem, new SeparatorMenuItem(), clearMenuItem);
+
+                    // context menu to assign/unassign runners to a given wave
+                    rowMenu.getItems().addAll(statusMenu, assignWaveMenu);
+
+                    // only display context menu for non-null items:
+                    row.contextMenuProperty().bind(
+                            Bindings.when(Bindings.isNotNull(row.itemProperty()))
+                                    .then(rowMenu)
+                                    .otherwise((ContextMenu)null));
+
+                    // Hide the edit option if more than one item is selected and only show
+                    // the swap option if exactly two items are selected. 
+//                    table.getSelectionModel().getSelectedIndices().addListener((Change<? extends Integer> change) -> {
+//                        if (change.getList().size() == 2) {
+//                            swapBibs.setDisable(false);
+//                        } else {
+//                            swapBibs.setDisable(true);
+//                        }
+//                        if (change.getList().size() == 1) {
+//                            editItem.setDisable(false);
+//                        } else {
+//                            editItem.setDisable(true);
+//                        }
+//                    });
+
+                    return row;
+                });
+                
+ 
+                
+                
+                // 7. save it
                 raceTableViewMap.put(r, table);
     }
 
