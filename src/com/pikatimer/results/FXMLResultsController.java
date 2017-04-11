@@ -15,6 +15,7 @@
  */
 package com.pikatimer.results;
 
+import com.pikatimer.PikaPreferences;
 import com.pikatimer.event.Event;
 import com.pikatimer.event.EventDAO;
 import com.pikatimer.event.EventOptions;
@@ -28,10 +29,12 @@ import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransferTypes;
 import com.pikatimer.util.Pace;
+import java.io.File;
 import java.io.IOException;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Double.MAX_VALUE;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +60,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
+import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -93,6 +97,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
@@ -940,7 +945,11 @@ public class FXMLResultsController  {
         // We do this so we can easily show one and hide the other as the 
         // typeChoiceBox changes
         GridPane localGrid = new GridPane();
+            localGrid.setHgap(5);
+            localGrid.setVgap(5);
         GridPane remoteGrid = new GridPane();
+            remoteGrid.setHgap(5);
+            remoteGrid.setVgap(5);
         
         grid.add(localGrid,0,1,2,1); // col 0, row 1, colspan 2, rowspan 1
         grid.add(remoteGrid,0,1,2,1);
@@ -948,17 +957,53 @@ public class FXMLResultsController  {
 
 
         // create and populate the localGrid
-        TextField filePath = new TextField();
-        filePath.setText(sp.getBasePath());
+        TextField filePath = new TextField("");
+        
         localGrid.add(new Label("Directory"),0,0);
         localGrid.add(filePath,1,0);
         
+        
+        
+        
+        Button chooseDirectoryButton = new Button("Select...");
+        localGrid.add(chooseDirectoryButton,2,0);
+        chooseDirectoryButton.setOnAction((event) -> {
+            File current = PikaPreferences.getInstance().getCWD();
+            if (filePath.getText() != null && ! filePath.getText().isEmpty()) current = new File(filePath.getText());
+            if (! current.isDirectory() || !current.canWrite()) current = PikaPreferences.getInstance().getCWD();
+            DirectoryChooser dirChooser = new DirectoryChooser();
+            dirChooser.setInitialDirectory(current);
+            dirChooser.setTitle("Report Output Directory");
+            current = dirChooser.showDialog(chooseDirectoryButton.getParent().getScene().getWindow());
+            if (current != null) filePath.setText(current.getPath());
+        });
+        
+        
+        Label statusLabel = new Label("Please enter a target directory.");
+        localGrid.add(statusLabel, 1, 1, 2, 1);
+        
+        filePath.textProperty().addListener((observable, oldValue, newValue) -> {
+            //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            if (newValue == null || newValue.isEmpty()){
+                statusLabel.setText("Please enter a target directory.");
+            }
+            else {
+                File newFile = new File(newValue);
+                
+                if (! newFile.isDirectory()) statusLabel.setText("No Such Directory: " + newValue);
+                else statusLabel.setText("");
+            }
+        });
+        filePath.setText(sp.getBasePath());
+        
+        
+        
+        // create and populate the remoteGrid
         TextField remoteServer = new TextField();
         remoteServer.setText(sp.getServer());
         remoteGrid.add(new Label("Server"),0,0);
-        remoteGrid.add(remoteServer,1,0);
+        remoteGrid.add(remoteServer,1,0);       
         
-        // create and populate the remoteGrid
         TextField remoteDir = new TextField();
         remoteDir.setText(sp.getBasePath());
         remoteGrid.add(new Label("Path"),0,1);
@@ -978,6 +1023,8 @@ public class FXMLResultsController  {
         stripAccents.setSelected(sp.getStripAccents());
         stripAccents.tooltipProperty().set(new Tooltip("Remove accent marks from files. e.g. é -> e"));
         grid.add(stripAccents,0,2,2,1);
+        
+        
         
         typeChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
             FileTransferTypes ftt = typeChoiceBox.getItems().get((Integer) number2);
