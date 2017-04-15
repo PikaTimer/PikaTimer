@@ -92,7 +92,9 @@ public class Participant {
     private final StringProperty zipProperty = new SimpleStringProperty();
     private LocalDate birthday; 
     private final ObjectProperty<LocalDate> birthdayProperty = new SimpleObjectProperty();
-    private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());   
+    private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());  
+    
+    
     private final IntegerProperty wavesChangedCounterProperty = new SimpleIntegerProperty(0);
     private final ObjectProperty<ObservableList<Wave>> wavesProperty = new SimpleObjectProperty(waves);
     private Set<Integer> waveIDSet = new HashSet(); 
@@ -133,6 +135,7 @@ public class Participant {
         waves.addListener(new ListChangeListener<Wave>() {
             @Override
             public void onChanged(Change<? extends Wave> c) {
+            
                 Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
             }
         });
@@ -534,8 +537,6 @@ public class Participant {
     }
     public void setWaveIDs(Set<Integer> w) {
         waveIDSet = w; 
-        
-        
     }
     
     public void setWaves(List<Wave> w) {
@@ -573,11 +574,13 @@ public class Participant {
         Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
     }
     public ObservableList<Wave> wavesObservableList() {
-        waves.clear();
-        waveIDSet.stream().forEach(id -> {
-            if (RaceDAO.getInstance().getWaveByID(id) == null) System.out.println("Null WAVE!!! " + id);
-            waves.add(RaceDAO.getInstance().getWaveByID(id)); 
-        });
+        if (waves.size() != waveIDSet.size()){
+            waves.clear();
+            waveIDSet.stream().forEach(id -> {
+                if (RaceDAO.getInstance().getWaveByID(id) == null) System.out.println("Null WAVE!!! " + id);
+                waves.add(RaceDAO.getInstance().getWaveByID(id)); 
+            });
+        }
         return waves; 
     }
     
