@@ -52,6 +52,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -63,6 +64,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -88,6 +90,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Tooltip;
@@ -1024,6 +1027,46 @@ public class FXMLResultsController  {
         stripAccents.tooltipProperty().set(new Tooltip("Remove accent marks from files. e.g. é -> e"));
         grid.add(stripAccents,0,2,2,1);
         
+        VBox testVBox= new VBox();
+        Label resultLabel = new Label("Test Results:");
+        TextArea resultOutputTextArea = new TextArea("");
+        resultOutputTextArea.setPrefWidth(300);
+
+        testVBox.setManaged(false);
+        testVBox.setVisible(false);
+        testVBox.getChildren().addAll(resultLabel,resultOutputTextArea);
+        grid.add(testVBox,2,1,1,2);
+        
+        Button testButton = new Button("Test Connection...");
+        remoteGrid.add(testButton,1,4);
+        GridPane.setHalignment(testButton, HPos.RIGHT);
+        testButton.setOnAction((event) -> {
+            ReportDestination newRD = new ReportDestination();
+            StringProperty result = new SimpleStringProperty();
+            
+            resultOutputTextArea.textProperty().bind(result);
+            
+            if (FileTransferTypes.LOCAL.equals(typeChoiceBox.getSelectionModel().getSelectedItem())) {
+                newRD.setBasePath(filePath.getText());
+            } else {
+                newRD.setBasePath(remoteDir.getText());
+            }
+
+            newRD.setServer(remoteServer.getText());
+            newRD.setUsername(remoteUsername.getText());
+            newRD.setPassword(remotePassword.getText());
+            newRD.setStripAccents(stripAccents.selectedProperty().get());
+            
+            // show the result screen
+            
+            testVBox.setManaged(true);
+            testVBox.setVisible(true);
+           
+            dialog.getDialogPane().getScene().getWindow().sizeToScene();
+            typeChoiceBox.getSelectionModel().getSelectedItem().getNewTransport().test(newRD, result);
+            
+        });
+        
         
         
         typeChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
@@ -1054,6 +1097,7 @@ public class FXMLResultsController  {
                         remoteDir.textProperty().isEmpty()));
                 
                 dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(oneEmpty);
+                testButton.disableProperty().bind(oneEmpty);
             }
             
             dialog.getDialogPane().getScene().getWindow().sizeToScene();

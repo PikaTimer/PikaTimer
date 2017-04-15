@@ -29,6 +29,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -218,6 +220,7 @@ public class FTPSTransport implements FileTransport{
                     Platform.runLater(() -> {transferStatus.set("Changing Directories...");});
                     if(!ftpClient.changeWorkingDirectory(basePath)) {
                         reply = ftpClient.mkd(basePath);
+                        
                         if (!FTPReply.isPositiveCompletion(reply)) {
                             System.out.println("Unable to make remote dir " + basePath);
                             Platform.runLater(() -> {transferStatus.set("Error: Unabe to make target directory");});
@@ -309,4 +312,125 @@ public class FTPSTransport implements FileTransport{
         needConfigRefresh = false;
     
     }    
+
+    @Override
+    public void test(ReportDestination parent, StringProperty output) {
+        Task transferTask = new Task<Void>() {
+
+                @Override 
+                public Void call() {
+                    
+                    password=parent.getPassword();
+                    username=parent.getUsername();
+                    hostname=parent.getServer();
+                    basePath=parent.getBasePath();
+
+                    Platform.runLater(() -> output.set(output.getValueSafe() + "Connecting to " + hostname +" via FTPS..." ));
+                    
+                    
+                    ftpsClient = new FTPSClient(false);
+                    ftpClient = ftpsClient;
+                    ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out), true));
+                    
+
+                    // Connect to host
+                    
+                    try {
+                        ftpClient.connect(hostname);
+                        Platform.runLater(() -> output.set(output.getValueSafe() + "\nConnected via via FTPS..." ));
+                    } catch (IOException ex) {
+                        Platform.runLater(() -> output.set(output.getValueSafe() + "\nConnection Failed, attempting to use FTP..." ));
+                        ftpClient = new FTPClient();
+                        ftpClient.setConnectTimeout(10000); // 10 seconds
+                        ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out), true));
+                        try {
+                            ftpClient.connect(hostname);
+                            Platform.runLater(() -> output.set(output.getValueSafe() + "\nConnected via via FTP..." ));
+
+                        } catch (IOException ex1) {
+                            Platform.runLater(() -> output.set(output.getValueSafe() + "\n\nError: " + ex1.getLocalizedMessage() ));
+                            try {
+                                ftpClient.disconnect();
+                            } catch (IOException ex2) {
+                            }
+                            return null;
+                        }
+                    }
+                    
+                    int reply = ftpClient.getReplyCode();
+                    
+                    if (FTPReply.isPositiveCompletion(reply)) {
+                        try {
+                            Platform.runLater(() -> output.set(output.getValueSafe() + "\nLogging in..." ));
+
+                            if (ftpClient.login(username, password)) {
+                                // try and CD to the target directory
+                                Platform.runLater(() -> output.set(output.getValueSafe() + "\nLogin successful." ));
+
+                                Platform.runLater(() -> output.set(output.getValueSafe() + "\nChanging directories..." ));
+
+                                if(!ftpClient.changeWorkingDirectory(basePath)) {
+                                    Platform.runLater(() -> output.set(output.getValueSafe() + "\nTarget directory does not exist\n Attempting to create it..." ));
+
+                                    int reply2 = ftpClient.mkd(basePath);
+                                    
+
+                                    if (!FTPReply.isPositiveCompletion(reply2)) {
+                                        Platform.runLater(() -> output.set(output.getValueSafe() + "\nError: Unable to make the target directory.\n\nTest Failed!" ));
+                                        ftpClient.disconnect();
+                                        return null;
+                                    } else {
+                                        
+                                        if (!ftpClient.changeWorkingDirectory(basePath)) {
+                                            Platform.runLater(() -> output.set(output.getValueSafe() + "\nError: Unabe to change to target directory\n\nTest Failed!" ));
+                                            ftpClient.disconnect();
+                                            return null;
+                                        } else {
+                                            Platform.runLater(() -> output.set(output.getValueSafe() + "\n\nSuccess!"));
+                                            ftpClient.disconnect();
+                                            return null;
+                                        }
+                                        
+                                    }
+                                } else {
+                                    Platform.runLater(() -> output.set(output.getValueSafe() + "\n\nSuccess!"));
+                                    ftpClient.disconnect();
+                                    return null;
+                                }
+                            } else {
+                                Platform.runLater(() -> output.set(output.getValueSafe() + "\nError: Invalid Username or Password\n\nTest Failed!" ));
+                                ftpClient.disconnect();
+                                return null;
+                            }
+                        } catch (IOException ex) {
+                            Platform.runLater(() -> output.set(output.getValueSafe() + "\nError: IO Error " + ex.getLocalizedMessage()+ "\n\nTest Failed!"  ));
+                            try {
+                                ftpClient.disconnect();
+                            } catch (IOException ex1) {
+                                Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex1);
+                            }
+                        }
+                    } else {
+                        Platform.runLater(() -> output.set(output.getValueSafe() + "\n\nError: Error code response from server: " + reply ));
+                        try {
+                            ftpClient.disconnect();
+                        } catch (IOException ex) {
+                            Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        return null;
+                    }
+                    try {
+                        ftpClient.disconnect();
+                    } catch (IOException ex) {
+                        Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    return null;
+                }
+        
+        };
+        transferThread = new Thread(transferTask);
+        transferThread.setName("Thread-SFTP-Transfer-Test");
+        transferThread.setDaemon(true);
+        transferThread.start();
+    }
 }

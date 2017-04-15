@@ -20,6 +20,7 @@ import com.pikatimer.results.ReportDestination;
 import com.pikatimer.util.FileTransport;
 import java.io.File;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -86,7 +87,7 @@ public class LocalTransport implements FileTransport {
 
             // does it exist?
             if (!baseDir.exists()) {
-              baseDir.mkdir();
+              baseDir.mkdirs();
             }
             
             // it should now... 
@@ -105,6 +106,48 @@ public class LocalTransport implements FileTransport {
     @Override
     public StringProperty statusProperty() {
         return transferStatus;
+    }
+
+    @Override
+    public void test(ReportDestination parent, StringProperty output) {
+        
+        
+        basePath = FilenameUtils.normalizeNoEndSeparator(parent.getBasePath());
+            
+        File baseDir = new File(basePath);
+
+        stripAccents = parent.getStripAccents();
+
+        
+
+        
+        if (baseDir.exists() && baseDir.isDirectory()) {
+            Platform.runLater(() -> output.set(output.getValueSafe() + "Target Directory exists." ));
+        } else {
+            // try and create it
+            Platform.runLater(() -> output.set(output.getValueSafe() + "Target Directory does not exist\nAttempting to create it..." ));
+            baseDir.mkdirs();
+
+            if (baseDir.exists() && baseDir.isDirectory()) {
+                Platform.runLater(() -> output.set(output.getValueSafe() + "\nSuccessfuly created target directory." ));
+            } else {
+                Platform.runLater(() -> output.set(output.getValueSafe() + "\n\nFailure! Unable to create target directory." ));
+                return;
+            }
+
+        }
+        
+        UUID tmpFileName = UUID.randomUUID();
+        File tmpFile = new File(baseDir,tmpFileName.toString());
+        try {
+            tmpFile.createNewFile();
+            tmpFile.delete();
+            Platform.runLater(() -> output.set(output.getValueSafe() + "\n\nSuccess! the target directory is writable." ));
+
+        } catch (IOException ex) {
+            Platform.runLater(() -> output.set(output.getValueSafe() + "\n\nFailure! Unable to write to the target directory." ));
+
+        } 
     }
     
     
