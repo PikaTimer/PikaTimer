@@ -35,6 +35,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.GridPane;
@@ -281,5 +282,16 @@ public class FXMLopenEventController {
     protected void cloneEvent(ActionEvent fxevent) {
         
         
+    }
+    
+    @FXML
+    protected void openLink(ActionEvent fxevent) {
+        Hyperlink hyperlink = (Hyperlink)fxevent.getSource();
+        String link = hyperlink.getText();
+        if (link.contains("(")) {
+            link = link.replaceFirst("^.+\\(", "").replaceFirst("\\).*$", "");
+        }
+        System.out.println("Hyperlink pressed: " + link);
+        Pikatimer.getInstance().getHostServices().showDocument(link);
     }
 }
