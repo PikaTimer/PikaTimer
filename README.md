@@ -3,15 +3,15 @@ PikaTimer: An OpenSource race timing application
 
 PikaTimer is a JavaFX based race timing application. Named after the American Pika that is often found at high altitudes where the need for simple, easy to use race timing application was born. Because at 14,000 ft, you want things to be simple.
 
-The entire system is released under the GPLv3 Open Source license. It is free to use, free to modify, free to redistribute per the GPLv3 license. 
+The entire system is released under the GPLv3 Open Source license. PikaTimer is free to use, free to modify, free to redistribute per the GPLv3 license. 
 
-Initial support will be for RFID Timing System based readers (http://rfidtiming.com/), but there is nothing preventing the system from being able to read from from other timing systems in the future.
 
 Current Feature Highlights:
 * Multiple Races per Event
 * Multiple start waves per race
 * Multiple Timing Locations
 * Multiple Splits per Race, each associated with a given timing location
+* Direct import of timing data from RFID Ultra Based systems
 * No practical limit on the number of participants, races, splits, etc (but you'll want a faster box beyond a few thousand runners with a dozen splits).
 * Support for automatically importing a timing input file and updating the results as new times are entered
 * Automatically process reports and post them to a remote server every 30s/1m/2m/5m 
@@ -26,25 +26,21 @@ Current Feature Highlights:
 * Built in database engine (H2) that stores the entire event in a single file (easy for backups, copying, archiving, etc)
 * Outputs basic Overall, Age Group, and Awards text based reports. 
 * Output of HTML results table (formatted with DataTables for easy mobile viewing)
-* Automatically upload reports to an FTPS (FTP over TLS) server
+* Automatically upload reports to an FTP, FTPS (FTP over TLS), or SFTP (FTP over SSH) server
 * Output awards file based on gun or chip time for Overall / Masters / AG
 * DQ / DNF / DNS flags for runners and the ability to exclude them on results.
 * In-Progress report options that show runners who started but have not yet finished.
 * Windows x64 based native application
 
 
-Short Term Pending Features:
-* Ability to directly import times from the RFID Ultra units (no need for RFIDServer)
-* Bulk bib assignments
-* Post results to social media (Twitter, Facebook, etc)
-* Easy download option from HTML report
 
-Long Term Features:
-* Team Reports / Awards
+Road Map (In no particular order):
 * Arbitrary participant attributes an the ability to produce reports based on them
 * Arbitrary age groups (vs 5/10 year)
 * Arbitrary awards categories based on any participant attribute
+* Team Reports / Awards
 * Ability to change the pace or distance units on a per split/segment basis (e.g. swim in min/100yds, bike in mph, run in min/mile)
+* Mandatory Splits
 * Non-binary gender/sex attribute
 * Ability to support relay races
 * Ability to support lap races
