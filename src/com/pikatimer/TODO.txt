@@ -1,25 +1,17 @@
+Post 1.0 Release:
 Overall Focus: 
 Cleanup UI and input field validation
 Create a DurationTextField / LocalTimeTextField that "does the right thing"
 Create a DurationCell (or whatever) for inline edits of durations?
 editCell that does not revert on focus change (WTF Oracle)
 
--Fix result display to show wave start -> actual delta, gun time
--Mandatory split? (if it is mandatory)
-
+-Mandatory split? 
 
 Overall:
 Upgrade Hibernate to 5.x
 Fix FXML layout resizing checks on race and results tabs
 
-Add 'About' page w/ links to the following items:
---gliphicons
---h2 db
---hibernate
---AlphanumericComparator 
---flyaway
---DataFX
---ControlsFX 
+
 
 Logging 
   --no more System.out.println
@@ -51,7 +43,7 @@ Participants:
   -- store the team id
   -- textfield auto complete for city/state 
   -- textfield for teams pre-populated / with auto complete
-Duplication check on import
+
 Clean up import from csv (field formatting, etc)
   -- Custom city name map
   -- Zip -> City map
@@ -61,7 +53,7 @@ Wave/Race assignment based on import field
 Update/Add on enter from any valid field
 Custom fields / attributes w/ data types (string, limited select, date, time)
 Link to Team
-Inline Edit of the cells?
+
 Mass bib assignment 
 
 sync from/to fusesport / active.com / runsignup / other
@@ -76,29 +68,21 @@ Min for score attribute?
 Team category setup (gender, mixed gender, custom data field setting, etc)
 
 Timing:
-
+--Option to assign any time to the race/wave start time via right mouse click menu
+-- Lookup Button -> option of manual entry of wave start times?
+                             -- custom cell with an editable combo box
 
 Overrides 
   -- Make the bib an autocomplete text field based on the registered runners
   -- mouse over shows runner name in override table view
-
-
-
-Option to assign any time to the race/wave start time via right mouse click menu
-
-
-RFID Direct:
-    --Continually import times from box (via tcp in a separate task) to a timing point
-    --Auto rewind for race day data upon connect
-    --Rewind option for times read from box/outreach
-    --Chip sequence gap detection that triggers an automatic rewind 
+  -- Right-Click to create an override from a cooked time
 
 Results:
     --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
+    -- Double-Click for review screen (show all times, option to change wave or dq participant)
 
 Wire in a "min time to next split" option to replace hardcoded 5/10 minutes. 
 Ability to select multiple and DQ, un-DQ them (with a note)
-Show Gender/AG on results display
 Ability to select multiple results and transfer them to another wave/race
 
 
@@ -135,12 +119,14 @@ Active.com/RunSignUp/FuseSport Account info profiles
 Gender Display (Men/Women, Male/Female, custom)
 
 -------------------------------------
-Series Manager (separate App?)
+Series Manager (separate App like PikaSeries?)
 -------------------------------------
 select events
 Individual vs Team
 Sync team info
-Sync participant info for mismatch resolution
+Participant match/merge option
+Fastest X of Y scoring
+Import from CSV or .pika file
 
 Awards based on whatever split from whatever races
   --i.e., Total from race A + race B + fastest from (race C OR race D split X)
