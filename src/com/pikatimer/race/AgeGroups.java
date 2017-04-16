@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ public class AgeGroups {
         // based on the increment and the agStart floor (1->9)
         if (agNameMap.containsKey(ageToAG(i))) return agNameMap.get(ageToAG(i));
         
-        if(i < agStartProperty.get()) {
+        if(i <= agStartProperty.get()) {
             agNameMap.put(ageToAG(i), "1-" + (agStartProperty.getValue()));
         } else {
             agNameMap.put(ageToAG(i), ageToAG(i) + "-" + (ageToAG(i)+agIncrementProperty.get()-1));

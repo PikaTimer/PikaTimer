@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,8 @@ import javafx.scene.layout.VBox;
 public class FXMLTimingLocationInputController{
     @FXML private TextField locationNameTextField; 
     @FXML private GridPane baseGridPane; 
-    @FXML private Pane readerPane;
+    //@FXML private Pane readerPane;
+    @FXML private VBox readerVBox;
     @FXML private ChoiceBox inputTypeChoiceBox;
     @FXML private Label readCountLabel;
     @FXML private CheckBox timeSkewCheckBox;
@@ -71,7 +72,7 @@ public class FXMLTimingLocationInputController{
                 if (o == null || ! o.equals(n)) {
                     System.out.println("inputTypeChoiceBox event");
                     timingLocationInput.setTimingInputType(n);
-                    timingLocationInput.initializeReader(readerPane);
+                    timingLocationInput.initializeReader(readerVBox);
                     timingLocationDAO.updateTimingLocationInput(timingLocationInput);
                 }
             }
@@ -111,7 +112,7 @@ public class FXMLTimingLocationInputController{
                 inputTypeChoiceBox.setValue(TimingInputTypes.RFIDFile);
             }
 
-            timingLocationInput.initializeReader(readerPane);
+            timingLocationInput.initializeReader(readerVBox);
             
             readCountLabel.textProperty().bind(Bindings.convert(timingLocationInput.readCountProperty())); 
             

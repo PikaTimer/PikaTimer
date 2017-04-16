@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 John Garner <segfaultcoredump@gmail.com>
+ * Copyright (C) 2017 John Garner <segfaultcoredump@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -134,10 +134,10 @@ public class OverallHTML implements RaceReportType{
         }
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" ;
-        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.css\"/>\n" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.css\"/>\n" ;
         else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.0/sc-1.4.2/datatables.min.css\"/>" ;
         report +=    " \n";
-        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" ;
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
         else  report +=  "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" ;
 
         report +=   " \n" +

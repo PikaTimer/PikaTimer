@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -408,7 +408,7 @@ public class FXMLRaceDetailsController {
             Split s = t.getRowValue();
             //Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
             try {
-                dist = new BigDecimal(t.getNewValue().split(" ",2)[0]);
+                dist = new BigDecimal(t.getNewValue().replaceAll("[^\\.0123456789]",""));
                 s.setSplitDistance(dist);
                 if (s.getPosition().equals(s.getRace().getSplits().size())) {
                     //we are the last split

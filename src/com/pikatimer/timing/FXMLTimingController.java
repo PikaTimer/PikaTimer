@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,6 +91,7 @@ import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -269,12 +270,15 @@ public class FXMLTimingController {
         // 5. Set the cell factories and stort routines... 
         bibColumn.setCellValueFactory(new PropertyValueFactory<>("bib"));
         bibColumn.setComparator(new AlphanumericComparator());
+        bibColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
         
         chipColumn.setCellValueFactory(c -> c.getValue().rawChipIDProperty());
         chipColumn.setComparator(new AlphanumericComparator());
+        chipColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
         
         timeColumn.setCellValueFactory(new PropertyValueFactory<>("timestampString"));
         timeColumn.setComparator(new AlphanumericComparator());
+        timeColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
         
         nameColumn.setCellValueFactory(cellData -> {
             String bib = cellData.getValue().getBib();
@@ -306,8 +310,10 @@ public class FXMLTimingController {
         });
         
         backupColumn.setCellValueFactory(new PropertyValueFactory<>("backupTime"));
-        backupColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        //backupColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
+        backupColumn.setCellFactory(column -> new BackupFlagTableCell());
         backupColumn.setEditable(false);
+        backupColumn.setStyle( "-fx-alignment: CENTER;");
         
         ignoreColumn.setCellValueFactory(new PropertyValueFactory<>("ignoreTime"));
         ignoreColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
@@ -1054,7 +1060,7 @@ public class FXMLTimingController {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("No Start Times...");
             alert.setHeaderText("No Start Times Found");
-            alert.setContentText("No Start times (typically a \"0\" chip) were\nfound at any of the start timing locations!");
+            alert.setContentText("No Start times (typically a \"0\" chip) were\nfound at any of the start timing locations!\nTo manually enter start times, update\\nthe race or wave start value on the 'Event Details' tab.");
 
             alert.showAndWait();
             return;
@@ -1078,8 +1084,11 @@ public class FXMLTimingController {
         VBox scrollVBox = new VBox();
         scrollVBox.setStyle("-fx-font-size: 12px;"); // Make everything normal again
         scrollVBox.fillWidthProperty().set(true);
+        scrollVBox.maxHeight(Double.MAX_VALUE);
+      
         scrollPane.setContent(scrollVBox);
         scrollPane.fitToWidthProperty().set(true);
+        scrollPane.fitToHeightProperty().set(true);
         // For each start location, create a table and a list of possible start times
         
         List<WaveStartTime> waveStartMasterList = new ArrayList();
@@ -1087,6 +1096,8 @@ public class FXMLTimingController {
         wavesByLocation.keySet().forEach(tlID -> {
                 VBox locationVBox = new VBox();
                 locationVBox.fillWidthProperty().set(true);
+                locationVBox.maxHeight(Double.MAX_VALUE);
+                VBox.setVgrow(locationVBox, Priority.SOMETIMES);
                 scrollVBox.getChildren().add(locationVBox);
                 if (wavesByLocation.keySet().size()>1) {
                     Label locLabel = new Label(timingDAO.getTimingLocationByID(tlID).getLocationName() + " Timing Location");
@@ -1095,19 +1106,24 @@ public class FXMLTimingController {
                 }
                 if(!startTimesByLocation.containsKey(tlID)) { // no start times
                     Label noStarts = new Label("No start times found at this location");
+                    Label noStarts2 = new Label("To manually enter start times, update\nthe race or wave start value on the 'Event Details' tab.");
                     locationVBox.getChildren().add(noStarts);
+                    locationVBox.getChildren().add(noStarts2);
                 } else {
                     TableView<WaveStartTime> waveTable = new TableView();
+                    VBox.setVgrow(waveTable, Priority.SOMETIMES);
                     waveTable.setFixedCellSize(30);
                     int size = wavesByLocation.get(tlID).size();
                     if (size >= 6) {
                         waveTable.prefHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
                         waveTable.minHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
-                        waveTable.maxHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
+                        //waveTable.maxHeightProperty().setValue(waveTable.getFixedCellSize()*5 + waveTable.getFixedCellSize()/2);
+                        waveTable.maxHeight(Double.MAX_VALUE);
                     } else {
                         waveTable.prefHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
                         waveTable.minHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
-                        waveTable.maxHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
+                        //waveTable.maxHeightProperty().setValue(1+(size + 1 )* waveTable.getFixedCellSize());
+                        waveTable.maxHeight(Double.MAX_VALUE);
                     }
                     
                     waveTable.maxWidthProperty().setValue(Double.MAX_VALUE);
@@ -1299,6 +1315,27 @@ public class FXMLTimingController {
         });
     }
 
+        private class BackupFlagTableCell extends TableCell<CookedTimeData, Boolean> {
+        @Override
+        protected void updateItem(Boolean d, boolean empty) {
+            super.updateItem(d, empty);
+            if (d == null || empty) {
+                setText(null);
+            } else {
+                // Format duration.
+                CookedTimeData t = (CookedTimeData)getTableRow().getItem();
+                if (t == null) {
+                    setText("");
+                    return;
+                }
+                
+                if (! t.getBackupTime()) setText("-");
+                else setText("X");
+            }
+        }
+
+    };
+        
     private static class WaveStartTime {
         public Wave w;
         public StringProperty wName = new SimpleStringProperty();

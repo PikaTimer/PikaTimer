@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
@@ -44,6 +45,7 @@ import javafx.beans.property.StringProperty;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.util.Callback;
@@ -90,7 +92,10 @@ public class Participant {
     private final StringProperty zipProperty = new SimpleStringProperty();
     private LocalDate birthday; 
     private final ObjectProperty<LocalDate> birthdayProperty = new SimpleObjectProperty();
-    private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());   
+    private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());  
+    
+    
+    private final IntegerProperty wavesChangedCounterProperty = new SimpleIntegerProperty(0);
     private final ObjectProperty<ObservableList<Wave>> wavesProperty = new SimpleObjectProperty(waves);
     private Set<Integer> waveIDSet = new HashSet(); 
     private final BooleanProperty dnfProperty = new SimpleBooleanProperty(FALSE);
@@ -124,6 +129,14 @@ public class Participant {
             protected boolean computeValue() {
                 if (statusProperty.getValue().equals(Status.DQ)) return true;
                 return false; 
+            }
+        });
+        
+        waves.addListener(new ListChangeListener<Wave>() {
+            @Override
+            public void onChanged(Change<? extends Wave> c) {
+            
+                Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
             }
         });
         
@@ -355,6 +368,7 @@ public class Participant {
         return ageProperty; 
     }
     
+    
     @Column(name="SEX")
     public String getSex() {
         return sexProperty.getValueSafe();
@@ -523,8 +537,6 @@ public class Participant {
     }
     public void setWaveIDs(Set<Integer> w) {
         waveIDSet = w; 
-        
-        
     }
     
     public void setWaves(List<Wave> w) {
@@ -532,12 +544,15 @@ public class Participant {
         waves.setAll(w);
         waveIDSet = new HashSet();
         waves.stream().forEach(n -> {waveIDSet.add(n.getID());});
+        Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
     }
     public void setWaves(Set<Wave> w){
         System.out.println("SetWaves(Set) called with " + w.size());
         waves.setAll(w);
         waveIDSet = new HashSet();
         waves.stream().forEach(n -> {waveIDSet.add(n.getID());});
+        Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
+
     }
     public void setWaves(Wave w) {
         System.out.println("Participant.setWaves(Wave w)");
@@ -545,6 +560,8 @@ public class Participant {
         
         waveIDSet = new HashSet();
         waveIDSet.add(w.getID()); 
+        Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
+
     }
     public void addWave(Wave w) {
         //System.out.println("Participant.addWave(Wave w)");
@@ -554,22 +571,28 @@ public class Participant {
             waves.add(w); 
             waveIDSet.add(w.getID()); 
         }
+        Platform.runLater(() -> wavesChangedCounterProperty.setValue(wavesChangedCounterProperty.get()+1));
     }
     public ObservableList<Wave> wavesObservableList() {
-        waves.clear();
-        waveIDSet.stream().forEach(id -> {
-            if (RaceDAO.getInstance().getWaveByID(id) == null) System.out.println("Null WAVE!!! " + id);
-            waves.add(RaceDAO.getInstance().getWaveByID(id)); 
-        });
+        if (waves.size() != waveIDSet.size()){
+            waves.clear();
+            waveIDSet.stream().forEach(id -> {
+                if (RaceDAO.getInstance().getWaveByID(id) == null) System.out.println("Null WAVE!!! " + id);
+                waves.add(RaceDAO.getInstance().getWaveByID(id)); 
+            });
+        }
         return waves; 
     }
     
     public ObjectProperty<ObservableList<Wave>> wavesProperty(){
         return wavesProperty;
     }
+    public IntegerProperty wavesChangedCounterProperty(){
+        return wavesChangedCounterProperty;
+    }
     
     public static Callback<Participant, Observable[]> extractor() {
-        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.wavesProperty,p.statusProperty};
+        return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.wavesProperty,p.wavesChangedCounterProperty,p.statusProperty};
     }
 
     @Override

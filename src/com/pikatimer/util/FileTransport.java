@@ -29,10 +29,12 @@ public interface FileTransport {
 
     public void save(String filename, String contents);
 
-    public void setOutputPortal(ReportDestination aThis);
+    public void setOutputPortal(ReportDestination parent);
 
     public void refreshConfig();
     
     public StringProperty statusProperty();
+    
+    public void test(ReportDestination parent, StringProperty output);
     
 }

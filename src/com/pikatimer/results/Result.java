@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,8 +59,10 @@ public class Result {
     private Duration startDuration;
     private final ObjectProperty<Duration> startDurationProperty; 
     private final ObjectProperty<Duration> waveStartDurationProperty;
+    private final ObjectProperty<Duration> startOffsetProperty;
     private Duration waveStartDuration;
     private Duration finishDuration;
+    private final ObjectProperty<Duration> finishTODProperty;
     private final ObjectProperty<Duration> finishDurationProperty;
     private final ObjectProperty<Duration> finishGunDurationProperty;
     private Map<Integer,Long> splitMap = new HashMap();
@@ -82,8 +84,10 @@ public class Result {
         finishDuration = Duration.ZERO;
         startDurationProperty = new SimpleObjectProperty(startDuration);
         waveStartDurationProperty = new SimpleObjectProperty(waveStartDuration);
+        startOffsetProperty = new SimpleObjectProperty(Duration.ZERO);
         finishDurationProperty = new SimpleObjectProperty(finishDuration);
         finishGunDurationProperty = new SimpleObjectProperty(finishDuration);
+        finishTODProperty = new SimpleObjectProperty(finishDuration);
     }
     
     public void clearTimes(){
@@ -153,9 +157,6 @@ public class Result {
         pendingRecalc=true;
     }
     public ObjectProperty<Duration> startTimeProperty(){
-//        if (startDuration.isZero()) startTimeProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
-//        
-//        else startTimeProperty.setValue(startDuration);
         return startDurationProperty; 
     }
 
@@ -181,6 +182,13 @@ public class Result {
     public void setWaveStartDuration(Duration ws) {
         waveStartDuration = ws;
         if (startDuration == null || startDuration.isZero()) setStartDuration(waveStartDuration);
+    }
+    public ObjectProperty<Duration> waveStartTimeProperty(){
+        return waveStartDurationProperty; 
+    }
+    
+    public ObjectProperty<Duration> startOffsetProperty(){
+        return startOffsetProperty; 
     }
     
     @Column(name="partFinish",nullable=true)
@@ -212,6 +220,10 @@ public class Result {
     public ObjectProperty<Duration> finishGunTimeProperty(){
         return finishGunDurationProperty; 
     }
+    public ObjectProperty<Duration> finishTODProperty(){
+        return finishTODProperty; 
+    }
+    
     
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="split_id", insertable=false,updatable=false)
@@ -261,11 +273,28 @@ public class Result {
             if (!startDuration.equals(startDurationProperty.get())) startDurationProperty.set(startDuration);
             if (!waveStartDuration.equals(waveStartDurationProperty.get())) waveStartDurationProperty.set(waveStartDuration);
             
-            if (finishDuration.isZero()) finishDurationProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
-            else finishDurationProperty.setValue(finishDuration.minus(startDuration));
+            Duration startOffset = Duration.ZERO;
+            if (splitMap.containsKey(0)) {
+                startOffset = Duration.ofNanos(splitMap.get(0)).minus(waveStartDuration);
+            }
+            
+            if (!startOffset.equals(startOffsetProperty.get())) startOffsetProperty.set(startOffset);
+            
+            if (finishDuration.isZero()) {
+                finishDurationProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+                finishTODProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
+            }
+            else {
+                finishDurationProperty.setValue(finishDuration.minus(startDuration));
+                if (finishDuration.toDays()> 0) {
+                    finishTODProperty.setValue(finishDuration.minus(Duration.ofDays(finishDuration.toDays())));
+                } else finishTODProperty.setValue(finishDuration);
+            }
 
             if (finishDuration.isZero()) finishGunDurationProperty.setValue(Duration.ofNanos(Long.MAX_VALUE));
             else finishGunDurationProperty.setValue(finishDuration.minus(waveStartDuration));
+            
+            
 //            
 //            System.out.println(" chipTime: " + finishDurationProperty.get().toString());
 //            System.out.println(" gunTime: " + finishGunDurationProperty.get().toString());
@@ -273,11 +302,22 @@ public class Result {
             // now loop through and fix the splits...
             // missing splits are set to MAX_VALUE
             splitMap.keySet().forEach(splitID -> {
-                Duration d = Duration.ofNanos(splitMap.get(splitID)).minus(startDuration);
-                if (d.isNegative()) d = Duration.ofNanos(Long.MAX_VALUE);
+                Duration d;
+                if (splitID != 0){
+                    d = Duration.ofNanos(splitMap.get(splitID)).minus(startDuration);
+                    if (d.isNegative()) d = Duration.ofNanos(Long.MAX_VALUE);
+                } else {
+                    d = Duration.ofNanos(splitMap.get(splitID));
+                }
                 if (splitPropertyMap.containsKey(splitID)) splitPropertyMap.get(splitID).set(d);
                 else splitPropertyMap.put(splitID, new SimpleObjectProperty(d));
             });    
+            
+            splitPropertyMap.keySet().forEach(splitID -> {
+                if (!splitMap.containsKey(splitID)) splitPropertyMap.get(splitID).set(Duration.ofNanos(Long.MAX_VALUE));
+            
+            });
+            
             revision.set(revision.get() + 1);
             //System.out.println("Result revision is now " + revision.getValue().toString());
             pendingRecalc = false;

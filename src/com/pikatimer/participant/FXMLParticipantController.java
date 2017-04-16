@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,7 +102,7 @@ public class FXMLParticipantController  {
     @FXML private TableView<Participant> participantTableView;
     @FXML private TableColumn bibNumberColumn;
     //@FXML private TableColumn<Participant,ObservableList<Wave>> raceColumn;
-    @FXML private TableColumn<Participant,String> raceColumn;
+    @FXML private TableColumn<Participant,Number> raceColumn;
     @FXML private TableColumn<Participant,Status> statusColumn;
     @FXML private VBox formVBox; 
     @FXML private TextField bibTextField;
@@ -209,11 +209,12 @@ public class FXMLParticipantController  {
             });
             
             Menu assignWave = new Menu("Assign");
-            RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+            //RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+            RaceDAO.getInstance().listWaves().sorted(new AlphanumericComparator()).stream().forEach(w -> {
                 MenuItem m = new MenuItem(w.toString());
                 m.setOnAction(e -> {
                     participantTableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
-                        p.setWaves(w);
+                        p.setWaves((Wave)w);
                         participantDAO.updateParticipant(p);
 
                     });
@@ -223,11 +224,12 @@ public class FXMLParticipantController  {
             
             RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
                 assignWave.getItems().clear();
-                RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                //RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                RaceDAO.getInstance().listWaves().sorted(new AlphanumericComparator()).stream().forEach(w -> {
                     MenuItem m = new MenuItem(w.toString());
                     m.setOnAction(e -> {
                         participantTableView.getSelectionModel().getSelectedItems().stream().forEach(p -> {
-                            p.setWaves(w);
+                            p.setWaves((Wave)w);
                             participantDAO.updateParticipant(p);
 
                         });
@@ -488,38 +490,44 @@ public class FXMLParticipantController  {
         sexPrefixSelectionChoiceBox.setItems(FXCollections.observableArrayList("M","F") );
         
         // TODO: Get the CellFactory to work
-//        raceColumn.setCellValueFactory(person -> person.getValue().wavesProperty());
-//        raceColumn.setCellFactory(column -> {
-//            return new TableCell<Participant, ObservableList<Wave>>() {
-//                @Override
-//                protected void updateItem(ObservableList<Wave> waves, boolean empty) {
-//                    super.updateItem(waves, empty);
-//
-//                    if (waves == null || empty) {
-//                        setText(null);
-//                    } else {
-//                        WaveStringConverter wsc = new WaveStringConverter();
-//                        setText(waves.stream().map (w -> wsc.toString(w)).collect(Collectors.joining(",")));
-//                    }
-//                }
-//            };
-//        });
-
-        raceColumn.setCellValueFactory((CellDataFeatures<Participant, String> p) -> {
-            StringProperty wavesString = new SimpleStringProperty();
-            WaveStringConverter wString=new WaveStringConverter();
-            if (p.getValue().wavesObservableList().isEmpty()) return new SimpleStringProperty();
-            
-            p.getValue().wavesObservableList().stream().forEach(w -> {
-                wavesString.setValue(wavesString.getValueSafe() + wString.toString(w) + ", " );
-                //System.out.println("Checking " + w.getID() + " " + w.toString());
-            });
-            // remove the trailing ", "
-            wavesString.set(wavesString.getValueSafe().substring(0, wavesString.getValueSafe().length()-2));
-            
-            
-            return wavesString;
+        raceColumn.setCellValueFactory(person -> person.getValue().wavesChangedCounterProperty());
+        
+        raceColumn.setCellFactory(column -> {
+            return new TableCell<Participant, Number>() {
+                @Override
+                protected void updateItem(Number n, boolean empty) {
+                    super.updateItem(n, empty);
+                    Participant p = (Participant)getTableRow().getItem();
+                    if (p == null) {
+                        setText(null);
+                        return;
+                    }
+                    ObservableList<Wave> waves = p.wavesObservableList();
+                    if (waves == null || empty) {
+                        setText(null);
+                    } else {
+                        WaveStringConverter wsc = new WaveStringConverter();
+                        setText(waves.stream().map (w -> wsc.toString(w)).collect(Collectors.joining(",")));
+                    }
+                }
+            };
         });
+
+//        raceColumn.setCellValueFactory((CellDataFeatures<Participant, String> p) -> {
+//            StringProperty wavesString = new SimpleStringProperty();
+//            WaveStringConverter wString=new WaveStringConverter();
+//            if (p.getValue().wavesObservableList().isEmpty()) return new SimpleStringProperty();
+//            
+//            p.getValue().wavesObservableList().stream().forEach(w -> {
+//                wavesString.setValue(wavesString.getValueSafe() + wString.toString(w) + ", " );
+//                //System.out.println("Checking " + w.getID() + " " + w.toString());
+//            });
+//            // remove the trailing ", "
+//            wavesString.set(wavesString.getValueSafe().substring(0, wavesString.getValueSafe().length()-2));
+//            
+//            
+//            return wavesString;
+//        });
         
         //Sorting the raceColumn triggers a StackOverflow
         raceColumn.sortableProperty().setValue(Boolean.FALSE);

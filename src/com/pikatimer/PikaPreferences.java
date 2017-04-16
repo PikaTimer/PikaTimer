@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 package com.pikatimer;
 
 import java.io.File;
+import java.util.prefs.Preferences;
 
 /**
  *
@@ -29,6 +30,7 @@ public class PikaPreferences {
     */
     
     private File recentFile;
+    Preferences prefs = Preferences.userRoot().node("PikaTimer");
     
     private static class SingletonHolder { 
             private static final PikaPreferences INSTANCE = new PikaPreferences();
@@ -46,6 +48,20 @@ public class PikaPreferences {
         return recentFile;
     }
     
+    public Preferences getGlobalPreferences(){
+        return prefs;
+    }
     
+    public File getCWD(){
+        File cwd = new File(prefs.get("PikaEventHome", System.getProperty("user.home")));
+        if (!cwd.exists() ) {
+            // we have a problem
+            cwd= new File(System.getProperty("user.home"));
+        } else if (cwd.exists() && cwd.isFile()){
+            cwd = new File(cwd.getParent());
+           
+        }
+        return cwd;
+    }
     
 }

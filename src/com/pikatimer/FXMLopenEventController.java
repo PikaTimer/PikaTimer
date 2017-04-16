@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,12 +28,14 @@ import javafx.fxml.FXML;
 import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.IOException;
+import java.util.prefs.Preferences;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.GridPane;
@@ -70,6 +72,8 @@ public class FXMLopenEventController {
     private final Stage primaryStage = Pikatimer.getPrimaryStage();
     private String jdbcURL;
     
+    Preferences globalPrefs = PikaPreferences.getInstance().getGlobalPreferences();
+    
     @FXML
     protected void initialize() {
         // initialize your logic here: all @FXML variables will have been injected
@@ -86,6 +90,8 @@ public class FXMLopenEventController {
     protected void openDB(File dbFile) {
         
         PikaPreferences.getInstance().setRecentFile(dbFile); // stash this for future use
+        globalPrefs.put("PikaEventHome", dbFile.getParent());
+        System.setProperty("user.dir", dbFile.getParent());
         
         OpenHBox.setVisible(false);
         OpenHBox.setManaged(false);
@@ -193,10 +199,21 @@ public class FXMLopenEventController {
     @FXML
     protected void openEvent(ActionEvent fxevent) throws IOException {
         final FileChooser fileChooser = new FileChooser();
+        
         fileChooser.setTitle("Open Event");
-        fileChooser.setInitialDirectory(
-            new File(System.getProperty("user.home"))
-        ); 
+        
+        File lastEventFolder = new File(globalPrefs.get("PikaEventHome", System.getProperty("user.home")));
+        if (!lastEventFolder.exists() ) {
+            // we have a problem
+            lastEventFolder= new File(System.getProperty("user.home"));
+        } else if (lastEventFolder.exists() && lastEventFolder.isFile()){
+            lastEventFolder = new File(lastEventFolder.getParent());
+           
+        }
+        
+        System.out.println("Using initial directory of " + lastEventFolder.getAbsolutePath());
+
+        fileChooser.setInitialDirectory(lastEventFolder); 
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("PikaTimer Events", "*.pika"),
                 new FileChooser.ExtensionFilter("All files", "*")
@@ -237,9 +254,15 @@ public class FXMLopenEventController {
     protected void newEvent(ActionEvent fxevent) {
         final FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Create New Event...");
-        fileChooser.setInitialDirectory(
-            new File(System.getProperty("user.home"))
-        ); 
+        File lastEventFolder = new File(globalPrefs.get("PikaEventHome", System.getProperty("user.home")));
+        if (!lastEventFolder.exists() ) {
+            // we have a problem
+            lastEventFolder= new File(System.getProperty("user.home"));
+        } else if (lastEventFolder.exists() && lastEventFolder.isFile()){
+            lastEventFolder = new File(lastEventFolder.getParent());
+           
+        }
+        fileChooser.setInitialDirectory(lastEventFolder); 
         //fileChooser.getExtensionFilters().add(
         //        new FileChooser.ExtensionFilter("PikaTimer Events", "*.db") 
         //    );
@@ -259,5 +282,16 @@ public class FXMLopenEventController {
     protected void cloneEvent(ActionEvent fxevent) {
         
         
+    }
+    
+    @FXML
+    protected void openLink(ActionEvent fxevent) {
+        Hyperlink hyperlink = (Hyperlink)fxevent.getSource();
+        String link = hyperlink.getText();
+        if (link.contains("(")) {
+            link = link.replaceFirst("^.+\\(", "").replaceFirst("\\).*$", "");
+        }
+        System.out.println("Hyperlink pressed: " + link);
+        Pikatimer.getInstance().getHostServices().showDocument(link);
     }
 }

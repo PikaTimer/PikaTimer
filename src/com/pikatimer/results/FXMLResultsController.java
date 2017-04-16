@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
  */
 package com.pikatimer.results;
 
+import com.pikatimer.PikaPreferences;
 import com.pikatimer.event.Event;
 import com.pikatimer.event.EventDAO;
 import com.pikatimer.event.EventOptions;
@@ -23,16 +24,20 @@ import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.participant.Status;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
-import com.pikatimer.timing.FXMLTimingController;
+import com.pikatimer.race.Wave;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.FileTransferTypes;
 import com.pikatimer.util.Pace;
+import java.io.File;
 import java.io.IOException;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Double.MAX_VALUE;
+import java.nio.file.Files;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,19 +49,23 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ListChangeListener.Change;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -65,18 +74,25 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
@@ -84,10 +100,9 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
 
@@ -372,20 +387,78 @@ public class FXMLResultsController  {
                         return p.sexProperty();
                     }
                 });
+                // AgeGroup
+                TableColumn<Result,Number> agColumn = new TableColumn("AG");
+                agColumn.setPrefWidth(40.0);
+                table.getColumns().add(agColumn);
+                agColumn.setCellFactory(column -> new AgeGroupTableCell());
+                agColumn.setCellValueFactory(cellData -> {
+                    Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
+                    if (p == null) { return new SimpleIntegerProperty();
+                    } else {
+                        return p.ageProperty();
+                    }
+                });
+                
+                // status
+                TableColumn<Result,Status> statusColumn = new TableColumn("Status");
+                table.getColumns().add(statusColumn);
+                statusColumn.setCellValueFactory(cellData -> {
+                    Participant p = participantDAO.getParticipantByBib(cellData.getValue().getBib());
+                    
+                    if (p == null) { return new SimpleObjectProperty();
+                    } else {
+                        return p.statusProperty();
+                    }
+                });
                 
                 // start
-                TableColumn<Result,Duration> startColumn = new TableColumn("Start");
+                TableColumn<Result,Duration> startColumn = new TableColumn("Start (TOD)");
                 
                 startColumn.setCellValueFactory(cellData -> {
-                    //return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getStartDuration(), 3, Boolean.TRUE));
                     return cellData.getValue().startTimeProperty();
                 });
                 startColumn.setCellFactory(column -> {
                     return new DurationTableCell();
                 });
-                //startColumn.setComparator(new AlphanumericComparator());
                 startColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
                 table.getColumns().add(startColumn);
+                
+                // Wave start
+                TableColumn<Result,Duration> waveStartColumn = new TableColumn("Wave (TOD)");
+                
+                waveStartColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().waveStartTimeProperty();
+                });
+                waveStartColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                waveStartColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(waveStartColumn);
+                
+                // Start Last Seen
+                TableColumn<Result,Duration> waveStartLastSeenColumn = new TableColumn("Start (Last Seen)");
+                
+                waveStartLastSeenColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().splitTimeByIDProperty(0);
+                });
+                waveStartLastSeenColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                waveStartLastSeenColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(waveStartLastSeenColumn);
+                
+                // Seen to Wave delta start
+                TableColumn<Result,Duration> startDeltaColumn = new TableColumn("Start Offset");
+                
+                startDeltaColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().startOffsetProperty();
+                });
+                startDeltaColumn.setCellFactory(column -> {
+                    return new DurationTableCell().showZeros();
+                });
+                startDeltaColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(startDeltaColumn);
                 
                 // for each split from 2 -> n-2
                 //TableColumn<Result,String> splitColumn;
@@ -412,6 +485,18 @@ public class FXMLResultsController  {
 //                    splitColumn.setComparator(new AlphanumericComparator());
                 }
                 
+                // finish TOD
+                
+                TableColumn<Result,Duration> finishTODColumn = new TableColumn("Finish (TOD)");
+                finishTODColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().finishTODProperty(); 
+                });
+                finishTODColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                //finishColumn.setComparator(new DurationComparator());
+                finishTODColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(finishTODColumn);
                 
                 // finish
                 TableColumn<Result,Duration> finishColumn = new TableColumn("Finish");
@@ -462,20 +547,39 @@ public class FXMLResultsController  {
                             System.out.println(" Null participant, bailing...");
                             return false;
                         }
-                        String lowerCaseFilter = "(.*)(" + resultsSearchTextField.textProperty().getValueSafe() + ")(.*)";
-                        try {
-                            Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
+                        String searchString = resultsSearchTextField.textProperty().getValueSafe().toLowerCase().replaceAll("\\s","");
+                        if (searchString.contains(":")) {
+                            String[] keyValue = searchString.split(":", 2);
+                            if (keyValue.length < 2) return true;
+                            switch (keyValue[0]) {
+                                case "bib":  
+                                        if (participant.getBib().equalsIgnoreCase(keyValue[1])) return true;
+                                        else return false;
+                                case "sex": ;
+                                        if (participant.getSex().equalsIgnoreCase(keyValue[1])) return true;
+                                        else return false;
+                                case "ag": 
+                                        String ag = r.getAgeGroups().ageToAGString(participant.getAge());
+                                        if (ag.equalsIgnoreCase(keyValue[1])) return true;
+                                        else if ((participant.getSex()+ag).equalsIgnoreCase(keyValue[1])) return true;
+                                        else return false;
+                            }
+                        } else {
+                            String lowerCaseFilter = "(.*)(" + resultsSearchTextField.textProperty().getValueSafe() + ")(.*)";
+                            try {
+                                Pattern pattern =  Pattern.compile(lowerCaseFilter, Pattern.CASE_INSENSITIVE);
 
-                            if (    pattern.matcher(participant.getFirstName()).matches() ||
-                                    pattern.matcher(participant.getLastName()).matches() ||
-                                    pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
-                                    pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
-                                    pattern.matcher(participant.getBib()).matches()) {
-                                return true; // Filter matches first/last/bib.
-                            } 
+                                if (    pattern.matcher(participant.getFirstName()).matches() ||
+                                        pattern.matcher(participant.getLastName()).matches() ||
+                                        pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
+                                        pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
+                                        pattern.matcher(participant.getBib()).matches()) {
+                                    return true; // Filter matches first/last/bib.
+                                } 
 
-                        } catch (PatternSyntaxException e) {
-                            return true;
+                            } catch (PatternSyntaxException e) {
+                                return true;
+                            }
                         }
                         return false; // Does not match.
                     });
@@ -490,7 +594,194 @@ public class FXMLResultsController  {
                 // 5. Add sorted (and filtered) data to the table.
                 table.setItems(sortedResultsList);
                 
-                // save it
+                // 6. Add a context menu
+                
+                // Setup the context menu and actions
+                table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+                table.setRowFactory((TableView<Result> tableView1) -> {
+                    final TableRow<Result> row = new TableRow<>();
+                    final ContextMenu rowMenu = new ContextMenu();
+
+                    // For future 
+//                    row.setOnMouseClicked(event -> {
+//                        if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+//                            editParticipant(participantTableView.getSelectionModel().getSelectedItem());
+//                        }
+//                    });
+
+                    // Context menu
+                    
+                    // Context menu
+                    MenuItem clearMenuItem = new MenuItem("Clear DQ/DNF/DNS Flag");
+                    clearMenuItem.setOnAction((ActionEvent event) -> {
+                        // Dialog
+                        List<Participant> perps = new ArrayList();
+                        table.getSelectionModel().getSelectedItems().forEach(res -> {
+                            if (res != null && ParticipantDAO.getInstance().getParticipantByBib(res.getBib()) != null)
+                                perps.add(ParticipantDAO.getInstance().getParticipantByBib(res.getBib()));
+                        });
+                        
+                        perps.forEach(perp -> {
+                            perp.setStatus(Status.GOOD);
+                            participantDAO.updateParticipant(perp);
+                        });
+                    });
+                    
+                    
+                    
+                    MenuItem dqMenuItem = new MenuItem("DQ: Disqulify");
+                    dqMenuItem.setOnAction((ActionEvent event) -> {
+                        // Dialog
+                        List<Participant> perps = new ArrayList();
+                        table.getSelectionModel().getSelectedItems().forEach(res -> {
+                            if (res != null && ParticipantDAO.getInstance().getParticipantByBib(res.getBib()) != null)
+                                perps.add(ParticipantDAO.getInstance().getParticipantByBib(res.getBib()));
+                        });
+                        
+                        // Open a dialog
+                        TextInputDialog dialog = new TextInputDialog();
+                        dialog.setTitle("DQ Participants");
+                        dialog.setHeaderText("You are about to Disqualify " + perps.size() + " participant(s)");
+                        dialog.setContentText("Please enter a reason:");
+
+                        // Traditional way to get the response value.
+                        Optional<String> result = dialog.showAndWait();
+                                                
+                        result.ifPresent(reason -> {
+                            // if yes, dq with note
+                            perps.forEach(perp -> {
+                                perp.setStatus(Status.DQ);
+                                perp.setNote(reason);
+                                participantDAO.updateParticipant(perp);
+                            });
+                        });
+                    });
+
+                    MenuItem dnfMenuItem = new MenuItem("DNF: Did Not Finish");
+                    dnfMenuItem.setOnAction((ActionEvent event) -> {
+                        // Dialog
+                        List<Participant> perps = new ArrayList();
+                        table.getSelectionModel().getSelectedItems().forEach(res -> {
+                            if (res != null && ParticipantDAO.getInstance().getParticipantByBib(res.getBib()) != null)
+                                perps.add(ParticipantDAO.getInstance().getParticipantByBib(res.getBib()));
+                        });
+                        
+                        // Open a dialog
+                        TextInputDialog dialog = new TextInputDialog();
+                        dialog.setTitle("Set DNF Flag");
+                        dialog.setHeaderText("You are about to flag " + perps.size() + " participant(s)\nas not having finished");
+                        dialog.setContentText("Please enter a note (optional):");
+
+                        // Traditional way to get the response value.
+                        Optional<String> result = dialog.showAndWait();
+                                                
+                        result.ifPresent(reason -> {
+                            // if yes, dq with note
+                            perps.forEach(perp -> {
+                                perp.setStatus(Status.DQ);
+                                perp.setNote(reason);
+                                participantDAO.updateParticipant(perp);
+                            });
+                        });
+                    });
+
+                    MenuItem dnsMenuItem = new MenuItem("DNS: Did Not Start");
+                    dnsMenuItem.setOnAction((ActionEvent event) -> {
+                        // Dialog
+                        List<Participant> perps = new ArrayList();
+                        table.getSelectionModel().getSelectedItems().forEach(res -> {
+                            if (res != null && ParticipantDAO.getInstance().getParticipantByBib(res.getBib()) != null)
+                                perps.add(ParticipantDAO.getInstance().getParticipantByBib(res.getBib()));
+                        });
+                        
+                        // Open a dialog
+                        TextInputDialog dialog = new TextInputDialog("Did not start");
+                        dialog.setTitle("Set DNS Flag");
+                        dialog.setHeaderText("You are about to flag " + perps.size() + " participant(s)\nas not having started");
+                        dialog.setContentText("Please enter a optional note (optional):");
+
+                        // Traditional way to get the response value.
+                        Optional<String> result = dialog.showAndWait();
+                                                
+                        result.ifPresent(reason -> {
+                            // if yes, dq with note
+                            perps.forEach(perp -> {
+                                perp.setStatus(Status.DNS);
+                                perp.setNote(reason);
+                                participantDAO.updateParticipant(perp);
+                            });
+                        });
+                    });
+
+                    Menu assignWaveMenu = new Menu("Re-Assign");
+                    //RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                    RaceDAO.getInstance().listWaves().sorted(new AlphanumericComparator()).stream().forEach(w -> {
+                        MenuItem m = new MenuItem(w.toString());
+                        m.setOnAction(e -> {
+                            table.getSelectionModel().getSelectedItems().stream().forEach(res -> {
+                                if (res != null ){
+                                    Participant part = ParticipantDAO.getInstance().getParticipantByBib(res.getBib());
+                                    part.setWaves((Wave)w);
+                                    participantDAO.updateParticipant(part);
+                                }
+                            });
+                        });
+                        assignWaveMenu.getItems().add(m);
+                    });
+
+                    RaceDAO.getInstance().listWaves().addListener((Change<? extends Wave> change) -> {
+                        assignWaveMenu.getItems().clear();
+                        //RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())).stream().forEach(w -> {
+                        RaceDAO.getInstance().listWaves().sorted(new AlphanumericComparator()).stream().forEach(w -> {
+                            MenuItem m = new MenuItem(w.toString());
+                            m.setOnAction(e -> {
+                                table.getSelectionModel().getSelectedItems().stream().forEach(res -> {
+                                    if (res != null ){
+                                        Participant part = ParticipantDAO.getInstance().getParticipantByBib(res.getBib());
+                                        part.setWaves((Wave)w);
+                                        participantDAO.updateParticipant(part);
+                                    }
+                                });
+                            });
+                            assignWaveMenu.getItems().add(m);
+                        });
+                    });
+                    
+                    Menu statusMenu = new Menu("Status");
+                    statusMenu.getItems().addAll(dqMenuItem, dnfMenuItem, dnsMenuItem, new SeparatorMenuItem(), clearMenuItem);
+
+                    // context menu to assign/unassign runners to a given wave
+                    rowMenu.getItems().addAll(statusMenu, assignWaveMenu);
+
+                    // only display context menu for non-null items:
+                    row.contextMenuProperty().bind(
+                            Bindings.when(Bindings.isNotNull(row.itemProperty()))
+                                    .then(rowMenu)
+                                    .otherwise((ContextMenu)null));
+
+                    // Hide the edit option if more than one item is selected and only show
+                    // the swap option if exactly two items are selected. 
+//                    table.getSelectionModel().getSelectedIndices().addListener((Change<? extends Integer> change) -> {
+//                        if (change.getList().size() == 2) {
+//                            swapBibs.setDisable(false);
+//                        } else {
+//                            swapBibs.setDisable(true);
+//                        }
+//                        if (change.getList().size() == 1) {
+//                            editItem.setDisable(false);
+//                        } else {
+//                            editItem.setDisable(true);
+//                        }
+//                    });
+
+                    return row;
+                });
+                
+ 
+                
+                
+                // 7. save it
                 raceTableViewMap.put(r, table);
     }
 
@@ -657,7 +948,11 @@ public class FXMLResultsController  {
         // We do this so we can easily show one and hide the other as the 
         // typeChoiceBox changes
         GridPane localGrid = new GridPane();
+            localGrid.setHgap(5);
+            localGrid.setVgap(5);
         GridPane remoteGrid = new GridPane();
+            remoteGrid.setHgap(5);
+            remoteGrid.setVgap(5);
         
         grid.add(localGrid,0,1,2,1); // col 0, row 1, colspan 2, rowspan 1
         grid.add(remoteGrid,0,1,2,1);
@@ -665,17 +960,53 @@ public class FXMLResultsController  {
 
 
         // create and populate the localGrid
-        TextField filePath = new TextField();
-        filePath.setText(sp.getBasePath());
+        TextField filePath = new TextField("");
+        
         localGrid.add(new Label("Directory"),0,0);
         localGrid.add(filePath,1,0);
         
+        
+        
+        
+        Button chooseDirectoryButton = new Button("Select...");
+        localGrid.add(chooseDirectoryButton,2,0);
+        chooseDirectoryButton.setOnAction((event) -> {
+            File current = PikaPreferences.getInstance().getCWD();
+            if (filePath.getText() != null && ! filePath.getText().isEmpty()) current = new File(filePath.getText());
+            if (! current.isDirectory() || !current.canWrite()) current = PikaPreferences.getInstance().getCWD();
+            DirectoryChooser dirChooser = new DirectoryChooser();
+            dirChooser.setInitialDirectory(current);
+            dirChooser.setTitle("Report Output Directory");
+            current = dirChooser.showDialog(chooseDirectoryButton.getParent().getScene().getWindow());
+            if (current != null) filePath.setText(current.getPath());
+        });
+        
+        
+        Label statusLabel = new Label("Please enter a target directory.");
+        localGrid.add(statusLabel, 1, 1, 2, 1);
+        
+        filePath.textProperty().addListener((observable, oldValue, newValue) -> {
+            //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            if (newValue == null || newValue.isEmpty()){
+                statusLabel.setText("Please enter a target directory.");
+            }
+            else {
+                File newFile = new File(newValue);
+                
+                if (! newFile.isDirectory()) statusLabel.setText("No Such Directory: " + newValue);
+                else statusLabel.setText("");
+            }
+        });
+        filePath.setText(sp.getBasePath());
+        
+        
+        
+        // create and populate the remoteGrid
         TextField remoteServer = new TextField();
         remoteServer.setText(sp.getServer());
         remoteGrid.add(new Label("Server"),0,0);
-        remoteGrid.add(remoteServer,1,0);
+        remoteGrid.add(remoteServer,1,0);       
         
-        // create and populate the remoteGrid
         TextField remoteDir = new TextField();
         remoteDir.setText(sp.getBasePath());
         remoteGrid.add(new Label("Path"),0,1);
@@ -695,6 +1026,48 @@ public class FXMLResultsController  {
         stripAccents.setSelected(sp.getStripAccents());
         stripAccents.tooltipProperty().set(new Tooltip("Remove accent marks from files. e.g. é -> e"));
         grid.add(stripAccents,0,2,2,1);
+        
+        VBox testVBox= new VBox();
+        Label resultLabel = new Label("Test Results:");
+        TextArea resultOutputTextArea = new TextArea("");
+        resultOutputTextArea.setPrefWidth(300);
+
+        testVBox.setManaged(false);
+        testVBox.setVisible(false);
+        testVBox.getChildren().addAll(resultLabel,resultOutputTextArea);
+        grid.add(testVBox,2,1,1,2);
+        
+        Button testButton = new Button("Test Connection...");
+        remoteGrid.add(testButton,1,4);
+        GridPane.setHalignment(testButton, HPos.RIGHT);
+        testButton.setOnAction((event) -> {
+            ReportDestination newRD = new ReportDestination();
+            StringProperty result = new SimpleStringProperty();
+            
+            resultOutputTextArea.textProperty().bind(result);
+            
+            if (FileTransferTypes.LOCAL.equals(typeChoiceBox.getSelectionModel().getSelectedItem())) {
+                newRD.setBasePath(filePath.getText());
+            } else {
+                newRD.setBasePath(remoteDir.getText());
+            }
+
+            newRD.setServer(remoteServer.getText());
+            newRD.setUsername(remoteUsername.getText());
+            newRD.setPassword(remotePassword.getText());
+            newRD.setStripAccents(stripAccents.selectedProperty().get());
+            
+            // show the result screen
+            
+            testVBox.setManaged(true);
+            testVBox.setVisible(true);
+           
+            dialog.getDialogPane().getScene().getWindow().sizeToScene();
+            typeChoiceBox.getSelectionModel().getSelectedItem().getNewTransport().test(newRD, result);
+            
+        });
+        
+        
         
         typeChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
             FileTransferTypes ftt = typeChoiceBox.getItems().get((Integer) number2);
@@ -724,6 +1097,7 @@ public class FXMLResultsController  {
                         remoteDir.textProperty().isEmpty()));
                 
                 dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(oneEmpty);
+                testButton.disableProperty().bind(oneEmpty);
             }
             
             dialog.getDialogPane().getScene().getWindow().sizeToScene();
@@ -817,18 +1191,46 @@ public class FXMLResultsController  {
         }
     }
     private class DurationTableCell extends TableCell<Result, Duration> {
+        Boolean showZero = false;
         @Override
         protected void updateItem(Duration d, boolean empty) {
             super.updateItem(d, empty);
             if (d == null || empty) {
                 setText(null);
             } else if (d.isZero() || d.equals(Duration.ofNanos(Long.MAX_VALUE))){
-                setText("");
+                if (showZero && d.isZero()) setText("0:00:00.000");
+                else setText("");
             } else {
                 // Format duration.
-                setText(DurationFormatter.durationToString(d, 3, Boolean.FALSE));
+                setText(DurationFormatter.durationToString(d, 3, Boolean.TRUE));
             }
         }
+        public DurationTableCell showZeros(){
+            showZero = true;
+            return this;
+        }
+    };
+    
+    
+    private class AgeGroupTableCell extends TableCell<Result, Number> {
+        @Override
+        protected void updateItem(Number d, boolean empty) {
+            super.updateItem(d, empty);
+            if (d == null || empty) {
+                setText(null);
+            } else {
+                // Format duration.
+                Result r = (Result)getTableRow().getItem();
+                if (r == null) {
+                    setText("");
+                    return;
+                }
+                Race race = raceDAO.getRaceByID(r.getRaceID());
+                if (race == null) setText("");
+                else setText(race.getAgeGroups().ageToAGString(d.intValue()));
+            }
+        }
+
     };
     
     private class OutputPortalListCell extends ListCell<ReportDestination> {

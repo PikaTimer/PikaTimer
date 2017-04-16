@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,5 +33,7 @@ public interface TimingListener {
     public LocalDate getEventDate();
     
     public void clearReads();
+    
+    public String getLocationName();
     
 }

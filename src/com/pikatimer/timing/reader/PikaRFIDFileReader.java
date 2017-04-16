@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -98,6 +98,7 @@ public class PikaRFIDFileReader extends TailingReader {
                 Platform.runLater(() -> {
                     statusLabel.textProperty().setValue(status);
                 });
+                return;
             }
         }
 

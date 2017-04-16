@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -159,7 +159,10 @@ public class ResultsDAO {
                             try {
                                 pendingBibs.stream().forEach(pb -> {
                                     processBib(pb);
-                                    if (!resultsMap.get(pb).keySet().isEmpty()) pendingResults.addAll(resultsMap.get(pb).values());
+                                    if (!resultsMap.get(pb).keySet().isEmpty()) {
+                                        //System.out.println("ResultsDAO ProcessNewResult Thread: resultsMap has " + resultsMap.get(pb).size() + " entries");
+                                        pendingResults.addAll(resultsMap.get(pb).values());
+                                    }
                                     
                                 });
                             } catch (Exception e) {
@@ -173,10 +176,12 @@ public class ResultsDAO {
                                 Iterator<Result> addIterator = pendingResults.iterator();
                                 while (addIterator.hasNext()) {
                                     Result c = addIterator.next();
-                                    if (c.isEmpty() && c.getID() != null) {                                        
+                                    if (c.isEmpty() && c.getID() != null) {    
+                                        //System.out.println("Deleting " + c.getBib());
                                         s.delete(c);    
                                         resultsMap.get(c.getBib()).remove(c.getRaceID());
-                                    } else {                                        
+                                    } else {                    
+                                        //System.out.println("Saving " + c.getBib());
                                         s.saveOrUpdate(c);                                        
                                     }
                                     if (++count % 20 == 0) {
@@ -189,13 +194,12 @@ public class ResultsDAO {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             } 
-
+                            
                             pendingResults.stream().forEach(r -> {
-                                
                                 if(!raceResultsMap.containsKey(r.getRaceID())) raceResultsMap.put(r.getRaceID(), FXCollections.observableArrayList(Result.extractor()));
-
-                                Platform.runLater(() -> {
-                                    
+                            });
+                            Platform.runLater(() -> {
+                                pendingResults.stream().forEach(r -> {
                                     //This causes the AAIOB error due to a java bug until we fix the extractor and the tableview to only display properties
                                     //if (r.isEmpty() && raceResultsMap.get(r.getRaceID()).contains(r)) raceResultsMap.get(r.getRaceID()).remove(r);
                                     
@@ -213,7 +217,7 @@ public class ResultsDAO {
                             });
                             
                             
-                            Thread.sleep(10); 
+                            Thread.sleep(100); 
                         } catch (InterruptedException ex) {
                             Logger.getLogger(ResultsDAO.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -226,6 +230,7 @@ public class ResultsDAO {
             Thread processNewResultThread = new Thread(processNewResult);
             processNewResultThread.setName("Thread-ProcessNewResultThread");
             processNewResultThread.setDaemon(true);
+            processNewResultThread.setPriority(1);
             processNewResultThread.start();
             
      
@@ -312,14 +317,14 @@ public class ResultsDAO {
             //System.out.println("Processing waveID " + i); 
             
             Boolean hasOverrides = false;
-            
-            Result r = resultsMap.get(bib).get(i);
+            Race race = raceDAO.getWaveByID(i).getRace();
+            Result r = resultsMap.get(bib).get(race.getID());
             
             if (r == null ) {
                 r = new Result();
                 r.setBib(bib);
-                r.setRaceID(raceDAO.getWaveByID(i).getRace().getID());
-                resultsMap.get(bib).put(i, r);
+                r.setRaceID(race.getID());
+                resultsMap.get(bib).put(r.getRaceID(), r);
             }
             
             
@@ -327,7 +332,7 @@ public class ResultsDAO {
             Duration waveStart = Duration.between(LocalTime.MIDNIGHT, RaceDAO.getInstance().getWaveByID(i).waveStartProperty());
             Duration maxWaveStart = waveStart.plus(Duration.ofHours(1)); //FIX THIS!
             //System.out.println("ResultsDAO.processBib: " + r.getBib() + " waveStart: " + waveStart + " maxWaveStart" + maxWaveStart);
-            List<Split> splits = raceDAO.getWaveByID(i).getRace().getSplits();
+            List<Split> splits = race.getSplits();
             
             r.setWaveStartDuration(waveStart);
             
@@ -350,6 +355,7 @@ public class ResultsDAO {
                 waveStart = overrides[0];
                 r.setStartDuration(waveStart);
                 r.setWaveStartDuration(waveStart);
+                r.setSplitTime(0, waveStart);
                 //System.out.println("Found start time override of " + overrides[0].toString());
                 
                 // Adjust all relative overrides to actual
@@ -437,6 +443,7 @@ public class ResultsDAO {
                     
                     splitIndex++; // we pre-filled the split times earlier
                 } else if (ctd.getTimestamp().compareTo(waveStart) < 0 ) {
+                    if (splitIndex == 0 && ctd.getTimingLocationId().equals(splitArray[splitIndex].getTimingLocationID())) r.setSplitTime(splitIndex, ctd.getTimestamp());
                     if (times.hasNext()) ctd = times.next();
                     else ctd = null;
                     //System.out.println("ResultsDAO.processBib: tossing ctd's that were before the wave start");
@@ -449,7 +456,7 @@ public class ResultsDAO {
                          // or we find a different locationID
                         do { 
                             //System.out.println("ResultsDAO.processBib: start time: " + ctd.getTimestamp());
-
+                            r.setSplitTime(splitIndex, ctd.getTimestamp());
                             r.setStartDuration(ctd.getTimestamp());
                             if (times.hasNext()) ctd = times.next();
                             else ctd = null;
@@ -533,6 +540,8 @@ public class ResultsDAO {
             }
             
             // Now we are going to walk the times and look for backp times that may be able to fill the gaps.
+            //System.out.println("ResultsDAO.processBib: Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+
             if (backupTimesList.isEmpty()) return;
             int backupTimeIndex = 0;
             int maxBackupTimes = backupTimesList.size();
@@ -620,7 +629,7 @@ public class ResultsDAO {
                 }
             }
             
-            System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+            //System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
             //resultsList.add(r); 
             //resultsMap.put(bib + " " + r.getRaceID(), r);
             
@@ -776,7 +785,7 @@ public class ResultsDAO {
                         // Set the AG code (e.g. M30-34) (age and gender are set automagically)
                         pr.setAge(pr.getParticipant().getAge());
                         pr.setAGCode(r.getAgeGroups().ageToAGString(pr.getAge()));
-
+                        
                         // set the start and wave start times
                         Duration chipStartTime = res.getStartDuration();
                         Duration waveStartTime = res.getWaveStartDuration();
@@ -789,9 +798,14 @@ public class ResultsDAO {
                         pr.setSplit(1, Duration.ZERO); 
 
                         //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
-
-                        // Set the finish times
-                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero()){
+                        
+                        // if they are DQ'ed then we don't care what their time is
+                        if (pr.getParticipant().getDQ()) {
+                            results.add(pr);
+                            return;
+                        }
+                        // Set the finish times unless they are a DNF
+                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero() && ! pr.getParticipant().getDNF()){
                             pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
                             pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
                             pr.setSplit(splitSize, pr.getChipFinish());
@@ -806,8 +820,8 @@ public class ResultsDAO {
                         }
                         
                         
-                        // set the segment times
-                        r.getSegments().forEach(seg -> {
+                        // set the segment times unless they are a DNF
+                        if (!pr.getParticipant().getDNF()) r.getSegments().forEach(seg -> {
                             //System.out.println("Processing segment " + seg.getSegmentName());
                             if (pr.getSplit(seg.getEndSplitPosition()) != null && pr.getSplit(seg.getStartSplitPosition()) != null) {
                                 pr.setSegmentTime(seg.getID(), pr.getSplit(seg.getEndSplitPosition()).minus(pr.getSplit(seg.getStartSplitPosition())));
@@ -850,16 +864,19 @@ public class ResultsDAO {
                         
                         results.forEach(pr -> {
                             if (pr.getSegmentTime(seg.getID()) == null) return;
+                            //System.out.println("Segment " + seg.getID() + " runner: " + pr.participant.fullNameProperty().get() + " time: " + DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()),r.getStringAttribute("TimeDisplayFormat"),r.getStringAttribute("TimeRoundingMode")));
+                            //System.out.println("  This: Overall: " + segPlCounter.get("overall") + " Sex: " + segPlCounter.get(pr.getSex()) );
                             
                             pr.setSegmentOverallPlace(seg.getID(),segPlCounter.get("overall"));
-                            segPlCounter.put("overall", pr.getOverall()+1);
+                            segPlCounter.put("overall", segPlCounter.get("overall")+1);
 
                             pr.setSegmentSexPlace(seg.getID(),segPlCounter.get(pr.getSex()));
-                            segPlCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID())+1);
+                            segPlCounter.put(pr.getSex(), segPlCounter.get(pr.getSex())+1);
 
                             segPlCounter.putIfAbsent(pr.getSex()+pr.getAGCode(), 1);
                             pr.setSegmentAGPlace(seg.getID(),segPlCounter.get(pr.getSex()+pr.getAGCode()));
-                            segPlCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID())+1);
+                            segPlCounter.put(pr.getSex()+pr.getAGCode(),segPlCounter.get(pr.getSex()+pr.getAGCode())+1);
+                            //System.out.println("  Next: Overall: " + segPlCounter.get("overall") + " Sex: " + segPlCounter.get(pr.getSex()) );
                         });
                     });
                     
@@ -952,6 +969,7 @@ public class ResultsDAO {
             Thread processNewResultThread = new Thread(processRaceReports);
             processNewResultThread.setName("Thread-processRaceReports-" + r.getRaceName());
             processNewResultThread.setDaemon(true);
+            processNewResultThread.setPriority(1);
             processNewResultThread.start();
         
     }

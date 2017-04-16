@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -241,6 +241,7 @@ public class TimingDAO {
             Thread processNewCookedThread = new Thread(processNewCooked);
             processNewCookedThread.setName("Thread-ProcessNewCookedThread");
             processNewCookedThread.setDaemon(true);
+            processNewCookedThread.setPriority(1);
             processNewCookedThread.start();
         }
     
@@ -288,6 +289,7 @@ public class TimingDAO {
         };
         Thread clearAllCookedThread = new Thread(clearTimes);
         clearAllCookedThread.setName("Thread-clearAllCookedThread");
+        clearAllCookedThread.setPriority(1);
         clearAllCookedThread.start();
                     
     }
@@ -339,8 +341,9 @@ public class TimingDAO {
                 return null;
             }
         };
-        Thread processNewCookedThread = new Thread(clearTimes);
-        processNewCookedThread.start();
+        Thread clearCookedThread = new Thread(clearTimes);
+        clearCookedThread.setPriority(1);
+        clearCookedThread.start();
     }
     
     public Map<String,List<CookedTimeData>> getCookedTimesMap() {
@@ -703,7 +706,7 @@ public class TimingDAO {
         if (!overrideMap.get(o.getBib()).contains(o)) {
             // if this is an overwrite, remove the old one first
             try {
-                TimeOverride old = overrideList.stream().filter(e -> e.getSplitId().equals(o.getSplitId())).findFirst().get();
+                TimeOverride old = overrideMap.get(o.getBib()).stream().filter(e -> e.getSplitId().equals(o.getSplitId())).findFirst().get();
                 deleteOverride(old);
             }
             catch (Exception e) {

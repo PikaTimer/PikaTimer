@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.timing.reader.PikaPCTimerFileReader;
+import com.pikatimer.timing.reader.PikaRFIDDirectReader;
 import com.pikatimer.timing.reader.PikaRaceTimerFileReader;
 import com.pikatimer.timing.reader.PikaRFIDFileReader;
 import java.util.Collections;
@@ -31,6 +32,7 @@ public enum TimingInputTypes {
 
 
     RFIDFile,
+    RFIDDirect,
     PCTimer, 
     RaceTimer; 
 
@@ -41,6 +43,7 @@ public enum TimingInputTypes {
         Map<TimingInputTypes, String> result = new HashMap<>();
 
         result.put(RFIDFile, "RFIDServer / Outreach File");
+        result.put(RFIDDirect, "RFID Ultra (TCP)");
         result.put(PCTimer, "PC Timer (Race Director)");
         result.put(RaceTimer, "Race Timer");
 
@@ -62,6 +65,8 @@ public enum TimingInputTypes {
                 return new PikaRaceTimerFileReader();
             case RFIDFile:
                 return new PikaRFIDFileReader();
+            case RFIDDirect:
+                return new PikaRFIDDirectReader();
         }
         
         return null;

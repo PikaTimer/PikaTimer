@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -325,37 +325,36 @@ public class TimingLocationInput implements TimingListener{
             //System.out.println("processRead() ProcessRead.aquire()");
             processRead.acquire();
             //System.out.println("Got it... ");
+
+            // Mark it as our own
+            r.setTimingLocationInputId(IDProperty.getValue());
+
+            if (rawTimeSet == null) getRawTimeSet();
+            // is it a duplicate?
+
+            // if so, just return
+            if (rawTimeSet.contains(r)) {
+                //System.out.println("TimingLocationInput.processRead: Duplicate " + r.getChip() + " " + r.getTimestamp().toString()); 
+                processRead.release();
+                return;
+            }
+            //if not, save it to our local stash of times. 
+            timingDAO.saveRawTimes(r); 
+            rawTimeSet.add(r);
+
+            Platform.runLater(() -> {
+                readCountProperty.set(rawTimeSet.size());
+            });
+
+            processRead.release();
+
+            processReadStage2(r);
         } catch (InterruptedException ex) {
             Logger.getLogger(TimingLocationInput.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         
-        // Mark it as our own
-        r.setTimingLocationInputId(IDProperty.getValue());
         
-        if (rawTimeSet == null) getRawTimeSet();
-        // is it a duplicate?
-        
-        // if so, just return
-        if (rawTimeSet.contains(r)) {
-            //System.out.println("TimingLocationInput.processRead: Duplicate " + r.getChip() + " " + r.getTimestamp().toString()); 
-            processRead.release();
-            return;
-        }
-        
-        
-        Platform.runLater(() -> {
-            readCountProperty.set(rawTimeSet.size());
-        });
-        
-        
-        //if not, save it to our local stash of times. 
-        timingDAO.saveRawTimes(r); 
-        rawTimeSet.add(r);
-        
-        processRead.release();
-
-        processReadStage2(r);
     }
     
     public void processReadStage2(RawTimeData r){

@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 John Garner
+ * Copyright (C) 2017 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,9 +70,14 @@ public class DurationFormatter {
         if (isNegative) r = "-"; 
         if (H > 0 ) r += H.toString() + ":";
         if (H == 0 && printHours) r += "0:";
+        
         if (M > 9) r += M.toString() +":";
-        if (M < 10 && M > 0) r+= "0" + M.toString()+":";
+        if (M < 10 && M > 0) {
+            if (H > 0 || printHours ) r+= "0" + M.toString()+":";
+            else r+= M.toString()+":";
+        }
         if ((H > 0 || printHours ) && M == 0) r+= "00:";
+        
         if (s > 9 ) r+= s.toString();
         if (s < 10 && s > 0) r+= "0" + s.toString();
         if (p > 0 && s > 0) r += S.toPlainString().replace("0.", ".");
