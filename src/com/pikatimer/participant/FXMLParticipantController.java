@@ -201,8 +201,8 @@ public class FXMLParticipantController  {
                     swapMe.get(1).setBib(swapMe.get(0).getBib());
                     swapMe.get(0).setBib(tmp);
                     
-                    participantDAO.updateParticipant(swapMe.get(2));
                     participantDAO.updateParticipant(swapMe.get(1));
+                    participantDAO.updateParticipant(swapMe.get(0));
                     
                 }
 		
