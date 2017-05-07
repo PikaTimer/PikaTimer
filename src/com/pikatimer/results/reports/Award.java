@@ -102,7 +102,11 @@ public class Award implements RaceReportType {
         
         Map<String,List<ProcessedResult>> agAwardMap = new HashMap();
         RaceAwards awardParams = race.getAwards();
-        
+        if (awardParams == null){
+            report += "Award depths have not yet been set up!" + System.lineSeparator();
+            report += "Go to the Award tab and select " + race.getRaceName() + " to configure the award depths.";
+            return report;
+        }
         Event event = Event.getInstance();  // fun with singletons... 
         
         //rr.getKnownAttributeNames().forEach(s -> {System.out.println("Award: Known Attribute: " + s);});
