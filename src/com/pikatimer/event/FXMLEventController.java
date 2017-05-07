@@ -19,6 +19,7 @@ package com.pikatimer.event;
 
 
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.FXMLRaceDetailsController;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
@@ -235,6 +236,9 @@ public class FXMLEventController  {
             selectedRace.setRaceDistance(new BigDecimal("5.0")); 
             selectedRace.setRaceDistanceUnits(Unit.KILOMETERS);
             raceDAO.addRace(selectedRace);
+            AgeGroups ageGroups = new AgeGroups();
+            selectedRace.setAgeGroups(ageGroups);
+            raceDAO.updateRace(selectedRace);
         } else {
             selectedRace = raceList.get(0); 
         }
@@ -465,8 +469,9 @@ public class FXMLEventController  {
             raceRemoveButton.setDisable(true);
         }
         raceAddButton.setDefaultButton(false);
-        //Because we call the timingLocListView.edit, we don't want to pull back focus
-        //timingLocAddButton.requestFocus();
+        AgeGroups ageGroups = new AgeGroups();
+        r.setAgeGroups(ageGroups);
+        raceDAO.updateRace(r);
 
     }
     public void removeRace(ActionEvent fxevent){
