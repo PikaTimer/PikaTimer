@@ -561,7 +561,9 @@ public class FXMLResultsController  {
                                 case "ag": 
                                         String ag = r.getAgeGroups().ageToAGString(participant.getAge());
                                         if (ag.equalsIgnoreCase(keyValue[1])) return true;
+                                        else if (ag.toLowerCase().startsWith(keyValue[1].toLowerCase(), 0)) return true;
                                         else if ((participant.getSex()+ag).equalsIgnoreCase(keyValue[1])) return true;
+                                        else if ((participant.getSex()+ag).toLowerCase().startsWith(keyValue[1].toLowerCase())) return true;
                                         else return false;
                             }
                         } else {
@@ -573,6 +575,7 @@ public class FXMLResultsController  {
                                         pattern.matcher(participant.getLastName()).matches() ||
                                         pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
                                         pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
+                                        pattern.matcher(participant.getSex()+r.getAgeGroups().ageToAGString(participant.getAge())).matches() ||
                                         pattern.matcher(participant.getBib()).matches()) {
                                     return true; // Filter matches first/last/bib.
                                 } 
