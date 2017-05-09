@@ -40,10 +40,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   </columnConstraints>
   <rowConstraints>
       <RowConstraints fillHeight="false" vgrow="NEVER" />
+      <RowConstraints fillHeight="false" vgrow="NEVER" />
     <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
   </rowConstraints>
    <children>
-      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
          <children>
             <VBox fx:id="splitsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" VBox.vgrow="ALWAYS">
                <children>
@@ -98,7 +99,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <Button fx:id="splitUpdateResultsButton" mnemonicParsing="false" text="Update Results" />
                         <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                         <Button fx:id="addSplitButton" mnemonicParsing="false" onAction="#addSplit" text="Add" />
-                        <Button fx:id="deleteSplitButton" mnemonicParsing="false" onAction="#deleteSplit" text="Delete" />
+                        <Button fx:id="deleteSplitButton" mnemonicParsing="false" onAction="#deleteSplit" text="Remove" />
                      </children>
                   </HBox>
                </children>
@@ -143,7 +144,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <HBox alignment="CENTER_RIGHT" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
                         <Button fx:id="addSegmentutton" mnemonicParsing="false" onAction="#addSegment" text="Add" />
-                        <Button fx:id="deleteSegmentButton" mnemonicParsing="false" onAction="#deleteSegment" text="Delete" />
+                        <Button fx:id="deleteSegmentButton" mnemonicParsing="false" onAction="#deleteSegment" text="Remove" />
                      </children>
                   </HBox>
                </children>
@@ -153,7 +154,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </VBox>
          </children>
       </VBox>
-      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="ALWAYS">
+      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.valignment="TOP" GridPane.vgrow="ALWAYS">
          <children>
             <Label maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" text="Start Waves" VBox.vgrow="NEVER">
                <font>
@@ -217,7 +218,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <HBox alignment="CENTER_RIGHT" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
                <children>
                   <Button fx:id="addWaveButton" mnemonicParsing="false" onAction="#addWave" text="Add" />
-                  <Button fx:id="deleteWaveButton" mnemonicParsing="false" onAction="#deleteWave" text="Delete" />
+                  <Button fx:id="deleteWaveButton" mnemonicParsing="false" onAction="#deleteWave" text="Remove" />
                </children>
             </HBox>
          </children>
@@ -225,8 +226,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets top="10.0" />
          </padding>
       </VBox>
-      <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
+      <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
          <children>
+            <Label text="Race Options">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Label>
             <CheckBox fx:id="waveStartsCheckBox" mnemonicParsing="false" text="Wave Starts">
                <font>
                   <Font size="14.0" />
@@ -274,7 +280,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </HBox>
          </children>
       </VBox>
-      <VBox maxHeight="-Infinity" minHeight="-Infinity" spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
+      <VBox maxHeight="-Infinity" minHeight="-Infinity" spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
          <children>
             <HBox fx:id="raceNameHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
@@ -315,5 +321,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets />
          </GridPane.margin>
       </VBox>
+      <Label text="Race Details">
+         <font>
+            <Font name="System Bold" size="20.0" />
+         </font>
+      </Label>
    </children>
 </GridPane>
