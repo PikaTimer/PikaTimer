@@ -121,7 +121,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <ToggleSwitch fx:id="reportEnabledToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="78.0" text="Enabled" HBox.hgrow="NEVER" />
             <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#processReportNow" text="Process Now" />
             <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-            <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#removeRaceReport" text="Delete Report" />
+            <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#removeRaceReport" text="Remove Report" />
          </children>
       </HBox>
       <Separator prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="2" />

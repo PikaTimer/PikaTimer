@@ -74,7 +74,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                            <children>
                               <HBox alignment="CENTER_LEFT">
                                  <children>
-                                    <Label text="Reports" GridPane.columnIndex="2">
+                                    <Label text="Results and Reports" GridPane.columnIndex="2">
                                        <font>
                                           <Font size="20.0" />
                                        </font>
