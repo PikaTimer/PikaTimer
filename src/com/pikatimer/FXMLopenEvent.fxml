@@ -58,11 +58,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <Font size="48.0" />
                </font>
             </Label>
-            <Label fx:id="pikaVersionLabel" alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Version" textAlignment="CENTER">
-               <font>
-                  <Font size="30.0" />
-               </font>
-            </Label>
+            <HBox alignment="CENTER" spacing="5.0">
+               <children>
+                  <Label alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Version" textAlignment="CENTER">
+                     <font>
+                        <Font size="30.0" />
+                     </font>
+                  </Label>
+                  <Label fx:id="pikaVersionLabel" alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Version" textAlignment="CENTER">
+                     <font>
+                        <Font size="30.0" />
+                     </font>
+                  </Label>
+               </children>
+            </HBox>
             <Label text="Race Timing Made Simple" textAlignment="CENTER" wrapText="true">
                <font>
                   <Font name="System Bold" size="18.0" />
