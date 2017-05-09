@@ -18,7 +18,6 @@ package com.pikatimer.timing.reader;
 
 import com.pikatimer.PikaPreferences;
 import com.pikatimer.event.Event;
-import com.pikatimer.timing.FXMLTimingController;
 import com.pikatimer.timing.RawTimeData;
 import com.pikatimer.timing.TimingListener;
 import com.pikatimer.timing.TimingReader;
@@ -35,19 +34,14 @@ import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -68,7 +62,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -84,21 +77,17 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import static javafx.scene.layout.Region.USE_PREF_SIZE;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
-import javafx.util.Pair;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -1437,7 +1426,10 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 });
                                 ultraOutput.flush();
                                 
-                                String command = "800";
+                                // Send 8[0x00][0x00], like RFIDServer, not "800" per the manual
+                                String command = "8";
+                                command += Character.toString ((char) 0) ;
+                                command += Character.toString ((char) 0) ;
                                 command += startTimestamp.toString() ;
                                 command += Character.toString ((char) 13) ;
                                 command += endTimestamp.toString();
@@ -1486,7 +1478,10 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 
                                 ultraOutput.flush();
                                 
-                                String command = "600";
+                                // Send 6[0x00][0x00], like RFIDServer, not "800" per the manual
+                                String command = "6";
+                                command += Character.toString ((char) 0) ;
+                                command += Character.toString ((char) 0) ;
                                 command += lastRead.toString() ;
                                 command += Character.toString ((char) 13) ;
                                 command += currentRead.toString();
