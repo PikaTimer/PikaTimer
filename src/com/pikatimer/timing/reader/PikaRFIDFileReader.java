@@ -37,23 +37,51 @@ public class PikaRFIDFileReader extends TailingReader {
     
     @Override
     public void process(String s) {
+        String port="";
+        String chip="";
+        String dateAndTime="";
         
-        
-        String[] tokens = s.split(",", -1);
-        // we only care about the following fields:
-        // 0 -- The port (1->4)
-        // 1 -- chip
-        // 2 -- bib
-        // 3 -- time (as a string)
-        // 4 & 5 -- the Reader {1 or 2} and Port (again)
+        if (s.contains(",")) {
+            String[] tokens = s.split(",", -1);
+            // we only care about the following fields:
+            // 0 -- The port (1->4)
+            // 1 -- chip
+            // 2 -- bib
+            // 3 -- time (as a string)
+            // 4 & 5 -- the Reader {1 or 2} and Port (again)
 
-        // Step 1: Make sure we have a time in the 4th field
-        // Find out if we have a date + time or just a time
-        String port = tokens[0];
-        String chip = tokens[1];
-        //String bib = tokens[2]; // We don't care what the bib is
-        String dateAndTime = tokens[3].replaceAll("\"", "");
-        
+            // Step 1: Make sure we have a time in the 4th field
+            // Find out if we have a date + time or just a time
+            port = tokens[0];
+            chip = tokens[1];
+            //String bib = tokens[2]; // We don't care what the bib is
+            dateAndTime = tokens[3].replaceAll("\"", "");
+            
+            if (port.equals("0") && ! chip.equals("0")) { // invalid combo
+                System.out.println("Non Start time: " + s);
+                return;
+            } else if (!port.matches("[1234]") && !chip.equals("0")){
+                System.out.println("Invalid Port: " + s);
+                return;
+            }
+            
+        } else if (s.contains("\t")){
+            String[] tokens = s.split("\t", -1);
+            // we only care about the following fields:
+            // 0 -- The port (1->4)
+            // 1 -- chip
+            // 2 -- bib
+            // 3 -- time (as a string)
+            // 4 & 5 -- the Reader {1 or 2} and Port (again)
+
+            // Step 1: Make sure we have a time in the 4th field
+            // Find out if we have a date + time or just a time
+            chip = tokens[0];
+            //String bib = tokens[2]; // We don't care what the bib is
+            dateAndTime = tokens[1].replaceAll("\"", "");
+        }
+                
+                
         String date = null;
         String time = null;
         String[] dateTime = dateAndTime.split(" ", 2);
@@ -65,13 +93,7 @@ public class PikaRFIDFileReader extends TailingReader {
         //System.out.println("Chip: " + chip);
         //System.out.println("dateTime: " + dateTime);
         
-        if (port.equals("0") && ! chip.equals("0")) { // invalid combo
-            System.out.println("Non Start time: " + s);
-            return;
-        } else if (!port.matches("[1234]") && !chip.equals("0")){
-            System.out.println("Invalid Port: " + s);
-            return;
-        }
+
         
         
         Duration timestamp = Duration.ZERO;
