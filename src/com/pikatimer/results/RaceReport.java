@@ -52,6 +52,8 @@ import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
@@ -134,6 +136,7 @@ public class RaceReport {
     }
     
     @OneToMany(mappedBy="raceReport",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.LAZY)
+    @Fetch(FetchMode.SELECT)
     public List<RaceOutputTarget> getRaceOutputTargets() {
         return raceOutputTargetList;
     }
