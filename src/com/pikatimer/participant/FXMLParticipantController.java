@@ -108,6 +108,7 @@ public class FXMLParticipantController  {
     @FXML private TextField bibTextField;
     @FXML private Label raceLabel;
     @FXML private CheckComboBox<Wave> waveComboBox; 
+    @FXML private HBox raceHBox;
     @FXML private TextField firstNameField;
     @FXML private TextField middleNameTextField;
     @FXML private TextField lastNameField;
@@ -301,9 +302,15 @@ public class FXMLParticipantController  {
         filteredSizeLabel.textProperty().bind(Bindings.size(sortedParticipantsList).asString());
         
         // if there is only one race, hide the option to pick a race... 
-        raceLabel.visibleProperty().bind(waveComboBox.visibleProperty());
-        waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
-        waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+//        raceLabel.visibleProperty().bind(waveComboBox.visibleProperty());
+//        waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+//        waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        
+        raceHBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        raceHBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        if (RaceDAO.getInstance().listRaces().size() > 1) raceLabel.setText("Race");
+        else raceLabel.setText("Wave");
+        
         searchWaveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         filterLabel.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
@@ -325,6 +332,7 @@ public class FXMLParticipantController  {
                     searchWaveComboBox.getCheckModel().clearCheck(removed);
                 });
             waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
+            waveComboBox.getCheckModel().check(0);
             searchWaveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
             
             if (change.getList().size() == 1 ) {
@@ -332,6 +340,9 @@ public class FXMLParticipantController  {
                 searchWaveComboBox.getCheckModel().clearChecks();
             }
             else raceColumn.visibleProperty().set(true);
+            
+            if (RaceDAO.getInstance().listRaces().size() > 1) raceLabel.setText("Race");
+            else raceLabel.setText("Wave");
             //});
         });
         
