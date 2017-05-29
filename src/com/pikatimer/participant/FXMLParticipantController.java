@@ -568,6 +568,9 @@ public class FXMLParticipantController  {
         formAddButton.defaultButtonProperty().bind(formAddButton.focusedProperty());
         formUpdateButton.defaultButtonProperty().bind(formUpdateButton.focusedProperty());
         deleteParticipantsButton.disableProperty().bind(participantTableView.getSelectionModel().selectedItemProperty().isNull());
+        
+        // Add button only enabled if both the first and last names are empty
+        formAddButton.disableProperty().bind(Bindings.and(firstNameField.textProperty().isEmpty(), lastNameField.textProperty().isEmpty()));
 
     }
     
@@ -575,7 +578,7 @@ public class FXMLParticipantController  {
     protected void addPerson(ActionEvent fxevent) {
         // Make sure they actually entered something first
         System.out.println("addPerson fired");
-        if (!firstNameField.getText().isEmpty() && !lastNameField.getText().isEmpty()) {
+        if (!(firstNameField.getText().isEmpty() && lastNameField.getText().isEmpty())) {
             Participant p = new Participant(firstNameField.getText(),
                 lastNameField.getText()
             );
