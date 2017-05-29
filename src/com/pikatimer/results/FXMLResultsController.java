@@ -68,6 +68,8 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
@@ -1140,9 +1142,35 @@ public class FXMLResultsController  {
         });
     }
     public void removeOutputDestination(ActionEvent fxevent){
+        BooleanProperty inUse = new SimpleBooleanProperty(FALSE);
+        StringBuilder inUseBy = new StringBuilder("In use by the following reports:\n");
+        ReportDestination rd = outputDestinationsListView.getSelectionModel().getSelectedItem();
+        if (rd == null) return;
         // Make sure it is  not in use anywhere, then remove it.
+        raceDAO.listRaces().forEach(r -> {
+            System.out.println("  Race: " + r.getRaceName());
+            r.getRaceReports().forEach(rr -> {
+                System.out.println("  Report: " + rr.getReportType().toString());
+                rr.getRaceOutputTargets().forEach(rot -> {
+                    System.out.println("  Target: " + rot.getUUID() );
+                    if (rd.getID().equals(rot.getOutputDestination()) ) {
+                        // the ReportDestination is in use
+                        inUse.set(true);
+                        inUseBy.append(r.getRaceName() + ": " + rr.getReportType().toString() +"\n" );
+                    }
+                });
+            });
+        });
         
-        resultsDAO.removeReportDestination(outputDestinationsListView.getSelectionModel().getSelectedItem());
+        if (inUse.getValue()) {
+            // Alert dialog box time
+            Alert alert = new Alert(AlertType.WARNING);
+            alert.setTitle("Unable to Remove ");
+            alert.setHeaderText("Unable to Remove the selected Output Destination");
+            alert.setContentText(inUseBy.toString());
+
+            alert.showAndWait();
+        } else resultsDAO.removeReportDestination(outputDestinationsListView.getSelectionModel().getSelectedItem());
     }
     
     public void addNewReport(ActionEvent fxevent){
@@ -1237,6 +1265,7 @@ public class FXMLResultsController  {
     };
     
     private class OutputPortalListCell extends ListCell<ReportDestination> {
+        ReportDestination boundRD = null;
         Label protocolLabel = new Label();
         Label serverLabel = new Label();
         Label pathLabel = new Label();
@@ -1297,13 +1326,19 @@ public class FXMLResultsController  {
             if (empty || op == null) {
                 setText(null);
                 setGraphic(null);
+                if (boundRD != null) {
+                    enabledCheckBox.selectedProperty().unbindBidirectional(boundRD.enabledProperty());
+                    boundRD = null;
+                }
             } else {
                 setText(null);
                 protocolLabel.setText(op.protocolProperty().getValueSafe());
                 //serverLabel.setText(op.serverProperty().getValueSafe());
                 if (op.getOutputProtocol().equals(FileTransferTypes.LOCAL)) pathLabel.setText(op.basePathProperty().getValueSafe());
                 else pathLabel.setText(op.serverProperty().getValueSafe() + ":" + op.basePathProperty().getValueSafe());
+                if (boundRD != null) enabledCheckBox.selectedProperty().unbindBidirectional(boundRD.enabledProperty());
                 enabledCheckBox.selectedProperty().bindBidirectional(op.enabledProperty());
+                boundRD = op;
                 transferStatusLabel.setText("Status: " + op.transferStatusProperty().getValueSafe());
                 setGraphic(container);
                 System.out.println("updateItem called: " + op.transferStatusProperty().getValueSafe());

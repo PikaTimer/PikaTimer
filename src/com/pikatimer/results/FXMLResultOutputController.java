@@ -382,6 +382,8 @@ public class FXMLResultOutputController {
         
         // ChoserBox for the OutputDestination
         destinationChoiceBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
+            if (t.getID() < 0) return; // deleted
+            
             ReportDestination op = destinationChoiceBox.getItems().get((Integer) number2);
 //            if(! Objects.equals(destinationChoiceBox.getSelectionModel().getSelectedItem(),op)) {
 //                t.setOutputDestination(op.getID());
@@ -422,8 +424,13 @@ public class FXMLResultOutputController {
     }
     
     public void removeRaceReportOutputTarget(RaceOutputTarget t){
-        resultsDAO.removeRaceReportOutputTarget(t);
+        
         outputTargetsVBox.getChildren().remove(rotHBoxMap.get(t));
+        rotHBoxMap.remove(t);
+        
+        thisRaceReport.removeRaceOutputTarget(t);
+        resultsDAO.removeRaceReportOutputTarget(t);
+        t.setID(-1);
     }
     
 }
