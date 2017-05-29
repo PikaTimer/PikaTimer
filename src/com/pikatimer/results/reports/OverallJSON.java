@@ -34,6 +34,7 @@ import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -151,6 +152,10 @@ public class OverallJSON implements RaceReportType{
             chars.append("\t\t\"sex\": ").append("\"").append(pr.getSex()).append("\",\n");
             chars.append("\t\t\"ag\": ").append("\"").append(pr.getAGCode()).append("\",\n");
             chars.append("\t\t\"full_name\": ").append("\"").append(pr.getParticipant().fullNameProperty().getValueSafe()).append("\"").append(",\n");
+            chars.append("\t\t\"full_name_filter\": ").append("\"").append(pr.getParticipant().fullNameProperty().getValueSafe());
+            if(!pr.getParticipant().fullNameProperty().getValueSafe().equals(StringUtils.stripAccents(pr.getParticipant().fullNameProperty().getValueSafe()))) 
+                chars.append(" ").append(StringUtils.stripAccents(pr.getParticipant().fullNameProperty().getValueSafe()));
+            chars.append("\"").append(",\n");
             chars.append("\t\t\"first_name\": ").append("\"").append(pr.getParticipant().getFirstName()).append("\"").append(",\n");
             chars.append("\t\t\"middle_name\": ").append("\"").append(pr.getParticipant().getMiddleName()).append("\"").append(",\n");
             chars.append("\t\t\"last_name\": ").append("\"").append(pr.getParticipant().getLastName()).append("\"").append(",\n");

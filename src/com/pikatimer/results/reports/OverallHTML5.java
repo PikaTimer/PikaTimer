@@ -439,7 +439,7 @@ public class OverallHTML5 implements RaceReportType{
                     "var search = \"\";\n" +
                     "	if ( window.location.hash !== \"\" ) {\n" +
                     "		search = decodeURI(window.location.hash.substring( 1 ));\n" +
-                    "	}" +
+                    "	}\n" +
                     "var oTable = $('#results').DataTable({\n" +
                         "   data: resultsData,\n" +
                         "        \"columns\": [\n" +
@@ -451,7 +451,12 @@ public class OverallHTML5 implements RaceReportType{
                         "           { \"data\": \"age\" },\n" +
                         "           { \"data\": \"sex\" },\n" + // If this index changes, change the filter below
                         "           { \"data\": \"ag\" },\n" +  // ibid
-                        "           { \"data\": \"full_name\" },\n" +
+                        "           { \"data\": null, " +
+                        "                  \"render\": {\n" +
+                        "                       \"_\": \"full_name\",\n" +
+                        "                       \"filter\": \"full_name_filter\",\n" +
+                        "               } "
+                    +   "           },\n" +
                         "           { \"data\": \"city\" },\n" +
                         "           { \"data\": \"state\" },\n";
             if (showCountry) report += "           { \"data\": \"country\" },\n";
