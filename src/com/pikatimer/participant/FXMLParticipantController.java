@@ -307,6 +307,7 @@ public class FXMLParticipantController  {
         searchWaveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         filterLabel.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
+        waveComboBox.getCheckModel().check(0);
         searchWaveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
         
         waveComboBox.setConverter(new WaveStringConverter());
@@ -337,14 +338,14 @@ public class FXMLParticipantController  {
         
         
         // DOES NOT WORK :-( 
-        waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            System.out.println("PartController::waveComboBox(focusedListener) fired...");
-            if (!newPropertyValue) {
-                System.out.println("waveComboBox out focus");
-            } else {
-                System.out.println("waveComboBox in focus");
-            }
-        });
+//        waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+//            System.out.println("PartController::waveComboBox(focusedListener) fired...");
+//            if (!newPropertyValue) {
+//                System.out.println("waveComboBox out focus");
+//            } else {
+//                System.out.println("waveComboBox in focus");
+//            }
+//        });
         // Does Work
         waveComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends Wave> c) -> {
             System.out.println("PartController::waveComboBox(changeListener) fired...");
@@ -735,6 +736,7 @@ public class FXMLParticipantController  {
         //waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
         waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
         waveComboBox.getCheckModel().clearChecks();
+        waveComboBox.getCheckModel().check(0);
 
 
         sexPrefixSelectionChoiceBox.getSelectionModel().clearSelection();
