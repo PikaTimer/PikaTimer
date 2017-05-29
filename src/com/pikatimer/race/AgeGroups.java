@@ -124,9 +124,12 @@ public class AgeGroups {
         // Returns the string representation of the ag given an age
         // e.g., 42 -> 40-44
         // based on the increment and the agStart floor (1->9)
+        // Zero is a special case
+        
         if (agNameMap.containsKey(ageToAG(i))) return agNameMap.get(ageToAG(i));
         
-        if(i <= agStartProperty.get()) {
+        if (i == 0) agNameMap.put(ageToAG(i), "0");
+        else if(i <= agStartProperty.get()) {
             agNameMap.put(ageToAG(i), "1-" + (agStartProperty.getValue()));
         } else {
             agNameMap.put(ageToAG(i), ageToAG(i) + "-" + (ageToAG(i)+agIncrementProperty.get()-1));
@@ -139,10 +142,12 @@ public class AgeGroups {
         // Returns the base Age for the age group given the participants age.
         // e.g., 42 -> 40
         // based on the increment and the agStart floor
+        // Zero is a special case
         
         if (agMap.containsKey(i)) return agMap.get(i);
         
-        if (i <= agStartProperty.get()) agMap.put(i,1);
+        if (i == 0) agMap.put(i,0); 
+        else if (i <= agStartProperty.get()) agMap.put(i,1);
         else agMap.put(i,((i/agIncrementProperty.get())*agIncrementProperty.get()));
         
         return agMap.get(i);
