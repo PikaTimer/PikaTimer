@@ -58,6 +58,8 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
@@ -229,6 +231,7 @@ public class Race {
     }
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SELECT)
     public List<Wave> getWaves() {
         return raceWavesList;
     }
@@ -260,6 +263,7 @@ public class Race {
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     @OrderBy("split_seq_number")
+    @Fetch(FetchMode.SELECT)
     public List<Split> getSplits() {
         return raceSplitList;
         //return raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
@@ -317,6 +321,7 @@ public class Race {
     }
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SELECT)
     public List<RaceReport> getRaceReports() {
         return raceReportsList;
     }
@@ -343,6 +348,7 @@ public class Race {
     }
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SELECT)
     public List<Segment> getSegments() {
         if (segmentsList == null) segmentsList = new ArrayList();
         return segmentsList;
