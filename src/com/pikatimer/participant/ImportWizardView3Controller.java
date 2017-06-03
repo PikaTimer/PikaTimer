@@ -24,6 +24,17 @@ import io.datafx.controller.FXMLController;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.HashMap;
@@ -32,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -111,8 +123,22 @@ public class ImportWizardView3Controller {
                      }
                 }
                //ObservableList<Participant> participantsList =FXCollections.observableArrayList();
-                try {
-                    ResultSet rs = new Csv().read(model.getFileName(),null,null);
+               
+               
+               // Let's play the "What type of text file is this..." game
+               // Try UTF-8 and see if it blows up on the decode. If it does, default down to a platform specific type and then hope for the best
+               // TODO: fix the "platform specific" part to not assume Windows in the US
+               CharsetDecoder uft8Decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
+               String charset = "UTF-8"; 
+               try {
+                    String result = new BufferedReader(new InputStreamReader(new FileInputStream(model.getFileName()),uft8Decoder)).lines().collect(Collectors.joining("\n"));
+                } catch (Exception ex) {
+                    System.out.println("Not UTF-8: " + ex.getMessage());
+                    charset = "Cp1252"; // Windows standard txt file stuff
+                }
+                
+               try {
+                    ResultSet rs = new Csv().read(model.getFileName(),null,charset);
                     ResultSetMetaData meta = rs.getMetaData();
                     
                     Map<String,Participant> existingMap = new HashMap();
