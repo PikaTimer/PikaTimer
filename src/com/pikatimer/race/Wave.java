@@ -95,7 +95,7 @@ public class Wave {
     }
    
    public static Callback<Wave, Observable[]> extractor() {
-        return (Wave w) -> new Observable[]{w.waveName,w.waveStartString,w.raceName};
+        return (Wave w) -> new Observable[]{w.waveName,w.waveStartString,w.raceName,w.waveDisplayName};
     }
 //    @Override
 //    public boolean equals(Object w) {
