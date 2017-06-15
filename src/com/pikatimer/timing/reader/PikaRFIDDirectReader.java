@@ -31,15 +31,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -774,6 +779,8 @@ public class PikaRFIDDirectReader implements TimingReader {
                                     // timeout
                                         System.out.println("Timeout with command 't'");
                                     }
+                                } else {
+                                    System.out.println("NULL time in setClock");
                                 }
                                 if (tz != null){
                                     System.out.println("setClock(): Sending tz (0x23) command");
@@ -793,8 +800,10 @@ public class PikaRFIDDirectReader implements TimingReader {
                                         restartInterface=true;
                                     } else {
                                     // timeout
-                                        System.out.println("Timeout with command 't'");
+                                        System.out.println("Timeout with command 'u0x23' timezone string");
                                     }
+                                } else {
+                                    System.out.println("NULL TZ in setClock()");
                                 }
                                 if (gps != null){
                                     System.out.println("setClock(): Sending auto-gps (0x22) command");
@@ -811,14 +820,14 @@ public class PikaRFIDDirectReader implements TimingReader {
                                     String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
                                     if (result != null) {
                                         commit=true;
-                                        ultraSettings.put("22",tz.toString());
+                                        ultraSettings.put("22","1");
                                     } else {
                                     // timeout
-                                        System.out.println("Timeout with command 't'");
+                                        System.out.println("Timeout with command '0x22' to set the gps flag");
                                     }
                                 }
                                 if (commit){
-                                    System.out.println("setClock(): Sending auto-gps (0x22) command");
+                                    System.out.println("setClock(): Sending commit (u 0xFF 0xFF) command");
                                     // t[0x20]HH:MM:SS DD-MM-YYYY  
                                     ultraOutput.flush();
 
@@ -902,9 +911,9 @@ public class PikaRFIDDirectReader implements TimingReader {
                             String line = "";
                             while (read != 10) { // 1,Connected,<stuff>\n is sent on initial connect. 10 == \n
                                 read = input.read();
-                                //System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
+                                System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
                             } 
-                            
+                            System.out.println("Read connect string");
                             if (firstConnect) {
                                 onConnectSetup();
                                 firstConnect = false;
@@ -920,7 +929,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                                         System.out.println("End of stream!" + Integer.toHexString(read));
                                     } if (read != 10) {
                                         line = line +  Character.toString ((char) read);
-                                        //System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
+                                    //    System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
                                     } else {
                                         processLine(line);
                                     }
@@ -1147,68 +1156,76 @@ public class PikaRFIDDirectReader implements TimingReader {
         System.out.println("Starting discover...");
         ObservableList<Ultra> ultras = FXCollections.observableArrayList(); 
         BooleanProperty scanCompleted = new SimpleBooleanProperty(false);
+        BooleanProperty dialogClosed = new SimpleBooleanProperty(false);
         // start a discovery task in a background thread
         Task ultraSearch = new Task<Void>() {
                 @Override public Void call() {
-                    try {
-                        InetAddress local = Inet4Address.getLocalHost();
-                        String[] localIP = local.getHostAddress().split("\\.");
-                        
-                        String subnet = localIP[0] + "." + localIP[1] + "." + localIP[2];
+                    
+                    // This is ugly but it works
+                    byte one = new Integer(1).byteValue();
+                    byte zero = new Integer(0).byteValue();
+                    byte[] packetData = {one,zero,zero,zero,zero,zero,zero,zero};
+                    
+                    // Find the server using UDP broadcast
+                    //Loop while the dialog box is open
+                    while (dialogClosed.not().get()) {
+                        try(DatagramSocket broadcastSocket = new DatagramSocket()) {
+                            broadcastSocket.setBroadcast(true);
+                            // 2 second timeout for responses
+                            broadcastSocket.setSoTimeout(2000);
+                            
+                            // Send a packet to 255.255.255.255 on port 2000
+                            DatagramPacket probeDatagramPacket = new DatagramPacket(packetData, packetData.length, InetAddress.getByName("255.255.255.255"), 2000);
+                            broadcastSocket.send(probeDatagramPacket);
 
-                        ForkJoinPool forkJoinPool = new ForkJoinPool(256);
-                        int timeout=12000;
-                        for (int i = 1; i < 255; i++) {
-                            String host=subnet + "." + i;
-                            int lastOctet = i;
-                            forkJoinPool.submit(() -> {
-                               
-                                //System.out.println("Trying " + host);
-                                int tries = 3;
-                                try{
-                                    while (tries-- >= 0) {
-                                        //System.out.println("Trying " + host + "(" + tries + ")");
-                                        try{
-                                            Socket ultraSocket = new Socket();
-                                            ultraSocket.connect(new InetSocketAddress(host,23), 4000);
-                                            if (ultraSocket.isConnected()) {
-                                                System.out.println("Connected to " + host);
-                                                Ultra u = new Ultra(host);
-                                                if (!ultras.contains(u)) Platform.runLater(() -> {ultras.add(u);});
-                                                // TODO:
-                                                // Work with RFIDTiming to get info on the box
-                                                // MAC, Type, etc. 
-                                                
-                                                tries = -1;
-                                            } 
-                                            ultraSocket.close();
-                                        } catch (Exception e){
-                                            //System.out.println(e);
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    //System.out.println("Unable to connect to " + host);
+                            //Wait for a response
+                            try {
+                                while (true) { // the socket timeout should stop this
+                                    byte[] recvBuf = new byte[1500]; // mass overkill
+                                    DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
+                                    broadcastSocket.receive(receivePacket);
+                                    
+                                    
+                                    String message = new String(receivePacket.getData()).trim();
+                                    
+                                    System.out.println("Ultra Finder Response: " + receivePacket.getAddress().getHostAddress() + " " + message);
+                                    
+                                    // parse the response string
+                                    
+                                    // Set the Ultra's IP
+                                    Ultra u = new Ultra(receivePacket.getAddress().getHostAddress().toString());
+                                    
+                                    // Now the Type
+                                    if (message.contains("Joey")) u.TYPE.set("Joey");
+                                    if (message.contains("Ultra")) u.TYPE.set("Ultra");
+                                    
+                                    // Finally the Rabbit MAC
+                                    // dump the first 3 octets and save the last 3
+                                    u.MAC.set(message.substring(message.indexOf(":")+7));
+                                    
+                                    // If we have a new Ultra, save it. 
+                                    if (!u.TYPE.getValueSafe().isEmpty() && !ultras.contains(u)) Platform.runLater(() -> {ultras.add(u);});
                                 }
-                            });
-                         }
-                        int increment = 100;
-                        for (int i = 0; i< timeout; i+=increment){
-                            updateProgress(i,timeout);
-                            //System.out.println(i);
-                            Thread.sleep(increment);
+                            }catch (Exception ex){
+                            }
+                                                 
+                        } catch (IOException ex) {
+                          //Logger.getLogger(this.class.getName()).log(Level.SEVERE, null, ex);
+                          System.out.println("oops...");
                         }
-                        forkJoinPool.shutdown();
-                        forkJoinPool.awaitTermination(1, TimeUnit.SECONDS);
-                        System.out.println("Done scanning for Ultras");
-                        Platform.runLater(() -> {scanCompleted.set(true);});
-                    } catch (Exception ex) {
-                        Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                    System.out.println("Done scanning for Ultras");
+                    //Platform.runLater(() -> {scanCompleted.set(true);});
+                                       
+
                     ultras.forEach(u -> {System.out.println("Found " + u.IP.getValueSafe());});
                     return null;
                 }
         };
-        new Thread(ultraSearch).start();
+        Thread scanner = new Thread(ultraSearch);
+        scanner.setDaemon(true);
+        scanner.setName("Ultra Scanner");
+        scanner.start();
         
         ProgressBar progress = new ProgressBar();
         progress.progressProperty().bind(ultraSearch.progressProperty());
@@ -1222,17 +1239,18 @@ public class PikaRFIDDirectReader implements TimingReader {
         Dialog<Ultra> dialog = new Dialog();
         dialog.resizableProperty().set(true);
         dialog.getDialogPane().setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight()-150);
-        dialog.setTitle("Discover Available Ultras");
-        dialog.setHeaderText("Discover Available Ultras");
+        dialog.setTitle("Discover...");
+        dialog.setHeaderText("Discover Local RFIDTiming Systems");
         ButtonType selectButtonType = new ButtonType("Select", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(selectButtonType, ButtonType.CANCEL);
         
         // Create a scrollPane to put the tables and such in
         VBox mainVBox = new VBox();
+        mainVBox.setPrefWidth(250);
         mainVBox.setStyle("-fx-font-size: 16px;"); // Make the scroll bar a bit larger
         VBox progressVBox = new VBox();
         progressVBox.setAlignment(Pos.CENTER);
-        progressVBox.getChildren().add(new Label("Searching for Ultras..."));
+        progressVBox.getChildren().add(new Label("Searching for Units..."));
         progressVBox.visibleProperty().bind(scanCompleted.not());
         progressVBox.managedProperty().bind(scanCompleted.not());
         progressVBox.getChildren().add(progress);
@@ -1249,7 +1267,8 @@ public class PikaRFIDDirectReader implements TimingReader {
         ultraListVBox.setStyle("-fx-font-size: 16px;"); // Make everything normal again
         ultraListVBox.fillWidthProperty().set(true);
         ultraListVBox.setAlignment(Pos.CENTER_LEFT);
-        Label selectLabel = new Label("Select an Ultra...");
+       
+        Label selectLabel = new Label("Select an RFID source:");
         selectLabel.visibleProperty().bind(Bindings.size(ultras).isNotEqualTo(0));
         selectLabel.managedProperty().bind(Bindings.size(ultras).isNotEqualTo(0));
         ultraListVBox.getChildren().add(selectLabel);
@@ -1269,6 +1288,8 @@ public class PikaRFIDDirectReader implements TimingReader {
         mainVBox.getChildren().add(progressVBox);
         mainVBox.getChildren().add(ultraListVBox);
         dialog.getDialogPane().setContent(mainVBox);
+        
+        scanCompleted.bind(Bindings.size(ultras).greaterThanOrEqualTo(1));
         
         // If they double click on an ultra, select it and close the dialog box
         ultraListView.setOnMouseClicked((MouseEvent click) -> {
@@ -1290,6 +1311,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         });
 
         Optional<Ultra> result = dialog.showAndWait();
+        dialogClosed.set(true);
 
         
         if (result.isPresent()) {
@@ -1668,8 +1690,9 @@ public class PikaRFIDDirectReader implements TimingReader {
                                         dialog.setTitle("Ultra Clock Issues");
                                         dialog.setHeaderText("Issues detected with the clock...");
                                         dialog.setContentText(timeIssues);
-                                        ButtonType fixButtonType = new ButtonType("Fix", ButtonBar.ButtonData.OK_DONE);
-                                        dialog.getDialogPane().getButtonTypes().addAll(fixButtonType, ButtonType.CANCEL);
+                                        ButtonType fixButtonType = new ButtonType("Yes", ButtonBar.ButtonData.OK_DONE);
+                                        ButtonType cancelButtonType = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
+                                        dialog.getDialogPane().getButtonTypes().addAll(fixButtonType, cancelButtonType);
 
                                         dialog.setResultConverter(dialogButton -> {
                                             if (dialogButton == fixButtonType) {
@@ -1781,7 +1804,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 }
                                 
                                 if (commit){
-                                    System.out.println("updateReaderSettings(): Sending auto-gps (0x22) command");
+                                    System.out.println("updateReaderSettings(): Sending commit (u 0xFF 0xFF) command");
                                     // t[0x20]HH:MM:SS DD-MM-YYYY  
                                     ultraOutput.flush();
 
@@ -1859,6 +1882,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         }
         public StringProperty IP  = new SimpleStringProperty();
         public StringProperty MAC  = new SimpleStringProperty();
+        public StringProperty TYPE = new SimpleStringProperty();
         public Ultra() {
             
         }
@@ -1871,8 +1895,11 @@ public class PikaRFIDDirectReader implements TimingReader {
         public StringProperty macProperty(){
             return MAC;
         }
+        public StringProperty typeProperty(){
+            return TYPE;
+        }
         public String toString(){
-            return IP.getValueSafe();
+            return IP.getValueSafe() + " " + TYPE.getValueSafe() + " (" + MAC.getValueSafe() + ")";
         }
     }
 
