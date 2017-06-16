@@ -1,12 +1,11 @@
-# pikatimer
-PikaTimer: An OpenSource race timing application
+# PikaTimer: An OpenSource race timing application
 
 PikaTimer is a JavaFX based race timing application. Named after the American Pika that is often found at high altitudes where the need for simple, easy to use race timing application was born. Because at 14,000 ft, you want things to be simple.
 
 The entire system is released under the GPLv3 Open Source license. PikaTimer is free to use, free to modify, free to redistribute per the GPLv3 license. 
 
 
-Current Feature Highlights:
+##Current Feature Highlights:
 * Multiple Races per Event
 * Multiple start waves per race
 * Multiple Timing Locations
@@ -32,12 +31,26 @@ Current Feature Highlights:
 * In-Progress report options that show runners who started but have not yet finished.
 * Windows x64 based native application
 
+##Screen Snapshots
+
+*Race Setup:*
+![Race Setup](https://user-images.githubusercontent.com/19352375/27207276-d47b38d8-51fa-11e7-999f-90d840084dcd.png)
+
+*Participants:*
+![Participant Setup](https://user-images.githubusercontent.com/19352375/27207420-f62490be-51fb-11e7-87ca-3b7e6a3bf483.png)
+
+*Timing Setup:*
+![Timing Setup](https://user-images.githubusercontent.com/19352375/27207246-9addf0ca-51fa-11e7-9fea-cd8a9d0c5468.png)
+
+*Results and Reports:*
+![Results Setup](https://user-images.githubusercontent.com/19352375/27207258-b8c87416-51fa-11e7-9858-388326c9eed4.png)
 
 
-Road Map (In no particular order):
+##Road Map (In no particular order):
 * Arbitrary participant attributes an the ability to produce reports based on them
 * Arbitrary age groups (vs 5/10 year)
 * Arbitrary awards categories based on any participant attribute
+* Bluetooth connectivity to RFID Joey timing systems
 * Team Reports / Awards
 * Ability to change the pace or distance units on a per split/segment basis (e.g. swim in min/100yds, bike in mph, run in min/mile)
 * Mandatory Splits
