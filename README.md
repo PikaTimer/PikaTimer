@@ -5,7 +5,7 @@ PikaTimer is a JavaFX based race timing application. Named after the American Pi
 The entire system is released under the GPLv3 Open Source license. PikaTimer is free to use, free to modify, free to redistribute per the GPLv3 license. 
 
 
-##Current Feature Highlights:
+## Current Feature Highlights:
 * Multiple Races per Event
 * Multiple start waves per race
 * Multiple Timing Locations
@@ -31,7 +31,7 @@ The entire system is released under the GPLv3 Open Source license. PikaTimer is 
 * In-Progress report options that show runners who started but have not yet finished.
 * Windows x64 based native application
 
-##Screen Snapshots
+## Screen Snapshots
 
 *Race Setup:*
 ![Race Setup](https://user-images.githubusercontent.com/19352375/27207276-d47b38d8-51fa-11e7-999f-90d840084dcd.png)
@@ -46,7 +46,7 @@ The entire system is released under the GPLv3 Open Source license. PikaTimer is 
 ![Results Setup](https://user-images.githubusercontent.com/19352375/27207258-b8c87416-51fa-11e7-9858-388326c9eed4.png)
 
 
-##Road Map (In no particular order):
+## Road Map (In no particular order):
 * Arbitrary participant attributes an the ability to produce reports based on them
 * Arbitrary age groups (vs 5/10 year)
 * Arbitrary awards categories based on any participant attribute
@@ -63,11 +63,11 @@ The entire system is released under the GPLv3 Open Source license. PikaTimer is 
 * Result "embellishments" (Course Records, Awards, Boston Qualifying time notifications, etc).
 * Linux / MacOS native installation apps
 
-Built on top of:
+## Built on top of:
 * Java / JavaFX -- http://java.com
 * H2 -- http://www.h2database.com/
 * Hibernate -- http://hibernate.org/
 * ControlsFX -- http://fxexperience.com/controlsfx/
 * And a few other Open Source / Public Domain applications
 
-Building: TODO
+## Building: TODO
