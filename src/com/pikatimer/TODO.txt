@@ -1,10 +1,42 @@
+TODO for 1.0 Release
+
+
+Finish User Manual
+DONE -- Screen Snapshots in README.md file 
+DONE -- Changing report type requires a restart?
+DONE -- ASCII vs UTF-8 import file encoding detection for participants
+DONE -- Joey Testing (Rewind, set clock, start/stop, etc)
+DONE -- Hide reader mode if a Joey
+DONE -- Hide 'add person' until minimal fields are entered (last, etc)
+DONE -- default to 1st wave on add person form
+DONE -- Reports: Don't permit report destinations to be removed if in use
+DONE -- html5 report: search for accented strings
+DONE -- AG is missing if not setup (still)
+
 Post 1.0 Release:
-Overall Focus: 
-Cleanup UI and input field validation
+AgeGroup: Arbitrary boundaries
+Awards: Simple (done), Advanced (3 tier, custom depths), Custom (arbitrary levels, depths, filters, timing points)
+Participants: Custom Attributes
+Timing: Ultra -- filter after skew to permit "old" times to be adjusted forward  
+Timing: Ultra -- Half hour time zone detection / support. 
+Timing: Ultra -- antenna on/off configuration
+Timing: Ultra -- Show/set beeper volume
+Cleanup UI and better input field validation
+TableView Custom Cells:
+  -- Switch to 'always active' cells to get around the commit on focus lost issue
 Create a DurationTextField / LocalTimeTextField that "does the right thing"
 Create a DurationCell (or whatever) for inline edits of durations?
-editCell that does not revert on focus change (WTF Oracle)
+Penalty support (extend override or make it a participant attribute?)
+Ignore split/segment time support (aka "dead zone" or "pause"). Basically blank out the time from that segment. 
+Per segment pace display override (swim/bike/run/transition)
+Show splits on the segment report
+Mandatory split (stop if they are missing a time from that split)
+Wire in a "min time to next split" option to replace hardcoded 5/10 minutes. 
 
+
+DEFERRED -- Upgrade to Hibernate 5.2.x (wait for 5.2.11+)
+
+editCell that does not revert on focus change (WTF Oracle)?
 -Mandatory split? 
 
 Overall:
@@ -56,7 +88,7 @@ Link to Team
 
 Mass bib assignment 
 
-sync from/to fusesport / active.com / runsignup / other
+sync from/to  active.com / runsignup / other
 
 Relay Teams? Figure this one out!
 ? Relay team attribute set to the team name or team id?
@@ -70,7 +102,7 @@ Team category setup (gender, mixed gender, custom data field setting, etc)
 Timing:
 --Option to assign any time to the race/wave start time via right mouse click menu
 -- Lookup Button -> option of manual entry of wave start times?
-                             -- custom cell with an editable combo box
+    -- custom cell with an editable combo box?
 
 Overrides 
   -- Make the bib an autocomplete text field based on the registered runners
@@ -81,9 +113,7 @@ Results:
     --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
     -- Double-Click for review screen (show all times, option to change wave or dq participant)
 
-Wire in a "min time to next split" option to replace hardcoded 5/10 minutes. 
-Ability to select multiple and DQ, un-DQ them (with a note)
-Ability to select multiple results and transfer them to another wave/race
+
 
 
 Reports:
@@ -115,7 +145,7 @@ Team awards
 Award report for fastest to a given split or segment time (fastest uphill, fastest downhill, etc). 
 
 Options tab:
-Active.com/RunSignUp/FuseSport Account info profiles
+Active.com/RunSignUp/FuseSport/Outreach Account info profiles
 Gender Display (Men/Women, Male/Female, custom)
 
 -------------------------------------
