@@ -290,7 +290,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
         report += "  <BODY> " +  System.lineSeparator();
         
         if (customHeaders){
-            if (textOnlyHeaders) report += race.getStringAttribute("textHeader");
+            if (textOnlyHeaders) report += "<pre>" + race.getStringAttribute("textHeader") + "</pre>";
             else report += race.getStringAttribute("htmlHeader");
             report += System.lineSeparator();
         }
@@ -309,7 +309,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
         }
         
         if (customHeaders){
-            if (textOnlyHeaders) report += race.getStringAttribute("textMessage");
+            if (textOnlyHeaders) report += "<pre>" + race.getStringAttribute("textMessage") + "</pre>";
             else report += race.getStringAttribute("htmlMessage");
             report += System.lineSeparator();
         }
@@ -317,7 +317,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             report += "    <div class=\"in-progress\">" + "<BR>*No Results Have Been Posted Yet*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
             if (customHeaders){
-                if (textOnlyHeaders) report += race.getStringAttribute("textFooter");
+                if (textOnlyHeaders) report += "<pre>" + race.getStringAttribute("textFooter") + "</pre>";
                 else report += race.getStringAttribute("htmlFooter");
                 report += System.lineSeparator();
             }
@@ -480,7 +480,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             report += "</table>" +  System.lineSeparator();
             if (!inProgress) report += "<div id=\"btn\" class=\"buttons\"></div>" +  System.lineSeparator();
             if (customHeaders){
-                if (textOnlyHeaders) report += race.getStringAttribute("textFooter");
+                if (textOnlyHeaders) report += "<pre>" + race.getStringAttribute("textFooter") + "</pre>";
                 else report += race.getStringAttribute("htmlFooter");
                 report += System.lineSeparator();
             }
