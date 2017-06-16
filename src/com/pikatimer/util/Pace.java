@@ -72,10 +72,10 @@ public enum Pace {
         switch(p){
             case MPM: // Minutes per Mile
                 dist = new BigDecimal(u.convertTo(d, Unit.FEET));
-                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(5280L),0, FALSE, RoundingMode.DOWN).replaceFirst("^0", "") + "/mi";
+                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(5280L),0, FALSE, RoundingMode.HALF_UP).replaceFirst("^0", "") + "/mi";
             case MPK: // Minutes per Kilometer
                 dist = new BigDecimal(u.convertTo(d, Unit.METERS));
-                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(1000L),0, FALSE, RoundingMode.DOWN).replaceFirst("^0", "") + "/km";
+                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(1000L),0, FALSE, RoundingMode.HALF_UP).replaceFirst("^0", "") + "/km";
             case MPH: // Miles Per Hour
                 dist = new BigDecimal(u.convertTo(d, Unit.MILES));
                 return dist.divide(BigDecimal.valueOf(t.toMillis()), 8, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(3600000L)).setScale(1, RoundingMode.HALF_UP).toPlainString() + " mph";
@@ -93,10 +93,10 @@ public enum Pace {
                 return dist.divide(BigDecimal.valueOf(t.toMillis()), 8, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(1000L)).setScale(1, RoundingMode.HALF_UP).toPlainString() + " f/s";
             case MP100M: // Minutes per 100M
                 dist = new BigDecimal(u.convertTo(d, Unit.METERS));
-                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(100L),0, TRUE, RoundingMode.DOWN).replaceFirst("^0:", "") + "/100M";
+                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(100L),0, TRUE, RoundingMode.HALF_UP).replaceFirst("^0:", "") + "/100M";
             case MP100Y: // Minutes per 100Y
                 dist = new BigDecimal(u.convertTo(d, Unit.FEET));
-                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(300L),0, TRUE, RoundingMode.DOWN).replaceFirst("^0:", "") + "/100Y";
+                return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(300L),0, TRUE, RoundingMode.HALF_UP).replaceFirst("^0:", "") + "/100Y";
         }
        return "???";
     }
