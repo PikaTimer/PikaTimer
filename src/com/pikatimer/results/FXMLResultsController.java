@@ -487,19 +487,6 @@ public class FXMLResultsController  {
 //                    splitColumn.setComparator(new AlphanumericComparator());
                 }
                 
-                // finish TOD
-                
-                TableColumn<Result,Duration> finishTODColumn = new TableColumn("Finish (TOD)");
-                finishTODColumn.setCellValueFactory(cellData -> {
-                    return cellData.getValue().finishTODProperty(); 
-                });
-                finishTODColumn.setCellFactory(column -> {
-                    return new DurationTableCell();
-                });
-                //finishColumn.setComparator(new DurationComparator());
-                finishTODColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
-                table.getColumns().add(finishTODColumn);
-                
                 // finish
                 TableColumn<Result,Duration> finishColumn = new TableColumn("Finish");
                 finishColumn.setCellValueFactory(cellData -> {
@@ -522,8 +509,21 @@ public class FXMLResultsController  {
                 });
                 gunColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
                 table.getColumns().add(gunColumn);
-                //gunColumn.setComparator(new AlphanumericComparator());
+                //gunColumn.setComparator(new AlphanumericComparator());     
                 
+                // finish TOD
+                
+                TableColumn<Result,Duration> finishTODColumn = new TableColumn("Finish (TOD)");
+                finishTODColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().finishTODProperty(); 
+                });
+                finishTODColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                //finishColumn.setComparator(new DurationComparator());
+                finishTODColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(finishTODColumn);
+                                
                 // set the default sort order to the finish time
 		finishColumn.setSortType(SortType.ASCENDING);
 		table.getSortOrder().clear();
@@ -1180,7 +1180,7 @@ public class FXMLResultsController  {
         
         if (! raceReportsUIMap.containsKey(r)) {
         } else {
-            System.out.println("Adding default Ooverall and Award race reports");
+            System.out.println("Adding a new report for " + r.getRaceName());
             RaceReport newRR = new RaceReport();
             newRR.setReportType(ReportTypes.OVERALL);
             r.addRaceReport(newRR);
