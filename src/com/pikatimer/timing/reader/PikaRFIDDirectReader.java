@@ -99,6 +99,27 @@ import org.controlsfx.control.ToggleSwitch;
  *
  * @author jcgarner
  */
+
+
+/**
+ * 
+ * This class implements the communications to and from the RFID Ultra/Joey
+ * 
+ * It is a minefield of threads as the system has to mux/demux the requests 
+ * and responses to and from the unit over a single TCP connection. The system
+ * uses the "okToSend" semaphore to ensure that only one request is 
+ * outstanding at any given time. 
+ * 
+ * Everything should be done in an async fashion to keep the UI responsive. 
+ * Given that everything is contained in this one class, it was decided 
+ * to not use a message bus library. 
+ * 
+ * Proceed with caution. 
+ * 
+ */
+
+
+
 public class PikaRFIDDirectReader implements TimingReader {
 
     LocalDateTime EPOC = LocalDateTime.of(LocalDate.parse("1980-01-01",DateTimeFormatter.ISO_LOCAL_DATE),LocalTime.MIDNIGHT);
@@ -142,6 +163,7 @@ public class PikaRFIDDirectReader implements TimingReader {
     
     protected final BooleanProperty readingStatus = new SimpleBooleanProperty();
     protected final BooleanProperty connectedStatus = new SimpleBooleanProperty();
+    protected final BooleanProperty isJoey = new SimpleBooleanProperty(false);
 
     private Boolean connectToUltra = false;
     private Boolean externalInitiated = false;
@@ -336,6 +358,11 @@ public class PikaRFIDDirectReader implements TimingReader {
 
                 }
             });
+            
+            modeLabel.managedProperty().bind(isJoey.not());
+            modeLabel.visibleProperty().bind(isJoey.not());
+            reader1ModeChoiceBox.managedProperty().bind(isJoey.not());
+            reader1ModeChoiceBox.visibleProperty().bind(isJoey.not());
             
             updateSettingsButton.setVisible(false);
             updateSettingsButton.setOnAction(action -> {
@@ -657,7 +684,8 @@ public class PikaRFIDDirectReader implements TimingReader {
                             ultraOutput.flush();
                             String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
                             if (result != null) {
-                                // result is HH:MM:SS DD-MM-YYYY
+                                // result is HH:MM:SS DD-MM-YYYY 
+                                // and is NOT zero padded 
                                 String[] dateTime = result.split(" ");
                                 String[] d = dateTime[1].split("-");
                                 if (d[1].length() == 1) d[1] = "0" + d[1];
@@ -675,17 +703,15 @@ public class PikaRFIDDirectReader implements TimingReader {
 
                             } else {
                             // timeout
-                                System.out.println("Timeout with command 't'");
+                                System.out.println("Timeout with command 'r'");
                                 return null;
                             }
 
-                            System.out.println("getClock(): Sending tz (0x23) command");
+                            
 
                             ultraOutput.flush();
 
                             ultraOutput.writeBytes("U");
-//                            ultraOutput.writeByte(35);  // 0x23
-//                            ultraOutput.writeBytes("-9".toString());
 
                             ultraOutput.writeByte(10);
 
@@ -719,15 +745,25 @@ public class PikaRFIDDirectReader implements TimingReader {
                             
                             // reader mode
                             try{
-                                ultraSettings.get("14");
+                                
                                 if ("0".equals(ultraSettings.get("14"))) Platform.runLater(() -> reader1ModeChoiceBox.getSelectionModel().select("Start"));
                                 else Platform.runLater(() -> reader1ModeChoiceBox.getSelectionModel().select("Finish"));
                             } catch (Exception e){
                                 Platform.runLater(() -> reader1ModeChoiceBox.getSelectionModel().selectFirst());
                             }
+                            
+                            // Do we have a Joey or Ultra?
+                            if ("255.255.255.255".equals(ultraSettings.get("1A"))) {
+                                System.out.println("We have a Joey");
+                                Platform.runLater(() -> isJoey.set(true));
+                            } else {
+                                System.out.println("We have an Ultra");
+                                // do we have an ultra-4 or ultra-8? 
+                                // TODO
+                            }
                         } else {
                             // timeout
-                            System.out.println("Timeout waiting to send command '?'");
+                            System.out.println("Timeout waiting to get Ultra Settings");
                             return null;
                         }
                     } catch (Exception ex) {
@@ -1736,7 +1772,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 
                                 // Mode
                                 String mode = reader1ModeChoiceBox.getSelectionModel().getSelectedItem();
-                                if (mode != null){
+                                if (! isJoey.get() && mode != null){
                                     System.out.println("updateReaderSettings(): Sending reader mode (0x14/0x15) command");
                                     byte val = 0;
                                     if (mode.equals("Start")) val = 0;
