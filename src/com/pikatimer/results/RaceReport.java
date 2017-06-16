@@ -78,6 +78,7 @@ public class RaceReport {
     
     private RaceReportType raceReportType;
     
+    private Boolean reportTypeChanged = false;
     
     public RaceReport(){
         
@@ -100,12 +101,12 @@ public class RaceReport {
     //    uuid varchar,
     @Column(name="uuid")
     public String getUUID() {
-       // System.out.println("Participant UUID is " + uuidProperty.get());
+       // System.out.println("RaceReport UUID is " + uuidProperty.get());
         return uuidProperty.getValue(); 
     }
     public void setUUID(String  uuid) {
         uuidProperty.setValue(uuid);
-        //System.out.println("Participant UUID is now " + uuidProperty.get());
+        //System.out.println("RaceReport UUID is now " + uuidProperty.get());
     }
     public StringProperty uuidProperty() {
         return uuidProperty; 
@@ -132,6 +133,7 @@ public class RaceReport {
             
             reportType = t;
             reportTypeProperty.setValue(reportTypeProperty.toString());
+            reportTypeChanged = true;
         }
     }
     
@@ -232,9 +234,10 @@ public class RaceReport {
     public void processResultNow(List<ProcessedResult> r){
         System.out.println("RaceReport.procesResultNow() Called... ");
         if (race != null && reportType != null) {
-            if (raceReportType == null) {
+            if (raceReportType == null || reportTypeChanged) {
                 raceReportType = reportType.getReportType();
                 raceReportType.init(race);
+                reportTypeChanged = false;
             }
             System.out.println("RaceReport.procesResult() calling raceReportType.process()");
             String output = raceReportType.process(r, this);
