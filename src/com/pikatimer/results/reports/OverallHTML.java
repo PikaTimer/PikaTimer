@@ -134,11 +134,11 @@ public class OverallHTML implements RaceReportType{
         }
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" ;
-        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.css\"/>\n" ;
-        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.0/sc-1.4.2/datatables.min.css\"/>" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.15/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.css\"/>\n" ;
+        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.3.1/b-flash-1.3.1/b-html5-1.3.1/b-print-1.3.1/r-2.1.1/sc-1.4.2/datatables.min.css\"/>" ;
         report +=    " \n";
-        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.13/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
-        else  report +=  "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/r-2.1.0/sc-1.4.2/datatables.min.js\"></script>\n" ;
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.15/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
+        else  report +=  "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.3.1/b-flash-1.3.1/b-html5-1.3.1/b-print-1.3.1/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
 
         report +=   " \n" +
                     "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
@@ -290,7 +290,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
         report += "  <BODY> " +  System.lineSeparator();
         
         if (customHeaders){
-            if (textOnlyHeaders) report += race.getStringAttribute("textHeader");
+            if (textOnlyHeaders) report += "<pre>" + race.getStringAttribute("textHeader") + "</pre>";
             else report += race.getStringAttribute("htmlHeader");
             report += System.lineSeparator();
         }
@@ -309,7 +309,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
         }
         
         if (customHeaders){
-            if (textOnlyHeaders) report += race.getStringAttribute("textMessage");
+            if (textOnlyHeaders) report += "<pre>" + race.getStringAttribute("textMessage") + "</pre>";
             else report += race.getStringAttribute("htmlMessage");
             report += System.lineSeparator();
         }
@@ -317,7 +317,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             report += "    <div class=\"in-progress\">" + "<BR>*No Results Have Been Posted Yet*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
             if (customHeaders){
-                if (textOnlyHeaders) report += race.getStringAttribute("textFooter");
+                if (textOnlyHeaders) report += "<pre>" + race.getStringAttribute("textFooter") + "</pre>";
                 else report += race.getStringAttribute("htmlFooter");
                 report += System.lineSeparator();
             }
@@ -480,7 +480,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             report += "</table>" +  System.lineSeparator();
             if (!inProgress) report += "<div id=\"btn\" class=\"buttons\"></div>" +  System.lineSeparator();
             if (customHeaders){
-                if (textOnlyHeaders) report += race.getStringAttribute("textFooter");
+                if (textOnlyHeaders) report += "<pre>" + race.getStringAttribute("textFooter") + "</pre>";
                 else report += race.getStringAttribute("htmlFooter");
                 report += System.lineSeparator();
             }

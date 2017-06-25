@@ -51,6 +51,8 @@ import javax.persistence.Transient;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.GenericGenerator;
 
 /**
@@ -148,6 +150,7 @@ public class TimingLocation {
 
     // We keep two lists, one observable for JavaFX, one regular for Hibernate
     @OneToMany(mappedBy="timingLocation",fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SELECT)
     @Cascade(CascadeType.DELETE)
     public List<TimingLocationInput> getInputs() {
         //return associatedSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));

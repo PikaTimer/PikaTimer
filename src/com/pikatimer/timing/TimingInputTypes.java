@@ -43,7 +43,7 @@ public enum TimingInputTypes {
         Map<TimingInputTypes, String> result = new HashMap<>();
 
         result.put(RFIDFile, "RFIDServer / Outreach File");
-        result.put(RFIDDirect, "RFID Ultra (TCP)");
+        result.put(RFIDDirect, "RFID Ultra/Joey (TCP)");
         result.put(PCTimer, "PC Timer (Race Director)");
         result.put(RaceTimer, "Race Timer");
 

@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<GridPane fx:id="eventGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.event.FXMLEventController">
+<GridPane fx:id="eventGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.event.FXMLEventController">
    <columnConstraints>
       <ColumnConstraints fillWidth="false" hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="250.0" />
       <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="400.0" prefWidth="400.0" />
@@ -50,7 +50,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                <children>
                   <HBox alignment="CENTER_LEFT" prefWidth="579.0">
                      <children>
-                        <Label minWidth="-Infinity" prefHeight="20.0" prefWidth="50.0" text="Name">
+                        <Label minWidth="-Infinity" prefHeight="20.0" prefWidth="85.0" text="Event Name">
                            <padding>
                               <Insets right="10.0" />
                            </padding>
@@ -63,7 +63,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   </HBox>
                   <HBox alignment="CENTER_LEFT">
                      <children>
-                        <Label minWidth="-Infinity" prefHeight="20.0" prefWidth="50.0" text="Date">
+                        <Label minWidth="-Infinity" prefHeight="20.0" prefWidth="85.0" text="Date">
                            <padding>
                               <Insets right="10.0" />
                            </padding>

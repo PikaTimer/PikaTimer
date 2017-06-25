@@ -108,6 +108,7 @@ public class FXMLParticipantController  {
     @FXML private TextField bibTextField;
     @FXML private Label raceLabel;
     @FXML private CheckComboBox<Wave> waveComboBox; 
+    @FXML private HBox raceHBox;
     @FXML private TextField firstNameField;
     @FXML private TextField middleNameTextField;
     @FXML private TextField lastNameField;
@@ -201,8 +202,8 @@ public class FXMLParticipantController  {
                     swapMe.get(1).setBib(swapMe.get(0).getBib());
                     swapMe.get(0).setBib(tmp);
                     
-                    participantDAO.updateParticipant(swapMe.get(2));
                     participantDAO.updateParticipant(swapMe.get(1));
+                    participantDAO.updateParticipant(swapMe.get(0));
                     
                 }
 		
@@ -301,12 +302,19 @@ public class FXMLParticipantController  {
         filteredSizeLabel.textProperty().bind(Bindings.size(sortedParticipantsList).asString());
         
         // if there is only one race, hide the option to pick a race... 
-        raceLabel.visibleProperty().bind(waveComboBox.visibleProperty());
-        waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
-        waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+//        raceLabel.visibleProperty().bind(waveComboBox.visibleProperty());
+//        waveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+//        waveComboBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        
+        raceHBox.managedProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        raceHBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
+        if (RaceDAO.getInstance().listRaces().size() > 1) raceLabel.setText("Race");
+        else raceLabel.setText("Wave");
+        
         searchWaveComboBox.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         filterLabel.visibleProperty().bind(Bindings.size(RaceDAO.getInstance().listWaves()).greaterThan(1));
         waveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
+        waveComboBox.getCheckModel().check(0);
         searchWaveComboBox.getItems().addAll(RaceDAO.getInstance().listWaves());
         
         waveComboBox.setConverter(new WaveStringConverter());
@@ -324,6 +332,7 @@ public class FXMLParticipantController  {
                     searchWaveComboBox.getCheckModel().clearCheck(removed);
                 });
             waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
+            waveComboBox.getCheckModel().check(0);
             searchWaveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
             
             if (change.getList().size() == 1 ) {
@@ -331,20 +340,23 @@ public class FXMLParticipantController  {
                 searchWaveComboBox.getCheckModel().clearChecks();
             }
             else raceColumn.visibleProperty().set(true);
+            
+            if (RaceDAO.getInstance().listRaces().size() > 1) raceLabel.setText("Race");
+            else raceLabel.setText("Wave");
             //});
         });
         
         
         
         // DOES NOT WORK :-( 
-        waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            System.out.println("PartController::waveComboBox(focusedListener) fired...");
-            if (!newPropertyValue) {
-                System.out.println("waveComboBox out focus");
-            } else {
-                System.out.println("waveComboBox in focus");
-            }
-        });
+//        waveComboBox.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+//            System.out.println("PartController::waveComboBox(focusedListener) fired...");
+//            if (!newPropertyValue) {
+//                System.out.println("waveComboBox out focus");
+//            } else {
+//                System.out.println("waveComboBox in focus");
+//            }
+//        });
         // Does Work
         waveComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends Wave> c) -> {
             System.out.println("PartController::waveComboBox(changeListener) fired...");
@@ -568,6 +580,9 @@ public class FXMLParticipantController  {
         formAddButton.defaultButtonProperty().bind(formAddButton.focusedProperty());
         formUpdateButton.defaultButtonProperty().bind(formUpdateButton.focusedProperty());
         deleteParticipantsButton.disableProperty().bind(participantTableView.getSelectionModel().selectedItemProperty().isNull());
+        
+        // Add button only enabled if both the first and last names are empty
+        formAddButton.disableProperty().bind(Bindings.and(firstNameField.textProperty().isEmpty(), lastNameField.textProperty().isEmpty()));
 
     }
     
@@ -575,7 +590,7 @@ public class FXMLParticipantController  {
     protected void addPerson(ActionEvent fxevent) {
         // Make sure they actually entered something first
         System.out.println("addPerson fired");
-        if (!firstNameField.getText().isEmpty() && !lastNameField.getText().isEmpty()) {
+        if (!(firstNameField.getText().isEmpty() && lastNameField.getText().isEmpty())) {
             Participant p = new Participant(firstNameField.getText(),
                 lastNameField.getText()
             );
@@ -732,6 +747,7 @@ public class FXMLParticipantController  {
         //waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
         waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves().sorted((Wave u1, Wave u2) -> u1.toString().compareTo(u2.toString())));
         waveComboBox.getCheckModel().clearChecks();
+        waveComboBox.getCheckModel().check(0);
 
 
         sexPrefixSelectionChoiceBox.getSelectionModel().clearSelection();

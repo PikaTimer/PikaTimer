@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import org.controlsfx.control.CheckComboBox?>
 <?import org.controlsfx.control.PrefixSelectionChoiceBox?>
 
-<GridPane alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="485.0" prefWidth="923.0" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.participant.FXMLParticipantController">
+<GridPane alignment="CENTER" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="485.0" prefWidth="923.0" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.participant.FXMLParticipantController">
     <padding>
         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
     </padding>
@@ -131,15 +131,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
          <children>
             <VBox fx:id="formVBox" spacing="5.0">
                <children>
-                  <HBox alignment="CENTER_LEFT" spacing="2.0">
+                  <HBox>
                      <children>
                         <Label minWidth="-Infinity" prefWidth="50.0" text="Bib" HBox.hgrow="NEVER">
                            <font>
                               <Font size="14.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="bibTextField" prefWidth="50.0" promptText="12345" HBox.hgrow="NEVER" />
-                        <Label fx:id="raceLabel" minWidth="-Infinity" text=" Race" textAlignment="RIGHT">
+                        <TextField fx:id="bibTextField" prefHeight="25.0" prefWidth="48.0" promptText="12345" HBox.hgrow="NEVER" />
+                     </children>
+                  </HBox>
+                  <HBox fx:id="raceHBox" alignment="CENTER_LEFT" spacing="2.0">
+                     <children>
+                        <Label fx:id="raceLabel" minWidth="-Infinity" prefWidth="50.0" text="Race" textAlignment="RIGHT">
                            <font>
                               <Font size="14.0" />
                            </font>
@@ -291,20 +295,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
       </HBox>
-      <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3">
+      <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2">
          <children>
-            <Button fx:id="deleteParticipantsButton" alignment="CENTER_RIGHT" onAction="#deleteParticipants" text="Delete" />
+            <Button fx:id="deleteParticipantsButton" alignment="CENTER_RIGHT" onAction="#deleteParticipants" text="Remove" />
          </children>
       </HBox>
    </children>
    <columnConstraints>
-      <ColumnConstraints maxWidth="200.0" minWidth="200.0" prefWidth="200.0" />
-      <ColumnConstraints minWidth="300.0" prefWidth="500.0" />
+      <ColumnConstraints hgrow="NEVER" maxWidth="220.0" minWidth="220.0" prefWidth="220.0" />
+      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="300.0" prefWidth="674.5" />
    </columnConstraints>
    <rowConstraints>
       <RowConstraints />
       <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
-      <RowConstraints />
       <RowConstraints />
 
    </rowConstraints>

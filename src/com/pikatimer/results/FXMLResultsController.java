@@ -68,6 +68,8 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
@@ -485,19 +487,6 @@ public class FXMLResultsController  {
 //                    splitColumn.setComparator(new AlphanumericComparator());
                 }
                 
-                // finish TOD
-                
-                TableColumn<Result,Duration> finishTODColumn = new TableColumn("Finish (TOD)");
-                finishTODColumn.setCellValueFactory(cellData -> {
-                    return cellData.getValue().finishTODProperty(); 
-                });
-                finishTODColumn.setCellFactory(column -> {
-                    return new DurationTableCell();
-                });
-                //finishColumn.setComparator(new DurationComparator());
-                finishTODColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
-                table.getColumns().add(finishTODColumn);
-                
                 // finish
                 TableColumn<Result,Duration> finishColumn = new TableColumn("Finish");
                 finishColumn.setCellValueFactory(cellData -> {
@@ -520,8 +509,21 @@ public class FXMLResultsController  {
                 });
                 gunColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
                 table.getColumns().add(gunColumn);
-                //gunColumn.setComparator(new AlphanumericComparator());
+                //gunColumn.setComparator(new AlphanumericComparator());     
                 
+                // finish TOD
+                
+                TableColumn<Result,Duration> finishTODColumn = new TableColumn("Finish (TOD)");
+                finishTODColumn.setCellValueFactory(cellData -> {
+                    return cellData.getValue().finishTODProperty(); 
+                });
+                finishTODColumn.setCellFactory(column -> {
+                    return new DurationTableCell();
+                });
+                //finishColumn.setComparator(new DurationComparator());
+                finishTODColumn.setStyle( "-fx-alignment: CENTER-RIGHT;");
+                table.getColumns().add(finishTODColumn);
+                                
                 // set the default sort order to the finish time
 		finishColumn.setSortType(SortType.ASCENDING);
 		table.getSortOrder().clear();
@@ -561,7 +563,9 @@ public class FXMLResultsController  {
                                 case "ag": 
                                         String ag = r.getAgeGroups().ageToAGString(participant.getAge());
                                         if (ag.equalsIgnoreCase(keyValue[1])) return true;
+                                        else if (ag.toLowerCase().startsWith(keyValue[1].toLowerCase(), 0)) return true;
                                         else if ((participant.getSex()+ag).equalsIgnoreCase(keyValue[1])) return true;
+                                        else if ((participant.getSex()+ag).toLowerCase().startsWith(keyValue[1].toLowerCase())) return true;
                                         else return false;
                             }
                         } else {
@@ -573,6 +577,7 @@ public class FXMLResultsController  {
                                         pattern.matcher(participant.getLastName()).matches() ||
                                         pattern.matcher(participant.getFirstName() + " " + participant.getLastName()).matches() ||
                                         pattern.matcher(StringUtils.stripAccents(participant.fullNameProperty().getValueSafe())).matches() ||
+                                        pattern.matcher(participant.getSex()+r.getAgeGroups().ageToAGString(participant.getAge())).matches() ||
                                         pattern.matcher(participant.getBib()).matches()) {
                                     return true; // Filter matches first/last/bib.
                                 } 
@@ -1137,9 +1142,35 @@ public class FXMLResultsController  {
         });
     }
     public void removeOutputDestination(ActionEvent fxevent){
+        BooleanProperty inUse = new SimpleBooleanProperty(FALSE);
+        StringBuilder inUseBy = new StringBuilder("In use by the following reports:\n");
+        ReportDestination rd = outputDestinationsListView.getSelectionModel().getSelectedItem();
+        if (rd == null) return;
         // Make sure it is  not in use anywhere, then remove it.
+        raceDAO.listRaces().forEach(r -> {
+            System.out.println("  Race: " + r.getRaceName());
+            r.getRaceReports().forEach(rr -> {
+                System.out.println("  Report: " + rr.getReportType().toString());
+                rr.getRaceOutputTargets().forEach(rot -> {
+                    System.out.println("  Target: " + rot.getUUID() );
+                    if (rd.getID().equals(rot.getOutputDestination()) ) {
+                        // the ReportDestination is in use
+                        inUse.set(true);
+                        inUseBy.append(r.getRaceName() + ": " + rr.getReportType().toString() +"\n" );
+                    }
+                });
+            });
+        });
         
-        resultsDAO.removeReportDestination(outputDestinationsListView.getSelectionModel().getSelectedItem());
+        if (inUse.getValue()) {
+            // Alert dialog box time
+            Alert alert = new Alert(AlertType.WARNING);
+            alert.setTitle("Unable to Remove ");
+            alert.setHeaderText("Unable to Remove the selected Output Destination");
+            alert.setContentText(inUseBy.toString());
+
+            alert.showAndWait();
+        } else resultsDAO.removeReportDestination(outputDestinationsListView.getSelectionModel().getSelectedItem());
     }
     
     public void addNewReport(ActionEvent fxevent){
@@ -1149,7 +1180,7 @@ public class FXMLResultsController  {
         
         if (! raceReportsUIMap.containsKey(r)) {
         } else {
-            System.out.println("Adding default Ooverall and Award race reports");
+            System.out.println("Adding a new report for " + r.getRaceName());
             RaceReport newRR = new RaceReport();
             newRR.setReportType(ReportTypes.OVERALL);
             r.addRaceReport(newRR);
@@ -1234,6 +1265,7 @@ public class FXMLResultsController  {
     };
     
     private class OutputPortalListCell extends ListCell<ReportDestination> {
+        ReportDestination boundRD = null;
         Label protocolLabel = new Label();
         Label serverLabel = new Label();
         Label pathLabel = new Label();
@@ -1294,13 +1326,19 @@ public class FXMLResultsController  {
             if (empty || op == null) {
                 setText(null);
                 setGraphic(null);
+                if (boundRD != null) {
+                    enabledCheckBox.selectedProperty().unbindBidirectional(boundRD.enabledProperty());
+                    boundRD = null;
+                }
             } else {
                 setText(null);
                 protocolLabel.setText(op.protocolProperty().getValueSafe());
                 //serverLabel.setText(op.serverProperty().getValueSafe());
                 if (op.getOutputProtocol().equals(FileTransferTypes.LOCAL)) pathLabel.setText(op.basePathProperty().getValueSafe());
                 else pathLabel.setText(op.serverProperty().getValueSafe() + ":" + op.basePathProperty().getValueSafe());
+                if (boundRD != null) enabledCheckBox.selectedProperty().unbindBidirectional(boundRD.enabledProperty());
                 enabledCheckBox.selectedProperty().bindBidirectional(op.enabledProperty());
+                boundRD = op;
                 transferStatusLabel.setText("Status: " + op.transferStatusProperty().getValueSafe());
                 setGraphic(container);
                 System.out.println("updateItem called: " + op.transferStatusProperty().getValueSafe());

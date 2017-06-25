@@ -867,6 +867,11 @@ public class FXMLTimingController {
         bibTextField.setPrefWidth(50.0);
         Label participantLabel = new Label();
         PrefixSelectionComboBox<Split> splitComboBox = new PrefixSelectionComboBox();
+        
+        
+        
+        
+        
         splitComboBox.setVisibleRowCount(5);
         bibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             Participant p = participantDAO.getParticipantByBib(newValue);
@@ -876,6 +881,26 @@ public class FXMLTimingController {
                 p.wavesObservableList().forEach(w -> {
                     splitList.addAll(w.getRace().getSplits());
                 });
+                
+                if (p.wavesObservableList().size() > 1) splitComboBox.setConverter(
+                    new StringConverter<Split>() {
+                        @Override
+                        public String toString(Split s) {
+                            if (s == null) {
+                                return "";
+                            } else {
+                                return s.getRace().getRaceName() + ": " + s.getSplitName();
+                            }
+                        }
+
+                        @Override
+                        public Split fromString(String s) {
+                            return null;
+                        }
+                    }
+                );
+                else splitComboBox.setConverter(null);
+                
                 splitComboBox.setItems(splitList);
                 splitComboBox.getSelectionModel().selectFirst();
                 bibOK.set(true);

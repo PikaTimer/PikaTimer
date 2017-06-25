@@ -16,6 +16,7 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.PikaPreferences;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import io.datafx.controller.FXMLController;
@@ -173,10 +174,7 @@ public class ImportWizardView1Controller {
         fileChooser.setTitle("Open CSV File");
         
         if (model.getFileName().equals("")) {
-            fileChooser.setInitialDirectory(
-                new File(System.getProperty("user.home"))
-            );
-            
+            fileChooser.setInitialDirectory(PikaPreferences.getInstance().getCWD());
         } else {
             fileChooser.setInitialFileName(model.getFileName()); 
         }

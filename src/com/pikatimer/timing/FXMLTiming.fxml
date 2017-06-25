@@ -44,13 +44,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="400.0" prefWidth="400.0" />
    </columnConstraints>
    <rowConstraints>
-      <RowConstraints valignment="CENTER" vgrow="NEVER" />
       <RowConstraints maxHeight="1.7976931348623157E308" valignment="CENTER" vgrow="NEVER" />
+      <RowConstraints valignment="CENTER" vgrow="NEVER" />
       <RowConstraints maxHeight="1.7976931348623157E308" minHeight="200.0" prefHeight="248.0" valignment="CENTER" vgrow="ALWAYS" />
       <RowConstraints />
    </rowConstraints>
    <children>
-      <SplitPane dividerPositions="0.66" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
+      <SplitPane dividerPositions="0.5103626943005182" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
          <items>
             <ScrollPane fx:id="timingDetailsPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefViewportHeight="486.0" prefViewportWidth="408.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
                <content>
@@ -62,6 +62,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </ScrollPane>
             <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0">
                <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Timing Data" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
                   <HBox alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
                         <Label text="Search">
@@ -131,24 +136,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </VBox>
             <VBox>
                <children>
-                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Start Time Trigger Lookup" textAlignment="CENTER">
-                     <font>
-                        <Font size="18.0" />
-                     </font>
-                  </Label>
-                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
-                     <children>
-                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
-                        <Button fx:id="startTriggerLookupButton" mnemonicParsing="false" onAction="#startTriggerLookup" text="Lookup" />
-                     </children>
-                     <padding>
-                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
-                     </padding>
-                  </HBox>
-               </children>
-            </VBox>
-            <VBox>
-               <children>
                   <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Chip -&gt; Bib Mapping" textAlignment="CENTER">
                      <font>
                         <Font size="18.0" />
@@ -163,6 +150,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         </CheckBox>
                         <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
                         <Button fx:id="customChipMapButton" mnemonicParsing="false" onAction="#setupCustomChipMap" text="Setup" />
+                     </children>
+                     <padding>
+                        <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
+                     </padding>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Start Time Trigger Lookup" textAlignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308">
+                     <children>
+                        <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="startTriggerLookupButton" mnemonicParsing="false" onAction="#startTriggerLookup" text="Lookup" />
                      </children>
                      <padding>
                         <Insets bottom="2.0" left="-2.0" right="2.0" top="2.0" />
@@ -204,8 +209,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" />
          </GridPane.margin>
       </VBox>
-      <VBox fx:id="timingLocVBox" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+      <VBox fx:id="timingLocVBox" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1">
          <children>
+            <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Timing Location Setup" textAlignment="CENTER" VBox.vgrow="NEVER">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Label>
             <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">
                <children>
                   <TextField fx:id="timingLocationNameTextField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="200.0" GridPane.columnIndex="1" />
