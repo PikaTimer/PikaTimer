@@ -344,7 +344,7 @@ public class Award implements RaceReportType {
             else currentTime = DurationFormatter.durationToString(overall.get(i).getGunFinish(), dispFormat, roundMode);
             
             //System.out.println("Award::printWinners: Comparing previous " + lastTime + " to " + currentTime);
-            if (permitTies && !lastTime.equals(currentTime)) currentPlace++;
+            if (permitTies && !lastTime.equals(currentTime)) currentPlace = i+1;
             else if (!permitTies) currentPlace++;
             
             lastTime = currentTime;
