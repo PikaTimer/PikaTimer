@@ -593,7 +593,7 @@ public class ResultsDAO {
 
                     while (r.getSplitTime(si).isZero() ){
                         if (Objects.equals(c.getTimingLocationId(), splitArray[si-1].getTimingLocationID()) ) {
-                            //System.out.println(" Split time found for bib " + p.getBib() + " " + c.getTimestamp() + " " + lastSeen + " " + nextSeen);
+                            System.out.println(" Split time found for bib " + p.getBib() + " " + c.getTimestamp() + " " + lastSeen + " " + nextSeen);
                             if (c.getTimestamp().compareTo(lastSeen) > 0  && (nextSeen.isZero() || c.getTimestamp().compareTo(nextSeen.minusMinutes(5)) < 0)) {
                                 r.setSplitTime(si,c.getTimestamp());
                                 lastSeen=c.getTimestamp();
@@ -601,28 +601,36 @@ public class ResultsDAO {
                             }
                         }
                         if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
-                        else break;
+                        else { 
+                            //we hit the bottom, reset the backupTimeIndex to zero to restart our search
+                            System.out.println(" Hit backup bottom, restarting search");
+                            backupTimeIndex=0;
+                            break;
+                        };
                     }
                 }
             }
             
             
-            if (backupTimeIndex == maxBackupTimes ) return; // out of times
+            if (backupTimeIndex == maxBackupTimes ) {
+                System.out.println("No more backup times found for bib " + p.getBib());
+                return; // out of backup times
+            } 
             
             // now fix the finish time 
             if (r.getFinishDuration() == null || r.getFinishDuration().isZero()) { // we need a finish time
                 int finishSplit = splits.size()-1;
                 
                 // find the last time we saw this runner
-                
                 for (int si = 1; si < finishSplit; si++ ){
                     if (r.getSplitTime(si) != Duration.ZERO) lastSeen = r.getSplitTime(si);
                 }
-                
+                backupTimeIndex=0;
+                c = backupTimesList.get(backupTimeIndex++);
                 while (r.getFinishDuration() == null || r.getFinishDuration().isZero() ){
                     if (Objects.equals(c.getTimingLocationId(), splitArray[finishSplit].getTimingLocationID()) ) {
                         if (c.getTimestamp().compareTo(lastSeen) > 0) r.setFinishDuration(c.getTimestamp());
-                        System.out.println("Finish start time found for bib " + p.getBib());
+                        System.out.println("Backup finish time found for bib " + p.getBib());
                     }
                     if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
                     else break;
