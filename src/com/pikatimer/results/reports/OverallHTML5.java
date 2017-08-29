@@ -268,6 +268,9 @@ public class OverallHTML5 implements RaceReportType{
             report += "      <th data-priority=\"3\">Sex</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"5\">AG</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"1\" class=\"all\">Name</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"1000\">First</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"1000\">Middle</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"1000\">Last</th>" +  System.lineSeparator();
             report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
             if (showCountry) report += "      <th data-priority=\"45\">Country</th>" +  System.lineSeparator(); 
@@ -457,6 +460,10 @@ public class OverallHTML5 implements RaceReportType{
                         "                       \"filter\": \"full_name_filter\",\n" +
                         "               } "
                     +   "           },\n" +
+                        "           { \"data\": \"first_name\" },\n" +
+                        "           { \"data\": \"middle_name\" },\n" +
+                        "           { \"data\": \"last_name\" },\n" +
+
                         "           { \"data\": \"city\" },\n" +
                         "           { \"data\": \"state\" },\n";
             if (showCountry) report += "           { \"data\": \"country\" },\n";
@@ -511,6 +518,7 @@ public class OverallHTML5 implements RaceReportType{
                         "        {\n" +
                         "            extend: 'csv',\n" +
                         "            text: 'Export to CSV',\n" +
+                        "                    bom: 'true',\n" +
                         "            exportOptions: {\n" +
                         "                modifier: {\n" +
                         "                    search: 'none'\n" +
