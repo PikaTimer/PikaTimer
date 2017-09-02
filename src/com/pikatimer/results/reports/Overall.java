@@ -267,6 +267,7 @@ public class Overall implements RaceReportType{
         report += chars.toString();
         
         if (customHeaders && race.getStringAttribute("textFooter") != null && !race.getStringAttribute("textFooter").isEmpty()) {
+            report += System.lineSeparator();
             report += race.getStringAttribute("textFooter");
             report += System.lineSeparator();
         }
