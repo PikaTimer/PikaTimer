@@ -50,7 +50,12 @@ public class LocalTransport implements FileTransport {
     public void save(String filename, String contents) {
         System.out.println("LocalTransport.save called for " + filename);
         
+        //String Accented chars if needed
         if (stripAccents) contents = StringUtils.stripAccents(contents);
+        
+        //Fix the newlines
+        contents = contents.replaceAll("\\R", System.lineSeparator()); 
+        
         
         if (goodToGo && ! basePath.isEmpty()) {
             
