@@ -335,7 +335,7 @@ public class OverallJSON implements RaceReportType{
             
         });
             
-        chars.deleteCharAt(chars.lastIndexOf(","));
+        if (chars.lastIndexOf(",") > 0 )chars.deleteCharAt(chars.lastIndexOf(","));
         report += chars.toString();
         report +=   "  ]\n";
 
