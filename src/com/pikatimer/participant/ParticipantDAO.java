@@ -19,6 +19,8 @@ package com.pikatimer.participant;
 import com.pikatimer.results.ResultsDAO;
 import java.util.List; 
 import com.pikatimer.util.HibernateUtil;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -51,6 +53,8 @@ public class ParticipantDAO {
     //Semaphore semaphore = new Semaphore(1);
     
     private static final CountDownLatch participantsLoadedLatch = new CountDownLatch(1);
+    
+    private static final List<CustomAttribute> customAttributeList = new ArrayList();
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -121,6 +125,7 @@ public class ParticipantDAO {
             @Override 
             public Void call() {
                 final List<Participant> list;// = new ArrayList<>();
+                final List<CustomAttribute> attributeList;
 
 
                 Session s=HibernateUtil.getSessionFactory().getCurrentSession();
@@ -129,7 +134,7 @@ public class ParticipantDAO {
 
                 try {  
                     list=s.createQuery("from Participant").list();
-                 
+                    attributeList=s.createQuery("from CustomAttribute").list();
 
                     System.out.println("ParticipantDAO::refreshParticipantsList found " + list.size() + " Participants");
                     //if(!participantsList.isEmpty()) participantsList.clear();
@@ -137,6 +142,8 @@ public class ParticipantDAO {
                     Platform.runLater(() -> {
                             participantsList.setAll(list);
                     });
+                    customAttributeList.addAll(attributeList);
+                    
                     list.forEach(p -> {
                         Participant2BibMap.put(p, p.getBib()); 
                         Bib2ParticipantMap.put(p.getBib(),p); 
@@ -291,6 +298,23 @@ public class ParticipantDAO {
             Logger.getLogger(ParticipantDAO.class.getName()).log(Level.SEVERE, null, ex);
         }
         return ID2ParticipantMap.get(id); 
+    }
+    
+    public List<CustomAttribute> getCustomAttributes() {
+        return customAttributeList;
+    }
+    
+    public void saveCustomAttribute(CustomAttribute cr){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.saveOrUpdate(cr);
+        s.getTransaction().commit();
+    }
+    public void deleteCustomAttribute(CustomAttribute cr){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.delete(cr);
+        s.getTransaction().commit();
     }
 } 
 

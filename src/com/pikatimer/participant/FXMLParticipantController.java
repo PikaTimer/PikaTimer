@@ -28,6 +28,7 @@ import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
 import java.io.File;
 import java.io.IOException;
+import static java.lang.Double.MAX_VALUE;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -35,9 +36,11 @@ import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -46,7 +49,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -63,6 +66,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -70,24 +74,30 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import static javafx.scene.layout.Region.USE_PREF_SIZE;
 import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.CheckComboBox;
@@ -137,10 +147,15 @@ public class FXMLParticipantController  {
     
     @FXML private Button deleteParticipantsButton;
     
+    @FXML private Button customAtrtributesButton;
+    @FXML private VBox customAttributesVBox;
+    
     private ObservableList<Participant> participantsList;
     private ParticipantDAO participantDAO;
     private Participant editedParticipant; 
     FilteredList<Participant> filteredParticipantsList ;
+    
+    
     
     @FXML
     protected void initialize() {
@@ -1083,6 +1098,287 @@ public class FXMLParticipantController  {
         } else {
             // ... user chose CANCEL or closed the dialog
         }
+        
+    }
+    
+    public void setupCustomAttributes(ActionEvent fxevent){
+        // Do something.... 
+        List<CustomAttribute> customAttributes = participantDAO.getCustomAttributes();
+        List<CustomAttribute> deletedCustomAttributes = new ArrayList();
+        
+        // Create the base dialog
+        Dialog<Boolean> dialog = new Dialog();
+        dialog.resizableProperty().set(true);
+        dialog.getDialogPane().setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight()-150);
+        dialog.setTitle("Custom Attributes");
+        dialog.setHeaderText("Custom Attributes");
+        ButtonType okButtonType = new ButtonType("Close", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType);
+        
+        VBox contentVBox = new VBox();
+        contentVBox.setSpacing(5);
+        contentVBox.setMaxHeight(MAX_VALUE);
+        contentVBox.setMaxWidth(MAX_VALUE);
+
+        
+        Button addCustomButton = new Button("Add New...");
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setMaxWidth(MAX_VALUE);
+        scrollPane.setMaxHeight(MAX_VALUE);
+        scrollPane.fitToWidthProperty().set(true);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        
+        VBox casVBox = new VBox();
+        casVBox.setPrefWidth(400);
+        casVBox.setPrefHeight(200);
+        casVBox.setSpacing(5);
+        casVBox.setMaxWidth(MAX_VALUE);
+        casVBox.setMaxHeight(MAX_VALUE);
+        
+        scrollPane.setContent(casVBox);
+        contentVBox.getChildren().addAll(addCustomButton,scrollPane);
+        addCustomButton.setOnAction(a -> {
+            CustomAttribute ca = new CustomAttribute();
+            customAttributes.add(ca);
+            VBox caVBox = new VBox();
+            caVBox.setPadding(new Insets(5,5,5,5));
+            caVBox.setSpacing(5);
+            HBox caHBox = new HBox();
+            caHBox.setMaxWidth(MAX_VALUE);
+            caHBox.setSpacing(5);
+            caHBox.setAlignment(Pos.CENTER_LEFT);
+            Label nameLabel = new Label("Name: ");
+            Label typeLabel = new Label("Type: ");
+            TextField name = new TextField();
+            name.setPrefWidth(150);
+            name.textProperty().addListener((observable, oldValue, newValue) -> {
+                System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                ca.nameProperty().set(newValue);
+            });
+            
+            VBox caListVBox = new VBox();
+            caListVBox.setSpacing(5);
+            ListView<String> list = new ListView<String>(ca.allowableValuesProperty());
+            list.setPrefHeight(100);
+            list.setMinHeight(100);
+            list.setCellFactory(TextFieldListCell.forListView());
+            list.setEditable(true);
+            caListVBox.getChildren().add(list);
+            HBox caListHBox = new HBox();
+            Button add = new Button("Add");
+            add.setOnAction(aa -> {
+                list.getItems().add("Item");
+                list.scrollTo(list.getItems().size() - 1);
+                list.layout();
+                list.edit(list.getItems().size() - 1);
+            });
+            
+            
+            Button remove = new Button("Remove");
+            remove.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+            remove.setOnAction(ra -> {
+                list.getItems().remove(list.getSelectionModel().getSelectedItem());
+            });
+            
+            list.setOnEditCommit((ListView.EditEvent<String> t) -> {
+                System.out.println("setOnEditCommit " + t.getIndex());
+                if (t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+                    if (t.getNewValue().isEmpty()) {
+                        list.getItems().remove(t.getIndex());
+                    } else {
+                        list.getItems().set(t.getIndex(), t.getNewValue());
+                    }
+                } else {
+                    System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+                }
+                add.requestFocus();
+                add.setDefaultButton(true);
+            });
+            list.setOnEditCancel((ListView.EditEvent<String> t) -> {
+                System.out.println("setOnEditCancel " + t.getIndex());
+                if (t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+                   
+                    if (t.getNewValue() == null || t.getNewValue().isEmpty()) {
+                        list.getItems().remove(t.getIndex());
+                    } 
+                } else {
+                    System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+                }
+                add.requestFocus();
+                add.setDefaultButton(true);
+            });
+            caListHBox.getChildren().addAll(add,remove);
+            caListVBox.getChildren().add(caListHBox);
+            
+            PrefixSelectionChoiceBox type = new PrefixSelectionChoiceBox();
+            ObservableList<CustomAttributeType> typeList = FXCollections.observableArrayList(Arrays.asList(CustomAttributeType.values()));
+            type.setItems(typeList);
+            type.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<CustomAttributeType>() {
+                @Override
+                public void changed(ObservableValue<? extends CustomAttributeType> observableValue, CustomAttributeType o, CustomAttributeType n) {
+                    if (n.equals(CustomAttributeType.LIST)) {
+                        caListVBox.setManaged(true);
+                        caListVBox.setVisible(true);
+                    } else {
+                        caListVBox.setManaged(false);
+                        caListVBox.setVisible(false);
+                    }
+                    ca.setAttributeType(n);
+                }
+            });
+            type.getSelectionModel().select(CustomAttributeType.STRING);
+            
+            Pane spring = new Pane();
+            spring.setMaxWidth(MAX_VALUE);
+            HBox.setHgrow(spring, Priority.ALWAYS);
+            
+            Button deleteButton = new Button("Delete");
+            Separator sep = new Separator();
+            
+            caHBox.getChildren().addAll(nameLabel,name,typeLabel,type,spring,deleteButton);
+            caVBox.getChildren().addAll(caHBox,caListVBox,sep);
+            
+            casVBox.getChildren().addAll(caVBox);
+            
+            deleteButton.setOnAction(da -> {
+                casVBox.getChildren().remove(caVBox);
+                customAttributes.remove(ca);
+            });
+        });
+        
+        // existing attributes
+        customAttributes.forEach(attrib -> {
+            
+            VBox caVBox = new VBox();
+            caVBox.setSpacing(5);
+            caVBox.setPadding(new Insets(5,5,5,5));
+            HBox caHBox = new HBox();
+            caHBox.setMaxWidth(MAX_VALUE);
+            caHBox.setSpacing(5);
+            caHBox.setAlignment(Pos.CENTER_LEFT);
+            Label nameLabel = new Label("Name: ");
+            Label typeLabel = new Label("Type: ");
+            TextField name = new TextField(attrib.getName());
+            name.setPrefWidth(150);
+            
+            name.textProperty().addListener((observable, oldValue, newValue) -> {
+                System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                attrib.nameProperty().set(newValue);
+            });
+            
+            VBox caListVBox = new VBox();
+            if (attrib.getAttributeType() == null) attrib.setAttributeType(CustomAttributeType.STRING);
+            if (attrib.getAttributeType().equals(CustomAttributeType.LIST)) {
+
+                caListVBox.setSpacing(5);
+                ListView<String> list = new ListView<String>(attrib.allowableValuesProperty());
+                list.setPrefHeight(100);
+                list.setMinHeight(100);
+                list.setCellFactory(TextFieldListCell.forListView());
+                list.setEditable(true);
+                caListVBox.getChildren().add(list);
+                HBox caListHBox = new HBox();
+                Button add = new Button("Add");
+                add.setOnAction(aa -> {
+                    list.getItems().add("Item");
+                    list.scrollTo(list.getItems().size() - 1);
+                    list.layout();
+                    list.edit(list.getItems().size() - 1);
+                });
+
+
+                Button remove = new Button("Remove");
+                remove.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+                remove.setOnAction(ra -> {
+                    list.getItems().remove(list.getSelectionModel().getSelectedItem());
+                });
+
+                list.setOnEditCommit((ListView.EditEvent<String> t) -> {
+                    System.out.println("setOnEditCommit " + t.getIndex());
+                    if (t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+                        if (t.getNewValue().isEmpty()) {
+                            list.getItems().remove(t.getIndex());
+                        } else {
+                            list.getItems().set(t.getIndex(), t.getNewValue());
+                        }
+                    } else {
+                        System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+                    }
+                    add.requestFocus();
+                    add.setDefaultButton(true);
+                });
+                list.setOnEditCancel((ListView.EditEvent<String> t) -> {
+                    System.out.println("setOnEditCancel " + t.getIndex());
+                    if (t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+
+                        if (t.getNewValue() == null || t.getNewValue().isEmpty()) {
+                            list.getItems().remove(t.getIndex());
+                        } 
+                    } else {
+                        System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+                    }
+                    add.requestFocus();
+                    add.setDefaultButton(true);
+                });
+                caListHBox.getChildren().addAll(add,remove);
+                caListVBox.getChildren().add(caListHBox);
+            }
+            
+            Label type = new Label(attrib.getAttributeType().toString());
+            
+            Pane spring = new Pane();
+            spring.setMaxWidth(MAX_VALUE);
+            HBox.setHgrow(spring, Priority.ALWAYS);
+            
+            Button deleteButton = new Button("Delete");
+            Separator sep = new Separator();
+            
+            caHBox.getChildren().addAll(nameLabel,name,typeLabel,type,spring,deleteButton);
+            if (attrib.getAttributeType().equals(CustomAttributeType.LIST)) caVBox.getChildren().addAll(caHBox,caListVBox,sep);
+            else caVBox.getChildren().addAll(caHBox,sep);
+                
+            casVBox.getChildren().addAll(caVBox);
+            
+            deleteButton.setOnAction(da -> {
+                casVBox.getChildren().remove(caVBox);
+                customAttributes.remove(attrib);
+                deletedCustomAttributes.add(attrib);
+            });
+        });
+        
+        
+        dialog.getDialogPane().setContent(contentVBox);
+        
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+        
+        Platform.runLater(() -> { dialog.setY((Screen.getPrimary().getVisualBounds().getHeight()-dialog.getHeight())/2); });
+        Optional<Boolean> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            deletedCustomAttributes.forEach(ca -> {
+                System.out.println("Deleting Custom Attribute " + ca.getName());
+                participantDAO.deleteCustomAttribute(ca);
+            });
+            customAttributes.forEach(ca -> {
+                System.out.println("Saving Custom Attribute " + ca.getName());
+                // remove duplicates from the allowable values list
+                Set<String> s = new LinkedHashSet<>(ca.allowableValuesProperty());
+                ca.setAllowableValues(new ArrayList(s)); 
+                
+                // Save it
+                participantDAO.saveCustomAttribute(ca);
+            });
+        }
+        
+        // Rework the table columns
+        
+        // Rework the form input fields
+               
         
     }
     

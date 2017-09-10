@@ -94,6 +94,7 @@ public class Participant {
     private final ObjectProperty<LocalDate> birthdayProperty = new SimpleObjectProperty();
     private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());  
     
+    private final ObservableMap<Integer,StringProperty> customAttributeMap = FXCollections.observableHashMap();
     
     private final IntegerProperty wavesChangedCounterProperty = new SimpleIntegerProperty(0);
     private final ObjectProperty<ObservableList<Wave>> wavesProperty = new SimpleObjectProperty(waves);
@@ -105,7 +106,6 @@ public class Participant {
     private final ObjectProperty<Status> statusProperty = new SimpleObjectProperty(Status.GOOD);
    
     public Participant() {
-        // TODO: Fix this to include the middle name if it is set
         fullNameProperty.bind(new StringBinding(){
             {super.bind(firstNameProperty,middleNameProperty, lastNameProperty);}
             @Override
@@ -226,6 +226,7 @@ public class Participant {
                  case "email": this.setEmail(entry.getValue()); break; 
                      
                  // TODO: Team value
+                 
              }
             }
         });
