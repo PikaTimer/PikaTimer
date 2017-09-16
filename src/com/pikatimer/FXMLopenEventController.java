@@ -89,9 +89,8 @@ public class FXMLopenEventController {
     @FXML
     protected void openDB(File dbFile) {
         
-        PikaPreferences.getInstance().setRecentFile(dbFile); // stash this for future use
-        globalPrefs.put("PikaEventHome", dbFile.getParent());
-        System.setProperty("user.dir", dbFile.getParent());
+        System.out.println("Opening " + dbFile.getAbsolutePath());
+
         
         OpenHBox.setVisible(false);
         OpenHBox.setManaged(false);
@@ -103,7 +102,9 @@ public class FXMLopenEventController {
         //LoadingLabel.setVisible(true);
         LoadingProgressBar.setProgress(-1);
 
-
+        PikaPreferences.getInstance().setRecentFile(dbFile); // stash this for future use
+        globalPrefs.put("PikaEventHome", dbFile.getParent());
+        System.setProperty("user.dir", dbFile.getParent());
 
         System.out.println("Just hid the Open stuff and revealed the Loading stuff");
         
@@ -219,6 +220,7 @@ public class FXMLopenEventController {
                 new FileChooser.ExtensionFilter("All files", "*")
             );
         File file = fileChooser.showOpenDialog(rootGridPane.getScene().getWindow());
+        System.out.println("Opening existing file....");
         if (file != null) {
             
             // does the file end in .mv.db? 
