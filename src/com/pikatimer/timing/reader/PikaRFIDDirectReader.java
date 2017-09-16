@@ -47,6 +47,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -151,10 +152,13 @@ public class PikaRFIDDirectReader implements TimingReader {
             
     ChoiceBox<String> reader1ModeChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Start", "Finish"));
     Spinner<Integer> gatingIntervalSpinner = new Spinner<>(1, 20, 3);    
+    ChoiceBox<String> beeperVolumeChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Off", "Soft", "Loud"));
     
     Button setClockButton = new Button("Sync Time...");
+    Button remoteSettingsButton = new Button("Remote...");
     Label modeLabel = new Label("Reader Mode:");
     Label gatingLabel = new Label("Gating Interval:");
+    Label volumeLabel = new Label("Beeper Volume:");
     Button updateSettingsButton = new Button("Update");
             
     private Map<String,String> ultraSettings = new HashMap();
@@ -329,9 +333,9 @@ public class PikaRFIDDirectReader implements TimingReader {
 
             fileHBox.getChildren().addAll(saveToFileCheckBox,fileTextField,fileButton);
             
-            HBox advancedHBox = new HBox();
-            advancedHBox.setSpacing(4);
-            advancedHBox.setAlignment(Pos.CENTER_LEFT);
+            VBox advancedVBox = new VBox();
+            advancedVBox.setSpacing(4);
+            advancedVBox.setAlignment(Pos.CENTER_LEFT);
             
             gatingIntervalSpinner.setMaxWidth(60);
             gatingIntervalSpinner.setEditable(true);
@@ -364,16 +368,37 @@ public class PikaRFIDDirectReader implements TimingReader {
             reader1ModeChoiceBox.managedProperty().bind(isJoey.not());
             reader1ModeChoiceBox.visibleProperty().bind(isJoey.not());
             
+            beeperVolumeChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                System.out.println("beeperVolumeChoiceBox listener: Existing volume: " + ultraSettings.get("21"));
+                if ("Off".equals(newVal)) {
+                    if (!"0".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                } else if ("Soft".equals(newVal)) {
+                    if (!"1".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                } else if ("Loud".equals(newVal)) {
+                    if (!"2".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                }
+                
+            });
+            
             updateSettingsButton.setVisible(false);
             updateSettingsButton.setOnAction(action -> {
                 updateReaderSettings();
             });
             
-            advancedHBox.getChildren().addAll(setClockButton,modeLabel,reader1ModeChoiceBox,gatingLabel,gatingIntervalSpinner,updateSettingsButton);
+            HBox advancedHBox1 = new HBox();
+            advancedHBox1.setSpacing(4);
+            advancedHBox1.setAlignment(Pos.CENTER_LEFT);
+            HBox advancedHBox2 = new HBox();
+            advancedHBox2.setSpacing(4);
+            advancedHBox2.setAlignment(Pos.CENTER_LEFT);
             
-            advancedHBox.disableProperty().bind(connectedStatus.and(readingStatus).or(connectedStatus.not()));
+            advancedHBox1.getChildren().addAll(volumeLabel,beeperVolumeChoiceBox,setClockButton,remoteSettingsButton);
+            advancedHBox2.getChildren().addAll(modeLabel,reader1ModeChoiceBox,gatingLabel,gatingIntervalSpinner,updateSettingsButton);
+            advancedVBox.getChildren().addAll(advancedHBox1,advancedHBox2);
+                        
+            advancedVBox.disableProperty().bind(connectedStatus.and(readingStatus).or(connectedStatus.not()));
             
-            settingsVBox.getChildren().addAll(fileHBox,advancedHBox);
+            settingsVBox.getChildren().addAll(fileHBox,advancedVBox);
             
             settingsTitlePane.setText("Advanced Settings");
             settingsTitlePane.setContent(settingsVBox);
@@ -405,7 +430,9 @@ public class PikaRFIDDirectReader implements TimingReader {
             setClockButton.setOnAction((event) -> {
                 setClockDialog();
             });
-            
+            remoteSettingsButton.setOnAction((event) -> {
+                remoteDialog();
+            });
             batteryProgressBar.visibleProperty().bind(connectToggleSwitch.selectedProperty());
             batteryProgressBar.setMaxHeight(30.0);
             
@@ -453,6 +480,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             fileTextField.setText(backupFile);
             fileTextField.focusedProperty().addListener((ob, oldVal, newVal) -> {
                 if (!newVal) {
+                    outputFile = null; // clear the reference to the old file
                     if (fileTextField.getText().isEmpty()){
                         saveToFileCheckBox.setSelected(false);
                         if (!backupFile.isEmpty()) {
@@ -510,6 +538,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                 File file = fileChooser.showSaveDialog(fileButton.getScene().getWindow());
                 if (file != null) {
                     Platform.runLater(() -> fileTextField.setText(file.getAbsolutePath()));
+                    outputFile=null;
                 }
             });
             
@@ -621,7 +650,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                                     Boolean newStatus = false;
                                     if (result.substring(2, 3).startsWith("1")) newStatus = true;
                                     else newStatus = false;
-                                    if (newStatus != currentStatus){
+                                    if (!Objects.equals(newStatus, currentStatus)){
                                         externalInitiated = true;
                                         Platform.runLater(() -> {
                                             if (result.substring(2, 3).startsWith("1")) readingStatus.setValue(Boolean.TRUE);
@@ -673,6 +702,9 @@ public class PikaRFIDDirectReader implements TimingReader {
         Task ultraCommand = new Task<Void>() {
             @Override public Void call() {
                 if (connectedStatus.get()) {
+                    
+                    Platform.runLater(() -> updateSettingsButton.setVisible(false));
+                    
                     Boolean aquired = false;
                     try {
                         if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
@@ -728,7 +760,18 @@ public class PikaRFIDDirectReader implements TimingReader {
                             } while(result != null);
                             
                             
-                            
+                            //Beeper Volume Factor
+                            try{
+                                if (!ultraSettings.containsKey("21")) System.out.println("We don't know what the beeper volume is");
+                                else {
+                                    Integer volume =Integer.parseInt(ultraSettings.get("21"));
+                                    Platform.runLater(() -> beeperVolumeChoiceBox.getSelectionModel().clearAndSelect(volume));
+                                    System.out.println("Setting the volume to " + volume);
+                                }
+                            } catch (Exception e){
+                                Platform.runLater(() -> beeperVolumeChoiceBox.getSelectionModel().selectFirst());
+                                System.out.println("Beeper volume parse error!");
+                            }
                             
                             //Gating Factor
                             try{
@@ -1157,7 +1200,8 @@ public class PikaRFIDDirectReader implements TimingReader {
             System.out.println("PikaRFIDDirectReader::saveToFile: opening " + newFile.getAbsolutePath());
             Boolean goodFile=false;
             try {
-                if (newFile.canWrite() || newFile.createNewFile()) {
+                // Not a directory and we can write to it _or_ we can create it
+                if ((!newFile.isDirectory() && newFile.isFile() && newFile.canWrite())  || newFile.createNewFile()) {
                     outputFile = new PrintWriter(new FileOutputStream(newFile, true));
                 }
             } catch (IOException ex) {
@@ -1564,6 +1608,60 @@ public class PikaRFIDDirectReader implements TimingReader {
             };
             new Thread(ultraCommand).start();
     }
+    
+    private void remoteDialog(){
+        
+        // Yeah, yeah, we should return an optional with an object that has the
+        // settings in it. Or a boolean and then we can just yank them from 
+        // the nodes and call it a good day. 
+        
+        // Open a dialog box
+        Dialog<Boolean> dialog = new Dialog();
+        dialog.setTitle("Remote settings");
+        dialog.setHeaderText("Set the remote settings for " + ultraIP);
+        ButtonType setButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(setButtonType, ButtonType.CANCEL);
+        
+        // set the gprsChoiceBox
+        Label gprsLabel = new Label("Connection Type");
+        ChoiceBox<String> gprsChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Off", "Internal Modem", "LAN"));
+        
+        //Server
+        Label serverLabel = new Label("Server");
+        ChoiceBox<String> serverChoiceBox = new ChoiceBox(FXCollections.observableArrayList("USA1.RFIDTiming.com", "Europe1.RFIDTiming.com"));
+
+        // Port
+        Label portLabel = new Label("Port");
+        TextField portTextField = new TextField("11111");
+        
+        // LAN
+        Label gatewayLabel = new Label("Gateway");
+        TextField gatewayTextField = new TextField("192.168.1.1");
+        
+        // 3G modem
+        Label apnNameLabel = new Label("APN Name");
+        TextField apnNameTextField = new TextField();
+        Label apnUserNameLabel = new Label("APN Username");
+        TextField apnUuserNameTextField = new TextField();
+        Label apnPasswordLabel = new Label("APN Password");
+        TextField apnPasswordTextField = new TextField();
+        
+        // if good, save the settings
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == setButtonType) {
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+
+        Optional<Boolean> result = dialog.showAndWait();
+
+        if (result.isPresent()) {
+            // Play the task game
+            
+        }
+    }
+    
     private void setClockDialog(){
         Integer localTZ = TimeZone.getDefault().getOffset(System.currentTimeMillis())/3600000;
         Integer ultraTZ = Integer.parseInt(ultraSettings.get("23"));
@@ -1770,6 +1868,37 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 Boolean commit=false;
                                 Boolean restartInterface=false;
                                 
+                                // Beeper Volume
+                                String volume = beeperVolumeChoiceBox.getSelectionModel().getSelectedItem();
+                                if (volume != null) {
+                                    byte val = 3;
+                                    if (volume.equals("Off")) val = 0;
+                                    else if (volume.equals("Soft")) val = 1;
+                                    else if (volume.equals("Loud")) val = 2;
+                                    
+                                    System.out.println("updateReaderSettings(): Setting beeper volume (0x21) " + volume + "(" + Byte.toString(val) + ")");
+
+                                    if (val != 3) {
+                                        ultraOutput.flush();
+
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(33);  // 0x21, volume
+                                        ultraOutput.writeByte(val);
+                                        ultraOutput.writeByte(255);
+
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            ultraSettings.put("21",Byte.toString(val));
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command 'u0x21'");
+                                        }
+                                    }
+                                } else {
+                                   System.out.println("updateReaderSettings(): Beeper volume is NULL!");
+                                }
                                 // Mode
                                 String mode = reader1ModeChoiceBox.getSelectionModel().getSelectedItem();
                                 if (! isJoey.get() && mode != null){
