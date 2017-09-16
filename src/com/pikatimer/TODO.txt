@@ -1,47 +1,78 @@
-TODO for 1.0 Release
+TODO for 1.1 Release
+
+Bugs:
+Ultra Direct: Discover only scans 1st network adapter
+Needs Testing: Ultra Direct: Save to file sometimes holds old target locations
+Ultra Direct: Better exception catching when we ask for a param that does not exist
+Done: FTPS Upload: Upload to a temp file and then do a rename to get around file locking issues
+DONE: Text header/footer does not honor line feeds in text output files (search/replace \R for system linefeed() )
+Single quotes in split names causes issues in the JSON parsing. Need to wrap in double quotes and escape all double quotes  in any user editable field (split, segment, name, city, state, country, etc)
+Having the "in-progress" or "show dnf's" not checked during a race with no finishers results in problems in the OverallJSON that blows through the OverallHMTL5 report.
+Start time lookup: 2nd location shows all waves and adds extra waves to those races
 
 
-Finish User Manual
-DONE -- Screen Snapshots in README.md file 
-DONE -- Changing report type requires a restart?
-DONE -- ASCII vs UTF-8 import file encoding detection for participants
-DONE -- Joey Testing (Rewind, set clock, start/stop, etc)
-DONE -- Hide reader mode if a Joey
-DONE -- Hide 'add person' until minimal fields are entered (last, etc)
-DONE -- default to 1st wave on add person form
-DONE -- Reports: Don't permit report destinations to be removed if in use
-DONE -- html5 report: search for accented strings
-DONE -- AG is missing if not setup (still)
+Features:
+Participant: Custom Attributes (string, integer, number, date, time, list)
+Participant Import: Assign to wave based on an input field in the CSV file
+Participant Import: Custom Attributes
+Participant Export: Custom Attributes
+Participant: Unknown age set to -1 and excluded from AG awards
 
-Post 1.0 Release:
-AgeGroup: Arbitrary boundaries
-Awards: Simple (done), Advanced (3 tier, custom depths), Custom (arbitrary levels, depths, filters, timing points)
-Participants: Custom Attributes
-Timing: Ultra -- filter after skew to permit "old" times to be adjusted forward  
-Timing: Ultra -- Half hour time zone detection / support. 
-Timing: Ultra -- antenna on/off configuration
-Timing: Ultra -- Show/set beeper volume
+AgeGroup: Arbitrary group ranges (5->7, 8->9, 10->13, etc)
+AgeGroup: Last AG (e.g., 80+)
+
+Split: Advanced toggle switch 
+Split: Min time to next split (under advanced display for the split)
+Split: Type: Normal, Hidden Split, Ignored 
+Split: Ignore split time support (aka "dead zone" or "pause"). Basically blank out the time from that segment. 
+Split: Mandatory split (stop if they are missing a time from that split)
+
+Awards: Advanced (3 tier, variable AG award depths based on number of registrants or runners)
+Awards: Custom (arbitrary levels, filters, timing points, group by (sex, age, age group),depths (fixed, variable)
+
+Timing: Ultra Direct -- filter after skew to permit "old" times to be adjusted forward  
+Timing: Ultra Direct -- antenna on/off and power configuration
+Timing: Ultra Direct -- Remote Settings (including custom IP)
+Timing: Outreach client?
+
+Results: Merge Country to State if not USA? 
+Results: Hide country/State if all are empty? 
+Results: Show custom attributes
+Results: Award report: Only show some awards
+Results: Awards: HTML output option
+Results: HTML5: Flag award winners with an icon and display in detailed view
+
+
+OverallHTML5: DNF should show the note and if in progress, display the last seen location
+
+Segments:
+Per segment pace display override (swim/bike/run/transition)
+Option to show splits on the segment section of the HTML5 report
+
+Penalty support w/ Note
+
+DONE -- Timing: Ultra -- Show/set beeper volume
+
+
+
+
+FUTURE: 
 Cleanup UI and better input field validation
 TableView Custom Cells:
-  -- Switch to 'always active' cells to get around the commit on focus lost issue
+  -- Switch to 'always active' cells to get around the commit on focus lost issue?
 Create a DurationTextField / LocalTimeTextField that "does the right thing"
 Create a DurationCell (or whatever) for inline edits of durations?
-Penalty support (extend override or make it a participant attribute?)
-Ignore split/segment time support (aka "dead zone" or "pause"). Basically blank out the time from that segment. 
-Per segment pace display override (swim/bike/run/transition)
-Show splits on the segment report
-Mandatory split (stop if they are missing a time from that split)
-Wire in a "min time to next split" option to replace hardcoded 5/10 minutes. 
 
+Participants: Custom Attributes
+Awards: Filter on custom attributes
+Timing: Ultra -- Half hour time zone detection and warning. 
 
 DEFERRED -- Upgrade to Hibernate 5.2.x (wait for 5.2.11+)
 
 editCell that does not revert on focus change (WTF Oracle)?
--Mandatory split? 
 
-Overall:
-Upgrade Hibernate to 5.x
-Fix FXML layout resizing checks on race and results tabs
+
+
 
 
 
@@ -127,7 +158,7 @@ Award winner note in overall text/html reports.
 Publish to 3rd party results web site (e.g. RunSignUp.com)? 
 
 
-Team Results
+Team Results: V1.5
 Male, Female, Coed, user selected variable (city, state, custom, etc)
 scoring numbers per team (1->N)
 for co-ed, number per team of each gender (1->(N-1))
