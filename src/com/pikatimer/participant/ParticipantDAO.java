@@ -54,7 +54,7 @@ public class ParticipantDAO {
     
     private static final CountDownLatch participantsLoadedLatch = new CountDownLatch(1);
     
-    private static final List<CustomAttribute> customAttributeList = new ArrayList();
+    private static final ObservableList<CustomAttribute> customAttributeList = FXCollections.observableArrayList();
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -142,7 +142,7 @@ public class ParticipantDAO {
                     Platform.runLater(() -> {
                             participantsList.setAll(list);
                     });
-                    customAttributeList.addAll(attributeList);
+                    customAttributeList.setAll(attributeList);
                     
                     list.forEach(p -> {
                         Participant2BibMap.put(p, p.getBib()); 
@@ -300,7 +300,7 @@ public class ParticipantDAO {
         return ID2ParticipantMap.get(id); 
     }
     
-    public List<CustomAttribute> getCustomAttributes() {
+    public ObservableList<CustomAttribute> getCustomAttributes() {
         return customAttributeList;
     }
     

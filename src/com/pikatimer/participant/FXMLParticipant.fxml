@@ -290,7 +290,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <TextField fx:id="noteTextField" prefWidth="90" promptText="Note" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
-                  <VBox fx:id="customAttributesVBox" VBox.vgrow="ALWAYS" />
+                  <VBox fx:id="customAttributesVBox" spacing="5.0" VBox.vgrow="ALWAYS" />
                </children>
             </VBox>
          </content>

@@ -32,7 +32,9 @@ import static java.lang.Double.MAX_VALUE;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -149,6 +151,11 @@ public class FXMLParticipantController  {
     
     @FXML private Button customAtrtributesButton;
     @FXML private VBox customAttributesVBox;
+    private final List<TableColumn> customAttributesColumns = new ArrayList();
+    private final Map<Integer,TextField> customAttributesTextFields = new HashMap();
+    private final Map<Integer,PrefixSelectionChoiceBox<String>> customAttributesChoiceBoxes = new HashMap();
+    private final Map<Integer,DatePicker> customAttributesDatePickers = new HashMap();
+    private final Map<Integer,CheckBox> customAttributesCheckBox = new HashMap();
     
     private ObservableList<Participant> participantsList;
     private ParticipantDAO participantDAO;
@@ -598,6 +605,10 @@ public class FXMLParticipantController  {
         
         // Add button only enabled if both the first and last names are empty
         formAddButton.disableProperty().bind(Bindings.and(firstNameField.textProperty().isEmpty(), lastNameField.textProperty().isEmpty()));
+        
+        
+        // Custom attribute setup
+        displayCustomAttributes();
 
     }
     
@@ -1375,10 +1386,135 @@ public class FXMLParticipantController  {
             });
         }
         
-        // Rework the table columns
+        // Rework the table columns and form input fields
+        displayCustomAttributes();
         
-        // Rework the form input fields
-               
+    }
+    
+    private void displayCustomAttributes() {
+        
+        // Clear the form
+        customAttributesVBox.getChildren().clear();
+        customAttributesTextFields.clear();
+        customAttributesChoiceBoxes.clear();
+        
+        // clear the table columns
+        customAttributesColumns.forEach(tc -> {
+            participantTableView.getColumns().remove(tc);
+        });
+        customAttributesColumns.clear();
+        
+        // recreate the form and columns
+        participantDAO.getCustomAttributes().forEach(a -> {
+            Integer aID = a.getID();
+            String name = a.getName();
+            
+            //create the form
+            HBox aHBox = new HBox();
+            aHBox.setSpacing(2);
+            Label aLabel = new Label(name);
+            aLabel.setPrefWidth(50);
+            aHBox.getChildren().add(aLabel);
+            switch (a.getAttributeType()) {
+                case LIST:
+                    {
+                        PrefixSelectionChoiceBox<String> aInput = new PrefixSelectionChoiceBox();
+                        aInput.setItems(a.allowableValuesProperty());
+                        aInput.getSelectionModel().selectFirst();
+                        customAttributesChoiceBoxes.put(aID, aInput);
+                        aHBox.getChildren().add(aInput);
+                        break;
+                    }
+                case DATE:
+                    {
+                        DatePicker aInput = new DatePicker();
+                        customAttributesDatePickers.put(aID, aInput);
+                        aHBox.getChildren().add(aInput);
+                        break;
+                    }
+                case BOOLEAN:
+                    {
+                        CheckBox aInput = new CheckBox();
+                        customAttributesCheckBox.put(aID, aInput);
+                        aHBox.getChildren().add(aInput);
+                        break;
+                    }
+                default:
+                    {
+                        TextField aInput = new TextField();
+                        customAttributesTextFields.put(aID,aInput);
+                        
+                        // Based on the type (time or number), limit what the 
+                        // user can type into the field. 
+                        if (a.getAttributeType().equals(CustomAttributeType.NUMBER)) {
+                            aInput.textProperty().addListener((observable, oldValue, newValue) -> {
+                                //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                                try {
+                                    if (!newValue.isEmpty()) {
+                                        Double.parseDouble(aInput.getText());
+                                        if (newValue.matches("^0*([0-9]+)")) {
+                                            Platform.runLater(() -> { 
+                                                int c = ageTextField.getCaretPosition();
+                                                ageTextField.setText(newValue.replaceFirst("^0*([0-9]+)", "$1"));
+                                                ageTextField.positionCaret(c);
+                                            });
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    Platform.runLater(() -> { 
+                                        int c = ageTextField.getCaretPosition();
+                                        ageTextField.setText(oldValue);
+                                        ageTextField.positionCaret(c);
+                                    }); 
+                                }
+
+                            });
+                            
+                        } else if (a.getAttributeType().equals(CustomAttributeType.TIME)) {
+                            aInput.textProperty().addListener((observable, oldValue, newValue) -> {
+                                        //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                                if (newValue.matches("([3-9]|[012]:)")) {
+                                    //Integer pos = raceStartTimeTextField.getCaretPosition();
+
+                                    Platform.runLater(() -> {
+                                        aInput.setText("0" + newValue);
+                                        aInput.positionCaret(newValue.length()+2);
+                                    });
+
+                                } else if (    newValue.isEmpty() || 
+                                        newValue.matches("([012]|[01][0-9]|2[0-3])") || 
+                                        newValue.matches("([01][0-9]|2[0-3]):[0-5]?") || 
+                                        newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9]:[0-5]?") ){
+                                    System.out.println("Possiblely good Race Cutoff Time (newValue: " + newValue + ")");
+                                } else if(newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]*)?)?") ) { // Looks like a time, lets check
+                                    System.out.println("Testing Race Start Time (newValue: " + newValue + ")");
+
+                                    try {
+                                        if (!newValue.isEmpty()) {
+                                            //LocalTime.parse(raceStartTimeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME );
+                                            LocalTime.parse(aInput.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
+                                        }
+                                    } catch (Exception e) {
+                                        aInput.setText(oldValue);
+                                        System.out.println("Exception Bad Race Start Time (newValue: " + newValue + ")");
+                                        e.printStackTrace();
+                                    }
+                                } else {
+                                    aInput.setText(oldValue);
+                                    System.out.println("Bad Race Start Time (newValue: " + newValue + ")");
+                                }
+
+                            });
+                        }
+                        
+                        
+                        aHBox.getChildren().add(aInput);
+                        break;
+                    }
+            }
+            customAttributesVBox.getChildren().add(aHBox);
+        });
+        
         
     }
     

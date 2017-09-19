@@ -26,7 +26,8 @@ public enum CustomAttributeType {
     NUMBER("Number"), 
     DATE("Date"),
     TIME("Time"),
-    LIST("List"); 
+    LIST("List"),
+    BOOLEAN("Boolean"); 
 
     private final String type;
         
