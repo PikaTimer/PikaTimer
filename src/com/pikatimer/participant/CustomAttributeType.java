@@ -22,7 +22,6 @@ package com.pikatimer.participant;
  */
 public enum CustomAttributeType {
     STRING("String"),
-    INTEGER("Integer"),
     NUMBER("Number"), 
     DATE("Date"),
     TIME("Time"),

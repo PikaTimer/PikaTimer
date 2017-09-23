@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,6 +60,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
@@ -94,7 +96,7 @@ public class Participant {
     private final ObjectProperty<LocalDate> birthdayProperty = new SimpleObjectProperty();
     private final ObservableList<Wave> waves = FXCollections.observableArrayList(Wave.extractor());  
     
-    private final ObservableMap<Integer,StringProperty> customAttributeMap = FXCollections.observableHashMap();
+    
     
     private final IntegerProperty wavesChangedCounterProperty = new SimpleIntegerProperty(0);
     private final ObjectProperty<ObservableList<Wave>> wavesProperty = new SimpleObjectProperty(waves);
@@ -104,7 +106,10 @@ public class Participant {
     private final StringProperty noteProperty = new SimpleStringProperty();
     private Status status = Status.GOOD; 
     private final ObjectProperty<Status> statusProperty = new SimpleObjectProperty(Status.GOOD);
-   
+    
+    private final ObservableMap<Integer,StringProperty> customAttributeObservableMap = FXCollections.observableHashMap();
+    private Map<Integer,String> customAttributeMap = new HashMap();
+    
     public Participant() {
         fullNameProperty.bind(new StringBinding(){
             {super.bind(firstNameProperty,middleNameProperty, lastNameProperty);}
@@ -178,7 +183,43 @@ public class Participant {
         return attribMap; 
     }
     
-
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name="attribute_id")
+    @Column(name="attribute_value")
+    @CollectionTable(name="participant_attributes", joinColumns=@JoinColumn(name="participant_id"))
+    public Map<Integer,String> getCustomAttributes(){
+        return customAttributeMap;
+    }
+    public void setCustomAttributes(Map<Integer,String> attribMap) {
+        customAttributeMap = attribMap;
+        customAttributeMap.keySet().forEach(k -> {
+            if (customAttributeObservableMap.containsKey(k)) {
+                customAttributeObservableMap.get(k).set(customAttributeMap.get(k));
+            } else {
+                customAttributeObservableMap.put(k, new SimpleStringProperty(customAttributeMap.get(k)));
+            }
+        });
+    }
+    public ObservableMap<Integer,StringProperty> customAttributesProperty(){
+        return customAttributeObservableMap;
+    }
+    public StringProperty getCustomAttribute(Integer cID) {
+        if (! customAttributeObservableMap.containsKey(cID)) {
+            customAttributeObservableMap.put(cID, new SimpleStringProperty());
+        }
+        return customAttributeObservableMap.get(cID);
+    }
+    public void setCustomAttribute(Integer cID, String value){
+        customAttributeMap.put(cID, value);
+        if (customAttributeObservableMap.containsKey(cID)) {
+            customAttributeObservableMap.get(cID).set(value);
+        } else {
+            customAttributeObservableMap.put(cID, new SimpleStringProperty(value));
+        }
+    }
+    
+    
     public void setAttributes(Map<String, String> attribMap) {
         // bulk set routine. Everything is a string so convert as needed
         

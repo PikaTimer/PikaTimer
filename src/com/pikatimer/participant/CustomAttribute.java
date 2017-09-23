@@ -47,7 +47,7 @@ public class CustomAttribute {
     private CustomAttributeType type;
     private final StringProperty name = new SimpleStringProperty();
     private List<String> allowable_values;
-    private ObservableList<String> allowableValuesList = FXCollections.observableArrayList();  
+    private final ObservableList<String> allowableValuesList = FXCollections.observableArrayList();  
     
     private Integer id;
     

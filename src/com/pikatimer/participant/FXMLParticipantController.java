@@ -32,6 +32,7 @@ import static java.lang.Double.MAX_VALUE;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
@@ -644,6 +645,39 @@ public class FXMLParticipantController  {
             
             p.setNote(noteTextField.getText());
             p.setStatus(statusPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
+            
+            //custom attributes
+            participantDAO.getCustomAttributes().forEach(a -> {
+                Integer aID = a.getID();
+                switch (a.getAttributeType()) {
+                    case LIST:
+                        {
+                            p.setCustomAttribute(aID, customAttributesChoiceBoxes.get(aID).getValue());
+                            break;
+                        }
+                    case DATE:
+                        {
+                            try {
+                            p.setCustomAttribute(aID, customAttributesDatePickers.get(aID).getValue().format(DateTimeFormatter.ISO_DATE));
+                            } catch (Exception e){
+                                p.setCustomAttribute(aID, "");
+                            }
+                            break;
+                        }
+                    case BOOLEAN:
+                        {
+                            p.setCustomAttribute(aID, customAttributesCheckBox.get(aID).selectedProperty().getValue().toString());
+                            break;
+                        }
+                    default:
+                        {
+                            p.setCustomAttribute(aID, customAttributesTextFields.get(aID).getText());                        
+                            break;
+                        }
+                }
+            });
+            
+            
             //participantsList.add(p);
             participantDAO.addParticipant(p);
             
@@ -704,6 +738,38 @@ public class FXMLParticipantController  {
         });
         //waveComboBox.getCheckModel().check(null);
         
+        //custom attributes
+        participantDAO.getCustomAttributes().forEach(a -> {
+            Integer aID = a.getID();
+            switch (a.getAttributeType()) {
+                case LIST:
+                    {
+                        if(! editedParticipant.getCustomAttribute(aID).getValueSafe().isEmpty())
+                            customAttributesChoiceBoxes.get(aID).getSelectionModel().select(editedParticipant.getCustomAttribute(aID).getValueSafe());
+                        else customAttributesChoiceBoxes.get(aID).getSelectionModel().selectFirst();
+                        break;
+                    }
+                case DATE:
+                    {
+                        if(! editedParticipant.getCustomAttribute(aID).getValueSafe().isEmpty())
+                            customAttributesDatePickers.get(aID).setValue(LocalDate.parse(editedParticipant.getCustomAttribute(aID).getValueSafe(), DateTimeFormatter.ISO_DATE));
+                        else customAttributesDatePickers.get(aID).setValue(null);
+                        break;
+                    }
+                case BOOLEAN:
+                    {
+                        if(! editedParticipant.getCustomAttribute(aID).getValueSafe().isEmpty())
+                            customAttributesCheckBox.get(aID).setSelected(Boolean.parseBoolean(editedParticipant.getCustomAttribute(aID).getValueSafe()));
+                        else customAttributesCheckBox.get(aID).setSelected(false);
+                        break;
+                    }
+                default:
+                    {
+                        customAttributesTextFields.get(aID).setText(editedParticipant.getCustomAttribute(aID).getValueSafe());
+                        break;
+                    }
+            }
+        });
 
         
         // Make the update button visible and hide the add button
@@ -717,7 +783,7 @@ public class FXMLParticipantController  {
     
     public void updateParticipant(ActionEvent fxevent){
         
-        if (!firstNameField.getText().isEmpty() && !lastNameField.getText().isEmpty()) {
+        if (!(firstNameField.getText().isEmpty() && lastNameField.getText().isEmpty())) {
             
             // pull the list of checked waves
             editedParticipant.setBib(bibTextField.getText());
@@ -751,8 +817,38 @@ public class FXMLParticipantController  {
                 editedParticipant.setWaves(waveComboBox.getCheckModel().getCheckedItems());
             }
             
-            
-            
+            System.out.println("Upating....");
+            //custom attributes
+            participantDAO.getCustomAttributes().forEach(a -> {
+                System.out.println("Upating " + a.getName());
+                Integer aID = a.getID();
+                switch (a.getAttributeType()) {
+                    case LIST:
+                        {
+                            editedParticipant.setCustomAttribute(aID, customAttributesChoiceBoxes.get(aID).getValue());
+                            break;
+                        }
+                    case DATE:
+                        {
+                            try {
+                            editedParticipant.setCustomAttribute(aID, customAttributesDatePickers.get(aID).getValue().format(DateTimeFormatter.ISO_DATE));
+                            } catch (Exception e){
+                                editedParticipant.setCustomAttribute(aID, "");
+                            }
+                            break;
+                        }
+                    case BOOLEAN:
+                        {
+                            editedParticipant.setCustomAttribute(aID, customAttributesCheckBox.get(aID).selectedProperty().getValue().toString());
+                            break;
+                        }
+                    default:
+                        {
+                            editedParticipant.setCustomAttribute(aID, customAttributesTextFields.get(aID).getText());                        
+                            break;
+                        }
+                }
+            });
             
             
             
@@ -799,6 +895,33 @@ public class FXMLParticipantController  {
         formUpdateButton.setVisible(false);
         formUpdateButton.setManaged(false);
         //formUpdateButton.setDefaultButton(false);
+        
+        //custom attributes
+        participantDAO.getCustomAttributes().forEach(a -> {
+            Integer aID = a.getID();
+            switch (a.getAttributeType()) {
+                case LIST:
+                    {
+                        customAttributesChoiceBoxes.get(aID).getSelectionModel().selectFirst();
+                        break;
+                    }
+                case DATE:
+                    {
+                        customAttributesDatePickers.get(aID).setValue(null);
+                        break;
+                    }
+                case BOOLEAN:
+                    {
+                        customAttributesCheckBox.get(aID).setSelected(false);
+                        break;
+                    }
+                default:
+                    {
+                        customAttributesTextFields.get(aID).setText("");
+                        break;
+                    }
+            }
+        });
                 
         // make the add button visible
         formAddButton.setVisible(true);
@@ -1409,9 +1532,23 @@ public class FXMLParticipantController  {
             Integer aID = a.getID();
             String name = a.getName();
             
+            // table colums
+                TableColumn<Participant,String> aColumn = new TableColumn(name);
+                aColumn.setPrefWidth(75.0);
+                participantTableView.getColumns().add(aColumn);
+                aColumn.setCellValueFactory(cellData -> {
+                    Participant p = cellData.getValue();
+                    if (p == null) { return new SimpleStringProperty("");
+                    } else {
+                        return p.getCustomAttribute(aID);
+                    }
+                });
+            customAttributesColumns.add(aColumn);
+            
             //create the form
             HBox aHBox = new HBox();
             aHBox.setSpacing(2);
+            HBox.setHgrow(aHBox, Priority.ALWAYS);
             Label aLabel = new Label(name);
             aLabel.setPrefWidth(50);
             aHBox.getChildren().add(aLabel);
@@ -1422,6 +1559,7 @@ public class FXMLParticipantController  {
                         aInput.setItems(a.allowableValuesProperty());
                         aInput.getSelectionModel().selectFirst();
                         customAttributesChoiceBoxes.put(aID, aInput);
+                        HBox.setHgrow(aInput, Priority.ALWAYS);
                         aHBox.getChildren().add(aInput);
                         break;
                     }
@@ -1429,6 +1567,7 @@ public class FXMLParticipantController  {
                     {
                         DatePicker aInput = new DatePicker();
                         customAttributesDatePickers.put(aID, aInput);
+                        HBox.setHgrow(aInput, Priority.ALWAYS);
                         aHBox.getChildren().add(aInput);
                         break;
                     }
@@ -1436,78 +1575,66 @@ public class FXMLParticipantController  {
                     {
                         CheckBox aInput = new CheckBox();
                         customAttributesCheckBox.put(aID, aInput);
+                        HBox.setHgrow(aInput, Priority.ALWAYS);
                         aHBox.getChildren().add(aInput);
                         break;
                     }
                 default:
                     {
                         TextField aInput = new TextField();
+                        HBox.setHgrow(aInput, Priority.ALWAYS);
                         customAttributesTextFields.put(aID,aInput);
                         
                         // Based on the type (time or number), limit what the 
                         // user can type into the field. 
                         if (a.getAttributeType().equals(CustomAttributeType.NUMBER)) {
                             aInput.textProperty().addListener((observable, oldValue, newValue) -> {
-                                //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
-                                try {
-                                    if (!newValue.isEmpty()) {
-                                        Double.parseDouble(aInput.getText());
-                                        if (newValue.matches("^0*([0-9]+)")) {
-                                            Platform.runLater(() -> { 
-                                                int c = ageTextField.getCaretPosition();
-                                                ageTextField.setText(newValue.replaceFirst("^0*([0-9]+)", "$1"));
-                                                ageTextField.positionCaret(c);
-                                            });
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    Platform.runLater(() -> { 
-                                        int c = ageTextField.getCaretPosition();
-                                        ageTextField.setText(oldValue);
-                                        ageTextField.positionCaret(c);
-                                    }); 
+                                System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                                if (!newValue.isEmpty()) {
+                                    if (newValue.matches("^-?\\.\\d+$")) {
+                                        Platform.runLater(() -> {
+                                            int caret = aInput.getCaretPosition();
+                                            aInput.setText(newValue.replaceFirst("\\.","0."));
+                                            aInput.positionCaret(caret+1);
+                                        });
+                                    } else if (newValue.matches("^-?0([0-9]+\\.?[0-9]*)$")) {
+                                        Platform.runLater(() -> { 
+                                            int c = aInput.getCaretPosition();
+                                            aInput.setText(newValue.replaceFirst("^(-?)0*([0-9]+\\.?[0-9]*)$", "$1$2"));
+                                            aInput.positionCaret(c-1);
+                                        });
+                                    } else if (!newValue.matches("^-?([0-9]+\\.?[0-9]*)?$")) {
+                                        Platform.runLater(() -> { 
+                                            int c = aInput.getCaretPosition();
+                                            aInput.setText(oldValue);
+                                            aInput.positionCaret(c-1);
+                                        }); 
+                                    } 
                                 }
-
                             });
                             
                         } else if (a.getAttributeType().equals(CustomAttributeType.TIME)) {
                             aInput.textProperty().addListener((observable, oldValue, newValue) -> {
                                         //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
-                                if (newValue.matches("([3-9]|[012]:)")) {
-                                    //Integer pos = raceStartTimeTextField.getCaretPosition();
-
+                                if (newValue.isEmpty()) return; 
+                                if (newValue.matches("^-?\\.\\d+$")) {
                                     Platform.runLater(() -> {
-                                        aInput.setText("0" + newValue);
-                                        aInput.positionCaret(newValue.length()+2);
+                                        int caret = aInput.getCaretPosition();
+                                        aInput.setText(newValue.replaceFirst("\\.","0."));
+                                        aInput.positionCaret(caret+1);
                                     });
-
-                                } else if (    newValue.isEmpty() || 
-                                        newValue.matches("([012]|[01][0-9]|2[0-3])") || 
-                                        newValue.matches("([01][0-9]|2[0-3]):[0-5]?") || 
-                                        newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9]:[0-5]?") ){
-                                    System.out.println("Possiblely good Race Cutoff Time (newValue: " + newValue + ")");
-                                } else if(newValue.matches("([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]*)?)?") ) { // Looks like a time, lets check
-                                    System.out.println("Testing Race Start Time (newValue: " + newValue + ")");
-
-                                    try {
-                                        if (!newValue.isEmpty()) {
-                                            //LocalTime.parse(raceStartTimeTextField.getText(), DateTimeFormatter.ISO_LOCAL_TIME );
-                                            LocalTime.parse(aInput.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
-                                        }
-                                    } catch (Exception e) {
-                                        aInput.setText(oldValue);
-                                        System.out.println("Exception Bad Race Start Time (newValue: " + newValue + ")");
-                                        e.printStackTrace();
-                                    }
+                                } else if (newValue.matches("^-?(\\d*:)?(\\d*:)?\\d*\\.?\\d*$")){
+                                    System.out.println("Good time: " + newValue);
                                 } else {
-                                    aInput.setText(oldValue);
-                                    System.out.println("Bad Race Start Time (newValue: " + newValue + ")");
+                                    Platform.runLater(() -> {
+                                        int caret = aInput.getCaretPosition();
+                                        aInput.setText(oldValue);
+                                        aInput.positionCaret(caret-1);
+                                    });
                                 }
 
                             });
                         }
-                        
-                        
                         aHBox.getChildren().add(aInput);
                         break;
                     }
