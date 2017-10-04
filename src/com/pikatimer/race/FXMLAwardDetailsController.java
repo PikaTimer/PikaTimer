@@ -18,6 +18,7 @@ package com.pikatimer.race;
 
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.util.IntegerEditingCell;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import javafx.application.Platform;
@@ -27,13 +28,20 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import org.controlsfx.control.ToggleSwitch;
 
 
 public class FXMLAwardDetailsController {
@@ -44,6 +52,16 @@ public class FXMLAwardDetailsController {
     @FXML ChoiceBox<Integer> agIncrementChoiceBox;
     @FXML TextField agStartTextField;
     @FXML TextField agMastersStartTextField;
+    @FXML ToggleSwitch agCustomToggleSwitch;
+    @FXML ToggleSwitch customAGNamesToggleSwitch;
+    @FXML GridPane agGridPane;
+    @FXML VBox agCustomVBox;
+    @FXML TableView<AgeGroupIncrement> customAGTableView;
+    @FXML TableColumn<AgeGroupIncrement,Integer> startAGTableColumn;
+    @FXML TableColumn<AgeGroupIncrement,String> endAGTableColumn;
+    @FXML TableColumn<AgeGroupIncrement,String> nameAGTableColumn;
+    @FXML Button agCustomAdd;
+    @FXML Button agCustomDelete;
     
     @FXML ChoiceBox<String> awardOverallPullChoiceBox;
     @FXML ChoiceBox<String> awardMastersPullChoiceBox;
@@ -81,6 +99,7 @@ public class FXMLAwardDetailsController {
         selectedRaceLabel.visibleProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
         selectedRaceLabel.managedProperty().bind(Bindings.size(raceDAO.listRaces()).greaterThan(1));
 
+
         
         initializeAgeGroupSettings();
         initializeAwardSettings();
@@ -100,9 +119,6 @@ public class FXMLAwardDetailsController {
             populateAwardsSettings(activeRace);
             // Populate the race-wide settings
             populateRaceSettings(activeRace);
-            
-            
-            
         });
         
         Platform.runLater(() -> {raceComboBox.getSelectionModel().clearAndSelect(0); });
@@ -111,18 +127,24 @@ public class FXMLAwardDetailsController {
     private void populateAgeGroupSettings(Race r) {
         System.out.println("populateRaceAGSettings() called...");
         
-        AgeGroups ageGroups;
+        AgeGroups ag;
         if (r.getAgeGroups() == null) {
-            ageGroups = new AgeGroups();
-            r.setAgeGroups(ageGroups);
+            ag = new AgeGroups();
+            r.setAgeGroups(ag);
             raceDAO.updateRace(r);
         } else {
-            ageGroups = r.getAgeGroups();
+            ag = r.getAgeGroups();
         }
 
-        agStartTextField.setText(ageGroups.getAGStart().toString());
-        agIncrementChoiceBox.getSelectionModel().select(ageGroups.getAGIncrement());
-        agMastersStartTextField.setText(ageGroups.getMasters().toString());
+        agStartTextField.setText(ag.getAGStart().toString());
+        agIncrementChoiceBox.getSelectionModel().select(ag.getAGIncrement());
+        agMastersStartTextField.setText(ag.getMasters().toString());
+        
+        agCustomToggleSwitch.setSelected(ag.getUseCustomIncrements());
+        customAGNamesToggleSwitch.setSelected(ag.getUseCustomNames());
+        
+        customAGTableView.setItems(ag.ageGroupIncrementProperty());
+        
     }
 
             
@@ -141,6 +163,12 @@ public class FXMLAwardDetailsController {
         //@FXML TextField agStartTextField;
         //@FXML TextField agMastersStartTextField;
         System.out.println("initizlizeRaceAGSettings() called...");
+        
+        agGridPane.visibleProperty().bind(agCustomToggleSwitch.selectedProperty().not());
+        agGridPane.managedProperty().bind(agCustomToggleSwitch.selectedProperty().not());
+        agCustomVBox.visibleProperty().bind(agCustomToggleSwitch.selectedProperty());
+        agCustomVBox.managedProperty().bind(agCustomToggleSwitch.selectedProperty());
+        
 
         TextFormatter<String> AGSformatter = new TextFormatter<>( change -> {
             change.setText(change.getText().replaceAll("[^0-9]", ""));
@@ -150,7 +178,7 @@ public class FXMLAwardDetailsController {
         agStartTextField.setTextFormatter(AGSformatter);
         
         
-        agIncrementChoiceBox.setItems(FXCollections.observableArrayList(5, 10));
+        agIncrementChoiceBox.setItems(FXCollections.observableArrayList(1, 5, 10));
         
         TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
             change.setText(change.getText().replaceAll("[^0-9]", ""));
@@ -227,6 +255,81 @@ public class FXMLAwardDetailsController {
             }
         });
         
+//        @FXML ToggleSwitch blankToZeroToggleSwitch;
+//        @FXML ToggleSwitch agCustomToggleSwitch;
+//        @FXML ToggleSwitch customAGNamesToggleSwitch;
+//        @FXML GridPane agGridPane;
+//        @FXML VBox agCustomVBox;
+//        @FXML TableView<AgeGroupIncrement> customAGTableView;
+//        @FXML TableColumn<AgeGroupIncrement,Integer> startAGTableColumn;
+//        @FXML TableColumn<AgeGroupIncrement,Integer> endAGTableColumn;
+//        @FXML TableColumn<AgeGroupIncrement,String> nameAGTableColumn;
+//        @FXML Button agCustomAdd;
+//        @FXML Button agCustomDelete;
+
+
+        agCustomToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean prevVal, Boolean newVal) -> {
+             Race r = activeRace; 
+             r.getAgeGroups().setUseCustomIncrements(newVal);
+             raceDAO.updateRace(r);
+        });
+        customAGNamesToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean prevVal, Boolean newVal) -> {
+             Race r = activeRace; 
+             r.getAgeGroups().setUseCustomNames(newVal);
+             raceDAO.updateRace(r);
+             nameAGTableColumn.visibleProperty().setValue(newVal);
+        });
+        
+        
+        endAGTableColumn.editableProperty().set(false);
+        endAGTableColumn.setCellValueFactory(value -> value.getValue().endAgeProperty());
+        
+        startAGTableColumn.setCellValueFactory(value -> value.getValue().startAgeProperty().asObject());
+        startAGTableColumn.setCellFactory(col -> new IntegerEditingCell());
+        startAGTableColumn.setOnEditCommit(e -> {
+            try {
+                e.getRowValue().startAgeProperty().setValue(e.getNewValue());
+                activeRace.getAgeGroups().recalcCustomAGs();
+            } catch (Exception ex) {
+                System.out.println("startAGTableColumn.setOnEditCommit Oops....");
+                e.getRowValue().startAgeProperty().setValue(e.getOldValue());
+            }
+            Race r = activeRace; 
+            raceDAO.updateRace(r);
+        });
+        
+        nameAGTableColumn.setCellValueFactory(value -> value.getValue().nameProperty());
+        nameAGTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        nameAGTableColumn.setOnEditCommit(e -> {
+            e.getRowValue().nameProperty().setValue(e.getNewValue());
+            Race r = activeRace; 
+            raceDAO.updateRace(r);
+        });
+        
+        agCustomAdd.setOnAction(action -> {
+            Race r = activeRace;
+            AgeGroupIncrement agi = new AgeGroupIncrement();
+            if (r.getAgeGroups().ageGroupIncrementProperty().isEmpty()) 
+                agi.setStartAge(10);
+            else if (r.getAgeGroups().ageGroupIncrementProperty().size() == 1){
+                agi.setStartAge(r.getAgeGroups().ageGroupIncrementProperty().get(r.getAgeGroups().ageGroupIncrementProperty().size()-1).getStartAge() + 5);
+            } else {
+                Integer l = r.getAgeGroups().ageGroupIncrementProperty().get(r.getAgeGroups().ageGroupIncrementProperty().size()-1).getStartAge();
+                Integer p = r.getAgeGroups().ageGroupIncrementProperty().get(r.getAgeGroups().ageGroupIncrementProperty().size()-2).getStartAge();
+                agi.setStartAge(l + l - p);
+            }
+            r.getAgeGroups().addCustomIncrement(agi);
+            raceDAO.updateRace(r);
+            activeRace.getAgeGroups().recalcCustomAGs();
+        
+        });
+        agCustomDelete.disableProperty().bind(customAGTableView.getSelectionModel().selectedItemProperty().isNull());
+        agCustomDelete.setOnAction(action -> {
+            Race r = activeRace;
+            r.getAgeGroups().removeCustomIncrement(customAGTableView.getSelectionModel().getSelectedItem());
+            raceDAO.updateRace(r);
+            activeRace.getAgeGroups().recalcCustomAGs();
+        });
     }
     
     private void initializeAwardSettings() {

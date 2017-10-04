@@ -20,6 +20,7 @@ import com.pikatimer.Pikatimer;
 import com.pikatimer.event.EventOptions;
 import com.pikatimer.participant.CustomAttribute;
 import com.pikatimer.participant.Participant;
+import com.pikatimer.race.AgeGroupIncrement;
 import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
@@ -86,6 +87,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(Race.class);
         cfg.addAnnotatedClass(RaceAwards.class);
         cfg.addAnnotatedClass(AgeGroups.class);
+        cfg.addAnnotatedClass(AgeGroupIncrement.class);
         cfg.addAnnotatedClass(Split.class);
         cfg.addAnnotatedClass(Segment.class);
         cfg.addAnnotatedClass(TimingLocation.class);

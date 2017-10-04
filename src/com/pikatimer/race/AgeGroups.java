@@ -16,12 +16,21 @@
  */
 package com.pikatimer.race;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -43,12 +52,16 @@ import org.hibernate.annotations.Parameter;
 public class AgeGroups {
     private Integer raceID;
 
-    private IntegerProperty agStartProperty = new SimpleIntegerProperty(9);
-    private IntegerProperty agIncrementProperty = new SimpleIntegerProperty(5);
-    private IntegerProperty mastersProperty = new SimpleIntegerProperty(40);
-    
+    private final IntegerProperty agStartProperty = new SimpleIntegerProperty(9);
+    private final IntegerProperty agIncrementProperty = new SimpleIntegerProperty(5);
+    private final IntegerProperty mastersProperty = new SimpleIntegerProperty(40);
+    private final BooleanProperty customIncrementsProperty = new SimpleBooleanProperty(false);
+    private final BooleanProperty customNamesProperty = new SimpleBooleanProperty(false);
+    private final ObservableList<AgeGroupIncrement> customIncrementObservableList = FXCollections.observableArrayList(AgeGroupIncrement.extractor());
     private Map<Integer,String> agNameMap = new ConcurrentHashMap();
     private Map<Integer,Integer> agMap = new ConcurrentHashMap();
+    
+    private List<AgeGroupIncrement> customIncrementList;
     
     private Race race;
 
@@ -57,6 +70,9 @@ public class AgeGroups {
         // invalidate the agMap and agNameMaps
         agIncrementProperty.addListener(listener -> {invalidateMaps();});
         agStartProperty.addListener(listener -> {invalidateMaps();});
+        customIncrementsProperty.addListener(listener -> {invalidateMaps();});
+        customIncrementObservableList.addListener((ListChangeListener<AgeGroupIncrement>) c -> {invalidateMaps(); });
+        customNamesProperty.addListener(listener -> {invalidateMaps();});       
         
     }
     
@@ -119,6 +135,70 @@ public class AgeGroups {
         return agStartProperty;
     }
     
+    @Column(name="custom_increments")
+    public Boolean getUseCustomIncrements() {
+        return customIncrementsProperty.getValue(); 
+    }
+    public void setUseCustomIncrements(Boolean i) {
+        //System.out.println("AgeGroups.setAGStart() with " + i);
+        customIncrementsProperty.set(i);
+    }
+    public BooleanProperty useCustomIncrementsProperty() {
+        return customIncrementsProperty;
+    }
+    
+    @Column(name="custom_names")
+    public Boolean getUseCustomNames() {
+        return customNamesProperty.getValue(); 
+    }
+    public void setUseCustomNames(Boolean i) {
+        //System.out.println("AgeGroups.setAGStart() with " + i);
+        customNamesProperty.set(i);
+    }
+    public BooleanProperty useCustomNamesProperty() {
+        return customNamesProperty;
+    }
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+          name="race_age_group_increments",
+          joinColumns=@JoinColumn(name="ag_id")
+    )
+    protected List<AgeGroupIncrement> getCustomIncrementsList(){
+        if (customIncrementList != null) System.out.println("getCustomIncrementList() called, returning list of " + customIncrementList.size());
+        else System.out.println("getCustomIncrementList() called, returning NULL list");
+        return customIncrementList;
+    }
+    protected void setCustomIncrementsList(List<AgeGroupIncrement> i){
+        customIncrementList = i;
+    }
+    
+    public ObservableList<AgeGroupIncrement> ageGroupIncrementProperty(){
+        if (customIncrementObservableList.isEmpty() && customIncrementList != null && ! customIncrementList.isEmpty() ) {
+            customIncrementObservableList.addAll(customIncrementList);
+            recalcCustomAGs();
+        }
+        return customIncrementObservableList;
+    }
+    
+    public void addCustomIncrement(AgeGroupIncrement i){
+        System.out.println("addCustomIncrement called");
+        customIncrementObservableList.add(i);
+        customIncrementList = customIncrementObservableList;
+    }
+    
+    public void removeCustomIncrement(AgeGroupIncrement i){
+        customIncrementObservableList.remove(i);
+        customIncrementList = customIncrementObservableList;
+    }
+    
+    public void recalcCustomAGs(){
+        customIncrementObservableList.sort((i1, i2) -> i1.getStartAge().compareTo(i2.getStartAge()));
+        for (int i=0; i < customIncrementObservableList.size(); i++) {
+            if (i == customIncrementObservableList.size() -1) customIncrementObservableList.get(i).endAgeProperty().setValue("+");
+            else customIncrementObservableList.get(i).endAgeProperty().setValue(Integer.toString(customIncrementObservableList.get(i+1).getStartAge() - 1));
+        }
+    }
 
     public String ageToAGString(Integer i){
         // Returns the string representation of the ag given an age
@@ -126,15 +206,43 @@ public class AgeGroups {
         // based on the increment and the agStart floor (1->9)
         // Zero is a special case
         
+        // Step 1: Handle nulls
+        if (i == null) i = 0;
+        
+        // Step 2: Did we deal with this age before?
         if (agNameMap.containsKey(ageToAG(i))) return agNameMap.get(ageToAG(i));
+
+        // Step 3: Figure out what the AG category is
         
-        if (i == 0) agNameMap.put(ageToAG(i), "0");
-        else if(i <= agStartProperty.get()) {
-            agNameMap.put(ageToAG(i), "1-" + (agStartProperty.getValue()));
+        if (customIncrementsProperty.get()) {
+            
+            if (customIncrementObservableList.isEmpty()) {
+                agNameMap.put(ageToAG(i),"0+");
+            } else {
+                Integer start = ageToAG(i);
+                Integer x = customIncrementObservableList.get(0).getStartAge() -1;
+                String end = x.toString();
+                agNameMap.put(start,start.toString()+"-" + end); // tmp value
+                for (AgeGroupIncrement ag: customIncrementObservableList ){
+                    if (ag.getStartAge() == start) {
+                        if (customNamesProperty.get() && ! ag.nameProperty().getValueSafe().isEmpty()) {
+                            agNameMap.put(start, ag.nameProperty().getValueSafe());
+                        } else {
+                            end = ag.endAgeProperty().get();
+                            if (end != "+") end = "-"+end;
+                            agNameMap.put(start,start.toString()+end);
+                        }
+                    }
+                }
+            }
         } else {
-            agNameMap.put(ageToAG(i), ageToAG(i) + "-" + (ageToAG(i)+agIncrementProperty.get()-1));
+            if (i == 0) agNameMap.put(ageToAG(i), "0"); //Zero is a special case
+            else if(i <= agStartProperty.get()) {
+                agNameMap.put(ageToAG(i), "1-" + (agStartProperty.getValue()));
+            } else {
+                agNameMap.put(ageToAG(i), ageToAG(i) + "-" + (ageToAG(i)+agIncrementProperty.get()-1));
+            }
         }
-        
         return agNameMap.get(ageToAG(i));
     }
     
@@ -144,12 +252,26 @@ public class AgeGroups {
         // based on the increment and the agStart floor
         // Zero is a special case
         
+        // Step 1: deal with null entries
+        if (i == null) i = 0;
+        
+        // Step 2: Did we deal with this age before?
         if (agMap.containsKey(i)) return agMap.get(i);
         
-        if (i == 0) agMap.put(i,0); 
-        else if (i <= agStartProperty.get()) agMap.put(i,1);
-        else agMap.put(i,((i/agIncrementProperty.get())*agIncrementProperty.get()));
-        
+        // Step 3: No? time to figure it out.... 
+        Integer a = 0; // start with zero as a default
+        if (customIncrementsProperty.get()) {
+            for (AgeGroupIncrement ag: customIncrementObservableList ){
+                if (i >= ag.getStartAge() ) {
+                    a = ag.getStartAge();
+                }
+            }
+            agMap.put(i, a);
+        } else {
+            if (i == 0) agMap.put(i,0); 
+            else if (i <= agStartProperty.get()) agMap.put(i,1);
+            else agMap.put(i,((i/agIncrementProperty.get())*agIncrementProperty.get()));
+        }
         return agMap.get(i);
         
     }
@@ -160,6 +282,8 @@ public class AgeGroups {
         agNameMap = new ConcurrentHashMap();
         agMap = new ConcurrentHashMap();
     }
+
+    
   
     
 }
