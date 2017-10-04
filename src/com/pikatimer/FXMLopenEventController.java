@@ -131,6 +131,7 @@ public class FXMLopenEventController {
                             flyway.setDataSource(jdbcURL, "sa", null);
                             flyway.migrate();
                         } catch (Exception ex) {
+                            ex.printStackTrace();
                             Platform.runLater(() -> {
                                 Alert alert = new Alert(AlertType.ERROR);
                                 alert.setTitle("Unable to Open Event");
