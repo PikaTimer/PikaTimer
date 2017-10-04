@@ -1,9 +1,9 @@
-TODO for 1.1 Release
+TODO for 1.5 Release
 
 Bugs:
 Ultra Direct: Discover only scans 1st network adapter
 Needs Testing: Ultra Direct: Save to file sometimes holds old target locations
-Ultra Direct: Better exception catching when we ask for a param that does not exist
+Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
 Done: FTPS Upload: Upload to a temp file and then do a rename to get around file locking issues
 DONE: Text header/footer does not honor line feeds in text output files (search/replace \R for system linefeed() )
 Single quotes in split names causes issues in the JSON parsing. Need to wrap in double quotes and escape all double quotes  in any user editable field (split, segment, name, city, state, country, etc)
@@ -12,23 +12,24 @@ Start time lookup: 2nd location shows all waves and adds extra waves to those ra
 
 
 Features:
-Participant: Custom Attributes (string, integer, number, date, time, list)
+DONE: Participant: Custom Attributes (string, integer, number, date, time, list)
 Participant Import: Assign to wave based on an input field in the CSV file
-Participant Import: Custom Attributes
-Participant Export: Custom Attributes
-Participant: Unknown age set to -1 and excluded from AG awards
+Participant Import: Import Custom Attributes
+Participant Export: Include Custom Attributes in list to export
+Participant: Unknown (blank/null) age excluded from AG awards
 
-AgeGroup: Arbitrary group ranges (5->7, 8->9, 10->13, etc)
-AgeGroup: Last AG (e.g., 80+)
+DONE: AgeGroup: 1 year option
+DONE: AgeGroup: Arbitrary group ranges (5->7, 8->9, 10->13, etc)
+Defer (Use the arbitrary option) AgeGroup: Last AG (e.g., 80+)
 
-Split: Advanced toggle switch 
+Awards: Advanced (3 tier, variable AG award depths based on number of registrants or runners)
+Awards: Custom (arbitrary levels, filters, timing points, group by (sex, age, age group),depths (fixed, variable)
+
+Split: Advanced toggle switch to enable additional options
 Split: Min time to next split (under advanced display for the split)
 Split: Type: Normal, Hidden Split, Ignored 
 Split: Ignore split time support (aka "dead zone" or "pause"). Basically blank out the time from that segment. 
 Split: Mandatory split (stop if they are missing a time from that split)
-
-Awards: Advanced (3 tier, variable AG award depths based on number of registrants or runners)
-Awards: Custom (arbitrary levels, filters, timing points, group by (sex, age, age group),depths (fixed, variable)
 
 Timing: Ultra Direct -- filter after skew to permit "old" times to be adjusted forward  
 Timing: Ultra Direct -- antenna on/off and power configuration
@@ -37,7 +38,7 @@ Timing: Outreach client?
 
 Results: Merge Country to State if not USA? 
 Results: Hide country/State if all are empty? 
-Results: Show custom attributes
+Results: Option to show custom attributes
 Results: Award report: Only show some awards
 Results: Awards: HTML output option
 Results: HTML5: Flag award winners with an icon and display in detailed view
@@ -49,7 +50,7 @@ Segments:
 Per segment pace display override (swim/bike/run/transition)
 Option to show splits on the segment section of the HTML5 report
 
-Penalty support w/ Note
+Penalty support w/ Note (via override?)
 
 DONE -- Timing: Ultra -- Show/set beeper volume
 
