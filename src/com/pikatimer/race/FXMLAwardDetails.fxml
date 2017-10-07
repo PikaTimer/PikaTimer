@@ -26,7 +26,7 @@
    <rowConstraints>
       <RowConstraints fillHeight="false" valignment="CENTER" vgrow="SOMETIMES" />
       <RowConstraints fillHeight="false" valignment="CENTER" vgrow="NEVER" />
-      <RowConstraints fillHeight="false" maxHeight="1.7976931348623157E308" valignment="TOP" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="1.7976931348623157E308" valignment="TOP" vgrow="ALWAYS" />
    </rowConstraints>
    <children>
       <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnSpan="2">
@@ -55,7 +55,7 @@
             <Font size="16.0" />
          </font>
       </Label>
-      <VBox spacing="2.0" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
+      <VBox maxHeight="1.7976931348623157E308" spacing="2.0" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
          <children>
             <ToggleSwitch fx:id="agCustomToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="18.0" prefWidth="140.0" text="Custom Increments " />
             <GridPane fx:id="agGridPane" hgap="2.0" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="140.0" vgap="2.0">
@@ -80,7 +80,7 @@
                   <TextField fx:id="agMastersStartTextField" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="50.0" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
-            <VBox fx:id="agCustomVBox" spacing="2.0">
+            <VBox fx:id="agCustomVBox" maxHeight="1.7976931348623157E308" spacing="2.0" VBox.vgrow="ALWAYS">
                <children>
                   <ToggleSwitch fx:id="customAGNamesToggleSwitch" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="140.0" text="Custom AG Names">
                      <padding>
@@ -94,7 +94,7 @@
                         <Insets top="5.0" />
                      </padding>
                   </Label>
-                  <TableView fx:id="customAGTableView" editable="true" prefHeight="150.0" prefWidth="150.0">
+                  <TableView fx:id="customAGTableView" editable="true" maxHeight="1.7976931348623157E308" prefHeight="150.0" prefWidth="150.0" VBox.vgrow="ALWAYS">
                     <columns>
                       <TableColumn fx:id="startAGTableColumn" maxWidth="40.0" minWidth="40.0" prefWidth="40.0" text="Start" />
                         <TableColumn fx:id="endAGTableColumn" maxWidth="40.0" minWidth="40.0" prefWidth="40.0" text="End" />

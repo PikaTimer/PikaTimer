@@ -18,6 +18,7 @@ package com.pikatimer.race;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
@@ -59,6 +60,7 @@ public class AgeGroups {
     private final BooleanProperty customNamesProperty = new SimpleBooleanProperty(false);
     private final ObservableList<AgeGroupIncrement> customIncrementObservableList = FXCollections.observableArrayList(AgeGroupIncrement.extractor());
     private Map<Integer,String> agNameMap = new ConcurrentHashMap();
+    private Map<Integer,String> agShortNameMap = new ConcurrentHashMap();
     private Map<Integer,Integer> agMap = new ConcurrentHashMap();
     
     private List<AgeGroupIncrement> customIncrementList;
@@ -105,7 +107,7 @@ public class AgeGroups {
     }
     public void setAGIncrement(Integer i) {
         System.out.println("AgeGroups.setAGIncrement() with " + i);
-        agIncrementProperty.set(i);
+        agIncrementProperty.setValue(i);
     }
     public IntegerProperty agIncrementProperty() {
         return agIncrementProperty;
@@ -129,7 +131,7 @@ public class AgeGroups {
     }
     public void setAGStart(Integer i) {
         //System.out.println("AgeGroups.setAGStart() with " + i);
-        agStartProperty.set(i);
+        agStartProperty.setValue(i);
     }
     public IntegerProperty agStartProperty() {
         return agStartProperty;
@@ -141,7 +143,7 @@ public class AgeGroups {
     }
     public void setUseCustomIncrements(Boolean i) {
         //System.out.println("AgeGroups.setAGStart() with " + i);
-        customIncrementsProperty.set(i);
+        customIncrementsProperty.setValue(i);
     }
     public BooleanProperty useCustomIncrementsProperty() {
         return customIncrementsProperty;
@@ -153,7 +155,8 @@ public class AgeGroups {
     }
     public void setUseCustomNames(Boolean i) {
         //System.out.println("AgeGroups.setAGStart() with " + i);
-        customNamesProperty.set(i);
+        customNamesProperty.setValue(i);
+        
     }
     public BooleanProperty useCustomNamesProperty() {
         return customNamesProperty;
@@ -200,9 +203,11 @@ public class AgeGroups {
         }
     }
 
-    public String ageToAGString(Integer i){
-        // Returns the string representation of the ag given an age
-        // e.g., 42 -> 40-44
+    // Identical to the ageToAGString method but it uses 
+    // the custom names if they are set
+    public String ageToLongAGString(Integer i){
+        // Returns the long string representation of the ag given an age
+        // e.g., 42 -> 40 to 44
         // based on the increment and the agStart floor (1->9)
         // Zero is a special case
         
@@ -222,14 +227,14 @@ public class AgeGroups {
                 Integer start = ageToAG(i);
                 Integer x = customIncrementObservableList.get(0).getStartAge() -1;
                 String end = x.toString();
-                agNameMap.put(start,start.toString()+"-" + end); // tmp value
+                agNameMap.put(start,start.toString()+" to " + end); // tmp value
                 for (AgeGroupIncrement ag: customIncrementObservableList ){
-                    if (ag.getStartAge() == start) {
+                    if (Objects.equals(ag.getStartAge(), start)) {
                         if (customNamesProperty.get() && ! ag.nameProperty().getValueSafe().isEmpty()) {
                             agNameMap.put(start, ag.nameProperty().getValueSafe());
                         } else {
                             end = ag.endAgeProperty().get();
-                            if (end != "+") end = "-"+end;
+                            if (!"+".equals(end)) end = " to "+end;
                             agNameMap.put(start,start.toString()+end);
                         }
                     }
@@ -244,6 +249,55 @@ public class AgeGroups {
             }
         }
         return agNameMap.get(ageToAG(i));
+    }
+    
+    
+    public String ageToAGString(Integer i){
+        // Returns the "short" string representation of the ag given an age
+        // e.g., 42 -> 40-44
+        // based on the increment and the agStart floor (1->9)
+        // Zero is a special case
+        
+        // Step 1: Handle nulls
+        if (i == null) i = 0;
+        
+        // Step 2: Did we deal with this age before?
+        if (agShortNameMap.containsKey(ageToAG(i))) return agShortNameMap.get(ageToAG(i));
+
+        // Step 3: Figure out what the AG category is
+        
+        if (customIncrementsProperty.get()) {
+            //System.out.println("AgeGroups::ageToAGString:  CustomIncrements in use");
+            if (customIncrementObservableList.isEmpty()) {
+                agShortNameMap.put(ageToAG(i),"0+");
+            } else {
+                Integer start = ageToAG(i);
+                Integer x = customIncrementObservableList.get(0).getStartAge() -1;
+                String end = x.toString();
+                agShortNameMap.put(start,start.toString()+"-" + end); // tmp value
+                //System.out.println("AgeGroups::ageToAGString:  tmp set to " + agShortNameMap.get(start));
+
+                for (AgeGroupIncrement ag: customIncrementObservableList ){
+                    if (Objects.equals(ag.getStartAge(), start)) {
+                        end = ag.endAgeProperty().getValue();
+                        if (!"+".equals(end)) end = "-"+end;
+                        agShortNameMap.put(start,start.toString()+end);
+                        //System.out.println("AgeGroups::ageToAGString:  finally set to " + agShortNameMap.get(start));
+
+                    }
+                }
+            }
+        } else {
+            if (i == 0) agShortNameMap.put(ageToAG(i), "0"); //Zero is a special case
+            else if(i <= agStartProperty.get()) {
+                agShortNameMap.put(ageToAG(i), "1-" + (agStartProperty.getValue()));
+            } else {
+                agShortNameMap.put(ageToAG(i), ageToAG(i) + "-" + (ageToAG(i)+agIncrementProperty.get()-1));
+            }
+        }
+        
+        //System.out.println("AgeGroups::ageToAGString " + i + " -> " + agShortNameMap.get(ageToAG(i)));
+        return agShortNameMap.get(ageToAG(i));
     }
     
     public Integer ageToAG(Integer i){
@@ -272,6 +326,7 @@ public class AgeGroups {
             else if (i <= agStartProperty.get()) agMap.put(i,1);
             else agMap.put(i,((i/agIncrementProperty.get())*agIncrementProperty.get()));
         }
+        //System.out.println("AgeGroups::ageToAG " + i + " -> " + agMap.get(i));
         return agMap.get(i);
         
     }

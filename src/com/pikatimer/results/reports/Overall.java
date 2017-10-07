@@ -218,8 +218,8 @@ public class Overall implements RaceReportType{
             
             chars.append(StringUtils.leftPad(pr.getParticipant().getBib(),5));
             chars.append(StringUtils.leftPad(pr.getAge().toString(),4));
-            chars.append(StringUtils.center(pr.getSex(),4));
-            chars.append(StringUtils.center(pr.getAGCode(),7));
+            chars.append(StringUtils.center(pr.getSex(),5));
+            chars.append(StringUtils.rightPad(pr.getAGCode(),6));
             chars.append(StringUtils.rightPad(pr.getParticipant().fullNameProperty().getValueSafe(),fullNameLength.get()));
             chars.append(StringUtils.rightPad(pr.getParticipant().getCity(),18));
             chars.append(StringUtils.center(pr.getParticipant().getState(),4));

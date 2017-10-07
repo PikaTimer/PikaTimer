@@ -142,7 +142,10 @@ public class AgeGroup implements RaceReportType {
         
         StringBuilder chars = new StringBuilder();
         agCatList.forEach(ag -> {
-            String longAG = ag.replace("F", "Female ").replace("M","Male ").replace("-"," -> "); 
+            
+            String agDesc = race.getAgeGroups().ageToLongAGString(agResultsMap.get(ag).get(0).getAge());
+            String agSex = agResultsMap.get(ag).get(0).getSex().replace("F", "Female ").replace("M","Male ");
+            String longAG = agSex + agDesc; 
             chars.append(StringUtils.center(StringUtils.center(longAG,30, "*"),80)).append(System.lineSeparator());
             chars.append(System.lineSeparator());
             chars.append(printAG(agResultsMap.get(ag)));
@@ -215,8 +218,8 @@ public class AgeGroup implements RaceReportType {
             
             chars.append(StringUtils.leftPad(pr.getParticipant().getBib(),5));
             chars.append(StringUtils.leftPad(pr.getAge().toString(),4));
-            chars.append(StringUtils.center(pr.getSex(),4));
-            chars.append(StringUtils.center(pr.getAGCode(),7));
+            chars.append(StringUtils.center(pr.getSex(),5));
+            chars.append(StringUtils.rightPad(pr.getAGCode(),6));
             chars.append(StringUtils.rightPad(pr.getParticipant().fullNameProperty().getValueSafe(),fullNameLength.get()));
             chars.append(StringUtils.rightPad(pr.getParticipant().getCity(),18));
             chars.append(StringUtils.center(pr.getParticipant().getState(),4));

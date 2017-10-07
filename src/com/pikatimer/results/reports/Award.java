@@ -25,7 +25,6 @@ import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
-import com.pikatimer.util.Pace;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -274,8 +273,10 @@ public class Award implements RaceReportType {
         List<String> agCatList = new ArrayList(agAwardMap.keySet());
         agCatList.sort(new AlphanumericComparator());       
         agCatList.forEach(ag -> {
-            
-            chars.append(StringUtils.center(StringUtils.center(ag,30, "*"),80)).append(System.lineSeparator());
+            String agDesc = race.getAgeGroups().ageToLongAGString(agAwardMap.get(ag).get(0).getAge());
+            String agSex = agAwardMap.get(ag).get(0).getSex().replace("F", "Female ").replace("M","Male ");
+            String longAG = agSex + agDesc; 
+            chars.append(StringUtils.center(StringUtils.center(longAG,30, "*"),80)).append(System.lineSeparator());
             chars.append(System.lineSeparator());
             if(ag.startsWith("F")) {
                 chars.append(outputHeader());
@@ -354,8 +355,8 @@ public class Award implements RaceReportType {
             report += StringUtils.rightPad(overall.get(i).getParticipant().fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
             report += StringUtils.leftPad(overall.get(i).getParticipant().getBib(),5); // 5R chars for the bib #
             report += StringUtils.leftPad(overall.get(i).getAge().toString(),4); // 4R for the age
-            report += StringUtils.leftPad(overall.get(i).getSex(),4); // 4R for the sex
-            report += StringUtils.leftPad(overall.get(i).getAGCode(),6); //6L for the AG Group
+            report += StringUtils.center(overall.get(i).getSex(),5); // 4R for the sex
+            report += StringUtils.rightPad(overall.get(i).getAGCode(),5); //6L for the AG Group
             report += " ";
             report += StringUtils.rightPad(overall.get(i).getParticipant().getCity(),18); // 18L for the city
             report += StringUtils.leftPad(overall.get(i).getParticipant().getState(),4); // 4C for the state code
@@ -375,8 +376,8 @@ public class Award implements RaceReportType {
                 report += StringUtils.rightPad(overall.get(i).getParticipant().fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
                 report += StringUtils.leftPad(overall.get(i).getParticipant().getBib(),5); // 5R chars for the bib #
                 report += StringUtils.leftPad(overall.get(i).getAge().toString(),4); // 4R for the age
-                report += StringUtils.leftPad(overall.get(i).getSex(),4); // 4R for the sex
-                report += StringUtils.leftPad(overall.get(i).getAGCode(),6); //6L for the AG Group
+                report += StringUtils.center(overall.get(i).getSex(),5); // 4R for the sex
+                report += StringUtils.rightPad(overall.get(i).getAGCode(),5); //6L for the AG Group
                 report += " ";
                 report += StringUtils.rightPad(overall.get(i).getParticipant().getCity(),18); // 18L for the city
                 report += StringUtils.leftPad(overall.get(i).getParticipant().getState(),4); // 4C for the state code
