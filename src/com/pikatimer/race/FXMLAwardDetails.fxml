@@ -6,12 +6,14 @@
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
@@ -20,7 +22,7 @@
 <GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardDetailsController">
    <columnConstraints>
       <ColumnConstraints fillWidth="false" hgrow="NEVER" />
-      <ColumnConstraints fillWidth="false" hgrow="NEVER" />
+      <ColumnConstraints hgrow="NEVER" maxWidth="1.7976931348623157E308" />
       <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
    </columnConstraints>
    <rowConstraints>
@@ -50,11 +52,17 @@
             <Font size="16.0" />
          </font>
       </Label>
-      <Label text="Award Setup" GridPane.columnIndex="1" GridPane.rowIndex="1">
-         <font>
-            <Font size="16.0" />
-         </font>
-      </Label>
+      <HBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1">
+         <children>
+            <Label text="Award Setup">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+            <Pane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+            <Button mnemonicParsing="false" text="Add" />
+         </children>
+      </HBox>
       <VBox maxHeight="1.7976931348623157E308" spacing="2.0" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
          <children>
             <ToggleSwitch fx:id="agCustomToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="18.0" prefWidth="140.0" text="Custom Increments " />
@@ -120,69 +128,11 @@
             <Insets top="2.0" />
          </GridPane.margin>
       </VBox>
-      <GridPane hgap="2.0" maxHeight="1.7976931348623157E308" vgap="2.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
-         <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" maxWidth="91.0" minWidth="10.0" prefWidth="64.0" />
-            <ColumnConstraints hgrow="SOMETIMES" maxWidth="220.0" minWidth="3.0" prefWidth="81.0" />
-            <ColumnConstraints hgrow="SOMETIMES" maxWidth="61.0" minWidth="10.0" prefWidth="61.0" />
-            <ColumnConstraints hgrow="SOMETIMES" maxWidth="153.0" minWidth="10.0" prefWidth="57.0" />
-         </columnConstraints>
-         <rowConstraints>
-            <RowConstraints maxHeight="40.0" minHeight="40.0" prefHeight="40.0" vgrow="NEVER" />
-            <RowConstraints prefHeight="25.0" vgrow="NEVER" />
-            <RowConstraints vgrow="NEVER" />
-            <RowConstraints minHeight="10.0" vgrow="NEVER" />
-         </rowConstraints>
-         <children>
-            <Label text="Overall" GridPane.rowIndex="1" />
-            <Label text="Masters" GridPane.rowIndex="2" />
-            <Label text="Age Group" GridPane.rowIndex="3" />
-            <Label alignment="CENTER" text="Name">
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Label>
-            <Label alignment="CENTER" prefHeight="34.0" prefWidth="84.0" text="Pull?" textAlignment="CENTER" wrapText="true" GridPane.columnIndex="3" />
-            <VBox alignment="TOP_CENTER" GridPane.columnIndex="1">
-               <children>
-                  <Label text="Depth" GridPane.columnIndex="1">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
-                  <Label text="Male  / Female" />
-               </children>
-            </VBox>
-            <Label alignment="CENTER" text="Gun/Chip?" GridPane.columnIndex="2" />
-            <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
-               <children>
-                  <TextField fx:id="awardOverallMaleDepthTextField" maxWidth="33.0" minWidth="33.0" prefWidth="33.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <TextField fx:id="awardOverallFemaleDepthTextField" prefWidth="33.0" />
-               </children>
-            </HBox>
-            <ChoiceBox fx:id="awardOverallChipChoiceBox" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
-            <ChoiceBox fx:id="awardOverallPullChoiceBox" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
-            <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
-               <children>
-                  <TextField fx:id="awardMastersMaleDepthTextField" maxWidth="33.0" minWidth="33.0" prefWidth="33.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <TextField fx:id="awardMastersFemaleDepthTextField" prefWidth="33.0" />
-               </children>
-            </HBox>
-            <ChoiceBox fx:id="awardMastersChipChoiceBox" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
-            <ChoiceBox fx:id="awardMastersPullChoiceBox" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
-            <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
-               <children>
-                  <TextField fx:id="awardAGMaleDepthTextField" maxWidth="33.0" prefWidth="33.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <TextField fx:id="awardAGFemaleDepthTextField" maxWidth="33.0" prefWidth="33.0" />
-               </children>
-            </HBox>
-            <ChoiceBox fx:id="awardAGChipChoiceBox" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="3" />
-            <ChoiceBox fx:id="awardAGPullChoiceBox" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="3" />
-         </children>
-         <padding>
-            <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-         </padding>
-      </GridPane>
+      <ScrollPane fitToWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2">
+         <content>
+            <VBox fx:id="awardsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+         </content>
+      </ScrollPane>
       <Label text="Tie Handling" GridPane.columnIndex="2" GridPane.rowIndex="1">
          <font>
             <Font size="16.0" />

@@ -257,7 +257,7 @@ public class RaceDAO {
         s.getTransaction().commit();
      }
     
-    public void updateAwards(RaceAwards a){
+    public void updateAwardCategory(AwardCategory a){
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction(); 
         s.saveOrUpdate(a);
