@@ -16,7 +16,6 @@
  */
 package com.pikatimer.race;
 
-import com.pikatimer.participant.Participant;
 import javafx.beans.Observable;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
