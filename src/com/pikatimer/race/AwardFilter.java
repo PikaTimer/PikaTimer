@@ -16,10 +16,57 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.participant.Participant;
+import com.pikatimer.results.ProcessedResult;
+import com.pikatimer.util.AlphanumericComparator;
+
 /**
  *
  * @author John Garner <segfaultcoredump@gmail.com>
  */
 public class AwardFilter {
+    protected String attribute;
+    protected String comparisonType;
+    protected String value;
+    static private AlphanumericComparator ac = new AlphanumericComparator();
+    
+    public AwardFilter(){
+        
+    }
+    public AwardFilter(String a, String c, String v){
+        attribute = a;
+        comparisonType = c;
+        value = v;
+    }
+    public Boolean filter(ProcessedResult pr, Race race){
+        return filter(pr.getParticipant(), race);
+    }
+    public Boolean filter (Participant p, Race race) {
+        String pvalue = "";
+        if (attribute.equals("AG")) {
+            pvalue = race.getAgeGroups().ageToAGString(p.getAge());
+        }
+        else if (attribute.matches("^\\d+$")) value = p.getCustomAttribute(Integer.parseInt(attribute)).getValueSafe();
+        else  pvalue = p.getNamedAttribute(attribute);
+        
+        //System.out.println("filter() " + attribute + " " + comparisonType + " " + value + " " + pvalue);
+
+        
+        if (comparisonType.equalsIgnoreCase("=") ) {
+            return ac.compare(pvalue, value) == 0;
+        } else if (comparisonType.equalsIgnoreCase(">") ) {
+            return ac.compare(pvalue, value) > 0;
+        } else if (comparisonType.equalsIgnoreCase("<") ) {
+            return ac.compare(pvalue, value) < 0;
+        } else if (comparisonType.equalsIgnoreCase("<=") ) {
+            return ac.compare(pvalue, value) <= 0;
+        } else if (comparisonType.equalsIgnoreCase(">=") ) {
+            return ac.compare(pvalue, value) >= 0;
+        } else if (comparisonType.equalsIgnoreCase("!=") ) {
+            return ac.compare(pvalue, value) != 0;
+        } 
+        
+        return true;
+    }
     
 }

@@ -296,7 +296,7 @@ public class Race {
         raceSplitList = raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
     }
     
-    @OneToOne(cascade=CascadeType.ALL)  
+    @OneToOne(cascade=CascadeType.ALL,fetch = FetchType.EAGER)  
     @PrimaryKeyJoinColumn
     public RaceAwards getAwards() {
         return awards;
@@ -307,7 +307,7 @@ public class Race {
         if (awards != null && awards.getRace() != this) awards.setRace(this);
     }
     
-    @OneToOne(cascade=CascadeType.ALL)  
+    @OneToOne(cascade=CascadeType.ALL,fetch = FetchType.EAGER)  
     @PrimaryKeyJoinColumn
     public AgeGroups getAgeGroups() {
         return ageGroups;

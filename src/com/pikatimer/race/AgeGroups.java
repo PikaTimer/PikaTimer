@@ -168,8 +168,6 @@ public class AgeGroups {
           joinColumns=@JoinColumn(name="ag_id")
     )
     protected List<AgeGroupIncrement> getCustomIncrementsList(){
-        if (customIncrementList != null) System.out.println("getCustomIncrementList() called, returning list of " + customIncrementList.size());
-        else System.out.println("getCustomIncrementList() called, returning NULL list");
         return customIncrementList;
     }
     protected void setCustomIncrementsList(List<AgeGroupIncrement> i){

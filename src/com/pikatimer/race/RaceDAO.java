@@ -97,6 +97,10 @@ public class RaceDAO {
         
         try {  
             list=s.createQuery("from Race order by ID").list();
+            if (list != null) list.forEach(r -> {
+                AgeGroups ag = r.getAgeGroups();
+                if (ag != null) ag.getCustomIncrementsList();
+            });
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } 

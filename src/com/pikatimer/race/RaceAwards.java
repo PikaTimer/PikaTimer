@@ -17,11 +17,16 @@
 package com.pikatimer.race;
 
 import com.pikatimer.results.ProcessedResult;
+import com.pikatimer.util.DurationFormatter;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.util.Pair;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -120,18 +125,38 @@ public class RaceAwards {
     public void recalcPriorities(){
         for (int i = 0; i < awardCategoriesList.size(); i++) 
             awardCategoriesList.get(i).setPriority(i);
-        //awardCategoriesList.sort((ac1,ac2) -> Integer.compare(ac1.getPriority(), ac2.getPriority()));
+        awardCategoriesList.sort((ac1,ac2) -> Integer.compare(ac1.getPriority(), ac2.getPriority()));
         awardCategories = awardCategoriesList;
     }
             
     
     // Loop through the categories and produce a map of the categories -> winners
-    public Map<AwardCategory,List<ProcessedResult>> getAwardWinners(List<ProcessedResult> p){
-        Map<AwardCategory,List<ProcessedResult>> awardWinners = new HashMap();
+    public Map<AwardCategory,Map<String,List<AwardWinner>>> getAwardWinners(List<ProcessedResult> pr){
+        Map<AwardCategory,Map<String,List<AwardWinner>>> awardWinners = new HashMap();
+        Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
+        String dispFormat = race.getStringAttribute("TimeDisplayFormat");
+        String roundMode = race.getStringAttribute("TimeRoundingMode");
+        String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
+
+        // filter out inelligible participants
+        List<ProcessedResult> contendersList = new ArrayList(
+            pr.stream().filter(p -> p.getChipFinish() != null)
+                .filter(p -> p.getParticipant().getDNF() != true)
+                .filter(p -> p.getParticipant().getDQ() != true)
+                .filter(p -> {
+                    if (cutoffTime.isZero()) return true;
+                    return cutoffTime.compareTo(p.getChipFinish()) >= 0 ||
+                            cutoffTimeString.equals(DurationFormatter.durationToString(p.getChipFinish(), dispFormat, roundMode));
+                })
+                .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
+                .collect(Collectors.toList())
+        );
         
-        
-        
-        
+        for(int i=0; i< awardCategoriesList.size();i++) {
+            Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> results = awardCategoriesList.get(i).process(contendersList);
+            awardWinners.put(awardCategoriesList.get(i), results.getKey());
+            contendersList = results.getValue();
+        }
         return awardWinners;
     }
             
@@ -199,7 +224,7 @@ public class RaceAwards {
             if (attributes.containsKey("AGChp") ) ag.setChip(Boolean.parseBoolean(attributes.get("AGChp")));
             ag.setPull(Boolean.TRUE);
             
-            attributes.clear(); // remove the outdated values
+            //attributes.clear(); // remove the outdated values
         }
         awardCategories = awardCategoriesList;
     }

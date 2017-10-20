@@ -18,7 +18,6 @@ package com.pikatimer.race;
 
 import com.pikatimer.util.Formatters;
 import javafx.application.Platform;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

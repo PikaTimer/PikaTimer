@@ -16,6 +16,18 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.results.ProcessedResult;
+import com.pikatimer.participant.Participant;
+import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.util.DurationFormatter;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
@@ -26,8 +38,8 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
+import javafx.util.Pair;
 import javax.persistence.Column;
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -60,6 +72,9 @@ public class AwardCategory {
     private final IntegerProperty depthProperty = new SimpleIntegerProperty(3);
 
     private RaceAwards raceAward;
+    
+    private List<AwardFilter> filters;
+    private List<String> splitBy;
 
     public AwardCategory() {
         
@@ -188,6 +203,209 @@ public class AwardCategory {
     public IntegerProperty depthProperty() {
         return depthProperty;
     }
+    
+    public Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> process(List<ProcessedResult> pr){
+        System.out.println("Processing " + typeProperty.toString() + " " + nameProperty.getValueSafe());
+        // What is going on here...
+        
+        // The "pr" list is the contenders for the award
+        // Let's make a copy for downstream contenders
+        List<ProcessedResult> downstreamContenders =new ArrayList(pr);
+        
+        // We send back a Pair consisting for a map of the subCategory to the winners
+        // and a list of results elliglble for downstream awards.
+        // if we are not a Custom award type, setup some default
+        // filters and splitBy arrays.
+        switch (typeProperty.get()) {
+            case OVERALL:
+                // no Filter
+                filters = new ArrayList();
+                splitBy = Arrays.asList("sex");
+                break;
+            case MASTERS:
+                filters= new ArrayList();
+                filters.add(new AwardFilter("age",">=",raceAward.getRace().getAgeGroups().getMasters().toString()));
+                splitBy = Arrays.asList("sex");
+                break;
+            case AGEGROUP:
+                filters= new ArrayList();
+                splitBy = Arrays.asList("sex","AG");
+                break;
+            default:
+                System.out.println("UNKNOWN TYPE: " + typeProperty.getName());
+                break;
+        }
+            
+        // Step 1: filter
+        // We assume that the list we have already filtered
+        // all DNF's, DQ's, and folks with no finish times. 
+        // Then filter by whatever the overall filter is (if any);
+        // The result our own copy to screw with
+        Race race = raceAward.getRace();
+        Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
+        String dispFormat = race.getStringAttribute("TimeDisplayFormat");
+        String roundMode = race.getStringAttribute("TimeRoundingMode");
+        String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
+
+        List<ProcessedResult> contendersList = new ArrayList(
+            pr.stream().filter(p -> {
+                    for(int i=0; i< filters.size(); i++){
+                        if (filters.get(i).filter(p,race) == false) return false;
+                    }
+                    return true;
+                })
+            .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
+            .collect(Collectors.toList())
+        );
+        // Step 2: sort by award time
+        contendersList.sort((p1,p2) -> {
+            if (chipProperty.get()) return p1.getChipFinish().compareTo(p2.getChipFinish());
+            else return p1.getGunFinish().compareTo(p2.getGunFinish());
+        });
+        
+        // Step 3: Split
+        Map<String,List<ProcessedResult>> contendersMap = new HashMap();
+        contendersList.forEach(r -> {
+            String splitCat = "";
+            
+            // What is their split category string?
+            for(int i=0; i<splitBy.size();i++){
+                String attrib = splitBy.get(i);
+                if (attrib.startsWith("sex")) {
+                    if (r.getSex().startsWith("M")) splitCat += "Male ";
+                    else splitCat += "Female ";
+                } else if (attrib.equals("AG")) {
+                    splitCat += r.getAGCode() + " ";
+                } else if (attrib.matches("^\\d+$")) { // custom attribute
+                    try {splitCat += r.getParticipant().getCustomAttribute(Integer.parseInt(attrib)) + " ";} catch (Exception e){}
+                } else {
+                    splitCat += r.getParticipant().getNamedAttribute(attrib) + " ";
+                }
+            }
+            splitCat = splitCat.trim();
+            if (!contendersMap.containsKey(splitCat)) contendersMap.put(splitCat,new ArrayList());
+            contendersMap.get(splitCat).add(r);
+        
+        });
+        
+        // Step 4: calculate award depths
+        Map<String,Integer> depthMap = new HashMap();
+        if (AwardDepthType.FIXED.equals(depthTypeProperty.get()))
+            contendersMap.keySet().forEach(k -> {depthMap.put(k, depthProperty.getValue());});
+        else { // Oh god, 
+            
+            // first, figure oout how many folks are in play
+            List<Participant> part;
+            if (AwardDepthType.BYREG.equals(depthTypeProperty.get())) part = ParticipantDAO.getInstance().listParticipants();
+            else part = ResultsDAO.getInstance().getResults(race.getID()).stream()
+                .filter(p -> {
+                    for(int i=0; i< filters.size(); i++){
+                        if (filters.get(i).filter(ParticipantDAO.getInstance().getParticipantByBib(p.getBib()),race) == false) return false;
+                    }
+                    return true;
+                })
+                .map(p -> ParticipantDAO.getInstance().getParticipantByBib(p.getBib()))
+                .collect(Collectors.toList());
+            
+            // now sort them into subdivisions.... 
+            Map<String,Integer> subMap = new HashMap();
+            part.forEach(r -> {
+                String splitCat = "";
+                // What is their split category string?
+                for(int i=0; i<splitBy.size();i++){
+                    String attrib = splitBy.get(i);
+                    if (attrib.startsWith("sex")) {
+                        if (r.getSex().startsWith("M")) splitCat += "Male ";
+                        else splitCat += "Female ";
+                    } else if (attrib.equals("AG")) {
+                        splitCat += race.getAgeGroups().ageToAGString(r.getAge()) + " ";
+                    } else if (attrib.matches("^\\d+$")) { // custom attribute
+                        try {splitCat += r.getCustomAttribute(Integer.parseInt(attrib)) + " ";} catch (Exception e){}
+                    } else {
+                        splitCat += r.getNamedAttribute(attrib) + " ";
+                    }
+                }
+                splitCat = splitCat.trim();
+                if (!contendersMap.containsKey(splitCat)) subMap.put(splitCat,0);
+                else subMap.put(splitCat, subMap.get(splitCat) + 1);
+            });
+            
+            // now create the depthMap based on the registration numbers
+            
+            // FIX THIS once we store the start/end -> depth map field
+            contendersMap.keySet().forEach(k -> {depthMap.put(k, depthProperty.getValue());});
+        }
+        
+        // Step 5: divy up awards by subcategory
+        Map<String,List<AwardWinner>> winners = new HashMap();
+        Boolean ties = race.getBooleanAttribute("permitTies");
+        
+        contendersMap.keySet().forEach(cat -> {
+            winners.put(cat, new ArrayList());
+            if (! contendersMap.containsKey(cat) || contendersMap.get(cat).isEmpty()) return;
+            String lastTime="";
+            String currentTime="";
+            Integer currentPlace = 1;
+            AwardWinner prevAW = null;
+            for(int i=0; i<depthMap.get(cat) && i <contendersMap.get(cat).size(); i++) {
+                if (i==0) {
+                    lastTime="";
+                    currentPlace = 0;
+                }
+                AwardWinner a = new AwardWinner();
+                
+                if (chipProperty.get()) a.awardTime = contendersMap.get(cat).get(i).getChipFinish();
+                else a.awardTime = contendersMap.get(cat).get(i).getGunFinish();
+                
+                currentTime = DurationFormatter.durationToString(a.awardTime, dispFormat, roundMode);
+            
+                //System.out.println("Award::printWinners: Comparing previous " + lastTime + " to " + currentTime);
+                if (ties && !lastTime.equals(currentTime)) currentPlace = i+1;
+                else if (lastTime.equals(currentTime)) { prevAW.tie = true; a.tie = true;}
+                else if (!ties) currentPlace++;
+                
+                a.participant = contendersMap.get(cat).get(i).getParticipant();
+                a.awardPlace = currentPlace;
+                a.awardTitle = cat;
+                a.processedResult = contendersMap.get(cat).get(i);
+                winners.get(cat).add(a);
+                lastTime = currentTime;
+                
+                prevAW = a;
+                
+                // If we are pulling then remove them from downstream awards
+                if(pullProperty.get()) downstreamContenders.remove(contendersMap.get(cat).get(i));
+                
+                if (ties && i == depthMap.get(cat)-1 && i+1 <contendersMap.get(cat).size()) { // last one....
+                    String nextTime ="";
+                    if (chipProperty.get()) nextTime = DurationFormatter.durationToString(contendersMap.get(cat).get(i+1).getChipFinish(), dispFormat, roundMode);
+                    else nextTime = DurationFormatter.durationToString(contendersMap.get(cat).get(i+1).getGunFinish(), dispFormat, roundMode);
+                    if (currentTime.equals(nextTime)){
+                        if (chipProperty.get()) a.awardTime = contendersMap.get(cat).get(i+1).getChipFinish();
+                        else a.awardTime = contendersMap.get(cat).get(i+1).getGunFinish();
+                        prevAW.tie = true;
+                        a = new AwardWinner();
+                        a.tie = true;
+                        a.participant = contendersMap.get(cat).get(i+1).getParticipant();
+                        a.awardPlace = currentPlace;
+                        a.awardTitle = cat;
+                        a.processedResult = contendersMap.get(cat).get(i+1);
+                        winners.get(cat).add(a);
+                        if(pullProperty.get()) downstreamContenders.remove(contendersMap.get(cat).get(i+1));
+                    }
+                }
+            }
+            
+            
+        
+        });
+                
+        return new Pair(winners,downstreamContenders);
+        
+    }
+    
+    
+    
     
     
     public static Callback<AwardCategory, Observable[]> extractor() {
