@@ -148,9 +148,12 @@ public class FXMLRaceDetailsController {
             @Override
             public void changed(ObservableValue<? extends Unit> observableValue, Unit o, Unit n) {
                 System.out.println("distanceUnitChoiceBox event");
-                selectedRace.setRaceDistanceUnits(n);
-                updateRaceCutoffPace();
-                raceDAO.updateRace(selectedRace);        
+                if (!n.equals(selectedRace.getRaceDistanceUnits())){
+                    System.out.println("distanceUnitChoiceBox event triggered update...");
+                    selectedRace.setRaceDistanceUnits(n);
+                    updateRaceCutoffPace();
+                    raceDAO.updateRace(selectedRace);  
+                }
             }
         });
         
@@ -737,11 +740,13 @@ public class FXMLRaceDetailsController {
         BigDecimal dist;
         try {
             dist = new BigDecimal(raceDistanceTextField.getText());
-            selectedRace.setRaceDistance(dist);
-            selectedRace.setRaceDistanceUnits((Unit)distanceUnitChoiceBox.getValue());
-            selectedRace.getSplits().get(selectedRace.getSplits().size()-1).setSplitDistance(dist);
-            raceDAO.updateRace(selectedRace);
-            raceDAO.updateSplit(selectedRace.getSplits().get(selectedRace.getSplits().size()-1));
+            if (!dist.equals(selectedRace.getRaceDistance())) {
+                selectedRace.setRaceDistance(dist);
+                selectedRace.setRaceDistanceUnits((Unit)distanceUnitChoiceBox.getValue());
+                selectedRace.getSplits().get(selectedRace.getSplits().size()-1).setSplitDistance(dist);
+                raceDAO.updateRace(selectedRace);
+                raceDAO.updateSplit(selectedRace.getSplits().get(selectedRace.getSplits().size()-1));
+            }
         } catch (Exception e) {
             // not a number
             dist = selectedRace.getRaceDistance();
