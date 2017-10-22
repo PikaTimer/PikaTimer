@@ -28,6 +28,13 @@ create table race_award_categories (
     award_type varchar,
     depth_type varchar,
     category_depth int,
+    masters_age int,
     pull boolean,
-    chip boolean,
+    chip boolean
+);
+
+create table race_award_category_depths (
+    ac_id int,
+    start int,
+    depth int
 );

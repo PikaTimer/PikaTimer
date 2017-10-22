@@ -23,6 +23,7 @@ import com.pikatimer.participant.Participant;
 import com.pikatimer.race.AgeGroupIncrement;
 import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.AwardCategory;
+import com.pikatimer.race.AwardDepth;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.Wave;
@@ -88,6 +89,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(Race.class);
         cfg.addAnnotatedClass(RaceAwards.class);
         cfg.addAnnotatedClass(AwardCategory.class);
+        cfg.addAnnotatedClass(AwardDepth.class);
         cfg.addAnnotatedClass(AgeGroups.class);
         cfg.addAnnotatedClass(AgeGroupIncrement.class);
         cfg.addAnnotatedClass(Split.class);

@@ -51,7 +51,11 @@ public class AwardFilter {
         
         //System.out.println("filter() " + attribute + " " + comparisonType + " " + value + " " + pvalue);
 
-        
+        // We are going to abuse the heck out of the Alphanumeic Cpmarator for now.
+        // This should work for numbers, letters, and most other things.
+        // It could produce odd results on Dates, Times, boolean,
+        // or otther arbitrary string based
+        // attributes (like Sex, Age Group, or City). 
         if (comparisonType.equalsIgnoreCase("=") ) {
             return ac.compare(pvalue, value) == 0;
         } else if (comparisonType.equalsIgnoreCase(">") ) {

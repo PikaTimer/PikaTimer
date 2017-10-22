@@ -16,10 +16,62 @@
  */
 package com.pikatimer.race;
 
+import javafx.beans.Observable;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.util.Callback;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+
 /**
  *
  * @author John Garner <segfaultcoredump@gmail.com>
  */
+@Embeddable
 public class AwardDepth {
+
+    private final IntegerProperty startCountProperty = new SimpleIntegerProperty();
+    private final StringProperty endCountProperty = new SimpleStringProperty(); 
+    private final IntegerProperty depthProperty = new SimpleIntegerProperty();
     
-}
+    public AwardDepth() {
+        
+    } 
+    
+    @Column(name="start")
+    public Integer getStartCount() {
+        //System.out.println("AgeGroups.getAGIncrement() returning " + agIncrement);
+        return startCountProperty.getValue(); 
+    }
+    public void setStartCount(Integer i) {
+        startCountProperty.set(i);
+    }
+    public IntegerProperty startCountProperty() {
+        return startCountProperty;
+    }
+    
+    public StringProperty endCountProperty() {
+        return endCountProperty;
+    }
+    
+    @Column(name="depth")
+    public Integer getDepth() {
+        //System.out.println("AgeGroups.getAGIncrement() returning " + agIncrement);
+        return depthProperty.getValue();
+    }
+    public void setDepth(Integer i) {
+        System.out.println("AwardDepth.setAGIncrement() with " + i);
+        depthProperty.setValue(i);
+    }
+    public IntegerProperty depthProperty() {
+        return depthProperty;
+    }
+    
+    public static Callback<AwardDepth, Observable[]> extractor() {
+        return (AwardDepth i) -> new Observable[]{i.startCountProperty,i.endCountProperty,i.depthProperty};
+    }
+
+}    
+

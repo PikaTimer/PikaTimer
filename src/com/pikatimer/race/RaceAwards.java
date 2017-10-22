@@ -114,6 +114,7 @@ public class RaceAwards {
         return awardCategoriesList;
     }
     public void addAwardCategory(AwardCategory a) {
+        a.setPriority(awardCategoriesList.size());
         awardCategoriesList.add(a);
         recalcPriorities();
     }
@@ -159,24 +160,7 @@ public class RaceAwards {
         }
         return awardWinners;
     }
-            
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+     
     public void createDefaultCategories(){
         System.out.println("RaceAwards:createDefaultCategories() Called...");
 
@@ -194,6 +178,7 @@ public class RaceAwards {
         m.setType(AwardCategoryType.MASTERS);
         m.setPriority(1);
         m.setRaceAward(this);
+        m.setMastersAge(race.getAgeGroups().getMasters());
         awardCategoriesList.add(m);
 
         // Masters

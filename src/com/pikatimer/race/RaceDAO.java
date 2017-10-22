@@ -267,6 +267,13 @@ public class RaceDAO {
         s.saveOrUpdate(a);
         s.getTransaction().commit();
     }
+    
+    public void removeAwardCategory(AwardCategory a){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        s.delete(a);
+        s.getTransaction().commit();
+    }
 
     
     public void updateSplit (Split sp) {

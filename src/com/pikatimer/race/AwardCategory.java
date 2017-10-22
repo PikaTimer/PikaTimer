@@ -37,9 +37,13 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.util.Callback;
 import javafx.util.Pair;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -70,17 +74,20 @@ public class AwardCategory {
     private final BooleanProperty pullProperty = new SimpleBooleanProperty(true);
     private final BooleanProperty chipProperty = new SimpleBooleanProperty(true);
     private final IntegerProperty depthProperty = new SimpleIntegerProperty(3);
-
+    private final IntegerProperty mastersAgeProperty = new SimpleIntegerProperty(40);
+    private final ObservableList<AwardDepth> customDepthObservableList = FXCollections.observableArrayList(AwardDepth.extractor());
+    
     private RaceAwards raceAward;
     
     private List<AwardFilter> filters;
     private List<String> splitBy;
+    private List<AwardDepth> customDepthList;
 
     public AwardCategory() {
         
     }
     
-        @Id
+    @Id
     @GenericGenerator(name="award_category_id" , strategy="increment")
     @GeneratedValue(generator="award_category_id")
     @Column(name="ID")
@@ -204,6 +211,60 @@ public class AwardCategory {
         return depthProperty;
     }
     
+    @Column(name="masters_age")
+    public Integer getMastersAge() {
+        System.out.println("AwardCategory.mastersAge(): returning " + mastersAgeProperty.getValue());
+        return mastersAgeProperty.getValue();
+    }
+    public void setMastersAge(Integer i) {
+        System.out.println("AwardCategory.setDepth(): " + i);
+        mastersAgeProperty.setValue(i);
+    }
+    public IntegerProperty mastersAgeProperty() {
+        return mastersAgeProperty;
+    }
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+          name="race_award_category_depths",
+          joinColumns=@JoinColumn(name="ac_id")
+    )
+    protected List<AwardDepth> getCustomDepthList(){
+        return customDepthList;
+    }
+    protected void setCustomDepthList(List<AwardDepth> i){
+        customDepthList = i;
+    }
+    
+    public ObservableList<AwardDepth> customDepthProperty(){
+        if (customDepthObservableList.isEmpty() && customDepthList != null && ! customDepthList.isEmpty() ) {
+            customDepthObservableList.addAll(customDepthList);
+            recalcCustomDepths();
+        }
+        return customDepthObservableList;
+    }
+    
+    public void addCustomDepth(AwardDepth i){
+        System.out.println("addCustomDepth called");
+        customDepthObservableList.add(i);
+        recalcCustomDepths();
+        customDepthList = customDepthObservableList;
+    }
+    
+    public void removeCustomDepth(AwardDepth i){
+        customDepthObservableList.remove(i);
+        recalcCustomDepths();
+        customDepthList = customDepthObservableList;
+    }
+    
+    public void recalcCustomDepths(){
+        customDepthObservableList.sort((i1, i2) -> i1.getStartCount().compareTo(i2.getStartCount()));
+        for (int i=0; i < customDepthObservableList.size(); i++) {
+            if (i == customDepthObservableList.size() -1) customDepthObservableList.get(i).endCountProperty().setValue("∞");
+            else customDepthObservableList.get(i).endCountProperty().setValue(Integer.toString(customDepthObservableList.get(i+1).getStartCount() - 1));
+        }
+    }
+    
     public Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> process(List<ProcessedResult> pr){
         System.out.println("Processing " + typeProperty.toString() + " " + nameProperty.getValueSafe());
         // What is going on here...
@@ -224,7 +285,7 @@ public class AwardCategory {
                 break;
             case MASTERS:
                 filters= new ArrayList();
-                filters.add(new AwardFilter("age",">=",raceAward.getRace().getAgeGroups().getMasters().toString()));
+                filters.add(new AwardFilter("age",">=",mastersAgeProperty.getValue().toString()));
                 splitBy = Arrays.asList("sex");
                 break;
             case AGEGROUP:
@@ -326,14 +387,28 @@ public class AwardCategory {
                     }
                 }
                 splitCat = splitCat.trim();
-                if (!contendersMap.containsKey(splitCat)) subMap.put(splitCat,0);
+                if (!subMap.containsKey(splitCat)) subMap.put(splitCat,1);
                 else subMap.put(splitCat, subMap.get(splitCat) + 1);
             });
             
             // now create the depthMap based on the registration numbers
-            
-            // FIX THIS once we store the start/end -> depth map field
-            contendersMap.keySet().forEach(k -> {depthMap.put(k, depthProperty.getValue());});
+
+            contendersMap.keySet().forEach(k -> {
+                Integer count = 0;
+                if (!subMap.containsKey(k)) {
+                    System.out.println("Odd, we have a contender with a sub-type of k but no registered or starting participants");
+                } else {
+                    count = subMap.get(k);
+                }
+                subMap.get(k);
+                Integer depth =0;
+                for(AwardDepth d: customDepthList){
+                    if(count >= d.getStartCount()) depth = d.getDepth();
+                }
+                System.out.println("AwardDepth: for " + k + " we have " + count + " and will go " + depth);
+
+                depthMap.put(k, depth);
+            });
         }
         
         // Step 5: divy up awards by subcategory
@@ -395,9 +470,6 @@ public class AwardCategory {
                     }
                 }
             }
-            
-            
-        
         });
                 
         return new Pair(winners,downstreamContenders);

@@ -19,7 +19,7 @@
 <?import javafx.scene.text.Font?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardDetailsController">
    <columnConstraints>
       <ColumnConstraints fillWidth="false" hgrow="NEVER" />
       <ColumnConstraints hgrow="NEVER" maxWidth="1.7976931348623157E308" />
@@ -60,7 +60,7 @@
                </font>
             </Label>
             <Pane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-            <Button mnemonicParsing="false" text="Add" />
+            <Button mnemonicParsing="false" onAction="#addAwardCategory" text="Add Award" />
          </children>
       </HBox>
       <VBox maxHeight="1.7976931348623157E308" spacing="2.0" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
@@ -82,12 +82,6 @@
                   <TextField fx:id="agStartTextField" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="50.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                </children>
             </GridPane>
-            <HBox maxWidth="1.7976931348623157E308" spacing="2.0">
-               <children>
-                  <Label prefWidth="80.0" text="Masters Start" />
-                  <TextField fx:id="agMastersStartTextField" maxWidth="1.7976931348623157E308" minWidth="50.0" prefWidth="50.0" HBox.hgrow="ALWAYS" />
-               </children>
-            </HBox>
             <VBox fx:id="agCustomVBox" maxHeight="1.7976931348623157E308" spacing="2.0" VBox.vgrow="ALWAYS">
                <children>
                   <ToggleSwitch fx:id="customAGNamesToggleSwitch" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="140.0" text="Custom AG Names">

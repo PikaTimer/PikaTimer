@@ -10,6 +10,7 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
@@ -25,9 +26,8 @@
    </columnConstraints>
    <rowConstraints>
       <RowConstraints vgrow="NEVER" />
-      <RowConstraints fillHeight="false" valignment="CENTER" vgrow="NEVER" />
-      <RowConstraints fillHeight="false" maxHeight="1.7976931348623157E308" valignment="TOP" vgrow="ALWAYS" />
-      <RowConstraints maxHeight="25.0" minHeight="25.0" prefHeight="25.0" valignment="CENTER" vgrow="NEVER" />
+      <RowConstraints fillHeight="false" valignment="TOP" vgrow="NEVER" />
+      <RowConstraints maxHeight="1.7976931348623157E308" valignment="TOP" vgrow="ALWAYS" />
       <RowConstraints fillHeight="false" valignment="CENTER" vgrow="NEVER" />
    </rowConstraints>
    <children>
@@ -37,13 +37,27 @@
          </font>
       </Label>
       <TextField fx:id="awardTitleTextField" maxWidth="-Infinity" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="NEVER" />
-      <PrefixSelectionComboBox fx:id="awardTypeComboBox" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-      <ToggleSwitch fx:id="pullToggleSwitch" contentDisplay="CENTER" text="Pull" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+      <VBox spacing="2.0" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2">
+         <children>
+            <PrefixSelectionComboBox fx:id="awardTypeComboBox" prefHeight="25.0" prefWidth="120.0" />
+            <HBox fx:id="mastersHBox" prefWidth="120.0" spacing="2.0">
+               <children>
+                  <Label maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="78.0" text="Start Age">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="mastersAgeTextField" prefHeight="25.0" prefWidth="40.0" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <ToggleSwitch fx:id="pullToggleSwitch" contentDisplay="CENTER" prefHeight="25.0" prefWidth="152.0" text="Pull From Later" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="CENTER">
          <font>
             <Font size="16.0" />
          </font>
       </ToggleSwitch>
-      <VBox spacing="2.0" GridPane.columnIndex="2" GridPane.rowIndex="2" GridPane.rowSpan="2">
+      <VBox spacing="2.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
          <children>
             <HBox maxWidth="1.7976931348623157E308" spacing="2.0">
                <children>
@@ -59,53 +73,42 @@
             <HBox fillHeight="false" VBox.vgrow="NEVER" />
             <VBox fx:id="depthVBox">
                <children>
-                  <TableView maxHeight="-Infinity" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="153.0">
+                  <TableView fx:id="depthTableView" editable="true" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" prefHeight="130.0" prefWidth="177.0">
                     <columns>
-                      <TableColumn maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" text="Start" />
-                      <TableColumn maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" text="End" />
-                        <TableColumn maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" text="Depth" />
+                      <TableColumn fx:id="depthStartTableColumn" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" text="Start" />
+                      <TableColumn fx:id="depthEndTableColumn" editable="false" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" text="End" />
+                        <TableColumn fx:id="depthTableColumn" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" text="Depth" />
                     </columns>
                   </TableView>
-                  <HBox>
+                  <HBox alignment="TOP_RIGHT" spacing="5.0">
                      <children>
-                        <Button mnemonicParsing="false" text="Add" />
-                        <Button mnemonicParsing="false" text="Delete" />
+                        <Button fx:id="depthAddButton" mnemonicParsing="false" text="Add" />
+                        <Button fx:id="depthDeleteButton" mnemonicParsing="false" text="Delete" />
                      </children>
                   </HBox>
                </children>
             </VBox>
          </children>
       </VBox>
-      <HBox spacing="10.0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="3" GridPane.valignment="CENTER">
-         <children>
-            <Label text="Priority">
-               <font>
-                  <Font size="16.0" />
-               </font>
-            </Label>
-            <Button mnemonicParsing="false" onAction="#upPriority" prefWidth="50.0" text="Up" />
-            <Button mnemonicParsing="false" onAction="#lowerPriority" prefHeight="25.0" prefWidth="50.0" text="Down" />
-         </children>
-      </HBox>
-      <ToggleSwitch fx:id="chipToggleSwitch" contentDisplay="CENTER" prefHeight="25.0" text="Use Chip Time" GridPane.columnIndex="2" GridPane.halignment="RIGHT">
+      <ToggleSwitch fx:id="chipToggleSwitch" contentDisplay="CENTER" prefHeight="25.0" prefWidth="152.0" text="Use Chip Time" GridPane.columnIndex="2" GridPane.halignment="RIGHT">
          <font>
             <Font size="16.0" />
          </font>
       </ToggleSwitch>
-      <GridPane fx:id="customGridPane" hgap="5.0" vgap="5.0" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
+      <GridPane fx:id="customGridPane" hgap="4.0" vgap="2.0" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
         <columnConstraints>
           <ColumnConstraints hgrow="NEVER" />
           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
             <RowConstraints vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <Label text="Timing Location">
+            <Label text="Split/Segment">
                <font>
                   <Font size="16.0" />
                </font>
@@ -128,7 +131,7 @@
                   <Font size="16.0" />
                </font>
             </ToggleSwitch>
-            <HBox GridPane.columnIndex="1" GridPane.rowIndex="3">
+            <HBox alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
                <children>
                   <CheckComboBox prefHeight="25.0" prefWidth="26.0" />
                   <CheckComboBox prefHeight="25.0" prefWidth="120.0" />
@@ -136,15 +139,32 @@
             </HBox>
          </children>
       </GridPane>
-      <Label prefWidth="120.0" text="Type" GridPane.rowIndex="1">
+      <Label alignment="TOP_LEFT" contentDisplay="TOP" prefWidth="120.0" text="Type" GridPane.rowIndex="1" GridPane.valignment="TOP">
          <font>
             <Font size="16.0" />
          </font>
       </Label>
-      <Separator maxWidth="1.7976931348623157E308" minHeight="-Infinity" GridPane.columnSpan="2147483647" GridPane.rowIndex="4">
+      <VBox alignment="BOTTOM_RIGHT" maxWidth="1.7976931348623157E308" spacing="10.0" GridPane.columnSpan="2147483647" GridPane.halignment="RIGHT" GridPane.rowIndex="3" GridPane.valignment="CENTER">
          <GridPane.margin>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </GridPane.margin></Separator>
+            <Insets bottom="5.0" top="5.0" />
+         </GridPane.margin>
+         <children>
+            <HBox spacing="10.0">
+               <children>
+                  <Label text="Priority">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <Button mnemonicParsing="false" onAction="#upPriority" prefWidth="50.0" text="Up" />
+                  <Button mnemonicParsing="false" onAction="#lowerPriority" prefHeight="25.0" prefWidth="50.0" text="Down" />
+                  <Pane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#removeAward" text="Remove Award" />
+               </children>
+            </HBox>
+            <Separator maxWidth="1.7976931348623157E308" minHeight="-Infinity" />
+         </children>
+      </VBox>
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

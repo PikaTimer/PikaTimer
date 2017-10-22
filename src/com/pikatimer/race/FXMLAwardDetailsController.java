@@ -33,6 +33,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -59,7 +60,6 @@ public class FXMLAwardDetailsController {
     
     @FXML ChoiceBox<Integer> agIncrementChoiceBox;
     @FXML TextField agStartTextField;
-    @FXML TextField agMastersStartTextField;
     @FXML ToggleSwitch agCustomToggleSwitch;
     @FXML ToggleSwitch customAGNamesToggleSwitch;
     @FXML GridPane agGridPane;
@@ -149,7 +149,6 @@ public class FXMLAwardDetailsController {
 
         agStartTextField.setText(ag.getAGStart().toString());
         agIncrementChoiceBox.getSelectionModel().select(ag.getAGIncrement());
-        agMastersStartTextField.setText(ag.getMasters().toString());
         
         agCustomToggleSwitch.setSelected(ag.getUseCustomIncrements());
         customAGNamesToggleSwitch.setSelected(ag.getUseCustomNames());
@@ -158,7 +157,6 @@ public class FXMLAwardDetailsController {
         
     }
 
-            
     private void initializeRaceSettings(){
         permitTiesCheckBox.selectedProperty().addListener((ob, oldVal, newVal) -> {
             Race r = activeRace;
@@ -191,12 +189,7 @@ public class FXMLAwardDetailsController {
         
         agIncrementChoiceBox.setItems(FXCollections.observableArrayList(1, 5, 10));
         
-        TextFormatter<String> AGMformatter = new TextFormatter<>( change -> {
-            change.setText(change.getText().replaceAll("[^0-9]", ""));
-            return change; 
-        });
-        agMastersStartTextField.setTooltip(new Tooltip("Sets the starting age for the Masters categories."));  
-        agMastersStartTextField.setTextFormatter(AGMformatter);
+
         
         agStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
             Race r = activeRace; 
@@ -247,38 +240,6 @@ public class FXMLAwardDetailsController {
             raceDAO.updateRace(r);
         });
         
-        agMastersStartTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
-            Race r = activeRace; 
-
-            if (!newPropertyValue) {
-                //System.out.println("agStart out of focus...");
-                
-                if (agMastersStartTextField.getText().isEmpty()) 
-                    agMastersStartTextField.setText(r.getAgeGroups().getMasters().toString());
-                
-                Integer m = Integer.parseUnsignedInt(agMastersStartTextField.getText());
-                
-                // If no change, bail
-                if ( ! m.equals(r.getAgeGroups().getMasters())){
-                    r.getAgeGroups().setMasters(m);
-                    raceDAO.updateRace(r);
-                }
-            }
-        });
-        
-//        @FXML ToggleSwitch blankToZeroToggleSwitch;
-//        @FXML ToggleSwitch agCustomToggleSwitch;
-//        @FXML ToggleSwitch customAGNamesToggleSwitch;
-//        @FXML GridPane agGridPane;
-//        @FXML VBox agCustomVBox;
-//        @FXML TableView<AgeGroupIncrement> customAGTableView;
-//        @FXML TableColumn<AgeGroupIncrement,Integer> startAGTableColumn;
-//        @FXML TableColumn<AgeGroupIncrement,Integer> endAGTableColumn;
-//        @FXML TableColumn<AgeGroupIncrement,String> nameAGTableColumn;
-//        @FXML Button agCustomAdd;
-//        @FXML Button agCustomDelete;
-
-
         agCustomToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean prevVal, Boolean newVal) -> {
              Race r = activeRace; 
              r.getAgeGroups().setUseCustomIncrements(newVal);
@@ -425,5 +386,17 @@ public class FXMLAwardDetailsController {
             }
         });
     }
+    
+    public void addAwardCategory(ActionEvent fxevent){
+        AwardCategory a = new AwardCategory();
+        a.setName("New Award");
+        a.setRaceAward(activeRace.getAwards());
+        a.setType(AwardCategoryType.OVERALL);
+        activeRace.getAwards().addAwardCategory(a);
+        raceDAO.updateAwardCategory(a);
+
+    }
+    
+    
     
 }
