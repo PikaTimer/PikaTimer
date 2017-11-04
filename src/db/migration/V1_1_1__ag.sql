@@ -30,3 +30,5 @@ create table race_age_group_increments (
     increment_start int,
     increment_name varchar
 );
+
+commit;

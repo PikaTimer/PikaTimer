@@ -309,12 +309,18 @@ public class ParticipantDAO {
         s.beginTransaction();
         s.saveOrUpdate(cr);
         s.getTransaction().commit();
+        if (!customAttributeList.contains(cr)) customAttributeList.add(cr);
     }
     public void deleteCustomAttribute(CustomAttribute cr){
-        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
-        s.beginTransaction();
-        s.delete(cr);
-        s.getTransaction().commit();
+        if (customAttributeList.contains(cr)) {
+            customAttributeList.remove(cr);
+        
+            Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+            s.beginTransaction();
+            s.delete(cr);
+            s.getTransaction().commit();
+        }
+        
     }
 } 
 

@@ -25,7 +25,6 @@ import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
-import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
@@ -146,7 +145,8 @@ public class Award implements RaceReportType {
             Map<String,List<AwardWinner>> resultsMap = awardWinnersMap.get(ac);
             List<String> categories = resultsMap.keySet().stream().sorted((k1,k2) -> k1.compareTo(k2)).collect(Collectors.toList());
             categories.forEach(cat -> {
-                awardPrintout.append(StringUtils.center("********" + ac.getName() + " " +  cat +"********",80) + System.lineSeparator());
+                String description = (ac.getName() + " " +  cat).trim();
+                awardPrintout.append(StringUtils.center("********" + description +"********",80) + System.lineSeparator());
                 awardPrintout.append(outputHeader());
                 awardPrintout.append(printWinners(resultsMap.get(cat)));
                 awardPrintout.append(System.lineSeparator());

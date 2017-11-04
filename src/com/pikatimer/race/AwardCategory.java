@@ -64,6 +64,7 @@ import org.hibernate.annotations.GenericGenerator;
 @DynamicUpdate
 @Table(name="race_award_categories")
 public class AwardCategory {
+    private RaceAwards raceAward;
     
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
     private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
@@ -77,11 +78,22 @@ public class AwardCategory {
     private final IntegerProperty mastersAgeProperty = new SimpleIntegerProperty(40);
     private final ObservableList<AwardDepth> customDepthObservableList = FXCollections.observableArrayList(AwardDepth.extractor());
     
-    private RaceAwards raceAward;
-    
     private List<AwardFilter> filters;
     private List<String> splitBy;
+    
     private List<AwardDepth> customDepthList;
+    
+    // Custom Type Attributes
+    private final BooleanProperty customFilteredProperty = new SimpleBooleanProperty(false);
+    private final ObservableList<AwardFilter> filtersObservableList = FXCollections.observableArrayList(AwardFilter.extractor());
+    
+    private final IntegerProperty customTimingPointProperty = new SimpleIntegerProperty(-1);
+    
+    private final BooleanProperty customSubdivideProperty = new SimpleBooleanProperty(false);
+    
+    private final BooleanProperty customSkewProperty = new SimpleBooleanProperty(false);
+    private final IntegerProperty customSkewAttributeProperty = new SimpleIntegerProperty(-1);
+
 
     public AwardCategory() {
         
@@ -265,6 +277,46 @@ public class AwardCategory {
         }
     }
     
+    @Column(name="filter")
+    public Boolean getFiltered(){
+        return customFilteredProperty.getValue();
+    }
+    public void setFiltered(Boolean t) {
+        customFilteredProperty.setValue(t); 
+    }
+    
+    public BooleanProperty filteredProperty(){
+        return customFilteredProperty;
+    }
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+          name="race_award_category_filters",
+          joinColumns=@JoinColumn(name="ac_id")
+    )
+    protected List<AwardFilter> getFilterList(){
+        return filters;
+    }
+    protected void setFilterList(List<AwardFilter> i){
+        filters = i;
+    }
+    
+    public ObservableList<AwardFilter> filtersProperty(){
+        if (filtersObservableList.isEmpty() && filters != null && ! filters.isEmpty() ) {
+            filtersObservableList.addAll(filters);
+        }
+        return filtersObservableList;
+    }
+    
+    public void addFilter(AwardFilter a){
+        filtersObservableList.add(a);
+        filters = filtersObservableList;
+    }
+    public void deleteFilter(AwardFilter a){
+        filtersObservableList.remove(a);
+        filters = filtersObservableList;
+    }
+    
     public Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> process(List<ProcessedResult> pr){
         System.out.println("Processing " + typeProperty.toString() + " " + nameProperty.getValueSafe());
         // What is going on here...
@@ -294,6 +346,8 @@ public class AwardCategory {
                 break;
             default:
                 System.out.println("UNKNOWN TYPE: " + typeProperty.getName());
+                if (filters == null) filters = new ArrayList();
+                if (splitBy == null) splitBy = new ArrayList();
                 break;
         }
             

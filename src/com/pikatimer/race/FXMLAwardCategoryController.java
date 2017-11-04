@@ -16,22 +16,31 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.participant.Participant;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.util.Formatters;
 import com.pikatimer.util.IntegerEditingCell;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.cell.ComboBoxTableCell;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.Pair;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -66,7 +75,21 @@ public class FXMLAwardCategoryController {
     
     AwardCategory awardCategory;
     
+    // Custom Award Stuff
+    @FXML ComboBox<String> timingPointComboBox;
     @FXML GridPane customGridPane;
+    
+    // Filters
+    @FXML ToggleSwitch filterToggleSwitch;
+    @FXML VBox filterVBox;
+    @FXML TableView<AwardFilter> filterTableView;
+    ObservableList<Pair<String,String>> customAttributesList = FXCollections.observableArrayList();
+    ObservableList<String> customAttributesDisplayList = FXCollections.observableArrayList();
+    @FXML TableColumn<AwardFilter,String> filterAttributeTableColumn;
+    @FXML TableColumn<AwardFilter,String> filterTypeTableColumn;
+    @FXML TableColumn<AwardFilter,String> filterReferenceValueTableColumn;
+    @FXML Button filterAddButton;
+    @FXML Button filterDeleteButton;
     
     private final RaceDAO raceDAO = RaceDAO.getInstance();
     
@@ -269,7 +292,60 @@ public class FXMLAwardCategoryController {
             }
         });
         
+        filterVBox.visibleProperty().bind(filterToggleSwitch.selectedProperty());
+        filterVBox.managedProperty().bind(filterToggleSwitch.selectedProperty());
         
+        filterToggleSwitch.setSelected(awardCategory.getFiltered());
+        filterToggleSwitch.selectedProperty().addListener((obs,  prevVal,  newVal) -> {
+             awardCategory.setFiltered(newVal);
+             raceDAO.updateAwardCategory(awardCategory);
+        });
+        
+        filterDeleteButton.setOnAction(action -> {
+            filterDelete();
+        });
+        filterAddButton.setOnAction(action -> {
+            filterAdd();
+        });
+        
+        rebuildAttributeLists();
+        ParticipantDAO.getInstance().getCustomAttributes().addListener((ListChangeListener) listener -> {
+            rebuildAttributeLists();
+        });
+        
+        filterAttributeTableColumn.setCellValueFactory(value -> {
+            String key = value.getValue().attributeProperty().getValue();
+            for(Pair<String,String> k: customAttributesList) {
+                if (k.getKey().equals(key)) return new SimpleStringProperty(k.getValue());
+            };
+            return new SimpleStringProperty(key);
+        });
+        filterAttributeTableColumn.setCellFactory(ComboBoxTableCell.forTableColumn(customAttributesDisplayList));
+        filterAttributeTableColumn.setOnEditCommit(e -> {
+            String value = e.getNewValue();
+            String key = e.getOldValue();
+            for(Pair<String,String> k: customAttributesList) {
+                if (k.getValue().equals(value)) key = k.getKey() ;
+            };
+            e.getRowValue().attributeProperty().setValue(key);
+            raceDAO.updateAwardCategory(awardCategory);
+        });
+        
+        filterTypeTableColumn.setCellValueFactory(value -> value.getValue().comparisonTypeProperty());
+        filterTypeTableColumn.setCellFactory(ComboBoxTableCell.forTableColumn("=",">","<",">=","<=","!="));
+        filterTypeTableColumn.setOnEditCommit(e -> {
+            e.getRowValue().comparisonTypeProperty().setValue(e.getNewValue());
+            raceDAO.updateAwardCategory(awardCategory);
+        });
+        filterReferenceValueTableColumn.setCellValueFactory(value -> value.getValue().referenceValueProperty());
+        filterReferenceValueTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        filterReferenceValueTableColumn.setOnEditCommit(e -> {
+            e.getRowValue().referenceValueProperty().setValue(e.getNewValue());
+            raceDAO.updateAwardCategory(awardCategory);
+        });
+        
+        filterTableView.setItems(awardCategory.filtersProperty());
+        filterTableView.setPlaceholder(new Label("No filters defined yet..."));
     }
     
     
@@ -287,6 +363,16 @@ public class FXMLAwardCategoryController {
         awardCategory.getRaceAward().recalcPriorities();
         awardCategory.getRaceAward().awardCategoriesProperty().forEach(a -> raceDAO.updateAwardCategory(a));
 
+    }
+    
+    public void filterAdd(){
+        awardCategory.addFilter(new AwardFilter("","=",""));
+        raceDAO.updateAwardCategory(awardCategory);
+    }
+    
+    public void filterDelete(){
+        awardCategory.deleteFilter(filterTableView.getSelectionModel().getSelectedItem());
+        raceDAO.updateAwardCategory(awardCategory);
     }
     
     public void removeAward(ActionEvent fxevent){
@@ -320,4 +406,23 @@ public class FXMLAwardCategoryController {
         awardCategory.removeCustomDepth(depthTableView.getSelectionModel().getSelectedItem());
         raceDAO.updateAwardCategory(awardCategory);
     }
+    
+    private void rebuildAttributeLists(){
+        
+        customAttributesList.clear();
+        customAttributesDisplayList.clear();
+        customAttributesList.add(new Pair("AG","Age Group"));
+        customAttributesDisplayList.add("Age Group");
+        Participant.getAvailableAttributes().keySet().stream().sorted().forEach(k -> {
+            customAttributesList.add(new Pair(k,Participant.getAvailableAttributes().get(k)));
+            customAttributesDisplayList.add(Participant.getAvailableAttributes().get(k));
+        });
+        ParticipantDAO.getInstance().getCustomAttributes().forEach(ca -> {
+            customAttributesList.add(new Pair(ca.getID().toString(),ca.getName()));
+            customAttributesDisplayList.add(ca.getName());
+        });
+        
+        
+    }
+    
 }

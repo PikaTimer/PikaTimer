@@ -30,7 +30,14 @@ create table race_award_categories (
     category_depth int,
     masters_age int,
     pull boolean,
-    chip boolean
+    chip boolean,
+    timing_point_type varchar,
+    timing_point_value int,
+    filter boolean,
+    subdivide boolean,
+    skew boolean,
+    skew_type varchar,
+    skew_attribute int
 );
 
 create table race_award_category_depths (
@@ -38,3 +45,17 @@ create table race_award_category_depths (
     start int,
     depth int
 );
+
+create table race_award_category_filters (
+    ac_id int,
+    attribute varchar,
+    comparison_type varchar,
+    reference_value varchar
+);
+
+create table race_award_category_subdivide_list (
+    ac_id int,
+    attribute varchar
+);
+
+commit;

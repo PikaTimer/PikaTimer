@@ -1237,7 +1237,7 @@ public class FXMLParticipantController  {
     
     public void setupCustomAttributes(ActionEvent fxevent){
         // Do something.... 
-        List<CustomAttribute> customAttributes = participantDAO.getCustomAttributes();
+        List<CustomAttribute> customAttributes = new ArrayList(participantDAO.getCustomAttributes());
         List<CustomAttribute> deletedCustomAttributes = new ArrayList();
         
         // Create the base dialog

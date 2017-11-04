@@ -71,7 +71,7 @@
                </children>
             </HBox>
             <HBox fillHeight="false" VBox.vgrow="NEVER" />
-            <VBox fx:id="depthVBox">
+            <VBox fx:id="depthVBox" spacing="2.0">
                <children>
                   <TableView fx:id="depthTableView" editable="true" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" prefHeight="130.0" prefWidth="177.0">
                     <columns>
@@ -79,6 +79,9 @@
                       <TableColumn fx:id="depthEndTableColumn" editable="false" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" text="End" />
                         <TableColumn fx:id="depthTableColumn" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" text="Depth" />
                     </columns>
+                     <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                     </columnResizePolicy>
                   </TableView>
                   <HBox alignment="TOP_RIGHT" spacing="5.0">
                      <children>
@@ -95,14 +98,14 @@
             <Font size="16.0" />
          </font>
       </ToggleSwitch>
-      <GridPane fx:id="customGridPane" hgap="4.0" vgap="2.0" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
+      <GridPane fx:id="customGridPane" hgap="4.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
         <columnConstraints>
           <ColumnConstraints hgrow="NEVER" />
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="10.0" />
         </columnConstraints>
         <rowConstraints>
           <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="10.0" valignment="TOP" vgrow="SOMETIMES" />
           <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
             <RowConstraints vgrow="SOMETIMES" />
@@ -113,13 +116,12 @@
                   <Font size="16.0" />
                </font>
             </Label>
-            <PrefixSelectionComboBox prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="1" />
-            <ToggleSwitch contentDisplay="CENTER" prefWidth="120.0" text="Fiter" GridPane.rowIndex="1">
+            <PrefixSelectionComboBox fx:id="timingPointComboBox" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="1" />
+            <ToggleSwitch fx:id="filterToggleSwitch" contentDisplay="CENTER" prefWidth="120.0" text="Fiter" GridPane.rowIndex="1">
                <font>
                   <Font size="16.0" />
                </font>
             </ToggleSwitch>
-            <Button mnemonicParsing="false" text="Add" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             <ToggleSwitch prefHeight="25.0" prefWidth="120.0" text="Subdivide" GridPane.rowIndex="2">
                <font>
                   <Font size="16.0" />
@@ -137,7 +139,30 @@
                   <CheckComboBox prefHeight="25.0" prefWidth="120.0" />
                </children>
             </HBox>
+            <VBox fx:id="filterVBox" spacing="2.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+               <children>
+                  <TableView fx:id="filterTableView" editable="true" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" prefHeight="130.0" prefWidth="200.0">
+                     <columns>
+                        <TableColumn fx:id="filterAttributeTableColumn" maxWidth="80.0" minWidth="80.0" resizable="false" text="Attribute" />
+                        <TableColumn fx:id="filterTypeTableColumn" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" resizable="false" sortable="false" text="Type" />
+                        <TableColumn fx:id="filterReferenceValueTableColumn" maxWidth="1.7976931348623157E308" minWidth="30.0" prefWidth="75.0" text="Value" />
+                     </columns>
+                     <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                     </columnResizePolicy>
+                  </TableView>
+                  <HBox alignment="TOP_RIGHT" spacing="5.0">
+                     <children>
+                        <Button fx:id="filterAddButton" mnemonicParsing="false" text="Add" />
+                        <Button fx:id="filterDeleteButton" mnemonicParsing="false" text="Delete" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
          </children>
+         <GridPane.margin>
+            <Insets top="2.0" />
+         </GridPane.margin>
       </GridPane>
       <Label alignment="TOP_LEFT" contentDisplay="TOP" prefWidth="120.0" text="Type" GridPane.rowIndex="1" GridPane.valignment="TOP">
          <font>

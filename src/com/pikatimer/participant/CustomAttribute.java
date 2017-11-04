@@ -17,6 +17,7 @@
 package com.pikatimer.participant;
 
 import java.util.List;
+import java.util.Objects;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -94,6 +95,35 @@ public class CustomAttribute {
     }
     public ObservableList<String> allowableValuesProperty(){
         return allowableValuesList;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + Objects.hashCode(this.type);
+        hash = 97 * hash + Objects.hashCode(this.id);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CustomAttribute other = (CustomAttribute) obj;
+        if (this.type != other.type) {
+            return false;
+        }
+        if (!Objects.equals(this.id, other.id)) {
+            return false;
+        }
+        return true;
     }
     
 }
