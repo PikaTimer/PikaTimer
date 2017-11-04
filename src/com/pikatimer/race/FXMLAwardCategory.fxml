@@ -122,12 +122,12 @@
                   <Font size="16.0" />
                </font>
             </ToggleSwitch>
-            <ToggleSwitch prefHeight="25.0" prefWidth="120.0" text="Subdivide" GridPane.rowIndex="2">
+            <ToggleSwitch fx:id="subdivideToggleSwitch" prefHeight="25.0" prefWidth="120.0" text="Subdivide" GridPane.rowIndex="2">
                <font>
                   <Font size="16.0" />
                </font>
             </ToggleSwitch>
-            <CheckComboBox prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <CheckComboBox fx:id="subdivideCheckComboBox" prefHeight="25.0" prefWidth="120.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <ToggleSwitch prefWidth="120.0" text="Skew" GridPane.rowIndex="3">
                <font>
                   <Font size="16.0" />

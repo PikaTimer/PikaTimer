@@ -21,12 +21,15 @@ import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.util.DurationFormatter;
+import static java.lang.Boolean.FALSE;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
@@ -79,7 +82,7 @@ public class AwardCategory {
     private final ObservableList<AwardDepth> customDepthObservableList = FXCollections.observableArrayList(AwardDepth.extractor());
     
     private List<AwardFilter> filters;
-    private List<String> splitBy;
+    private Set<String> splitBy;
     
     private List<AwardDepth> customDepthList;
     
@@ -90,6 +93,7 @@ public class AwardCategory {
     private final IntegerProperty customTimingPointProperty = new SimpleIntegerProperty(-1);
     
     private final BooleanProperty customSubdivideProperty = new SimpleBooleanProperty(false);
+    private final ObservableList<String> subdivideListProperty = FXCollections.observableArrayList();
     
     private final BooleanProperty customSkewProperty = new SimpleBooleanProperty(false);
     private final IntegerProperty customSkewAttributeProperty = new SimpleIntegerProperty(-1);
@@ -317,7 +321,45 @@ public class AwardCategory {
         filters = filtersObservableList;
     }
     
+    @Column(name="subdivide")
+    public Boolean getSubdivided(){
+        return customSubdivideProperty.getValue();
+    }
+    public void setSubdivided(Boolean t) {
+        customSubdivideProperty.setValue(t); 
+    }
+    
+    public BooleanProperty subdivideProperty(){
+        return customSubdivideProperty;
+    }
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+          name="race_award_category_subdivide_list",
+          joinColumns=@JoinColumn(name="ac_id")
+    )
+    @Column(name="attribute")
+    protected Set<String> getSubDivideList(){
+        return splitBy;
+    }
+    protected void setSubDivideList(Set<String> i){
+        splitBy = i;
+    }
+    public ObservableList<String> subDivideProperty(){
+        if (subdivideListProperty.isEmpty() && splitBy != null && ! splitBy.isEmpty() ) {
+            subdivideListProperty.addAll(splitBy);
+        }
+        return subdivideListProperty;
+    }
+    public void updateSubdivideList(){
+        splitBy = new HashSet();
+        splitBy.addAll(subdivideListProperty);
+    }
+    
     public Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> process(List<ProcessedResult> pr){
+        List<AwardFilter> processFilters;
+        List<String> processSplitBy;
+    
         System.out.println("Processing " + typeProperty.toString() + " " + nameProperty.getValueSafe());
         // What is going on here...
         
@@ -332,22 +374,24 @@ public class AwardCategory {
         switch (typeProperty.get()) {
             case OVERALL:
                 // no Filter
-                filters = new ArrayList();
-                splitBy = Arrays.asList("sex");
+                processFilters = new ArrayList();
+                processSplitBy = Arrays.asList("sex");
                 break;
             case MASTERS:
-                filters= new ArrayList();
-                filters.add(new AwardFilter("age",">=",mastersAgeProperty.getValue().toString()));
-                splitBy = Arrays.asList("sex");
+                processFilters= new ArrayList();
+                processFilters.add(new AwardFilter("age",">=",mastersAgeProperty.getValue().toString()));
+                processSplitBy = Arrays.asList("sex");
                 break;
             case AGEGROUP:
-                filters= new ArrayList();
-                splitBy = Arrays.asList("sex","AG");
+                processFilters= new ArrayList();
+                processSplitBy = Arrays.asList("sex","AG");
                 break;
             default:
-                System.out.println("UNKNOWN TYPE: " + typeProperty.getName());
-                if (filters == null) filters = new ArrayList();
-                if (splitBy == null) splitBy = new ArrayList();
+                System.out.println("Custom Award: " + typeProperty.getName());
+                if (filters == null || customFilteredProperty.equals(FALSE)) processFilters = new ArrayList();
+                else processFilters = filters;
+                if (splitBy == null || customSubdivideProperty.equals(FALSE)) processSplitBy = new ArrayList();
+                else {processSplitBy = new ArrayList(); processSplitBy.addAll(splitBy);}
                 break;
         }
             
@@ -364,8 +408,8 @@ public class AwardCategory {
 
         List<ProcessedResult> contendersList = new ArrayList(
             pr.stream().filter(p -> {
-                    for(int i=0; i< filters.size(); i++){
-                        if (filters.get(i).filter(p,race) == false) return false;
+                    for(int i=0; i< processFilters.size(); i++){
+                        if (processFilters.get(i).filter(p,race) == false) return false;
                     }
                     return true;
                 })
@@ -384,8 +428,8 @@ public class AwardCategory {
             String splitCat = "";
             
             // What is their split category string?
-            for(int i=0; i<splitBy.size();i++){
-                String attrib = splitBy.get(i);
+            for(int i=0; i<processSplitBy.size();i++){
+                String attrib = processSplitBy.get(i);
                 if (attrib.startsWith("sex")) {
                     if (r.getSex().startsWith("M")) splitCat += "Male ";
                     else splitCat += "Female ";
@@ -414,8 +458,8 @@ public class AwardCategory {
             if (AwardDepthType.BYREG.equals(depthTypeProperty.get())) part = ParticipantDAO.getInstance().listParticipants();
             else part = ResultsDAO.getInstance().getResults(race.getID()).stream()
                 .filter(p -> {
-                    for(int i=0; i< filters.size(); i++){
-                        if (filters.get(i).filter(ParticipantDAO.getInstance().getParticipantByBib(p.getBib()),race) == false) return false;
+                    for(int i=0; i< processFilters.size(); i++){
+                        if (processFilters.get(i).filter(ParticipantDAO.getInstance().getParticipantByBib(p.getBib()),race) == false) return false;
                     }
                     return true;
                 })
@@ -427,8 +471,8 @@ public class AwardCategory {
             part.forEach(r -> {
                 String splitCat = "";
                 // What is their split category string?
-                for(int i=0; i<splitBy.size();i++){
-                    String attrib = splitBy.get(i);
+                for(int i=0; i<processSplitBy.size();i++){
+                    String attrib = processSplitBy.get(i);
                     if (attrib.startsWith("sex")) {
                         if (r.getSex().startsWith("M")) splitCat += "Male ";
                         else splitCat += "Female ";

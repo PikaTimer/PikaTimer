@@ -41,6 +41,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
+import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -90,6 +91,9 @@ public class FXMLAwardCategoryController {
     @FXML TableColumn<AwardFilter,String> filterReferenceValueTableColumn;
     @FXML Button filterAddButton;
     @FXML Button filterDeleteButton;
+    
+    @FXML ToggleSwitch subdivideToggleSwitch;
+    @FXML CheckComboBox<String> subdivideCheckComboBox;
     
     private final RaceDAO raceDAO = RaceDAO.getInstance();
     
@@ -188,8 +192,6 @@ public class FXMLAwardCategoryController {
             depthVBox.setManaged(true);
             depthTextField.setVisible(false);
             depthTextField.setManaged(false);
-            
-            
         }
         
         depthTableView.setItems(awardCategory.customDepthProperty());
@@ -346,6 +348,40 @@ public class FXMLAwardCategoryController {
         
         filterTableView.setItems(awardCategory.filtersProperty());
         filterTableView.setPlaceholder(new Label("No filters defined yet..."));
+        
+        subdivideToggleSwitch.setSelected(awardCategory.getSubdivided());
+        subdivideToggleSwitch.selectedProperty().addListener((obs,  prevVal,  newVal) -> {
+             awardCategory.setSubdivided(newVal);
+             raceDAO.updateAwardCategory(awardCategory);
+        });
+        
+        subdivideCheckComboBox.getItems().setAll(customAttributesDisplayList);
+        awardCategory.subDivideProperty().forEach(s -> {
+            customAttributesList.stream().filter((k) -> (k.getKey().equals(s))).forEachOrdered((k) -> {
+                subdivideCheckComboBox.getCheckModel().check(k.getValue());
+            });
+        });
+        subdivideCheckComboBox.visibleProperty().bind(subdivideToggleSwitch.selectedProperty());
+        subdivideCheckComboBox.managedProperty().bind(subdivideToggleSwitch.selectedProperty());
+        subdivideCheckComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends String> c)  -> {
+            while (c.next()){
+                if (c.wasAdded()){
+                    c.getAddedSubList().forEach(s -> {
+                        customAttributesList.stream().filter((k) -> (k.getValue().equals(s))).filter((k) -> (!awardCategory.subDivideProperty().contains(k.getKey()))).forEachOrdered((k) -> {
+                            awardCategory.subDivideProperty().add(k.getKey());
+                        });
+                    });
+                } else if (c.wasRemoved()){
+                    c.getRemoved().forEach(s -> {
+                        customAttributesList.stream().filter((k) -> (k.getValue().equals(s))).filter((k) -> (awardCategory.subDivideProperty().contains(k.getKey()))).forEachOrdered((k) -> {
+                            awardCategory.subDivideProperty().remove(k.getKey());
+                        });
+                    });
+                }
+            }
+            awardCategory.updateSubdivideList();
+            raceDAO.updateAwardCategory(awardCategory);
+        });
     }
     
     
@@ -422,7 +458,7 @@ public class FXMLAwardCategoryController {
             customAttributesDisplayList.add(ca.getName());
         });
         
-        
+        subdivideCheckComboBox.getItems().setAll(customAttributesDisplayList);
     }
     
 }
