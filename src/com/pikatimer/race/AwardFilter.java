@@ -98,6 +98,10 @@ public class AwardFilter {
         String value = referenceValueProperty.getValue();
         String comparisonType = comparisonTypeProperty.getValue();
                 
+        
+        // if we are missing data, just return true.
+        if (attribute.isEmpty() || value.isEmpty()) return true; 
+        
         String pvalue = "";
         if (attribute.equals("AG")) {
             pvalue = race.getAgeGroups().ageToAGString(p.getAge());
@@ -114,6 +118,12 @@ public class AwardFilter {
         // attributes (like Sex, Age Group, or City). 
         if (comparisonType.equalsIgnoreCase("=") ) {
             return ac.compare(pvalue, value) == 0;
+        } else if (comparisonType.equalsIgnoreCase("=~") ) {
+            try {
+                return pvalue.matches(value);
+            } catch (Exception e) {
+                // invalid regex, just drop through
+            }
         } else if (comparisonType.equalsIgnoreCase(">") ) {
             return ac.compare(pvalue, value) > 0;
         } else if (comparisonType.equalsIgnoreCase("<") ) {

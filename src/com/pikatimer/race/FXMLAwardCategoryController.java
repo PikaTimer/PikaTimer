@@ -346,7 +346,7 @@ public class FXMLAwardCategoryController {
         });
         
         filterTypeTableColumn.setCellValueFactory(value -> value.getValue().comparisonTypeProperty());
-        filterTypeTableColumn.setCellFactory(ComboBoxTableCell.forTableColumn("=",">","<",">=","<=","!="));
+        filterTypeTableColumn.setCellFactory(ComboBoxTableCell.forTableColumn("=",">","<",">=","<=","!=","=~"));
         filterTypeTableColumn.setOnEditCommit(e -> {
             e.getRowValue().comparisonTypeProperty().setValue(e.getNewValue());
             raceDAO.updateAwardCategory(awardCategory);
