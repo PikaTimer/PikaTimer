@@ -20,8 +20,11 @@ import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.util.Formatters;
 import com.pikatimer.util.IntegerEditingCell;
+import java.util.Objects;
 import javafx.application.Platform;
+import javafx.beans.Observable;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -30,16 +33,19 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.cell.ComboBoxListCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.Callback;
 import javafx.util.Pair;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ToggleSwitch;
@@ -93,7 +99,12 @@ public class FXMLAwardCategoryController {
     @FXML Button filterDeleteButton;
     
     @FXML ToggleSwitch subdivideToggleSwitch;
-    @FXML CheckComboBox<String> subdivideCheckComboBox;
+    @FXML VBox subdivideVBox;
+    @FXML ListView<CustomAttribute> subdivideListView;
+    ObservableList<CustomAttribute> availableCustomAttributesList = FXCollections.observableArrayList(CustomAttribute.extractor());
+    ObservableList<CustomAttribute> subdivideCustomAttributesList = FXCollections.observableArrayList(CustomAttribute.extractor());
+    @FXML Button subdivideAddButton;
+    @FXML Button subdivideDeleteButton;
     
     private final RaceDAO raceDAO = RaceDAO.getInstance();
     
@@ -306,6 +317,7 @@ public class FXMLAwardCategoryController {
         filterDeleteButton.setOnAction(action -> {
             filterDelete();
         });
+        filterDeleteButton.disableProperty().bind(filterTableView.getSelectionModel().selectedItemProperty().isNull());
         filterAddButton.setOnAction(action -> {
             filterAdd();
         });
@@ -355,35 +367,88 @@ public class FXMLAwardCategoryController {
              raceDAO.updateAwardCategory(awardCategory);
         });
         
-        subdivideCheckComboBox.getItems().setAll(customAttributesDisplayList);
+        // build the subdivideCustomAttributesList
+        awardCategory.subDivideProperty().forEach(s -> {});
+        
+        subdivideListView.setItems(subdivideCustomAttributesList);
+        subdivideListView.setCellFactory(ComboBoxListCell.forListView(availableCustomAttributesList));
+        
+        
         awardCategory.subDivideProperty().forEach(s -> {
-            customAttributesList.stream().filter((k) -> (k.getKey().equals(s))).forEachOrdered((k) -> {
-                subdivideCheckComboBox.getCheckModel().check(k.getValue());
+            availableCustomAttributesList.stream().filter((k) -> (k.key.getValue().equals(s))).forEachOrdered((k) -> {
+                subdivideCustomAttributesList.add(k);
             });
         });
-        subdivideCheckComboBox.visibleProperty().bind(subdivideToggleSwitch.selectedProperty());
-        subdivideCheckComboBox.managedProperty().bind(subdivideToggleSwitch.selectedProperty());
-        subdivideCheckComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends String> c)  -> {
-            while (c.next()){
-                if (c.wasAdded()){
-                    c.getAddedSubList().forEach(s -> {
-                        customAttributesList.stream().filter((k) -> (k.getValue().equals(s))).filter((k) -> (!awardCategory.subDivideProperty().contains(k.getKey()))).forEachOrdered((k) -> {
-                            awardCategory.subDivideProperty().add(k.getKey());
-                        });
-                    });
-                } else if (c.wasRemoved()){
-                    c.getRemoved().forEach(s -> {
-                        customAttributesList.stream().filter((k) -> (k.getValue().equals(s))).filter((k) -> (awardCategory.subDivideProperty().contains(k.getKey()))).forEachOrdered((k) -> {
-                            awardCategory.subDivideProperty().remove(k.getKey());
-                        });
-                    });
-                }
-            }
-            awardCategory.updateSubdivideList();
-            raceDAO.updateAwardCategory(awardCategory);
+        subdivideVBox.visibleProperty().bind(subdivideToggleSwitch.selectedProperty());
+        subdivideVBox.managedProperty().bind(subdivideToggleSwitch.selectedProperty());
+        subdivideDeleteButton.setOnAction(action -> {
+            subDelete();
         });
+        subdivideDeleteButton.disableProperty().bind(subdivideListView.getSelectionModel().selectedItemProperty().isNull());
+        subdivideAddButton.setOnAction(action -> {
+            subAdd();
+        });
+        
+        subdivideListView.setOnEditCommit((ListView.EditEvent<CustomAttribute> t) -> {
+            System.out.println("setOnEditCommit " + t.getIndex());
+            
+            if(t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+                CustomAttribute ca = t.getSource().getItems().get(t.getIndex()); 
+                if (t.getNewValue().key.toString().isEmpty()) {
+                    //we never saved this so just remove it
+                    subdivideCustomAttributesList.remove(ca);
+                } else {
+                    // rebuild the backing list
+                    
+                    subdivideCustomAttributesList.remove(ca);
+                    subdivideCustomAttributesList.add(t.getIndex(), t.getNewValue());
+                    awardCategory.subDivideProperty().clear();
+                    awardCategory.updateSubdivideList();
+                    subdivideCustomAttributesList.forEach( cca -> {
+                        if (cca.key.isEmpty().get()) return;
+                        System.out.println("Current splitBy attribute: " + cca.key.getValueSafe());
+                        awardCategory.subDivideProperty().add(cca.key.getValueSafe());
+                    });
+                    awardCategory.updateSubdivideList();
+                    raceDAO.updateAwardCategory(awardCategory);
+                }
+            } else {
+                System.out.println("Timing setOnEditCommit event out of index: " + t.getIndex());
+            }
+        });
+
+//        subdivideListView.setOnEditCancel((ListView.EditEvent<CustomAttribute> t) ->{
+//            System.out.println("setOnEditCancel " + t.getIndex());
+//            System.out.println("setOnEditCommit " + t.getIndex());
+//            if(t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+//                CustomAttribute ca = t.getSource().getItems().get(t.getIndex()); 
+//                if (t.getNewValue().key.toString().isEmpty()) {
+//                    //we never saved this so just remove it
+//                    subdivideCustomAttributesList.remove(ca);
+//                }
+//            } else {
+//                System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+//            }
+//            
+//        });
+        
+        }
+    
+    public void subAdd(){
+        CustomAttribute ca = new CustomAttribute("","Select...");
+        subdivideCustomAttributesList.add(ca);
+        subdivideListView.getSelectionModel().select(subdivideCustomAttributesList.indexOf(ca));
+        subdivideListView.edit(subdivideCustomAttributesList.indexOf(ca));
     }
     
+    public void subDelete(){
+        CustomAttribute ca = subdivideListView.getSelectionModel().getSelectedItem();
+        subdivideCustomAttributesList.remove(ca);
+        if (ca.key.isEmpty().get()) return;
+        awardCategory.subDivideProperty().remove(ca.key.getValue());
+        awardCategory.updateSubdivideList();
+        raceDAO.updateAwardCategory(awardCategory);
+    }
     
     public void upPriority(ActionEvent fxevent){
         if (awardCategory.getPriority()> 0) {
@@ -444,21 +509,76 @@ public class FXMLAwardCategoryController {
     }
     
     private void rebuildAttributeLists(){
+        availableCustomAttributesList.clear();
+        availableCustomAttributesList.add(new CustomAttribute("AG","Age Group"));
         
         customAttributesList.clear();
         customAttributesDisplayList.clear();
         customAttributesList.add(new Pair("AG","Age Group"));
         customAttributesDisplayList.add("Age Group");
+        
         Participant.getAvailableAttributes().keySet().stream().sorted().forEach(k -> {
             customAttributesList.add(new Pair(k,Participant.getAvailableAttributes().get(k)));
             customAttributesDisplayList.add(Participant.getAvailableAttributes().get(k));
+            availableCustomAttributesList.add(new CustomAttribute(k,Participant.getAvailableAttributes().get(k)));
         });
         ParticipantDAO.getInstance().getCustomAttributes().forEach(ca -> {
             customAttributesList.add(new Pair(ca.getID().toString(),ca.getName()));
+            availableCustomAttributesList.add(new CustomAttribute(ca.getID().toString(),ca.nameProperty()));
             customAttributesDisplayList.add(ca.getName());
         });
+    }
+
+    private static class CustomAttribute {
+        StringProperty name = new SimpleStringProperty("");
+        StringProperty key = new SimpleStringProperty("");
         
-        subdivideCheckComboBox.getItems().setAll(customAttributesDisplayList);
+        public CustomAttribute() {
+        }
+        public CustomAttribute(String k, String v){
+            name.setValue(v);
+            key.setValue(k);
+        }
+        public CustomAttribute(String k, StringProperty v){
+            name = v;
+            key.setValue(k);
+        }
+        
+        @Override
+        public String toString(){
+            return name.getValueSafe();
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 59 * hash + Objects.hashCode(this.key);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final CustomAttribute other = (CustomAttribute) obj;
+            if (!Objects.equals(this.key, other.key)) {
+                return false;
+            }
+            return true;
+        }
+        
+        
+        public static Callback<CustomAttribute, Observable[]> extractor() {
+        return (CustomAttribute ca) -> new Observable[]{ca.name};
+    }
+        
     }
     
 }

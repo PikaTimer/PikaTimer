@@ -354,6 +354,7 @@ public class AwardCategory {
     public void updateSubdivideList(){
         splitBy = new HashSet();
         splitBy.addAll(subdivideListProperty);
+        splitBy.forEach(s -> {System.out.println("AwardCategory subdivide category: " + s);});
     }
     
     public Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> process(List<ProcessedResult> pr){
