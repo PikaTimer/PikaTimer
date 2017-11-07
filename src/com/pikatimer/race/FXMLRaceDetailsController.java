@@ -946,8 +946,8 @@ public class FXMLRaceDetailsController {
         s.setSegmentName("New Segment");
         s.setStartSplit(selectedRace.getSplits().get(0));
         s.setEndSplit(selectedRace.getSplits().get(1));
-        selectedRace.addRaceSegment(s);
         raceDAO.updateSegment(s);
+        selectedRace.addRaceSegment(s);
     }
     
     public void deleteSegment(ActionEvent fxevent){

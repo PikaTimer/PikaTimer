@@ -23,6 +23,8 @@ import com.pikatimer.util.IntegerEditingCell;
 import java.util.Objects;
 import javafx.application.Platform;
 import javafx.beans.Observable;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -83,8 +85,10 @@ public class FXMLAwardCategoryController {
     AwardCategory awardCategory;
     
     // Custom Award Stuff
-    @FXML ComboBox<String> timingPointComboBox;
     @FXML GridPane customGridPane;
+    
+    // Timing location 
+    @FXML ComboBox<AwardTimingPoint> timingPointComboBox;
     
     // Filters
     @FXML ToggleSwitch filterToggleSwitch;
@@ -98,6 +102,7 @@ public class FXMLAwardCategoryController {
     @FXML Button filterAddButton;
     @FXML Button filterDeleteButton;
     
+    // Groupings
     @FXML ToggleSwitch subdivideToggleSwitch;
     @FXML VBox subdivideVBox;
     @FXML ListView<CustomAttribute> subdivideListView;
@@ -105,6 +110,8 @@ public class FXMLAwardCategoryController {
     ObservableList<CustomAttribute> subdivideCustomAttributesList = FXCollections.observableArrayList(CustomAttribute.extractor());
     @FXML Button subdivideAddButton;
     @FXML Button subdivideDeleteButton;
+    
+    ObservableList<AwardTimingPoint> availableTimingPointsList = FXCollections.observableArrayList(AwardTimingPoint.extractor());
     
     private final RaceDAO raceDAO = RaceDAO.getInstance();
     
@@ -417,28 +424,33 @@ public class FXMLAwardCategoryController {
             }
         });
 
-//        subdivideListView.setOnEditCancel((ListView.EditEvent<CustomAttribute> t) ->{
-//            System.out.println("setOnEditCancel " + t.getIndex());
-//            System.out.println("setOnEditCommit " + t.getIndex());
-//            if(t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
-//                CustomAttribute ca = t.getSource().getItems().get(t.getIndex()); 
-//                if (t.getNewValue().key.toString().isEmpty()) {
-//                    //we never saved this so just remove it
-//                    subdivideCustomAttributesList.remove(ca);
-//                }
-//            } else {
-//                System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
-//            }
-//            
-//        });
+        timingPointComboBox.setItems(availableTimingPointsList);
         
-        }
+        rebuildTimingPointList();
+        
+        
+        // rebuild the list when we add or remove splits or segments
+        awardCategory.getRaceAward().getRace().splitsProperty().addListener((ListChangeListener) listener -> {rebuildTimingPointList();});
+        awardCategory.getRaceAward().getRace().unsortedSegmentsProperty().addListener((ListChangeListener) listener -> {
+            System.out.println("awardCategory: segments changed...");
+            rebuildTimingPointList();
+        });
+        
+        timingPointComboBox.getSelectionModel().selectedItemProperty().addListener((obs,  prevVal,  newVal) -> {
+            if (newVal != null && !newVal.equals(prevVal)) {
+                awardCategory.setTimingPointID(newVal.id.get());
+                awardCategory.setTimingPointType(newVal.type.get());
+                raceDAO.updateAwardCategory(awardCategory);
+            }
+        });
+        
+    }
     
     public void subAdd(){
         CustomAttribute ca = new CustomAttribute("","Select...");
         subdivideCustomAttributesList.add(ca);
-        subdivideListView.getSelectionModel().select(subdivideCustomAttributesList.indexOf(ca));
-        subdivideListView.edit(subdivideCustomAttributesList.indexOf(ca));
+        //subdivideListView.getSelectionModel().select(subdivideCustomAttributesList.indexOf(ca));
+        //subdivideListView.edit(subdivideCustomAttributesList.indexOf(ca));
     }
     
     public void subDelete(){
@@ -508,6 +520,34 @@ public class FXMLAwardCategoryController {
         raceDAO.updateAwardCategory(awardCategory);
     }
     
+    private void rebuildTimingPointList(){
+        availableTimingPointsList.clear();
+        
+        // Finish line
+        AwardTimingPoint finish = new AwardTimingPoint("Finish","FINISH",0);
+        availableTimingPointsList.setAll(finish);
+        Race r = awardCategory.getRaceAward().getRace();
+        // Splits
+        r.getSplits().forEach(s -> {
+            System.out.println("AwardCategoryController: rebuildTimingPointList: split " + s.getSplitName() + " -> " + s.getPosition());
+            if (s.getPosition() == 1 ) return; // Skip the start
+            if (s.getPosition() == r.getSplits().size()) return;  // Skip the finish
+            availableTimingPointsList.add(new AwardTimingPoint(s.splitNameProperty(),"SPLIT",s.getID()));
+        });
+        // Segments
+        r.getSegments().forEach(s ->{
+            System.out.println("AwardCategoryController: rebuildTimingPointList: Segment " + s.getSegmentName()+ " -> " + s.getID());
+            availableTimingPointsList.add(new AwardTimingPoint(s.segmentNameProperty(),"SEGMENT",s.getID()));
+        });
+        
+        AwardTimingPoint tmpTp = new AwardTimingPoint("",awardCategory.getTimingPointType(),awardCategory.getTimingPointID());
+        availableTimingPointsList.forEach(tp -> {
+            if (tp.equals(tmpTp)) timingPointComboBox.getSelectionModel().select(tp);
+        });
+    }
+    
+    
+    
     private void rebuildAttributeLists(){
         availableCustomAttributesList.clear();
         availableCustomAttributesList.add(new CustomAttribute("AG","Age Group"));
@@ -529,6 +569,66 @@ public class FXMLAwardCategoryController {
         });
     }
 
+    private static class AwardTimingPoint{
+        StringProperty name = new SimpleStringProperty("");
+        StringProperty type = new SimpleStringProperty("FINISH");
+        IntegerProperty id = new SimpleIntegerProperty(0);
+        
+        public AwardTimingPoint() {
+            
+        }
+        public AwardTimingPoint(String n, String t, Integer i){
+            name.setValue(n);
+            type.setValue(t);
+            id.setValue(i);
+        }
+    
+        public AwardTimingPoint(StringProperty n, String t, Integer i){
+            name = n;
+            type.setValue(t);
+            id.setValue(i);
+        }
+        
+        @Override
+        public String toString(){
+            return name.getValueSafe();
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 73 * hash + Objects.hashCode(this.type.get());
+            hash = 73 * hash + Objects.hashCode(this.id.get());
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final AwardTimingPoint other = (AwardTimingPoint) obj;
+            if (!Objects.equals(this.type.get(), other.type.get())) {
+                return false;
+            }
+            if (!Objects.equals(this.id.get(), other.id.get())) {
+                return false;
+            }
+            return true;
+        }
+        
+        public static Callback<AwardTimingPoint, Observable[]> extractor() {
+            return (AwardTimingPoint ca) -> new Observable[]{ca.name};
+        }
+    
+    }
+    
     private static class CustomAttribute {
         StringProperty name = new SimpleStringProperty("");
         StringProperty key = new SimpleStringProperty("");
@@ -576,8 +676,8 @@ public class FXMLAwardCategoryController {
         
         
         public static Callback<CustomAttribute, Observable[]> extractor() {
-        return (CustomAttribute ca) -> new Observable[]{ca.name};
-    }
+            return (CustomAttribute ca) -> new Observable[]{ca.name};
+        }
         
     }
     

@@ -360,6 +360,9 @@ public class Race {
     public ObservableList<Segment> raceSegmentsProperty() {
         return raceSegments.sorted((s1, s2)-> s1.compareTo(s2)); 
     }
+    public ObservableList<Segment> unsortedSegmentsProperty() {
+        return raceSegments; 
+    }
     public void addRaceSegment(Segment s) {
         s.setRace(this);
         raceSegments.add(s);

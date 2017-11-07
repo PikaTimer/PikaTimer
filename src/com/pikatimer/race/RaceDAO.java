@@ -78,11 +78,11 @@ public class RaceDAO {
     
     public void addSplit (Split w) {
         Race r = w.getRace();
-        r.addSplit(w);
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.save(w);
         s.getTransaction().commit();
+        r.addSplit(w);
         //System.out.println("Adding Split id: " + w.getID() + "to" + w.getRace().getRaceName());
         updateSplitOrder(r);
         splitMap.put(w.getID(), w);

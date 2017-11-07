@@ -90,7 +90,8 @@ public class AwardCategory {
     private final BooleanProperty customFilteredProperty = new SimpleBooleanProperty(false);
     private final ObservableList<AwardFilter> filtersObservableList = FXCollections.observableArrayList(AwardFilter.extractor());
     
-    private final IntegerProperty customTimingPointProperty = new SimpleIntegerProperty(-1);
+    private final IntegerProperty timingPointIDProperty = new SimpleIntegerProperty(0);
+    private final StringProperty timingPointTypeProperty = new SimpleStringProperty("FINISH");
     
     private final BooleanProperty customSubdivideProperty = new SimpleBooleanProperty(false);
     private final ObservableList<String> subdivideListProperty = FXCollections.observableArrayList();
@@ -201,6 +202,31 @@ public class AwardCategory {
         return chipProperty;
     }
     
+    //timing_point_type varchar,
+    @Column(name="timing_point_type")
+    public String getTimingPointType() {
+        //System.out.println("AgeGroups.getAGIncrement() returning " + agIncrement);
+        return timingPointTypeProperty.getValueSafe(); 
+    }
+    public void setTimingPointType(String i) {
+        timingPointTypeProperty.setValue(i);
+    }
+    public StringProperty timingPointTypeProperty() {
+        return timingPointTypeProperty;
+    }
+    //timing_point_value int,
+    @Column(name="timing_point_value")
+    public Integer getTimingPointID() {
+        //System.out.println("AgeGroups.getAGIncrement() returning " + agIncrement);
+        return timingPointIDProperty.getValue();
+    }
+    public void setTimingPointID(Integer i) {
+        timingPointIDProperty.setValue(i);
+    }
+    public IntegerProperty timingPointIDProperty() {
+        return timingPointIDProperty;
+    }
+            
     @Enumerated(EnumType.STRING)
     @Column(name="depth_type")
     public AwardDepthType getDepthType(){
@@ -360,6 +386,9 @@ public class AwardCategory {
     public Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> process(List<ProcessedResult> pr){
         List<AwardFilter> processFilters;
         List<String> processSplitBy;
+        IntegerProperty timeID = new SimpleIntegerProperty(0);
+        Race race = raceAward.getRace();
+        
     
         System.out.println("Processing " + typeProperty.toString() + " " + nameProperty.getValueSafe());
         // What is going on here...
@@ -377,15 +406,18 @@ public class AwardCategory {
                 // no Filter
                 processFilters = new ArrayList();
                 processSplitBy = Arrays.asList("sex");
+                timingPointTypeProperty.setValue("FINISH");
                 break;
             case MASTERS:
                 processFilters= new ArrayList();
                 processFilters.add(new AwardFilter("age",">=",mastersAgeProperty.getValue().toString()));
                 processSplitBy = Arrays.asList("sex");
+                timingPointTypeProperty.setValue("FINISH");
                 break;
             case AGEGROUP:
                 processFilters= new ArrayList();
                 processSplitBy = Arrays.asList("sex","AG");
+                timingPointTypeProperty.setValue("FINISH");
                 break;
             default:
                 System.out.println("Custom Award: " + typeProperty.getName());
@@ -393,6 +425,15 @@ public class AwardCategory {
                 else processFilters = filters;
                 if (splitBy == null || customSubdivideProperty.equals(FALSE)) processSplitBy = new ArrayList();
                 else {processSplitBy = new ArrayList(); processSplitBy.addAll(splitBy);}
+                if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
+                    race.getSplits().forEach(s -> {
+                        if (s.getID().equals(timingPointIDProperty.get())) timeID.setValue(s.getPosition());
+                    });
+                } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
+                    timeID.setValue(timingPointIDProperty.get());
+                } 
+                
+                
                 break;
         }
             
@@ -401,7 +442,7 @@ public class AwardCategory {
         // all DNF's, DQ's, and folks with no finish times. 
         // Then filter by whatever the overall filter is (if any);
         // The result our own copy to screw with
-        Race race = raceAward.getRace();
+        
         Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
@@ -412,15 +453,27 @@ public class AwardCategory {
                     for(int i=0; i< processFilters.size(); i++){
                         if (processFilters.get(i).filter(p,race) == false) return false;
                     }
+                    if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
+                        if (p.getSplit(timeID.get())== null) return false;
+                    } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
+                        if (p.getSegmentTime(timeID.get())== null) return false;
+                    } 
                     return true;
                 })
             .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
             .collect(Collectors.toList())
         );
+        
         // Step 2: sort by award time
         contendersList.sort((p1,p2) -> {
-            if (chipProperty.get()) return p1.getChipFinish().compareTo(p2.getChipFinish());
-            else return p1.getGunFinish().compareTo(p2.getGunFinish());
+            if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
+                return p1.getSplit(timeID.get()).compareTo(p2.getSplit(timeID.get()));
+            } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
+                return p1.getSegmentTime(timeID.get()).compareTo(p2.getSegmentTime(timeID.get()));
+            } else {
+                if (chipProperty.get()) return p1.getChipFinish().compareTo(p2.getChipFinish());
+                else return p1.getGunFinish().compareTo(p2.getGunFinish());
+            }
         });
         
         // Step 3: Split
@@ -528,8 +581,13 @@ public class AwardCategory {
                 }
                 AwardWinner a = new AwardWinner();
                 
-                if (chipProperty.get()) a.awardTime = contendersMap.get(cat).get(i).getChipFinish();
+                if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
+                    a.awardTime = contendersMap.get(cat).get(i).getSplit(timeID.get());
+                } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
+                    a.awardTime = contendersMap.get(cat).get(i).getSegmentTime(timeID.get());
+                } else if (chipProperty.get()) a.awardTime = contendersMap.get(cat).get(i).getChipFinish();
                 else a.awardTime = contendersMap.get(cat).get(i).getGunFinish();
+                
                 
                 currentTime = DurationFormatter.durationToString(a.awardTime, dispFormat, roundMode);
             
@@ -555,8 +613,13 @@ public class AwardCategory {
                     if (chipProperty.get()) nextTime = DurationFormatter.durationToString(contendersMap.get(cat).get(i+1).getChipFinish(), dispFormat, roundMode);
                     else nextTime = DurationFormatter.durationToString(contendersMap.get(cat).get(i+1).getGunFinish(), dispFormat, roundMode);
                     if (currentTime.equals(nextTime)){
-                        if (chipProperty.get()) a.awardTime = contendersMap.get(cat).get(i+1).getChipFinish();
+                        if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
+                            a.awardTime = contendersMap.get(cat).get(i+1).getSplit(timeID.get());
+                        } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
+                            a.awardTime = contendersMap.get(cat).get(i+1).getSegmentTime(timeID.get());
+                        } else if (chipProperty.get()) a.awardTime = contendersMap.get(cat).get(i+1).getChipFinish();
                         else a.awardTime = contendersMap.get(cat).get(i+1).getGunFinish();
+                        
                         prevAW.tie = true;
                         a = new AwardWinner();
                         a.tie = true;
