@@ -18,10 +18,12 @@ package com.pikatimer.participant;
 
 import java.util.List;
 import java.util.Objects;
+import javafx.beans.Observable;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.util.Callback;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -97,6 +99,10 @@ public class CustomAttribute {
         return allowableValuesList;
     }
 
+    public static Callback<CustomAttribute, Observable[]> extractor() {
+        return (CustomAttribute ac) -> new Observable[]{ac.name};
+    }
+    
     @Override
     public int hashCode() {
         int hash = 7;

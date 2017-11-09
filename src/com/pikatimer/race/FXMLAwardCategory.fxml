@@ -15,7 +15,6 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import org.controlsfx.control.CheckComboBox?>
 <?import org.controlsfx.control.PrefixSelectionComboBox?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
@@ -139,15 +138,15 @@
                   </HBox>
                </children>
             </VBox>
-            <ToggleSwitch prefWidth="120.0" text="Skew" GridPane.rowIndex="3">
+            <ToggleSwitch fx:id="skewToggleSwitch" prefWidth="120.0" text="Skew" GridPane.rowIndex="3">
                <font>
                   <Font size="16.0" />
                </font>
             </ToggleSwitch>
-            <HBox alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
+            <HBox fx:id="skewControlHBox" alignment="CENTER_LEFT" spacing="2.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
                <children>
-                  <CheckComboBox prefHeight="25.0" prefWidth="26.0" />
-                  <CheckComboBox prefHeight="25.0" prefWidth="120.0" />
+                  <PrefixSelectionComboBox fx:id="skewOpComboBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="55.0" />
+                  <PrefixSelectionComboBox fx:id="skewAttributeComboBox" prefWidth="120.0" />
                </children>
             </HBox>
             <VBox fx:id="filterVBox" spacing="2.0" GridPane.columnIndex="1" GridPane.rowIndex="1">

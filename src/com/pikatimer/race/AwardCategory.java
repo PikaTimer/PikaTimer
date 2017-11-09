@@ -21,6 +21,7 @@ import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.DurationParser;
 import static java.lang.Boolean.FALSE;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -96,8 +97,9 @@ public class AwardCategory {
     private final BooleanProperty customSubdivideProperty = new SimpleBooleanProperty(false);
     private final ObservableList<String> subdivideListProperty = FXCollections.observableArrayList();
     
-    private final BooleanProperty customSkewProperty = new SimpleBooleanProperty(false);
-    private final IntegerProperty customSkewAttributeProperty = new SimpleIntegerProperty(-1);
+    private final BooleanProperty skewedProperty = new SimpleBooleanProperty(false);
+    private final StringProperty skewOpProperty = new SimpleStringProperty("ADD");
+    private final IntegerProperty skewAttributeProperty = new SimpleIntegerProperty(-1);
 
 
     public AwardCategory() {
@@ -383,6 +385,41 @@ public class AwardCategory {
         splitBy.forEach(s -> {System.out.println("AwardCategory subdivide category: " + s);});
     }
     
+    @Column(name="skew")
+    public Boolean getSkewed(){
+        return skewedProperty.getValue();
+    }
+    public void setSkewed(Boolean t) {
+        skewedProperty.setValue(t); 
+    }
+    
+    public BooleanProperty skewedProperty(){
+        return skewedProperty;
+    }
+    
+    @Column(name="skew_type")
+    public String getSkewType() {
+        //System.out.println("AgeGroups.getAGIncrement() returning " + agIncrement);
+        return skewOpProperty.getValueSafe(); 
+    }
+    public void setSkewType(String i) {
+        skewOpProperty.setValue(i);
+    }
+    public StringProperty skewTypeProperty() {
+        return skewOpProperty;
+    }        
+            
+    @Column(name="skew_attribute")
+    public Integer getSkewAttribute() {
+        return skewAttributeProperty.getValue(); 
+    }
+    public void setSkewAttribute(Integer id) {
+        skewAttributeProperty.setValue(id);
+    }
+    public IntegerProperty skewAttributeProperty() {
+        return skewAttributeProperty; 
+    }
+    
     public Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> process(List<ProcessedResult> pr){
         List<AwardFilter> processFilters;
         List<String> processSplitBy;
@@ -466,14 +503,35 @@ public class AwardCategory {
         
         // Step 2: sort by award time
         contendersList.sort((p1,p2) -> {
-            if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
-                return p1.getSplit(timeID.get()).compareTo(p2.getSplit(timeID.get()));
-            } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
-                return p1.getSegmentTime(timeID.get()).compareTo(p2.getSegmentTime(timeID.get()));
-            } else {
-                if (chipProperty.get()) return p1.getChipFinish().compareTo(p2.getChipFinish());
-                else return p1.getGunFinish().compareTo(p2.getGunFinish());
+            Duration p1Time = Duration.ZERO;
+            Duration p2Time = Duration.ZERO;
+            if(skewedProperty.get()) {
+                if(DurationParser.parsable(p1.getParticipant().getCustomAttribute(skewAttributeProperty.get()).get()))
+                    p1Time = DurationParser.parse(p1.getParticipant().getCustomAttribute(skewAttributeProperty.get()).get());
+                if(DurationParser.parsable(p2.getParticipant().getCustomAttribute(skewAttributeProperty.get()).get()))
+                    p2Time = DurationParser.parse(p2.getParticipant().getCustomAttribute(skewAttributeProperty.get()).get());
+                if (skewOpProperty.get().equals("-")) {
+                    p1Time = p1Time.negated();
+                    p2Time = p2Time.negated();
+                }
             }
+            if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
+                p1Time = p1Time.plus(p1.getSplit(timeID.get()));
+                p2Time = p2Time.plus(p2.getSplit(timeID.get()));
+            } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
+                p1Time = p1Time.plus(p1.getSegmentTime(timeID.get()));
+                p2Time = p2Time.plus(p2.getSegmentTime(timeID.get()));
+            } else {
+                if (chipProperty.get()) {
+                    p1Time = p1Time.plus(p1.getChipFinish());
+                    p2Time = p2Time.plus(p2.getChipFinish());
+                } else {
+                    p1Time = p1Time.plus(p1.getGunFinish());
+                    p2Time = p2Time.plus(p2.getGunFinish());
+                }
+            }
+            
+            return p1Time.compareTo(p2Time);
         });
         
         // Step 3: Split
@@ -581,12 +639,21 @@ public class AwardCategory {
                 }
                 AwardWinner a = new AwardWinner();
                 
+                a.awardTime = Duration.ZERO;
+                if(skewedProperty.get()) {
+                    if(DurationParser.parsable(contendersMap.get(cat).get(i).getParticipant().getCustomAttribute(skewAttributeProperty.get()).get()))
+                        a.awardTime = DurationParser.parse(contendersMap.get(cat).get(i).getParticipant().getCustomAttribute(skewAttributeProperty.get()).get());
+                    if (skewOpProperty.get().equals("-")) {
+                        a.awardTime = a.awardTime.negated();
+                    }
+                }
+                
                 if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
-                    a.awardTime = contendersMap.get(cat).get(i).getSplit(timeID.get());
+                    a.awardTime = a.awardTime.plus(contendersMap.get(cat).get(i).getSplit(timeID.get()));
                 } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
-                    a.awardTime = contendersMap.get(cat).get(i).getSegmentTime(timeID.get());
-                } else if (chipProperty.get()) a.awardTime = contendersMap.get(cat).get(i).getChipFinish();
-                else a.awardTime = contendersMap.get(cat).get(i).getGunFinish();
+                    a.awardTime = a.awardTime.plus(contendersMap.get(cat).get(i).getSegmentTime(timeID.get()));
+                } else if (chipProperty.get()) a.awardTime = a.awardTime.plus(contendersMap.get(cat).get(i).getChipFinish());
+                else a.awardTime = a.awardTime.plus(contendersMap.get(cat).get(i).getGunFinish());
                 
                 
                 currentTime = DurationFormatter.durationToString(a.awardTime, dispFormat, roundMode);

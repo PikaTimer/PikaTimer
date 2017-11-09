@@ -16,13 +16,17 @@
  */
 package com.pikatimer.race;
 
+import static com.pikatimer.participant.CustomAttributeType.TIME;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.util.Formatters;
 import com.pikatimer.util.IntegerEditingCell;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import javafx.application.Platform;
 import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -49,7 +53,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.Pair;
-import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -110,6 +113,14 @@ public class FXMLAwardCategoryController {
     ObservableList<CustomAttribute> subdivideCustomAttributesList = FXCollections.observableArrayList(CustomAttribute.extractor());
     @FXML Button subdivideAddButton;
     @FXML Button subdivideDeleteButton;
+    
+    @FXML ToggleSwitch skewToggleSwitch;
+    @FXML HBox skewControlHBox;
+    @FXML ComboBox<String> skewOpComboBox;
+    @FXML ComboBox<String> skewAttributeComboBox;
+    ObservableList<String> skewableAttributes = FXCollections.observableArrayList();
+    Map<String,Integer> skewableAttributesMap = new HashMap();
+    
     
     ObservableList<AwardTimingPoint> availableTimingPointsList = FXCollections.observableArrayList(AwardTimingPoint.extractor());
     
@@ -331,6 +342,7 @@ public class FXMLAwardCategoryController {
         
         rebuildAttributeLists();
         ParticipantDAO.getInstance().getCustomAttributes().addListener((ListChangeListener) listener -> {
+            System.out.println("Custom Attributes changed...");
             rebuildAttributeLists();
         });
         
@@ -444,6 +456,35 @@ public class FXMLAwardCategoryController {
             }
         });
         
+        
+        skewToggleSwitch.setSelected(awardCategory.getSkewed());
+        skewToggleSwitch.selectedProperty().addListener((obs,  prevVal,  newVal) -> {
+             awardCategory.setSkewed(newVal);
+             raceDAO.updateAwardCategory(awardCategory);
+        });
+        
+        skewOpComboBox.setItems(FXCollections.observableArrayList("+","-"));
+        skewOpComboBox.getSelectionModel().select(awardCategory.getSkewType());
+        skewOpComboBox.getSelectionModel().selectedItemProperty().addListener((obs,  prevVal,  newVal) -> {
+            if (newVal != null && !newVal.equals(prevVal)) {
+                awardCategory.setSkewType(newVal);
+                raceDAO.updateAwardCategory(awardCategory);
+            }
+        });
+        skewAttributeComboBox.setItems(skewableAttributes);
+        skewableAttributesMap.keySet().forEach(key -> {
+            if (skewableAttributesMap.get(key).equals(awardCategory.getSkewAttribute())) skewAttributeComboBox.getSelectionModel().select(key);
+        });
+        skewAttributeComboBox.getSelectionModel().selectedItemProperty().addListener((obs,  prevVal,  newVal) -> {
+            if (newVal != null && !newVal.equals(prevVal)) {
+                awardCategory.setSkewAttribute(skewableAttributesMap.get(newVal));
+                raceDAO.updateAwardCategory(awardCategory);
+            }
+        });
+        skewToggleSwitch.visibleProperty().bind(Bindings.size(skewableAttributes).greaterThan(0));
+        skewToggleSwitch.managedProperty().bind(Bindings.size(skewableAttributes).greaterThan(0));
+        skewControlHBox.visibleProperty().bind(skewToggleSwitch.selectedProperty());
+        skewControlHBox.managedProperty().bind(skewToggleSwitch.selectedProperty());
     }
     
     public void subAdd(){
@@ -546,8 +587,6 @@ public class FXMLAwardCategoryController {
         });
     }
     
-    
-    
     private void rebuildAttributeLists(){
         availableCustomAttributesList.clear();
         availableCustomAttributesList.add(new CustomAttribute("AG","Age Group"));
@@ -556,6 +595,9 @@ public class FXMLAwardCategoryController {
         customAttributesDisplayList.clear();
         customAttributesList.add(new Pair("AG","Age Group"));
         customAttributesDisplayList.add("Age Group");
+        
+        skewableAttributes.clear();
+        skewableAttributesMap.clear();
         
         Participant.getAvailableAttributes().keySet().stream().sorted().forEach(k -> {
             customAttributesList.add(new Pair(k,Participant.getAvailableAttributes().get(k)));
@@ -566,6 +608,14 @@ public class FXMLAwardCategoryController {
             customAttributesList.add(new Pair(ca.getID().toString(),ca.getName()));
             availableCustomAttributesList.add(new CustomAttribute(ca.getID().toString(),ca.nameProperty()));
             customAttributesDisplayList.add(ca.getName());
+            if (ca.getAttributeType().equals(TIME)) {
+                skewableAttributes.add(ca.getName());
+                skewableAttributesMap.put(ca.getName(), ca.getID());
+            };
+        });
+        
+        skewableAttributesMap.keySet().forEach(key -> {
+            if (skewableAttributesMap.get(key).equals(awardCategory.getSkewAttribute())) skewAttributeComboBox.getSelectionModel().select(key);
         });
     }
 
