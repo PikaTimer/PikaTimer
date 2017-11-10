@@ -302,13 +302,13 @@ public class Race {
         return awards;
     }
     public void setAwards(RaceAwards a) {
+        System.out.println("Race::setAwards called.... ");
         if (awards == null) awards = a;
-        else for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-                System.out.println(ste);
-            }
+        
+        if (awards != null && awards.equals(a)) System.out.println("Race::setAwards called to set the awards to an equal awards object... ");
         // make sure awards is linked back to us
         if (awards != null && awards.getRace() != this) awards.setRace(this);
-        System.out.println("Race::setAwards called.... ");
+        
     }
     
     @OneToOne(cascade=CascadeType.ALL,fetch = FetchType.EAGER)  
