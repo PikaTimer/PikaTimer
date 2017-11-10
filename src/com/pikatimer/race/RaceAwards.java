@@ -104,9 +104,9 @@ public class RaceAwards {
         return awardCategories;
     }
     public void setAwardCategories(List<AwardCategory> a){
+        System.out.println("RaceAwards::setAwardCategories called ");
         awardCategories = a;
-        awardCategoriesList.clear();
-        if (a != null) {
+        if (awardCategoriesList.isEmpty() && a != null) {
             awardCategoriesList.addAll(a);
         }
     }
@@ -170,7 +170,7 @@ public class RaceAwards {
         o.setType(AwardCategoryType.OVERALL);
         o.setPriority(0);
         o.setRaceAward(this);
-        awardCategoriesList.add(o);
+        addAwardCategory(o);
 
         // Masters
         AwardCategory m = new AwardCategory();
@@ -179,7 +179,7 @@ public class RaceAwards {
         m.setPriority(1);
         m.setRaceAward(this);
         m.setMastersAge(race.getAgeGroups().getMasters());
-        awardCategoriesList.add(m);
+        addAwardCategory(m);
 
         // Masters
         AwardCategory ag = new AwardCategory();
@@ -187,7 +187,7 @@ public class RaceAwards {
         ag.setType(AwardCategoryType.AGEGROUP);
         ag.setPriority(2);
         ag.setRaceAward(this);
-        awardCategoriesList.add(ag);
+        addAwardCategory(ag);
             
         // Check to see if we have some old settings laying around...
         // We no longer support a Male/Female depth so we will pull from the
@@ -211,7 +211,7 @@ public class RaceAwards {
             
             //attributes.clear(); // remove the outdated values
         }
-        awardCategories = awardCategoriesList;
+        
     }
     
     // The map of attributes -> values

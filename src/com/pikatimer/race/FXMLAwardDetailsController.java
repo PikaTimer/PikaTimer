@@ -72,7 +72,7 @@ public class FXMLAwardDetailsController {
     @FXML Button agCustomDelete;
     
     @FXML VBox awardsVBox;
-    private final Map<Race,VBox> raceAwardUIMap = new HashMap();
+    private final Map<String,VBox> raceAwardUIMap = new HashMap();
     private final Map<String,Node> raceAwardNodeUIMap = new HashMap();
     
 //    @FXML ChoiceBox<String> awardOverallPullChoiceBox;
@@ -322,6 +322,7 @@ public class FXMLAwardDetailsController {
         
         // If null, create one and save it
         if (r.getAwards() == null) {
+            System.out.println("NULL RaceAwards... Creating one...");
             a = new RaceAwards();
             r.setAwards(a);
             raceDAO.updateRace(r);
@@ -339,11 +340,11 @@ public class FXMLAwardDetailsController {
                 //@FXML VBox outputDetailsVBox;
         
         // Did we already build this?
-        if (! raceAwardUIMap.containsKey(r)) {
+        if (! raceAwardUIMap.containsKey(r.getUUID())) {
             // No? then let's build this 
             VBox raceAwardVBox = new VBox();
-            raceAwardUIMap.put(r, raceAwardVBox);
-            System.out.println("populateAwardSettings() Showing " + a.awardCategoriesProperty().size() + " awards" );
+            raceAwardUIMap.put(r.getUUID(), raceAwardVBox);
+            System.out.println("Populating raceAwardUIMap() for race  " + r.getUUID() + " with "+ a.awardCategoriesProperty().size() + " awards" );
             
             rebuildAwardDisplay(r);
             
@@ -358,20 +359,23 @@ public class FXMLAwardDetailsController {
         // outputDetailsVBox.getChildren().clear(); 
         
         // And set it to the new one
-        awardsVBox.getChildren().setAll(raceAwardUIMap.get(r));
+        awardsVBox.getChildren().setAll(raceAwardUIMap.get(r.getUUID()));
       
     }
     
     private void rebuildAwardDisplay(Race r){
+        System.out.println("rebuildAwardDisplay called for race w/ uuid of " + r.getUUID());
         RaceAwards a = r.getAwards();
-        VBox raceAwardVBox = raceAwardUIMap.get(r);
+        VBox raceAwardVBox = raceAwardUIMap.get(r.getUUID());
         
         raceAwardVBox.getChildren().clear();
         a.awardCategoriesProperty().forEach(ac -> {
+            System.out.println("Looking for award category with UUID of " + ac.getUUID());
             if (raceAwardNodeUIMap.containsKey(ac.getUUID())){
+                System.out.println("Found an existing on in the UI map...");
                 raceAwardVBox.getChildren().add(raceAwardNodeUIMap.get(ac.getUUID()));
             } else {
-                System.out.println("populateAwardSettings() Showing " + ac.getName() );
+                System.out.println("Award not found, building UI for " + ac.getName() + "(" + ac.getUUID() + ")" );
                 FXMLLoader tlLoader = new FXMLLoader(getClass().getResource("/com/pikatimer/race/FXMLAwardCategory.fxml"));
                 try {
                     raceAwardNodeUIMap.put(ac.getUUID(),tlLoader.load());
@@ -385,6 +389,7 @@ public class FXMLAwardDetailsController {
                 ((FXMLAwardCategoryController)tlLoader.getController()).setAwardCategory(ac);
             }
         });
+        raceAwardVBox.requestLayout();
     }
     
     public void addAwardCategory(ActionEvent fxevent){

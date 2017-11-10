@@ -90,7 +90,7 @@ public class Race {
     private final ObservableList<Segment> raceSegments = FXCollections.observableArrayList(Segment.extractor());
     //private final Race self; 
 
-    private RaceAwards awards; 
+    private RaceAwards awards;
     private AgeGroups ageGroups;
 
     private Map<String,String> attributes = new HashMap();
@@ -302,9 +302,13 @@ public class Race {
         return awards;
     }
     public void setAwards(RaceAwards a) {
-        awards = a;
+        if (awards == null) awards = a;
+        else for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+                System.out.println(ste);
+            }
         // make sure awards is linked back to us
         if (awards != null && awards.getRace() != this) awards.setRace(this);
+        System.out.println("Race::setAwards called.... ");
     }
     
     @OneToOne(cascade=CascadeType.ALL,fetch = FetchType.EAGER)  
