@@ -16,9 +16,7 @@
  */
 package com.pikatimer.results.reports;
 
-import com.pikatimer.event.Event;
 import com.pikatimer.race.Race;
-import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
@@ -29,11 +27,10 @@ import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -66,6 +63,11 @@ public class OverallJSON implements RaceReportType{
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
+    }
+    
+    private String escape(String s){
+        return StringEscapeUtils.escapeHtml4(s).replace("'", "\\'").replace("\t", " ").replace("\\R", " ");
+        //return s.replace("'", "\\'").replace("\t", " ").replace("\\R", " ");
     }
     
     @Override
@@ -151,18 +153,18 @@ public class OverallJSON implements RaceReportType{
             chars.append("\t\t\"age\": ").append("\"").append(pr.getAge().toString()).append("\",\n");
             chars.append("\t\t\"sex\": ").append("\"").append(pr.getSex()).append("\",\n");
             chars.append("\t\t\"ag\": ").append("\"").append(pr.getAGCode()).append("\",\n");
-            chars.append("\t\t\"full_name\": ").append("\"").append(pr.getParticipant().fullNameProperty().getValueSafe()).append("\"").append(",\n");
-            chars.append("\t\t\"full_name_filter\": ").append("\"").append(pr.getParticipant().fullNameProperty().getValueSafe());
+            chars.append("\t\t\"full_name\": ").append("\"").append(escape(pr.getParticipant().fullNameProperty().getValueSafe())).append("\"").append(",\n");
+            chars.append("\t\t\"full_name_filter\": ").append("\"").append(escape(pr.getParticipant().fullNameProperty().getValueSafe()));
             if(!pr.getParticipant().fullNameProperty().getValueSafe().equals(StringUtils.stripAccents(pr.getParticipant().fullNameProperty().getValueSafe()))) 
-                chars.append(" ").append(StringUtils.stripAccents(pr.getParticipant().fullNameProperty().getValueSafe()));
+                chars.append(" ").append(StringUtils.stripAccents(escape(pr.getParticipant().fullNameProperty().getValueSafe())));
             chars.append("\"").append(",\n");
-            chars.append("\t\t\"first_name\": ").append("\"").append(pr.getParticipant().getFirstName()).append("\"").append(",\n");
-            chars.append("\t\t\"middle_name\": ").append("\"").append(pr.getParticipant().getMiddleName()).append("\"").append(",\n");
-            chars.append("\t\t\"last_name\": ").append("\"").append(pr.getParticipant().getLastName()).append("\"").append(",\n");
-            chars.append("\t\t\"city\": ").append("\"").append(pr.getParticipant().getCity()).append("\"").append(",\n");
-            chars.append("\t\t\"state\": ").append("\"").append(pr.getParticipant().getState()).append("\"").append(",\n");
-            chars.append("\t\t\"country\": ").append("\"").append(pr.getParticipant().getCountry()).append("\"").append(",\n");
-            chars.append("\t\t\"note\": ").append("\"").append(pr.getParticipant().getNote()).append("\"").append(",\n");
+            chars.append("\t\t\"first_name\": ").append("\"").append(escape(pr.getParticipant().getFirstName())).append("\"").append(",\n");
+            chars.append("\t\t\"middle_name\": ").append("\"").append(escape(pr.getParticipant().getMiddleName())).append("\"").append(",\n");
+            chars.append("\t\t\"last_name\": ").append("\"").append(escape(pr.getParticipant().getLastName())).append("\"").append(",\n");
+            chars.append("\t\t\"city\": ").append("\"").append(escape(pr.getParticipant().getCity())).append("\"").append(",\n");
+            chars.append("\t\t\"state\": ").append("\"").append(escape(pr.getParticipant().getState())).append("\"").append(",\n");
+            chars.append("\t\t\"country\": ").append("\"").append(escape(pr.getParticipant().getCountry())).append("\"").append(",\n");
+            chars.append("\t\t\"note\": ").append("\"").append(escape(pr.getParticipant().getNote())).append("\"").append(",\n");
             
             if (dq) {
                 chars.append("\t\t\"oa_place\": ").append("\"").append("DQ").append("\",\n");
@@ -195,7 +197,7 @@ public class OverallJSON implements RaceReportType{
             // do stuff
                 chars.append("\t\t\"splits\": {\n");
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    chars.append("\t\t\t\"split_").append(i-1).append("_").append(race.splitsProperty().get(i-1).getSplitName()).append("\": {\n");
+                    chars.append("\t\t\t\"split_").append(i-1).append("\": {\n");
                     if (hideTime || pr.getSplit(i) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
                         chars.append("\t\t\t\t\t\"delta_time\": ").append("\"\"").append(",\n");
@@ -239,7 +241,7 @@ public class OverallJSON implements RaceReportType{
                 chars.append("\t\t\"segments\": {\n");
                 race.getSegments().forEach(seg -> {
                     
-                    chars.append("\t\t\t\"segment_").append(seg.getSegmentName()).append("\": {\n");
+                    chars.append("\t\t\t\"segment_").append(seg.getID()).append("\": {\n");
                     if (ht || pr.getSegmentTime(seg.getID()) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
                         chars.append("\t\t\t\t\t\"sort\": ").append("\"~~\"").append(",\n");
@@ -269,7 +271,7 @@ public class OverallJSON implements RaceReportType{
                 if (times != null && !times.isEmpty()) {
                     times.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
                     CookedTimeData last_chip = times.get(times.size()-1);
-                    chars.append("\t\t\"last_seen\": \"").append(td.getTimingLocationByID(last_chip.getTimingLocationId()).getLocationName() + " at " + DurationFormatter.durationToString(last_chip.getTimestamp(), dispTimestamp, roundMode)).append("\",\n");
+                    chars.append("\t\t\"last_seen\": \"").append(escape(td.getTimingLocationByID(last_chip.getTimingLocationId()).getLocationName() + " at " + DurationFormatter.durationToString(last_chip.getTimestamp(), dispTimestamp, roundMode))).append("\",\n");
 
                 } else {
                     chars.append("\t\t\"last_seen\": \"Never\",\n");

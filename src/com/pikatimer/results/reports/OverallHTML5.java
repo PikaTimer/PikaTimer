@@ -30,6 +30,7 @@ import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  *
@@ -61,6 +62,12 @@ public class OverallHTML5 implements RaceReportType{
         supportedOptions.put("hideCustomHeaders", false);
     }
     
+    private String escape(String s){
+        return StringEscapeUtils.escapeHtml4(s).replace("'", "\\'").replace("\t", " ").replace("\\R", " ");
+    }
+    private String escapeHTML(String s){
+        return StringEscapeUtils.escapeHtml4(s);
+    }
     @Override
     public void init(Race r) {
         race = r;
@@ -278,14 +285,14 @@ public class OverallHTML5 implements RaceReportType{
             // Insert split stuff here
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
+                    report += "      <th data-priority=\"100\">" + escapeHTML(race.splitsProperty().get(i-1).getSplitName()) + "</th>" +  System.lineSeparator();
                 }
             }
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
                 Integer dispLeg = dispFormatLength;
                 race.getSegments().forEach(seg -> {
-                    chars.append("      <th data-priority=\"80\">" + seg.getSegmentName()+ "</th>" +  System.lineSeparator());
+                    chars.append("      <th data-priority=\"80\">" + escapeHTML(seg.getSegmentName())+ "</th>" +  System.lineSeparator());
                     //if (showSegmentPace) chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator()); // pace.getFieldWidth()+1
                 });
                 report += chars.toString();
@@ -375,10 +382,10 @@ public class OverallHTML5 implements RaceReportType{
                 chars.append("data += '<div class=\"row\">';\n");
                 race.getSegments().forEach(seg -> {
                     chars.append("data += '<div class=\"segment\">'; // time\n");
-                    chars.append("data += '<div class=\"segment-head\">" + seg.getSegmentName()+ "</div>';\n" );
-                    chars.append("data += '<div class=\"segment-time\">Time: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].display + '</div>';\n");
-                    chars.append("data += '<div class=\"segment-stats\">Overall: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].oa_place) + '   Sex: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].sex_place) + '   AG: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].ag_place) + '</div>';\n");
-                    if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].pace + '</div>';\n");
+                    chars.append("data += '<div class=\"segment-head\">" + escape(seg.getSegmentName())+ "</div>';\n" );
+                    chars.append("data += '<div class=\"segment-time\">Time: ' + rData.segments[\"segment_"+seg.getID()+ "\"].display + '</div>';\n");
+                    chars.append("data += '<div class=\"segment-stats\">Overall: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].oa_place) + '   Sex: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].sex_place) + '   AG: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].ag_place) + '</div>';\n");
+                    if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getID()+ "\"].pace + '</div>';\n");
                     chars.append("data += '</div>';\n"); // segment
                 });
                 chars.append("data += '</div>';\n"); // row
@@ -399,9 +406,9 @@ public class OverallHTML5 implements RaceReportType{
                 if (showPace) report += "data += '<td></td>';\n";
                 report += "data += '</tr>';\n";
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "data += '<tr><td>" + race.splitsProperty().get(i-1).getSplitName() + ":</td><td class=\"right\">  ' + rData.splits[\"split_" + Integer.toString(i-1) + "_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].display + '</td>';\n";
-                    report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].delta_time + '</td>';\n";
-                    if (showPace) report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].pace + '</td>';\n";
+                    report += "data += '<tr><td>" + escape(race.splitsProperty().get(i-1).getSplitName()) + ":</td><td class=\"right\">  ' + rData.splits[\"split_" + Integer.toString(i-1) + "\"].display + '</td>';\n";
+                    report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].delta_time + '</td>';\n";
+                    if (showPace) report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].pace + '</td>';\n";
                     report += "data += '</tr>';\n";
                 }
                 report += "data += '<tr><td>Finish:</td><td class=\"right\">  ' + rData.finish_display + '</td><td class=\"right up-half\">' + rData.finish_split_delta + '</td>';\n";
@@ -469,7 +476,7 @@ public class OverallHTML5 implements RaceReportType{
             if (showCountry) report += "           { \"data\": \"country\" },\n";
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "           { \"data\": \"splits.split_" + Integer.toString(i-1) + "_"+ race.splitsProperty().get(i-1).getSplitName() + "\", \n" +
+                    report += "           { \"data\": \"splits.split_" + Integer.toString(i-1) + "\", \n" +
                                 "				\"render\": {\n" +
                                 "					_: 'display',\n" +
                                 "					sort: 'sort'\n" +
@@ -481,7 +488,7 @@ public class OverallHTML5 implements RaceReportType{
                 final StringBuilder chars = new StringBuilder();
                 Integer dispLeg = dispFormatLength;
                 race.getSegments().forEach(seg -> {
-                    chars.append("           { \"data\": \"segments.segment_" +  seg.getSegmentName() + "\", \n" +
+                    chars.append("           { \"data\": \"segments.segment_" +  seg.getID()+ "\", \n" +
                                 "				\"render\": {\n" +
                                 "					_: 'display',\n" +
                                 "					sort: 'sort'\n" +
