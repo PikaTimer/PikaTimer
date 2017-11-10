@@ -1248,6 +1248,9 @@ public class PikaRFIDDirectReader implements TimingReader {
                     
                     // Find the server using UDP broadcast
                     //Loop while the dialog box is open
+                    // UDP Broadcast code borrowed from https://demey.io/network-discovery-using-udp-broadcast/
+                    // with a few modifications to protect the guilty and to bring it up to date
+                    // (e.g., try-with-resources 
                     while (dialogClosed.not().get()) {
                         try(DatagramSocket broadcastSocket = new DatagramSocket()) {
                             broadcastSocket.setBroadcast(true);
@@ -1257,6 +1260,33 @@ public class PikaRFIDDirectReader implements TimingReader {
                             // Send a packet to 255.255.255.255 on port 2000
                             DatagramPacket probeDatagramPacket = new DatagramPacket(packetData, packetData.length, InetAddress.getByName("255.255.255.255"), 2000);
                             broadcastSocket.send(probeDatagramPacket);
+                            
+                            System.out.println("Sent UDP Broadcast to 255.255.255.255");
+                            // Broadcast the message over all the network interfaces
+                            
+                            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                            while (interfaces.hasMoreElements()) {
+                              NetworkInterface networkInterface = interfaces.nextElement();
+
+                              if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                                continue; // Don't want to broadcast to the loopback interface
+                              }
+
+                              for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                                InetAddress broadcast = interfaceAddress.getBroadcast();
+                                if (broadcast == null) {
+                                  continue;
+                                }
+                                // Send the broadcast package!
+                                try {
+                                  DatagramPacket sendPacket = new DatagramPacket(packetData, packetData.length, broadcast, 8888);
+                                  broadcastSocket.send(sendPacket);
+                                  System.out.println("Sent UDP Broadcast to " + broadcast.getHostAddress());
+                                } catch (Exception e) {
+                                }
+                              }
+                            }
+
 
                             //Wait for a response
                             try {
