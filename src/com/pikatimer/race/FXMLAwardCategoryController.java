@@ -449,7 +449,7 @@ public class FXMLAwardCategoryController {
         });
         
         timingPointComboBox.getSelectionModel().selectedItemProperty().addListener((obs,  prevVal,  newVal) -> {
-            if (newVal != null && !newVal.equals(prevVal)) {
+            if (newVal != null && !newVal.id.getValue().equals(awardCategory.getTimingPointID())) {
                 awardCategory.setTimingPointID(newVal.id.get());
                 awardCategory.setTimingPointType(newVal.type.get());
                 raceDAO.updateAwardCategory(awardCategory);
@@ -476,7 +476,7 @@ public class FXMLAwardCategoryController {
             if (skewableAttributesMap.get(key).equals(awardCategory.getSkewAttribute())) skewAttributeComboBox.getSelectionModel().select(key);
         });
         skewAttributeComboBox.getSelectionModel().selectedItemProperty().addListener((obs,  prevVal,  newVal) -> {
-            if (newVal != null && !newVal.equals(prevVal)) {
+            if (newVal != null && !newVal.equals(skewableAttributesMap.get(newVal))) {
                 awardCategory.setSkewAttribute(skewableAttributesMap.get(newVal));
                 raceDAO.updateAwardCategory(awardCategory);
             }
