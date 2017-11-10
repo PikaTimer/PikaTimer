@@ -24,7 +24,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.property.SimpleStringProperty;
@@ -57,12 +56,16 @@ public class ImportWizardView2Controller {
         class AttributeMap {
             public SimpleStringProperty key = new SimpleStringProperty();
             public SimpleStringProperty value= new SimpleStringProperty();
-
+            Integer customKey = -1;
             private AttributeMap(String k, String v) {
                 key.setValue(k);
                 value.setValue(v);            
             }
-            
+            private AttributeMap(Integer ck, String v) {
+                key.setValue(v);
+                value.setValue(v);  
+                customKey = ck;
+            }
             @Override
             public String toString(){
                 return value.getValueSafe();
@@ -95,6 +98,9 @@ public class ImportWizardView2Controller {
         participantAttributes.entrySet().stream().forEach((entry) -> {
             attList.add(new AttributeMap(entry.getKey(),entry.getValue()));
         });
+        ParticipantDAO.getInstance().getCustomAttributes().forEach(ca -> {
+            attList.add(new AttributeMap(ca.getID(),ca.getName()));
+        });
         
         // display the colum -> attribute chooser maps
         mapGridPane.setPadding(new Insets(10,10,10,10));
@@ -102,7 +108,7 @@ public class ImportWizardView2Controller {
         mapGridPane.setVgap(2);
         for (int i = 0; i < csvColumns.size(); i++) {
             final String csvAttr = csvColumns.get(i); 
-            final ComboBox comboBox = new ComboBox(); 
+            final ComboBox<AttributeMap> comboBox = new ComboBox(); 
             mapGridPane.add(new Label(csvColumns.get(i)),0,i+1);
             comboBoxes.add(i,comboBox);
             mapGridPane.add(comboBoxes.get(i),1,i+1);
@@ -110,14 +116,17 @@ public class ImportWizardView2Controller {
             comboBoxes.get(i).getSelectionModel().selectFirst(); 
             comboBoxes.get(i).setOnAction((event) -> {
                 //TODO: If the new selected value is "Ignore" we should remove the map entry
-                model.mapAttrib(csvAttr, ((AttributeMap)comboBox.getSelectionModel().getSelectedItem()).key.getValue());
+                if (comboBox.getSelectionModel().getSelectedItem().customKey >= 0) 
+                    model.mapAttrib(csvAttr,comboBox.getSelectionModel().getSelectedItem().customKey.toString());
+                else model.mapAttrib(csvAttr, comboBox.getSelectionModel().getSelectedItem().key.getValue());
             });
             for(AttributeMap entry: attList) {
                 //System.out.println("Does " + csvColumns.get(i).toLowerCase() + " contain " + entry.key.toString().toLowerCase());
                 if (csvColumns.get(i).toLowerCase().contains(entry.key.getValue().toLowerCase()) || 
                         entry.key.getValue().toLowerCase().contains(csvColumns.get(i).toLowerCase())) {
                     comboBoxes.get(i).setValue(entry);
-                    model.mapAttrib(csvAttr,entry.key.getValue());
+                    if (entry.customKey >= 0) model.mapAttrib(csvAttr, entry.customKey.toString());
+                    else model.mapAttrib(csvAttr,entry.key.getValue());
                     //System.out.println("Import: " + csvColumns.get(i).toLowerCase() + " matches " + entry.key.getValue().toLowerCase() );
                 }
             }

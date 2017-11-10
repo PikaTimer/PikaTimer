@@ -26,15 +26,10 @@ import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.HashMap;
@@ -156,15 +151,19 @@ public class ImportWizardView3Controller {
                     while (rs.next()) {
                         numAdded++; 
                         
-                        Map<String,String> attributes = new HashMap<>();
+                        Map<String,String> attributes = new HashMap();
+                        Map<Integer,String> customAttributes = new HashMap();
                         
                         for (int i = 0; i < meta.getColumnCount(); i++) {
                             if (mapping.get(meta.getColumnLabel(i+1)) != null && !"".equals(rs.getString(i+1))) {
-                                //System.out.println(rs.getString(i+1) + " -> " + mapping.get(meta.getColumnLabel(i+1)));
-                                attributes.put(mapping.get(meta.getColumnLabel(i+1)),rs.getString(i+1)); 
+                                System.out.println(rs.getString(i+1) + " -> " + mapping.get(meta.getColumnLabel(i+1)));
+                                if (mapping.get(meta.getColumnLabel(i+1)).matches("^\\d$")) {
+                                    customAttributes.put(Integer.parseInt(mapping.get(meta.getColumnLabel(i+1))), rs.getString(i+1));
+                                } else attributes.put(mapping.get(meta.getColumnLabel(i+1)),rs.getString(i+1)); 
                             }
                         }
                         Participant p = new Participant(attributes); 
+                        p.setCustomAttributes(customAttributes);
                         
                         String key = p.getFirstName()+p.getLastName() + p.getAge()+p.getSex();
                         key = key.toLowerCase();
@@ -185,6 +184,7 @@ public class ImportWizardView3Controller {
                                 Participant np = p; // cuz lambdas don't like changes
                                 Platform.runLater(() -> {
                                     np.setAttributes(attributes);
+                                    np.setCustomAttributes(customAttributes);
                                     participantDAO.updateParticipant(np);
                                 });
                                 
