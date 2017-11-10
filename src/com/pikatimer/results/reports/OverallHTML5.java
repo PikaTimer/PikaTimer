@@ -239,9 +239,23 @@ public class OverallHTML5 implements RaceReportType{
         report += "<div class=\"event-date\">" + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</div>" + System.lineSeparator();
         report += System.lineSeparator();
         
+        Boolean dataToShow = false;
         if(inProgress) {
             report += "    <div class=\"in-progress\">" + "*In Progress*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
+            if (!prList.isEmpty()) dataToShow = true;
+        } else {
+            if (! prList.isEmpty()){
+                if (showDNF) dataToShow = true;
+                else {
+                    for(ProcessedResult f: prList){
+                        if (f.getChipFinish() != null ) {
+                            dataToShow = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         
         if (customHeaders){
@@ -250,7 +264,9 @@ public class OverallHTML5 implements RaceReportType{
             report += System.lineSeparator();
         }
         
-        if(prList.isEmpty()) {
+        
+        
+        if(!dataToShow) {
             report += "    <div class=\"in-progress\">" + "<BR>*No Results Have Been Posted Yet*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
             if (customHeaders){
