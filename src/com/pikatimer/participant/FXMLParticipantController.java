@@ -102,6 +102,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ListSelectionView;
@@ -988,15 +989,16 @@ public class FXMLParticipantController  {
         // of selected fields to export
         
         ObservableList<AttributeMap> availableAttributes = FXCollections.observableArrayList();
-        
+        ObservableList<AttributeMap> sortAttributes = FXCollections.observableArrayList();
+
         Participant.getAvailableAttributes().entrySet().stream().forEach((entry) -> {
             availableAttributes.add(new AttributeMap(entry.getKey(),entry.getValue()));
-        });
-        
-        ObservableList<AttributeMap> sortAttributes = FXCollections.observableArrayList();
-        
-        Participant.getAvailableAttributes().entrySet().stream().forEach((entry) -> {
             sortAttributes.add(new AttributeMap(entry.getKey(),entry.getValue()));
+        });
+         
+        participantDAO.getCustomAttributes().forEach(ca -> {
+            availableAttributes.add(new AttributeMap(ca.getID().toString(),ca.getName()));
+            sortAttributes.add(new AttributeMap(ca.getID().toString(),ca.getName()));
         });
         
         //Add Race/Wave attributes IF there are multiple races/waves to deal with
@@ -1153,7 +1155,7 @@ public class FXMLParticipantController  {
                 int fieldCount=result.get().size();
                 for(int i = 0; i< fieldCount;i++) {
                     header+="\"";
-                    header+=result.get().get(i);
+                    header+=result.get().get(i).toString().replace("\"", "\"\"");
                     header+="\"";
                     if(i != fieldCount -1) header+=",";
                 }
@@ -1167,7 +1169,10 @@ public class FXMLParticipantController  {
                 AlphanumericComparator acComparator = new AlphanumericComparator();
                 String sortAttribute = sortComboBox.getSelectionModel().getSelectedItem().key.getValueSafe();
                 participantDAO.listParticipants().stream().sorted((Participant o1, Participant o2) -> {
-                    return acComparator.compare(o1.getNamedAttribute(sortAttribute), o2.getNamedAttribute(sortAttribute));
+                    if(sortAttribute.matches("^\\d+$")) 
+                        return acComparator.compare(o1.getCustomAttribute(Integer.parseInt(sortAttribute)).getValueSafe(), o2.getCustomAttribute(Integer.parseInt(sortAttribute)).getValueSafe());
+                    else
+                        return acComparator.compare(o1.getNamedAttribute(sortAttribute), o2.getNamedAttribute(sortAttribute));
                 }).forEach(p -> {
                     BooleanProperty filtered = new SimpleBooleanProperty(true);
                     if (waveFilterCheckBox.selectedProperty().get()){
@@ -1183,6 +1188,8 @@ public class FXMLParticipantController  {
                     System.out.println("Exporting Particpant " + p.fullNameProperty().getValueSafe());
                     String part = "";
                     String fieldName;
+                    
+                    
                     for(int i = 0; i< fieldCount;i++) {
                         fieldName=result.get().get(i).key.getValueSafe();
                         part+="\"";
@@ -1192,7 +1199,15 @@ public class FXMLParticipantController  {
                             part += p.wavesObservableList().stream().map (w -> w.getRace().getRaceName()).distinct().collect (Collectors.joining(","));
                         } else if (fieldName.equals("WAVE") ) {
                             part += p.wavesObservableList().stream().map (w -> w.getWaveName()).collect (Collectors.joining(","));
-                        } else part+=p.getNamedAttribute(fieldName).replace("\"", "\"\"");
+                        } else if (fieldName.matches("^\\d+$")) {
+                            //System.out.println(" " + fieldName + " -> " + p.getCustomAttribute(Integer.parseInt(fieldName)).getValueSafe());
+                            part+=p.getCustomAttribute(Integer.parseInt(fieldName)).getValueSafe().replace("\"", "\"\"");
+                        }
+                        else {
+                            //System.out.println(" -> " + p.getNamedAttribute(fieldName));
+                            part+=p.getNamedAttribute(fieldName).replace("\"", "\"\"");
+                        }
+                        
                         part+="\"";
                         
                         if(i != fieldCount -1) part+=",";
