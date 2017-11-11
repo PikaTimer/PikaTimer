@@ -16,6 +16,7 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.race.RaceDAO;
 import io.datafx.controller.FXMLController;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.context.FXMLViewFlowContext;
@@ -101,7 +102,15 @@ public class ImportWizardView2Controller {
         ParticipantDAO.getInstance().getCustomAttributes().forEach(ca -> {
             attList.add(new AttributeMap(ca.getID(),ca.getName()));
         });
-        
+        if (model.getWaveAssignByAttribute()) {
+            if (RaceDAO.getInstance().listRaces().size() > 1)
+                attList.add(new AttributeMap("RACE","Race"));
+            if (RaceDAO.getInstance().listWaves().size() > RaceDAO.getInstance().listRaces().size() ) 
+                attList.add(new AttributeMap("WAVE","Wave"));
+        }
+            
+            
+            
         // display the colum -> attribute chooser maps
         mapGridPane.setPadding(new Insets(10,10,10,10));
         mapGridPane.setHgap(20);

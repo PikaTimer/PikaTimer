@@ -16,6 +16,7 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
@@ -93,6 +94,24 @@ public class ImportWizardView3Controller {
                 Boolean dupeCheck = false;
                 Boolean mergeDupes = false;
                 
+                Map<String,Wave> waveMap = new HashMap();
+                Map<String,Race> raceMap = new HashMap();
+                
+                if (model.getWaveAssignByAttribute()) {
+                    System.out.println("Setting up raceMap and waveMap");
+                    RaceDAO.getInstance().listRaces().forEach(race -> {
+                        raceMap.put(race.getRaceName(), race);
+                        System.out.println("Race \"" + race.getRaceName() + "\" added");
+                    });
+                    RaceDAO.getInstance().listWaves().forEach(wave -> {
+                        waveMap.put(wave.getWaveName(), wave);
+                        System.out.println("Wave \"" + wave.getWaveName() + "\" added");
+
+                    });
+                    
+                }
+                    
+                
                 if (!participantDAO.listParticipants().isEmpty()) {
                     existingRunners = true;
                     // add check to see if we should clear first
@@ -154,12 +173,21 @@ public class ImportWizardView3Controller {
                         Map<String,String> attributes = new HashMap();
                         Map<Integer,String> customAttributes = new HashMap();
                         
+                        String pendingWave = "";
+                        String pendingRace = ""; 
                         for (int i = 0; i < meta.getColumnCount(); i++) {
                             if (mapping.get(meta.getColumnLabel(i+1)) != null && !"".equals(rs.getString(i+1))) {
-                                System.out.println(rs.getString(i+1) + " -> " + mapping.get(meta.getColumnLabel(i+1)));
-                                if (mapping.get(meta.getColumnLabel(i+1)).matches("^\\d$")) {
-                                    customAttributes.put(Integer.parseInt(mapping.get(meta.getColumnLabel(i+1))), rs.getString(i+1));
-                                } else attributes.put(mapping.get(meta.getColumnLabel(i+1)),rs.getString(i+1)); 
+                                String key = mapping.get(meta.getColumnLabel(i+1));
+                                System.out.println(rs.getString(i+1) + " -> " + key);
+                                if (key.equals("WAVE")) {
+                                    pendingWave = rs.getString(i+1);
+                                } else if (key.equals("RACE")) {
+                                    pendingRace = rs.getString(i+1);
+                                } else if (key.matches("^\\d$")) {
+                                    customAttributes.put(Integer.parseInt(key), rs.getString(i+1));
+                                } else {
+                                    attributes.put(key,rs.getString(i+1));
+                                } 
                             }
                         }
                         Participant p = new Participant(attributes); 
@@ -208,14 +236,30 @@ public class ImportWizardView3Controller {
                         if(model.getWaveAssignByBib()) {
                             p.setWaves(getWaveByBib(attributes.get("bib")));
                         } else if (model.getWaveAssignByAttribute()) {
-                           // todo
+                            System.out.println("Assigning wave by attribute: \"" + pendingWave + "\" / \"" + pendingRace + "\"");
+                           if (pendingWave.isEmpty() && !pendingRace.isEmpty()){
+                               if (raceMap.containsKey(pendingRace)){
+                                   p.setWaves(raceMap.get(pendingRace).getWaves().get(0));
+                               }
+                           } else if (!pendingWave.isEmpty() && pendingRace.isEmpty()){
+                               if (waveMap.containsKey(pendingWave)){
+                                   p.setWaves(waveMap.get(pendingWave));
+                               }
+                           } else if (!pendingWave.isEmpty() && !pendingRace.isEmpty()) {
+                               // Well crap, we have both....
+                               if (waveMap.containsKey(pendingWave)){
+                                   p.setWaves(waveMap.get(pendingWave));
+                               } else if (raceMap.containsKey(pendingRace)){
+                                   p.setWaves(raceMap.get(pendingRace).getWaves().get(0));
+                               } // else they are screwed..... Sorry.... 
+                           }
+                           if (p.wavesObservableList().size() > 0 ) System.out.println("Now in wave " + p.wavesObservableList().get(0).getWaveName());
+                           else System.out.println("Not in any wave/race!!!");
                         } else {
                             p.addWave(model.getAssignedWave()); 
                         }
                         
                         participantDAO.addParticipant(p);
-                        //System.out.println("Adding ...");
-                        //TODO: merge vs add
                         //TODO: Cleanup Name Capitalization (if selected)
                         //TODO: City / State Title Case (if selected)
                         //TODO: Cleanup City/State (if zip specified)
