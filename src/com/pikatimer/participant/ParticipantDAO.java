@@ -16,14 +16,18 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.race.RaceDAO;
+import com.pikatimer.race.Wave;
+import com.pikatimer.race.WaveAssignment;
 import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.util.AlphanumericComparator;
 import java.util.List; 
 import com.pikatimer.util.HibernateUtil;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -322,6 +326,29 @@ public class ParticipantDAO {
             s.getTransaction().commit();
         }
         
+    }
+    
+    public Set<Wave> getWaveByBib(String bib) {
+        AlphanumericComparator comp = new AlphanumericComparator(); 
+        
+        Set<Wave> waves = new HashSet<>();
+        Map raceMap = new HashMap(); 
+        
+        RaceDAO.getInstance().listWaves().forEach(i -> {
+            if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
+                String start = i.getWaveAssignmentStart(); 
+                String end = i.getWaveAssignmentEnd(); 
+                if (!(start.isEmpty() && end.isEmpty()) && (comp.compare(start, bib) <= 0 || start.isEmpty()) && (comp.compare(end, bib) >= 0 || end.isEmpty())) {
+                    if(!raceMap.containsKey(i.getRace())) {
+                        //System.out.println("Bib " + bibTextField.getText() + " matched wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
+                        raceMap.put(i.getRace(), true); 
+                        waves.add(i); 
+                    }
+                }
+            }
+        });
+        
+        return waves; 
     }
 } 
 

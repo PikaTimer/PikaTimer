@@ -28,17 +28,18 @@ import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
 import java.io.File;
 import java.io.IOException;
+import static java.lang.Boolean.FALSE;
 import static java.lang.Double.MAX_VALUE;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.ColumnConstraints;
@@ -102,11 +104,11 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PrefixSelectionChoiceBox;
+import org.controlsfx.control.ToggleSwitch;
 /**
  *
  * @author jcgarner
@@ -153,6 +155,9 @@ public class FXMLParticipantController  {
     
     @FXML private Button customAtrtributesButton;
     @FXML private VBox customAttributesVBox;
+    
+    @FXML private Button bulkBibAssignmentButton;
+    
     private final List<TableColumn> customAttributesColumns = new ArrayList();
     private final Map<Integer,TextField> customAttributesTextFields = new HashMap();
     private final Map<Integer,PrefixSelectionChoiceBox<String>> customAttributesChoiceBoxes = new HashMap();
@@ -1250,6 +1255,244 @@ public class FXMLParticipantController  {
         
     }
     
+    public void bulkBibAssignment(ActionEvent fxevent){
+        RaceDAO raceDAO = RaceDAO.getInstance();
+        
+        PrefixSelectionChoiceBox<Race> raceComboBox = new PrefixSelectionChoiceBox();
+        raceComboBox.setItems(raceDAO.listRaces());
+        raceComboBox.setPrefWidth(90);
+        
+        //TextField startTextArea = new TextField();
+        //startTextArea.setPrefWidth(90);
+        
+        TextField startTextField = new TextField();
+        startTextField.setPrefWidth(90);
+        
+        TextField endTextField = new TextField();
+        endTextField.setPrefWidth(90);
+        
+        ToggleSwitch clearExistingToggleSwitch = new ToggleSwitch();
+        clearExistingToggleSwitch.setPrefWidth(90);
+        
+        ObservableList<Attribute> attributeList = FXCollections.observableArrayList();
+        attributeList.add(new Attribute("<None>","SKIP"));
+        Participant.getAvailableAttributes().keySet().stream().sorted().forEach(k -> {
+            attributeList.add(new Attribute(Participant.getAvailableAttributes().get(k),k));
+        });
+        ParticipantDAO.getInstance().getCustomAttributes().forEach(ca -> {
+            attributeList.add(new Attribute(ca.getName(),ca.getID()));
+        });
+                
+        
+        PrefixSelectionChoiceBox<Attribute> sort1ComboBox = new PrefixSelectionChoiceBox();
+        sort1ComboBox.setPrefWidth(90);
+        PrefixSelectionChoiceBox<String> sort1TypeComboBox = new PrefixSelectionChoiceBox();
+        PrefixSelectionChoiceBox<Attribute> sort2ComboBox = new PrefixSelectionChoiceBox();
+        sort2ComboBox.setPrefWidth(90);
+        PrefixSelectionChoiceBox<String> sort2TypeComboBox = new PrefixSelectionChoiceBox();
+        
+        sort1ComboBox.setItems(attributeList);
+        sort1TypeComboBox.setItems(FXCollections.observableArrayList("Asc","Dec"));
+
+        sort2TypeComboBox.setItems(FXCollections.observableArrayList("Asc","Dec"));
+        sort2ComboBox.setItems(attributeList);
+        
+        TextArea skipBibs = new TextArea();
+        skipBibs.setPrefWidth(90);
+        skipBibs.setPrefHeight(75);
+        
+        
+        Dialog<Boolean> dialog = new Dialog();
+        dialog.resizableProperty().set(true);
+        dialog.getDialogPane().setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight()-150);
+        dialog.setTitle("Bib Assigment");
+        dialog.setHeaderText("Bulk Bib Assigment");
+        ButtonType okButtonType = new ButtonType("Assign", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+        
+        VBox contentVBox = new VBox();
+        contentVBox.setSpacing(5);
+        contentVBox.setMaxHeight(MAX_VALUE);
+        contentVBox.setMaxWidth(MAX_VALUE);
+        
+        HBox raceSelection = new HBox();
+        raceSelection.setSpacing(5);
+        Label raceLabel = new Label("Race");
+        raceLabel.setPrefWidth(100);
+        raceSelection.getChildren().addAll(raceLabel, raceComboBox);
+        raceComboBox.getSelectionModel().selectFirst();
+        if (raceDAO.listRaces().size() > 1) contentVBox.getChildren().add(raceSelection);
+        
+        HBox start = new HBox();
+        start.setSpacing(5);
+        Label startLabel = new Label("Start Bib");
+        startLabel.setPrefWidth(100);
+        start.getChildren().addAll(startLabel,startTextField);
+        contentVBox.getChildren().add(start);
+                
+        HBox end = new HBox();
+        end.setSpacing(5);
+        Label endLabel = new Label("End Bib");
+        endLabel.setPrefWidth(100);
+        end.getChildren().addAll(endLabel,endTextField);
+        contentVBox.getChildren().add(end);
+        
+        HBox clear = new HBox();
+        clear.setSpacing(5);
+        Label clearLabel = new Label("Clear Existing Bibs");
+        clearLabel.setPrefWidth(100);
+        clearExistingToggleSwitch.selectedProperty().set(false);
+        clear.getChildren().addAll(clearLabel,clearExistingToggleSwitch);
+        contentVBox.getChildren().add(clear);
+        
+        HBox sort1 = new HBox();
+        sort1.setSpacing(5);
+        Label sort1Label = new Label("Sort By ");
+        sort1Label.setPrefWidth(100);
+        sort1TypeComboBox.getSelectionModel().selectFirst();
+        sort1ComboBox.getSelectionModel().selectFirst();
+        sort1.getChildren().addAll(sort1Label,sort1ComboBox,sort1TypeComboBox);
+        contentVBox.getChildren().add(sort1);
+        
+        HBox sort2 = new HBox();
+        sort2.setSpacing(5);
+        Label sort2Label = new Label("Sort By ");
+        sort2Label.setPrefWidth(100);
+        sort2TypeComboBox.getSelectionModel().selectFirst();
+        sort2ComboBox.getSelectionModel().selectFirst();
+        sort2.getChildren().addAll(sort2Label,sort2ComboBox,sort2TypeComboBox);
+        contentVBox.getChildren().add(sort2);
+        
+        HBox skip = new HBox();
+        skip.setSpacing(5);
+        Label skipLabel = new Label("Skip bibs ending:");
+        skipLabel.setPrefWidth(100);
+        skip.getChildren().addAll(skipLabel,skipBibs);
+        contentVBox.getChildren().add(skip);
+        
+        
+        
+        dialog.getDialogPane().setContent(contentVBox);
+        
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+        
+        Platform.runLater(() -> { dialog.setY((Screen.getPrimary().getVisualBounds().getHeight()-dialog.getHeight())/2); });
+        Optional<Boolean> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            AlphanumericComparator ac = new AlphanumericComparator();
+            
+            Integer currentBib = Integer.parseInt(startTextField.getText());
+            Integer lastBib = Integer.MAX_VALUE;
+            if (!endTextField.getText().isEmpty()) Integer.parseInt(endTextField.getText());
+            
+            Set<String> skipList = new HashSet(Arrays.asList(skipBibs.getText().split("\\R")));
+            
+            Attribute s1 = sort1ComboBox.getSelectionModel().getSelectedItem();
+            Attribute s2 = sort2ComboBox.getSelectionModel().getSelectedItem();
+            String s1Type = sort1TypeComboBox.getSelectionModel().getSelectedItem();   
+            String s2Type = sort2TypeComboBox.getSelectionModel().getSelectedItem();   
+            List<Participant> assignees = participantDAO.listParticipants().stream()
+                    .filter(p -> {  // race filter
+                        System.out.println("F1: Evaling " + p.fullNameProperty().getValueSafe());
+                        if (raceDAO.listRaces().size()== 1) return true; // only one race
+                        if (p.wavesObservableList().isEmpty()) return true; // unassigned
+                        if (p.wavesObservableList().stream().anyMatch((w) -> (w.getRace().equals(raceComboBox.getSelectionModel().getSelectedItem())))) {
+                            return true;
+                        }
+                        System.out.println("F1: Rejected");
+                        return false;
+                    }) 
+                    .filter(p -> {          // existing assignment filter
+                        System.out.println("F2: Evaling " + p.fullNameProperty().getValueSafe());
+                        if (clearExistingToggleSwitch.selectedProperty().get()) return true;
+                        else if (p.getBib().isEmpty()) return true;
+                        System.out.println("F2: Rejected");
+
+                        return false;
+                    }) 
+                    .filter(p -> { // start bib filter
+                        System.out.println("F3: Evaling " + p.fullNameProperty().getValueSafe());
+                        if (p.getBib().isEmpty()) return true;
+                        if (startTextField.getText().isEmpty()) return true;
+                        System.out.println("F3: " + ac.compare(startTextField.getText(), p.getBib()));
+                        return ac.compare(startTextField.getText(), p.getBib()) < 0;
+                    }) 
+                    .filter(p -> {// end bib filter
+                        System.out.println("F4: Evaling " + p.fullNameProperty().getValueSafe());
+                        if (p.getBib().isEmpty()) return true;
+                        if (endTextField.getText().isEmpty()) return true;
+                        System.out.println("F4: " + ac.compare(endTextField.getText(), p.getBib()));
+
+                        return ac.compare(endTextField.getText(), p.getBib()) > 0;
+                    }) 
+                    .sorted((p1,p2) -> {
+                        
+                        if (s1.cKey >=0){
+                            Integer r1 = ac.compare(p1.getCustomAttribute(s1.cKey).getValueSafe(), p2.getCustomAttribute(s1.cKey).getValueSafe());
+                            System.out.println("Sort C1: " + p1.getCustomAttribute(s1.cKey).getValueSafe() + " vs " + p2.getCustomAttribute(s1.cKey).getValueSafe() + " -> " + r1);
+
+                            if (r1  != 0) {
+                                if (s1Type.equals("Asc"))return r1;
+                                else return -r1;
+                            }
+                        } else if (! s1.key.equals("SKIP")) {
+                            Integer r1 = ac.compare(p1.getNamedAttribute(s1.key), p2.getNamedAttribute(s1.key));
+                            System.out.println("Sort A1: " + p1.getNamedAttribute(s1.key) + " vs " + p2.getNamedAttribute(s1.key) + " -> " + r1);
+                            if (r1  != 0) {
+                                if (s1Type.equals("Asc"))return r1;
+                                else return -r1;
+                            }
+                        }
+                        if (s2.cKey >=0){
+                            Integer r2 = ac.compare(p1.getCustomAttribute(s2.cKey).getValueSafe(), p2.getCustomAttribute(s2.cKey).getValueSafe());
+                            System.out.println("Sort C2: " + r2);
+                            if (r2  != 0) {
+                                if (s2Type.equals("Asc"))return r2;
+                                else return -r2;
+                            }
+                        } else if (! s2.key.equals("SKIP")) {
+                            Integer r2 = ac.compare(p1.getNamedAttribute(s2.key), p2.getNamedAttribute(s2.key));
+                            System.out.println("Sort A2: " + p1.getNamedAttribute(s2.key) + " vs " + p2.getNamedAttribute(s2.key) + " -> " + r2);
+                            if (r2  != 0) {
+                                if (s2Type.equals("Asc"))return r2;
+                                else return -r2;
+                            }
+                        }
+                        System.out.println("Sort returning 0");
+                        return 0;
+                    
+                    })  // Sort them
+                    .collect(Collectors.toList());
+            
+            
+            
+            for(Participant p: assignees){
+                //if (currentBib > lastBib) break;
+                System.out.println("Assigning bib for " + p.fullNameProperty().getValueSafe());
+                
+                //participantDAO.getParticipantByBib(currentBib.toString());
+                
+                //currentBib++;
+                
+            }
+            
+            
+            
+            
+            
+            
+            
+            
+        }
+    }
+    
+    
     public void setupCustomAttributes(ActionEvent fxevent){
         // Do something.... 
         List<CustomAttribute> customAttributes = new ArrayList(participantDAO.getCustomAttributes());
@@ -1713,6 +1956,28 @@ public class FXMLParticipantController  {
             }
             return false; // Does not match.
         });
+    }
+
+    private static class Attribute {
+        String name = "";
+        String key = "";
+        Integer cKey = -1;
+
+        public Attribute() {
+        }
+        public Attribute(String n, String k){
+            name = n;
+            key = k;
+        }
+        public Attribute(String n, Integer k){
+            name = n;
+            cKey = k;
+        }
+        
+        @Override
+        public String toString(){
+            return name;
+        }
     }
         
 

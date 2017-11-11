@@ -138,9 +138,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
       </HBox>
-      <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2">
+      <HBox alignment="CENTER_RIGHT" spacing="10.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2">
          <children>
             <Button fx:id="customAtrtributesButton" mnemonicParsing="false" onAction="#setupCustomAttributes" text="Setup Custom Attributes..." />
+            <Button fx:id="bulkBibAssignmentButton" mnemonicParsing="false" onAction="#bulkBibAssignment" text="Bulk Bib Assignment..." />
             <Pane HBox.hgrow="ALWAYS" />
             <Button fx:id="deleteParticipantsButton" alignment="CENTER_RIGHT" onAction="#deleteParticipants" text="Remove" />
          </children>

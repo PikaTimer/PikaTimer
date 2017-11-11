@@ -234,7 +234,7 @@ public class ImportWizardView3Controller {
                         }
                         
                         if(model.getWaveAssignByBib()) {
-                            p.setWaves(getWaveByBib(attributes.get("bib")));
+                            p.setWaves(participantDAO.getWaveByBib(attributes.get("bib")));
                         } else if (model.getWaveAssignByAttribute()) {
                             System.out.println("Assigning wave by attribute: \"" + pendingWave + "\" / \"" + pendingRace + "\"");
                            if (pendingWave.isEmpty() && !pendingRace.isEmpty()){
@@ -296,27 +296,6 @@ public class ImportWizardView3Controller {
     
    
     
-    private Set<Wave> getWaveByBib(String bib) {
-        AlphanumericComparator comp = new AlphanumericComparator(); 
-        
-        Set<Wave> waves = new HashSet<>();
-        Map raceMap = new HashMap(); 
-        
-        RaceDAO.getInstance().listWaves().forEach(i -> {
-            if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
-                String start = i.getWaveAssignmentStart(); 
-                String end = i.getWaveAssignmentEnd(); 
-                if (!(start.isEmpty() && end.isEmpty()) && (comp.compare(start, bib) <= 0 || start.isEmpty()) && (comp.compare(end, bib) >= 0 || end.isEmpty())) {
-                    if(!raceMap.containsKey(i.getRace())) {
-                        //System.out.println("Bib " + bibTextField.getText() + " matched wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
-                        raceMap.put(i.getRace(), true); 
-                        waves.add(i); 
-                    }
-                }
-            }
-        });
-        
-        return waves; 
-    }
+    
     
 }
