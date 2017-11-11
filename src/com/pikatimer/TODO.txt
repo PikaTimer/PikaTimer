@@ -1,40 +1,42 @@
 TODO for 1.5 Release
 
 Bugs:
-Ultra Direct: Discover only scans 1st network adapter
+DONE: Ultra Direct: Discover only scans 1st network adapter
 DONE: Ultra Direct: Save to file holds old target locations
 Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
 DONE: FTPS Upload: Upload to a temp file and then do a rename to get around file locking issues
 DONE: Text header/footer does not honor line feeds in text output files (search/replace \R for System.linefeed() )
-Single quotes in split names causes issues in the JSON parsing. Need to wrap in double quotes and escape all double quotes in any user editable field (split, segment, name, city, state, country, etc)
-Having the "in-progress" or "show dnf's" not checked during a race with no finishers yet results in problems in the OverallJSON that blows through the OverallHMTL5 report.
+DONE: Single quotes in split names causes issues in the JSON parsing. Need to wrap in double quotes and escape all double quotes in any user editable field (split, segment, name, city, state, country, etc)
+DONE: Having the "in-progress" or "show dnf's" not checked during a race with no finishers yet results in problems in the OverallJSON that blows through the OverallHMTL5 report.
 Start time lookup: 2nd location shows all waves and adds extra waves to those races
+DONE: Awards are not populated on initial event creation
 
 
 Features:
 DONE: Participant: Custom Attributes (string, integer, number, date, time, list)
-Participant Import: Assign to wave based on an input field in the CSV file
-Participant Import: Import Custom Attributes
-Participant Export: Include Custom Attributes in list to export
+DONE: Participant Import: Assign to race/wave based on an input field in the CSV file
+DONE: Participant Import: Import Custom Attributes
+DONE: Participant Export: Include Custom Attributes in list to export
 Participant: Bulk Assignments of bibs
 
 DONE: AgeGroup: 1 year option
 DONE: AgeGroup: Arbitrary group ranges (5->7, 8->9, 10->13, etc)
 
 DONE: Awards: Advanced (3 tier, variable AG award depths based on number of registrants or runners)
-Awards: Custom Awards:
+DONE: Awards: Custom Awards:
         DONE: arbitrary order, 
         DONE: filters, 
         DONE: timing points, 
         DONE: group by (sex, age, age group), 
         DONE: skew by custom duration,
         DONE: depths (fixed, variable)
+Awards: Hide on report flag
+Awards: Hide in overall results report flag
 
 Split: Advanced toggle switch to enable additional options
 Split: Min time to next split (under advanced display for the split)
-Split: Type: Normal, Hidden Split, Ignored/Blanked
 Split: Ignore split time support (aka "dead zone" or "pause"). Basically blank out the time from that segment. 
-Split: Mandatory split (stop if they are missing a time from that split)
+Split: Mandatory split (stop if they are missing a time from the split)
 
 Segment: Hidden flag (don't display on results)
 Segment: Pace display (vs the global default)
@@ -43,7 +45,7 @@ Segment: Pace display (vs the global default)
 Timing: Ultra Direct -- filter after skew to permit "old" times to be adjusted forward  
 Timing: Ultra Direct -- antenna on/off and power configuration
 Timing: Ultra Direct -- Remote Settings (including custom IP)
-Timing: Outreach client
+Timing: Outreach client?
 
 Override: Penalty support w/ Note
 
@@ -57,6 +59,7 @@ Results: HTML5: DNF should show the note and if in progress, display the last se
 Results: HTML5: Segments: Per segment pace display override (swim/bike/run/transition)
 Results: HTML5: Segments: Option to show splits on the segment section of the HTML5 report
 Results: HTML5: Show penalty w/ note if set
+
 
 
 FUTURE: 
@@ -86,7 +89,6 @@ Internationalization? (Spanish, English, French, German, British, US, etc)
 
 
 Races:
-Setup Custom AG's (other than just 5 & 10 year increments)?
 
 Metadata for split locations (distance, min time, max time, cutoffs, estimated % of total time)
 Ability to set min/max times for a split
@@ -156,7 +158,7 @@ Award winner note in overall text/html reports.
 Publish to 3rd party results web site (e.g. RunSignUp.com)? 
 
 
-Team Results: V1.5
+Team Results: V2.0+
 Male, Female, Coed, user selected variable (city, state, custom, etc)
 scoring numbers per team (1->N)
 for co-ed, number per team of each gender (1->(N-1))
@@ -164,14 +166,8 @@ for co-ed, number per team of each gender (1->(N-1))
 
 Awards: 
 
-Set depth based on # registrants / finishers
-Team based on top X scorers (specified per team category)
-Award Depth options: Fixed depth (done), variable, top X % with a cap
-Ordered list (overall, masters, AG) with per group option to pull winners from
-Custom award options with filters
 Team awards
 
-Award report for fastest to a given split or segment time (fastest uphill, fastest downhill, etc). 
 
 Options tab:
 Active.com/RunSignUp/FuseSport/Outreach Account info profiles
