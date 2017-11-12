@@ -1265,11 +1265,33 @@ public class FXMLParticipantController  {
         //TextField startTextArea = new TextField();
         //startTextArea.setPrefWidth(90);
         
-        TextField startTextField = new TextField();
+        TextField startTextField = new TextField("1");
         startTextField.setPrefWidth(90);
+        startTextField.textProperty().addListener((obs, prevVal, newVal) -> {
+            if (newVal != null && !newVal.isEmpty() ){
+                try {
+                    Integer.parseUnsignedInt(newVal);
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        startTextField.textProperty().set(prevVal);
+                    });
+                }
+            }
+        });
         
         TextField endTextField = new TextField();
         endTextField.setPrefWidth(90);
+        endTextField.textProperty().addListener((obs, prevVal, newVal) -> {
+            if (newVal != null && !newVal.isEmpty() ){
+                try {
+                    Integer.parseUnsignedInt(newVal);
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        endTextField.textProperty().set(prevVal);
+                    });
+                }
+            }
+        });
         
         ToggleSwitch clearExistingToggleSwitch = new ToggleSwitch();
         clearExistingToggleSwitch.setPrefWidth(90);
@@ -1308,8 +1330,9 @@ public class FXMLParticipantController  {
         dialog.setTitle("Bib Assigment");
         dialog.setHeaderText("Bulk Bib Assigment");
         ButtonType okButtonType = new ButtonType("Assign", ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
         
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+       
         VBox contentVBox = new VBox();
         contentVBox.setSpacing(5);
         contentVBox.setMaxHeight(MAX_VALUE);
@@ -1370,8 +1393,8 @@ public class FXMLParticipantController  {
         skip.getChildren().addAll(skipLabel,skipBibs);
         contentVBox.getChildren().add(skip);
         
-        
-        
+        dialog.getDialogPane().lookupButton(okButtonType).disableProperty().bind(startTextField.textProperty().isEmpty());
+
         dialog.getDialogPane().setContent(contentVBox);
         
         
@@ -1392,6 +1415,7 @@ public class FXMLParticipantController  {
             if (!endTextField.getText().isEmpty()) Integer.parseInt(endTextField.getText());
             
             Set<String> skipList = new HashSet(Arrays.asList(skipBibs.getText().split("\\R")));
+            for(String t: skipList) System.out.println("Skipping bibs ending with \"" + t + "\"");
             
             Attribute s1 = sort1ComboBox.getSelectionModel().getSelectedItem();
             Attribute s2 = sort2ComboBox.getSelectionModel().getSelectedItem();
@@ -1421,7 +1445,7 @@ public class FXMLParticipantController  {
                         if (p.getBib().isEmpty()) return true;
                         if (startTextField.getText().isEmpty()) return true;
                         System.out.println("F3: " + ac.compare(startTextField.getText(), p.getBib()));
-                        return ac.compare(startTextField.getText(), p.getBib()) < 0;
+                        return ac.compare(startTextField.getText(), p.getBib()) <= 0;
                     }) 
                     .filter(p -> {// end bib filter
                         System.out.println("F4: Evaling " + p.fullNameProperty().getValueSafe());
@@ -1429,7 +1453,7 @@ public class FXMLParticipantController  {
                         if (endTextField.getText().isEmpty()) return true;
                         System.out.println("F4: " + ac.compare(endTextField.getText(), p.getBib()));
 
-                        return ac.compare(endTextField.getText(), p.getBib()) > 0;
+                        return ac.compare(endTextField.getText(), p.getBib()) >= 0;
                     }) 
                     .sorted((p1,p2) -> {
                         
@@ -1471,24 +1495,41 @@ public class FXMLParticipantController  {
                     .collect(Collectors.toList());
             
             
-            
+            Participant existing = null;
             for(Participant p: assignees){
-                //if (currentBib > lastBib) break;
+                if (currentBib > lastBib) break;
                 System.out.println("Assigning bib for " + p.fullNameProperty().getValueSafe());
                 
-                //participantDAO.getParticipantByBib(currentBib.toString());
+                if (!clearExistingToggleSwitch.selectedProperty().get()) {
+                    while(currentBib <= lastBib && participantDAO.getParticipantByBib(currentBib.toString()) != null){
+                        currentBib++;
+                    }
+                }
+                if (!skipList.isEmpty()) {
+                    Boolean good = true;
+                    do {
+                        good = true;
+                        for(String t: skipList){
+                            if (currentBib.toString().endsWith(t)) good=false;
+                        }
+                        if (good==false) currentBib++;
+                        if (currentBib > lastBib) break;
+                    } while (!good);
+                }
+                if (currentBib > lastBib) break;
+                // This should be null if we are not clearing existing
+                existing = participantDAO.getParticipantByBib(currentBib.toString());
                 
-                //currentBib++;
-                
+                if (existing != null && !existing.equals(p)) {
+                    existing.setBib("OLD: " + currentBib.toString());
+                    participantDAO.updateParticipant(existing);
+                }
+                p.setBib(currentBib.toString());
+                p.setWaves(participantDAO.getWaveByBib(currentBib.toString()));
+                participantDAO.updateParticipant(p);
+                System.out.println("  " + p.fullNameProperty().getValueSafe() + " now has bib " + currentBib);
+                currentBib++;
             }
-            
-            
-            
-            
-            
-            
-            
-            
         }
     }
     

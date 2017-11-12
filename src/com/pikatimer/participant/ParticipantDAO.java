@@ -334,6 +334,15 @@ public class ParticipantDAO {
         Set<Wave> waves = new HashSet<>();
         Map raceMap = new HashMap(); 
         
+        System.out.println("Only one wave to assign them to...");
+
+        // If there is only one...
+        if (RaceDAO.getInstance().listWaves().size() == 1) {
+            System.out.println("Only one wave to assign them to...");
+            waves.add(RaceDAO.getInstance().listWaves().get(0));
+            return waves;
+        }
+        
         RaceDAO.getInstance().listWaves().forEach(i -> {
             if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
                 String start = i.getWaveAssignmentStart(); 
