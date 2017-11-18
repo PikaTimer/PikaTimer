@@ -142,6 +142,7 @@ public class Award implements RaceReportType {
             
         StringBuilder awardPrintout = new StringBuilder();
         awardParams.awardCategoriesProperty().forEach(ac -> {
+            if (!ac.getVisible()) return;
             Map<String,List<AwardWinner>> resultsMap = awardWinnersMap.get(ac);
             List<String> categories = resultsMap.keySet().stream().sorted((k1,k2) -> k1.compareTo(k2)).collect(Collectors.toList());
             categories.forEach(cat -> {
