@@ -77,16 +77,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                   <PropertyValueFactory property="splitDistance" />
                               </cellValueFactory>
                           </TableColumn>
-                          <TableColumn fx:id="splitTimeTableColumn" prefWidth="50.0" sortable="false" text="\% Time">
-                              <cellValueFactory>
-                                  <PropertyValueFactory property="splitTime" />
-                              </cellValueFactory>
-                          </TableColumn>
-                          <TableColumn fx:id="splitCutoffTableColumn" prefWidth="75.0" sortable="false" text="Cutoff">
-                              <cellValueFactory>
-                                  <PropertyValueFactory property="splitCutoffString" />
-                              </cellValueFactory>
-                          </TableColumn>
                         
                     </columns>
                      <columnResizePolicy>

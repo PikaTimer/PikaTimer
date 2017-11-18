@@ -62,6 +62,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.controlsfx.control.ToggleSwitch;
+import org.controlsfx.control.table.TableRowExpanderColumn;
 
 
 
@@ -92,8 +94,6 @@ public class FXMLRaceDetailsController {
     @FXML private TableColumn<Split, String> splitNameTableColumn;
     @FXML private TableColumn<Split,TimingLocation> splitLocationTableColumn; 
     @FXML private TableColumn<Split, String> splitDistanceTableColumn;
-    @FXML private TableColumn<Split, String> splitCutoffTableColumn; 
-    @FXML private TableColumn<Split, String> splitTimeTableColumn;
     @FXML private Button deleteSplitButton;
     @FXML private CheckBox waveStartsCheckBox; 
     @FXML private HBox startTimeHBox; 
@@ -427,31 +427,31 @@ public class FXMLRaceDetailsController {
         });
         splitDistanceTableColumn.setComparator(new AlphanumericComparator());
         
-        Label splitCutoffTableColumnLabel = new Label("Cutoff");
-        splitCutoffTableColumnLabel.setTooltip(new Tooltip("Optional Cutoff time in HH:MM"));
-        splitCutoffTableColumn.setGraphic(splitCutoffTableColumnLabel);
-        splitCutoffTableColumn.setText("");
-        splitCutoffTableColumn.setCellFactory(TextFieldTableCell.forTableColumn()); 
-        splitCutoffTableColumn.setOnEditCommit((CellEditEvent<Split, String> t) -> {
-            Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
-            if (t.getNewValue().matches("[0-9]+") ) {
-                int hours = Integer.valueOf(t.getNewValue());
-                s.setSplitCutoff(Duration.ofSeconds(hours * 3600L).toNanos());
-                raceDAO.updateSplit(s); 
-            } else if (t.getNewValue().matches("[0-9][0-9]*:[0-5][0-9]") ) {
-                String[] split = t.getNewValue().split(":");
-                int hours = Integer.valueOf(split[0]);
-                int minutes = Integer.valueOf(split[1]);
-                s.setSplitCutoff(Duration.ofSeconds(hours * 3600L + minutes * 60L).toNanos());
-                raceDAO.updateSplit(s);
-            } else if ( t.getNewValue().isEmpty() && ! t.getOldValue().isEmpty()) {
-                s.setSplitCutoff(0L);
-                raceDAO.updateSplit(s);
-            } else {
-                t.consume();
-                s.splitCutoffStringProperty().setValue(t.getOldValue());
-            }
-        });
+//        Label splitCutoffTableColumnLabel = new Label("Cutoff");
+//        splitCutoffTableColumnLabel.setTooltip(new Tooltip("Optional Cutoff time in HH:MM"));
+//        splitCutoffTableColumn.setGraphic(splitCutoffTableColumnLabel);
+//        splitCutoffTableColumn.setText("");
+//        splitCutoffTableColumn.setCellFactory(TextFieldTableCell.forTableColumn()); 
+//        splitCutoffTableColumn.setOnEditCommit((CellEditEvent<Split, String> t) -> {
+//            Split s = (Split) t.getTableView().getItems().get(t.getTablePosition().getRow());
+//            if (t.getNewValue().matches("[0-9]+") ) {
+//                int hours = Integer.valueOf(t.getNewValue());
+//                s.setSplitCutoff(Duration.ofSeconds(hours * 3600L).toNanos());
+//                raceDAO.updateSplit(s); 
+//            } else if (t.getNewValue().matches("[0-9][0-9]*:[0-5][0-9]") ) {
+//                String[] split = t.getNewValue().split(":");
+//                int hours = Integer.valueOf(split[0]);
+//                int minutes = Integer.valueOf(split[1]);
+//                s.setSplitCutoff(Duration.ofSeconds(hours * 3600L + minutes * 60L).toNanos());
+//                raceDAO.updateSplit(s);
+//            } else if ( t.getNewValue().isEmpty() && ! t.getOldValue().isEmpty()) {
+//                s.setSplitCutoff(0L);
+//                raceDAO.updateSplit(s);
+//            } else {
+//                t.consume();
+//                s.splitCutoffStringProperty().setValue(t.getOldValue());
+//            }
+//        });
         
         startBibTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             startBibTextField.setText(newValue.replaceFirst("^[ 0]*", "").replaceFirst(" *$", ""));
@@ -473,8 +473,7 @@ public class FXMLRaceDetailsController {
             }
         });
         
-        splitCutoffTableColumn.visibleProperty().set(false);
-        splitTimeTableColumn.visibleProperty().set(false);
+
         
         splitUpdateResultsButton.visibleProperty().set(false);
         
@@ -496,6 +495,125 @@ public class FXMLRaceDetailsController {
         
         segmentDistanceTableColumn.setCellValueFactory(new PropertyValueFactory<>("distanceString"));
         
+        TableRowExpanderColumn<Split> advancedSplitOptionsTableRowExpanderColumn = new TableRowExpanderColumn<>(param -> {
+            Split s = param.getValue();
+            if (s == null) return new Label("");
+            
+            
+            if (s.getPosition() == 1 || s.getPosition() == s.getRace().getSplits().size()) { // start or finish
+                Label errorLabel = new Label("There are no advanced options for the start or finish split");
+                return errorLabel;
+            } 
+            
+            Integer colWidth = 100;
+            VBox editor = new VBox();
+            editor.setSpacing(5);
+            
+            Label advLabel = new Label("Advanced Options:");
+            advLabel.setStyle("-fx-font-size: 14px;");
+            advLabel.setPrefWidth(200);
+            
+
+            // Min time to next split 
+            // If NOT Start or Finish
+            HBox minTimeHBox = new HBox();
+            minTimeHBox.setSpacing(5);
+            Label splitMinTimeLabel = new Label("Minimum Time");
+            splitMinTimeLabel.setPrefWidth(colWidth);
+            TextField minTimeTextField = new TextField(DurationFormatter.durationToString(param.getValue().splitMinTimeDuration()));
+            minTimeTextField.setPromptText("HH:MM:SS");
+            minTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                    System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+                } else {
+                    Platform.runLater(() -> {
+                        int c = minTimeTextField.getCaretPosition();
+                        if (oldValue.length() > newValue.length()) c++;
+                        else c--;
+                        minTimeTextField.setText(oldValue);
+                        minTimeTextField.positionCaret(c);
+                    });
+                    System.out.println("Bad Cutoff Time (newValue: " + newValue + ")");
+                }
+            });
+            minTimeHBox.getChildren().setAll(splitMinTimeLabel,minTimeTextField);
+
+            // Cutoff Time
+            // If NOT Start or Finish
+            HBox cutoffHBox = new HBox();
+            cutoffHBox.setSpacing(5);
+            Label splitCutoffLabel = new Label("Cutoff Time");
+            splitCutoffLabel.setPrefWidth(colWidth);
+            TextField cutoffTimeTextField = new TextField(DurationFormatter.durationToString(param.getValue().splitCutoffDuration()));
+            cutoffTimeTextField.setPromptText("HH:MM:SS");
+            cutoffTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                    System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+                } else {
+                    Platform.runLater(() -> {
+                        int c = cutoffTimeTextField.getCaretPosition();
+                        if (oldValue.length() > newValue.length()) c++;
+                        else c--;
+                        cutoffTimeTextField.setText(oldValue);
+                        cutoffTimeTextField.positionCaret(c);
+                    });
+                    System.out.println("Bad Cutoff Time (newValue: " + newValue + ")");
+                }
+            });
+        
+            cutoffHBox.getChildren().setAll(splitCutoffLabel,cutoffTimeTextField);
+            
+            // Ignore split time toggle
+            // If NOT Start or Finish
+            HBox ignoreyHBox = new HBox();
+            ignoreyHBox.setSpacing(5);
+            Label ignoreLabel = new Label("Ignore Time");
+            ignoreLabel.setPrefWidth(colWidth);
+            ToggleSwitch ignoreToggleSwitch = new ToggleSwitch();
+            ignoreToggleSwitch.setSelected(param.getValue().getIgnoreTime());
+            ignoreyHBox.getChildren().setAll(ignoreLabel,ignoreToggleSwitch);
+            
+            // Mandatory toggle
+            // If NOT Start or Finish
+            HBox mandatoryHBox = new HBox();
+            mandatoryHBox.setSpacing(5);
+            Label mandatoryLabel = new Label("Mandatory Split");
+            mandatoryLabel.setPrefWidth(colWidth);
+            ToggleSwitch mandatoryToggleSwitch = new ToggleSwitch();
+            mandatoryToggleSwitch.setSelected(param.getValue().getMandatorySplit());
+            mandatoryHBox.getChildren().setAll(mandatoryLabel,mandatoryToggleSwitch);
+
+            // Note saying that there are no advanced options for the start/finish
+            
+            Button save = new Button("Save Split");
+            save.setOnAction(event -> {
+                // Min Time Time
+                if (DurationParser.parsable(minTimeTextField.getText()))
+                    param.getValue().setSplitMinTime(DurationParser.parse(minTimeTextField.getText(),Boolean.TRUE).toNanos());
+                
+                // Cutoff Time
+                if (DurationParser.parsable(cutoffTimeTextField.getText()))
+                    param.getValue().setSplitCutoff(DurationParser.parse(cutoffTimeTextField.getText(),Boolean.TRUE).toNanos());
+                
+                param.getValue().setMandatorySplit(mandatoryToggleSwitch.selectedProperty().getValue());
+                param.getValue().setIgnoreTime(ignoreToggleSwitch.selectedProperty().getValue());
+
+                
+                raceDAO.updateSplit(param.getValue());
+                param.toggleExpanded();
+            });
+            
+            editor.getChildren().addAll(advLabel,minTimeHBox,cutoffHBox,mandatoryHBox,ignoreyHBox,save);
+            
+            return editor;
+        });
+        advancedSplitOptionsTableRowExpanderColumn.setMinWidth(50);
+        advancedSplitOptionsTableRowExpanderColumn.setPrefWidth(50);
+        advancedSplitOptionsTableRowExpanderColumn.setMaxWidth(50);
+        advancedSplitOptionsTableRowExpanderColumn.setResizable(false);
+        raceSplitsTableView.getColumns().add(0,advancedSplitOptionsTableRowExpanderColumn);
         
 
     }    

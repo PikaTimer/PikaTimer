@@ -68,11 +68,12 @@ public class PikaRFIDFileReader extends TailingReader {
         } else if (s.contains("\t")){
             String[] tokens = s.split("\t", -1);
             // we only care about the following fields:
-            // 0 -- The port (1->4)
-            // 1 -- chip
-            // 2 -- bib
-            // 3 -- time (as a string)
-            // 4 & 5 -- the Reader {1 or 2} and Port (again)
+            
+            // 0 -- chip
+            // 1 -- time (as a string)
+            // 2 -- the Reader {1 or 2} 
+            // 3 -- The port (1->4)
+            
 
             // Step 1: Make sure we have a time in the 4th field
             // Find out if we have a date + time or just a time
