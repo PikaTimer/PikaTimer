@@ -18,15 +18,20 @@ package com.pikatimer.timing;
 
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
+import com.pikatimer.util.Pace;
 import javafx.beans.Observable;
 import javafx.beans.binding.StringBinding;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -53,6 +58,10 @@ public class Segment implements Comparable<Segment>{
     private final StringProperty endSplitStringProperty = new SimpleStringProperty();
     private final StringProperty startSplitStringProperty = new SimpleStringProperty();
     private final StringProperty distanceStringProperty = new SimpleStringProperty("0");
+    
+    private Pace customPace;
+    private BooleanProperty useCustomPace = new SimpleBooleanProperty(false);
+    private BooleanProperty hideOnResults = new SimpleBooleanProperty(false);
     
     
     public Segment(Race r){
@@ -139,6 +148,40 @@ public class Segment implements Comparable<Segment>{
     public void setEndSplitID(Integer id) {
         endSplitID = id;
     }
+    
+    
+    @Column(name="HIDDEN")
+    public Boolean getHidden() {
+        return hideOnResults.getValue();
+    }
+    public void setHidden(Boolean n) {
+        hideOnResults.setValue(n);
+    }
+    public BooleanProperty hiddenProperty() {
+        return hideOnResults;
+    }
+    
+    @Column(name="use_custom_pace")
+    public Boolean getUseCustomPace() {
+        return useCustomPace.getValue();
+    }
+    public void setUseCustomPace(Boolean n) {
+        useCustomPace.setValue(n);
+    }
+    public BooleanProperty useCustomPaceProperty() {
+        return useCustomPace;
+    }
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name="pace_unit")
+    public Pace getCustomPace() {
+        return customPace;
+    }
+    public void setCustomPace(Pace p) {
+        customPace = p;
+    }
+    
+    
     @Transient
     public Split getEndSplit() {
         return RaceDAO.getInstance().getSplitByID(endSplitID);
@@ -159,6 +202,12 @@ public class Segment implements Comparable<Segment>{
         if ( ! endSplitStringProperty.isBound() && endSplitID != null && getEndSplit() != null) endSplitStringProperty.bind(getEndSplit().splitNameProperty());
         return endSplitStringProperty; 
     }
+    
+    
+    
+    
+    
+    
     @Transient
     public Integer getEndSplitPosition(){
         return getEndSplit().getPosition();

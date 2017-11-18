@@ -495,6 +495,7 @@ public class FXMLRaceDetailsController {
         
         segmentDistanceTableColumn.setCellValueFactory(new PropertyValueFactory<>("distanceString"));
         
+        // Advanced Split Dropdown Stuff
         TableRowExpanderColumn<Split> advancedSplitOptionsTableRowExpanderColumn = new TableRowExpanderColumn<>(param -> {
             Split s = param.getValue();
             if (s == null) return new Label("");
@@ -520,7 +521,7 @@ public class FXMLRaceDetailsController {
             minTimeHBox.setSpacing(5);
             Label splitMinTimeLabel = new Label("Minimum Time");
             splitMinTimeLabel.setPrefWidth(colWidth);
-            TextField minTimeTextField = new TextField(DurationFormatter.durationToString(param.getValue().splitMinTimeDuration()));
+            TextField minTimeTextField = new TextField(DurationFormatter.durationToString(s.splitMinTimeDuration()));
             minTimeTextField.setPromptText("HH:MM:SS");
             minTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                 //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
@@ -545,7 +546,7 @@ public class FXMLRaceDetailsController {
             cutoffHBox.setSpacing(5);
             Label splitCutoffLabel = new Label("Cutoff Time");
             splitCutoffLabel.setPrefWidth(colWidth);
-            TextField cutoffTimeTextField = new TextField(DurationFormatter.durationToString(param.getValue().splitCutoffDuration()));
+            TextField cutoffTimeTextField = new TextField(DurationFormatter.durationToString(s.splitCutoffDuration()));
             cutoffTimeTextField.setPromptText("HH:MM:SS");
             cutoffTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                 //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
@@ -567,13 +568,13 @@ public class FXMLRaceDetailsController {
             
             // Ignore split time toggle
             // If NOT Start or Finish
-            HBox ignoreyHBox = new HBox();
-            ignoreyHBox.setSpacing(5);
+            HBox ignoreHBox = new HBox();
+            ignoreHBox.setSpacing(5);
             Label ignoreLabel = new Label("Ignore Time");
             ignoreLabel.setPrefWidth(colWidth);
             ToggleSwitch ignoreToggleSwitch = new ToggleSwitch();
-            ignoreToggleSwitch.setSelected(param.getValue().getIgnoreTime());
-            ignoreyHBox.getChildren().setAll(ignoreLabel,ignoreToggleSwitch);
+            ignoreToggleSwitch.setSelected(s.getIgnoreTime());
+            ignoreHBox.getChildren().setAll(ignoreLabel,ignoreToggleSwitch);
             
             // Mandatory toggle
             // If NOT Start or Finish
@@ -582,7 +583,7 @@ public class FXMLRaceDetailsController {
             Label mandatoryLabel = new Label("Mandatory Split");
             mandatoryLabel.setPrefWidth(colWidth);
             ToggleSwitch mandatoryToggleSwitch = new ToggleSwitch();
-            mandatoryToggleSwitch.setSelected(param.getValue().getMandatorySplit());
+            mandatoryToggleSwitch.setSelected(s.getMandatorySplit());
             mandatoryHBox.getChildren().setAll(mandatoryLabel,mandatoryToggleSwitch);
 
             // Note saying that there are no advanced options for the start/finish
@@ -591,21 +592,21 @@ public class FXMLRaceDetailsController {
             save.setOnAction(event -> {
                 // Min Time Time
                 if (DurationParser.parsable(minTimeTextField.getText()))
-                    param.getValue().setSplitMinTime(DurationParser.parse(minTimeTextField.getText(),Boolean.TRUE).toNanos());
+                    s.setSplitMinTime(DurationParser.parse(minTimeTextField.getText(),Boolean.TRUE).toNanos());
                 
                 // Cutoff Time
                 if (DurationParser.parsable(cutoffTimeTextField.getText()))
-                    param.getValue().setSplitCutoff(DurationParser.parse(cutoffTimeTextField.getText(),Boolean.TRUE).toNanos());
+                    s.setSplitCutoff(DurationParser.parse(cutoffTimeTextField.getText(),Boolean.TRUE).toNanos());
                 
-                param.getValue().setMandatorySplit(mandatoryToggleSwitch.selectedProperty().getValue());
-                param.getValue().setIgnoreTime(ignoreToggleSwitch.selectedProperty().getValue());
+                s.setMandatorySplit(mandatoryToggleSwitch.selectedProperty().getValue());
+                s.setIgnoreTime(ignoreToggleSwitch.selectedProperty().getValue());
 
                 
-                raceDAO.updateSplit(param.getValue());
+                raceDAO.updateSplit(s);
                 param.toggleExpanded();
             });
             
-            editor.getChildren().addAll(advLabel,minTimeHBox,cutoffHBox,mandatoryHBox,ignoreyHBox,save);
+            editor.getChildren().addAll(advLabel,minTimeHBox,cutoffHBox,mandatoryHBox,ignoreHBox,save);
             
             return editor;
         });
@@ -613,8 +614,73 @@ public class FXMLRaceDetailsController {
         advancedSplitOptionsTableRowExpanderColumn.setPrefWidth(50);
         advancedSplitOptionsTableRowExpanderColumn.setMaxWidth(50);
         advancedSplitOptionsTableRowExpanderColumn.setResizable(false);
-        raceSplitsTableView.getColumns().add(0,advancedSplitOptionsTableRowExpanderColumn);
+        advancedSplitOptionsTableRowExpanderColumn.setText("Adv");
+        raceSplitsTableView.getColumns().add(advancedSplitOptionsTableRowExpanderColumn);
         
+        // Advanced Segment Stuff
+        TableRowExpanderColumn<Segment> advancedSegmentOptionsTableRowExpanderColumn = new TableRowExpanderColumn<>(param -> {
+            Segment s = param.getValue();
+            
+            VBox editor = new VBox();
+            
+            Integer colWidth = 120;
+            
+            // Intro Label
+            Label advLabel = new Label("Advanced Options:");
+            advLabel.setStyle("-fx-font-size: 14px;");
+            advLabel.setPrefWidth(200);
+            
+            //Hide on results
+            HBox hideHBox = new HBox();
+            hideHBox.setSpacing(5);
+            Label hideLabel = new Label("Hide on Results");
+            hideLabel.setPrefWidth(colWidth);
+            ToggleSwitch hideToggleSwitch = new ToggleSwitch();
+            hideToggleSwitch.setSelected(s.getHidden());
+            hideHBox.getChildren().setAll(hideLabel,hideToggleSwitch);
+            
+            //Pace Display
+            HBox paceHBox = new HBox();
+            paceHBox.setSpacing(5);
+            Label paceLabel = new Label("Override Pace Display");
+            paceLabel.setPrefWidth(colWidth);
+            ToggleSwitch customPaceToggleSwitch = new ToggleSwitch();
+            customPaceToggleSwitch.setSelected(s.getUseCustomPace());
+            ChoiceBox<Pace> paceFormatChoiceBox = new ChoiceBox();
+            paceFormatChoiceBox.setItems(FXCollections.observableArrayList(Pace.values()));
+            paceFormatChoiceBox.getSelectionModel().select(Pace.MPM);
+            if (s.getUseCustomPace()) paceFormatChoiceBox.getSelectionModel().select(s.getCustomPace());
+            paceFormatChoiceBox.visibleProperty().bind(customPaceToggleSwitch.selectedProperty());
+
+            paceHBox.getChildren().setAll(paceLabel,customPaceToggleSwitch,paceFormatChoiceBox);
+            
+            Button save = new Button("Save");
+            save.setOnAction(event -> {
+
+                // Hidden
+                s.setHidden(hideToggleSwitch.selectedProperty().getValue());
+                
+                // Custom Pace Display
+                s.setUseCustomPace(customPaceToggleSwitch.selectedProperty().getValue());
+                if (customPaceToggleSwitch.selectedProperty().getValue())
+                    s.setCustomPace(paceFormatChoiceBox.getSelectionModel().getSelectedItem());
+
+                
+                raceDAO.updateSegment(s);
+                param.toggleExpanded();
+            });
+            
+            editor.getChildren().addAll(advLabel,hideHBox,paceHBox,save);
+            
+            return editor;
+            
+        });
+        advancedSegmentOptionsTableRowExpanderColumn.setMinWidth(50);
+        advancedSegmentOptionsTableRowExpanderColumn.setPrefWidth(50);
+        advancedSegmentOptionsTableRowExpanderColumn.setMaxWidth(50);
+        advancedSegmentOptionsTableRowExpanderColumn.setResizable(false);
+        advancedSegmentOptionsTableRowExpanderColumn.setText("Adv");
+        raceSegmentsTableView.getColumns().add(advancedSegmentOptionsTableRowExpanderColumn);
 
     }    
     
