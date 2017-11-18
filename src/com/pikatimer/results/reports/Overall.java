@@ -162,9 +162,15 @@ public class Overall implements RaceReportType{
         if (showSegments) {
             final StringBuilder chars = new StringBuilder();
             Integer dispLeg = dispFormatLength;
-            race.getSegments().forEach(seg -> {
+            race.raceSegmentsProperty().forEach(seg -> {
+                if(seg.getHidden() ) return;
                 chars.append(StringUtils.leftPad(seg.getSegmentName(),dispLeg));
-                if (showSegmentPace) chars.append(StringUtils.leftPad("Pace",pace.getFieldWidth()+1)); // pace.getFieldWidth()+1
+                if (showSegmentPace) {
+                    if (seg.getUseCustomPace() ) {
+                        if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace())))
+                             chars.append(StringUtils.leftPad("Pace",seg.getCustomPace().getFieldWidth()+1));
+                    } else chars.append(StringUtils.leftPad("Pace",pace.getFieldWidth()+1));
+                } // pace.getFieldWidth()+1
             });
             report += chars.toString();
         }
@@ -239,12 +245,19 @@ public class Overall implements RaceReportType{
             }
             if (showSegments) {
                 Integer dispLen = dispFormatLength;
-                race.getSegments().forEach(seg -> {
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if (seg.getHidden()) return;
                     chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispFormat, roundMode),dispLen));
                     if (showSegmentPace) {
-                        //if (pr.getSegmentTime(seg.getID()) != null ) chars.append(StringUtils.leftPad(StringUtils.stripStart(Pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()), Pace.MPM), "0"),9));
-                        if (pr.getSegmentTime(seg.getID()) != null ) chars.append(StringUtils.leftPad(pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID())),pace.getFieldWidth()+1));
-                        else chars.append(StringUtils.leftPad("",pace.getFieldWidth()+1));
+                        if (seg.getUseCustomPace()) {
+                            if(!Pace.NONE.equals(seg.getCustomPace())) {
+                                if (pr.getSegmentTime(seg.getID()) != null ) chars.append(StringUtils.leftPad(seg.getCustomPace().getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID())),seg.getCustomPace().getFieldWidth()+1));
+                                else chars.append(StringUtils.leftPad("",seg.getCustomPace().getFieldWidth()+1));
+                            }
+                        } else {
+                            if (pr.getSegmentTime(seg.getID()) != null ) chars.append(StringUtils.leftPad(pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID())),pace.getFieldWidth()+1));
+                            else chars.append(StringUtils.leftPad("",pace.getFieldWidth()+1));
+                        }
                     }
                 });
             }

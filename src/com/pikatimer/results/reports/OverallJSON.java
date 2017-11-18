@@ -240,7 +240,7 @@ public class OverallJSON implements RaceReportType{
                 Boolean ht = hideTime;
                 chars.append("\t\t\"segments\": {\n");
                 race.getSegments().forEach(seg -> {
-                    
+                    if (seg.getHidden()) return;
                     chars.append("\t\t\t\"segment_").append(seg.getID()).append("\": {\n");
                     if (ht || pr.getSegmentTime(seg.getID()) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
@@ -257,7 +257,9 @@ public class OverallJSON implements RaceReportType{
                         chars.append("\t\t\t\t\t\"ag_place\": ").append("\"" + pr.getSegmentAGPlace(seg.getID()) +"\"").append("\n");;
                     }
                     if (showSegmentPace) {
-                        if (ht || pr.getSegmentTime(seg.getID()) == null ) chars.append(",\n\t\t\t\t\t\"pace\": ").append("\"~~\"").append("\n");
+                        if (ht || pr.getSegmentTime(seg.getID()) == null || (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) chars.append(",\n\t\t\t\t\t\"pace\": ").append("\"~~\"").append("\n");
+                        else if (seg.getUseCustomPace())
+                            chars.append(",\n\t\t\t\t\t\"pace\": \"").append(seg.getCustomPace().getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))).append("\"\n");
                         else chars.append(",\n\t\t\t\t\t\"pace\": \"").append(pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))).append("\"\n");
                     } else chars.append("\n");
                     chars.append("\t\t\t},\n");

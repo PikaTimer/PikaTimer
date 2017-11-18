@@ -307,7 +307,8 @@ public class OverallHTML5 implements RaceReportType{
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
                 Integer dispLeg = dispFormatLength;
-                race.getSegments().forEach(seg -> {
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if (seg.getHidden()) return;
                     chars.append("      <th data-priority=\"80\">" + escapeHTML(seg.getSegmentName())+ "</th>" +  System.lineSeparator());
                     //if (showSegmentPace) chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator()); // pace.getFieldWidth()+1
                 });
@@ -396,12 +397,16 @@ public class OverallHTML5 implements RaceReportType{
                 chars.append("data += '</div>';\n");
 
                 chars.append("data += '<div class=\"row\">';\n");
-                race.getSegments().forEach(seg -> {
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if (seg.getHidden()) return;
                     chars.append("data += '<div class=\"segment\">'; // time\n");
                     chars.append("data += '<div class=\"segment-head\">" + escape(seg.getSegmentName())+ "</div>';\n" );
                     chars.append("data += '<div class=\"segment-time\">Time: ' + rData.segments[\"segment_"+seg.getID()+ "\"].display + '</div>';\n");
                     chars.append("data += '<div class=\"segment-stats\">Overall: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].oa_place) + '   Sex: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].sex_place) + '   AG: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].ag_place) + '</div>';\n");
-                    if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getID()+ "\"].pace + '</div>';\n");
+                    if (showSegmentPace) {
+                        if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) 
+                            chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getID()+ "\"].pace + '</div>';\n");
+                    }
                     chars.append("data += '</div>';\n"); // segment
                 });
                 chars.append("data += '</div>';\n"); // row
@@ -503,7 +508,8 @@ public class OverallHTML5 implements RaceReportType{
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
                 Integer dispLeg = dispFormatLength;
-                race.getSegments().forEach(seg -> {
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if (seg.getHidden()) return;
                     chars.append("           { \"data\": \"segments.segment_" +  seg.getID()+ "\", \n" +
                                 "				\"render\": {\n" +
                                 "					_: 'display',\n" +

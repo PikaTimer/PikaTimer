@@ -327,7 +327,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             else report += race.getStringAttribute("htmlMessage");
             report += System.lineSeparator();
         }
-        if(dataToShow) {
+        if(!dataToShow) {
             report += "    <div class=\"in-progress\">" + "<BR>*No Results Have Been Posted Yet*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
             if (customHeaders){
@@ -361,9 +361,13 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
                 Integer dispLeg = dispFormatLength;
-                race.getSegments().forEach(seg -> {
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if(seg.getHidden()) return;
                     chars.append("      <th data-priority=\"80\">" + seg.getSegmentName()+ "</th>" +  System.lineSeparator());
-                    if (showSegmentPace) chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator()); // pace.getFieldWidth()+1
+                    if (showSegmentPace) {
+                        if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace())))
+                            chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator());
+                    } // pace.getFieldWidth()+1
                 });
                 report += chars.toString();
             }
@@ -403,6 +407,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
 
                 Boolean oco = false;
                 if (dnf || dq) oco = false;
+                else if (inProgress && pr.getChipFinish() == null) ; // They havent finished yet
                 else if (cutoffTime.isZero() 
                             || cutoffTime.compareTo(pr.getChipFinish()) >= 0 
                             || cutoffTimeString.equals(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode))) {
@@ -458,15 +463,20 @@ report +=   "   \"fnInitComplete\": function () {\n" +
 
                 if (showSegments) {
                     Boolean hst = hideSplitTimes;
-                    race.getSegments().forEach(seg -> {
+                    race.raceSegmentsProperty().forEach(seg -> {
+                        if (seg.getHidden()) return;
                         if (!hst) 
                             chars.append("<td>"+ DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
                         else chars.append("<td>---</td>" +  System.lineSeparator());
-                        if (showSegmentPace) {
-                            if (!hst)
-                                if (pr.getSegmentTime(seg.getID()) != null ) chars.append("<td>"+ pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))+ "</td>" +  System.lineSeparator());
+                        if (showSegmentPace ) {
+                            if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) {
+                                if (!hst)
+                                    if (pr.getSegmentTime(seg.getID()) != null ) {
+                                        if (seg.getUseCustomPace()) chars.append("<td>"+ seg.getCustomPace().getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))+ "</td>" +  System.lineSeparator());
+                                        else chars.append("<td>"+ pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))+ "</td>" +  System.lineSeparator());
+                                    } else chars.append("<td>---</td>" +  System.lineSeparator());
                                 else chars.append("<td>---</td>" +  System.lineSeparator());
-                            else chars.append("<td>---</td>" +  System.lineSeparator());
+                            }
                         }
                     });
                 }

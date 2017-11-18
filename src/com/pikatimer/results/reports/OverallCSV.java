@@ -30,9 +30,6 @@ import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -148,9 +145,10 @@ public class OverallCSV implements RaceReportType{
         
         if (showSegments) {
             final StringBuilder chars = new StringBuilder();
-            race.getSegments().forEach(seg -> {
+            race.raceSegmentsProperty().forEach(seg -> {
+                if(seg.getHidden() ) return;
                 chars.append(seg.getSegmentName()).append(",");
-                if (showSegmentPace) chars.append(seg.getSegmentName()).append(" Pace,"); 
+                if (showSegmentPace&& ! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) chars.append(seg.getSegmentName()).append(" Pace,"); 
             });
             report += chars.toString();
         }
@@ -233,12 +231,16 @@ public class OverallCSV implements RaceReportType{
             }
             if (showSegments) {
                 Boolean ht = hideTime;
-                race.getSegments().forEach(seg -> {
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if(seg.getHidden() ) return;
                     if (ht) chars.append(",");
                     else chars.append(DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispFormat, roundMode)).append(",");
-                    if (showSegmentPace) {
+                    if (showSegmentPace && ! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) {
                         if (ht) chars.append(",");
-                        else if (pr.getSegmentTime(seg.getID()) != null ) chars.append(pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))).append(",");
+                        else if (pr.getSegmentTime(seg.getID()) != null ) {
+                            if (seg.getUseCustomPace()) chars.append(seg.getCustomPace().getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))).append(",");
+                            else chars.append(pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))).append(",");
+                        }
                         else chars.append(",");
                     }
                 });
