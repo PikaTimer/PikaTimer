@@ -69,6 +69,10 @@ public class FXMLAwardCategoryController {
     @FXML ToggleSwitch chipToggleSwitch;
     @FXML ToggleSwitch pullToggleSwitch;
     
+    @FXML ToggleSwitch visibleAwardsToggleSwitch;
+    @FXML ToggleSwitch visibleOverallToggleSwitch;
+    
+    
     @FXML ComboBox<AwardDepthType> depthTypeComboBox;
     @FXML TextField depthTextField;
     @FXML VBox depthVBox;
@@ -140,6 +144,9 @@ public class FXMLAwardCategoryController {
         awardTitleTextField.textProperty().set(awardCategory.getName());
         chipToggleSwitch.setSelected(awardCategory.getChip());
         pullToggleSwitch.setSelected(awardCategory.getPull());
+        
+        visibleAwardsToggleSwitch.setSelected(awardCategory.getVisible());
+        visibleOverallToggleSwitch.setSelected(awardCategory.getVisibleOverall());
         
         depthTypeComboBox.getSelectionModel().select(awardCategory.getDepthType());
         
@@ -240,6 +247,15 @@ public class FXMLAwardCategoryController {
         });
         pullToggleSwitch.selectedProperty().addListener((obs,  prevVal,  newVal) -> {
              awardCategory.setPull(newVal);
+             raceDAO.updateAwardCategory(awardCategory);
+        });
+        
+        visibleAwardsToggleSwitch.selectedProperty().addListener((obs,  prevVal,  newVal) -> {
+             awardCategory.setVisible(newVal);
+             raceDAO.updateAwardCategory(awardCategory);
+        });
+        visibleOverallToggleSwitch.selectedProperty().addListener((obs,  prevVal,  newVal) -> {
+             awardCategory.setVisibleOverall(newVal);
              raceDAO.updateAwardCategory(awardCategory);
         });
         

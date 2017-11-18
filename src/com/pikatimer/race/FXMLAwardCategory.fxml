@@ -57,8 +57,18 @@
             <Font size="16.0" />
          </font>
       </ToggleSwitch>
-      <VBox spacing="2.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
+      <VBox alignment="TOP_RIGHT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
          <children>
+            <ToggleSwitch fx:id="visibleAwardsToggleSwitch" contentDisplay="CENTER" prefHeight="25.0" prefWidth="170.0" text="Visible on Awards">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </ToggleSwitch>
+            <ToggleSwitch fx:id="visibleOverallToggleSwitch" prefHeight="25.0" prefWidth="170.0" text="Visible on Overall">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </ToggleSwitch>
             <HBox maxWidth="1.7976931348623157E308" spacing="2.0">
                <children>
                   <Label text="Depth" HBox.hgrow="NEVER">

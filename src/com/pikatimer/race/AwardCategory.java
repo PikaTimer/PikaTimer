@@ -78,6 +78,9 @@ public class AwardCategory {
     private final ObjectProperty<AwardDepthType> depthTypeProperty = new SimpleObjectProperty(AwardDepthType.FIXED);
     private final BooleanProperty pullProperty = new SimpleBooleanProperty(true);
     private final BooleanProperty chipProperty = new SimpleBooleanProperty(true);
+    private final BooleanProperty visibleAwardsProperty = new SimpleBooleanProperty(true);
+    private final BooleanProperty visibleOverallProperty = new SimpleBooleanProperty(true);
+    
     private final IntegerProperty depthProperty = new SimpleIntegerProperty(3);
     private final IntegerProperty mastersAgeProperty = new SimpleIntegerProperty(40);
     private final ObservableList<AwardDepth> customDepthObservableList = FXCollections.observableArrayList(AwardDepth.extractor());
@@ -202,6 +205,32 @@ public class AwardCategory {
     
     public BooleanProperty chipProperty(){
         return chipProperty;
+    }
+    
+    //visibleAwardsProperty
+    @Column(name="visible")
+    public Boolean getVisible(){
+        return visibleAwardsProperty.getValue();
+    }
+    public void setVisible(Boolean t) {
+        visibleAwardsProperty.setValue(t); 
+    }
+    
+    public BooleanProperty visibleProperty(){
+        return visibleAwardsProperty;
+    }
+    
+    //visibleOverallProperty
+    @Column(name="visible_overall")
+    public Boolean getVisibleOverall(){
+        return visibleOverallProperty.getValue();
+    }
+    public void setVisibleOverall(Boolean t) {
+        visibleOverallProperty.setValue(t); 
+    }
+    
+    public BooleanProperty visibleOverallProperty(){
+        return visibleOverallProperty;
     }
     
     //timing_point_type varchar,
