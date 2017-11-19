@@ -17,19 +17,24 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.race.AwardCategory;
+import com.pikatimer.race.AwardWinner;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
+import static com.pikatimer.results.reports.OverallJSON.getOrdinal;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +55,7 @@ public class Overall implements RaceReportType{
     Boolean showDNF = true;
     Boolean showPace = true;
     Boolean showGun = true;
+    Boolean showAwards = true;
 
     Map<String,Boolean> supportedOptions = new HashMap();
     
@@ -63,6 +69,7 @@ public class Overall implements RaceReportType{
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
         supportedOptions.put("hideCustomHeaders", false);
+        supportedOptions.put("showAwards",true);
     }
     
     @Override
@@ -96,6 +103,7 @@ public class Overall implements RaceReportType{
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
+        showAwards = supportedOptions.get("showAwards");
         
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         if (customHeaders && supportedOptions.get("hideCustomHeaders")) customHeaders = false;
@@ -103,6 +111,25 @@ public class Overall implements RaceReportType{
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
+        
+        Map<String,List<String>> awardWinnersByBibMap = new HashMap();
+        if (showAwards){
+            Map<AwardCategory,Map<String,List<AwardWinner>>>  awardWinnersMap = race.getAwards().getAwardWinners(prList);
+            StringBuilder awardPrintout = new StringBuilder();
+            race.getAwards().awardCategoriesProperty().forEach(ac -> {
+                if (!ac.getVisibleOverall()) return;
+                Map<String,List<AwardWinner>> resultsMap = awardWinnersMap.get(ac);
+                List<String> categories = resultsMap.keySet().stream().sorted((k1,k2) -> k1.compareTo(k2)).collect(Collectors.toList());
+                categories.forEach(cat -> {
+                    String description = (ac.getName() + " -- " +  cat).trim();
+                    resultsMap.get(cat).forEach(w -> {
+                        if (!awardWinnersByBibMap.containsKey(w.participant.getBib())) awardWinnersByBibMap.put(w.participant.getBib(), new ArrayList());
+                        awardWinnersByBibMap.get(w.participant.getBib()).add(w.awardPlace + getOrdinal(w.awardPlace) + " " + description + " (Time: " + DurationFormatter.durationToString(w.awardTime, dispFormat, roundMode) + ")");
+                    });
+                });
+            });
+        }
+        
         
         Integer dispFormatLength;  // add a space
         if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
@@ -272,6 +299,12 @@ public class Overall implements RaceReportType{
 
             
             chars.append(System.lineSeparator());
+            if (showAwards && awardWinnersByBibMap.containsKey(pr.getParticipant().getBib())){
+                for(String a: awardWinnersByBibMap.get(pr.getParticipant().getBib())){
+                    chars.append("\t\tAward Winner: " + a + System.lineSeparator());
+                }
+                chars.append(System.lineSeparator());
+            }
         
         
         });
