@@ -128,10 +128,10 @@ public class OverallJSON implements RaceReportType{
                 Map<String,List<AwardWinner>> resultsMap = awardWinnersMap.get(ac);
                 List<String> categories = resultsMap.keySet().stream().sorted((k1,k2) -> k1.compareTo(k2)).collect(Collectors.toList());
                 categories.forEach(cat -> {
-                    String description = (ac.getName() + " " +  cat).trim();
+                    String description = (escape(ac.getName()) + " &mdash; " +  escape(cat)).trim();
                     resultsMap.get(cat).forEach(w -> {
                         if (!awardWinnersByBibMap.containsKey(w.participant.getBib())) awardWinnersByBibMap.put(w.participant.getBib(), new ArrayList());
-                        awardWinnersByBibMap.get(w.participant.getBib()).add(w.awardPlace + getOrdinal(w.awardPlace) + " " + description);
+                        awardWinnersByBibMap.get(w.participant.getBib()).add(w.awardPlace + getOrdinal(w.awardPlace) + " " + description + " (Time: " + DurationFormatter.durationToString(w.awardTime, dispFormat, roundMode) + ")");
                     });
                 });
             });
@@ -178,7 +178,7 @@ public class OverallJSON implements RaceReportType{
             chars.append("\t\t\"full_name\": ").append("\"").append(escape(pr.getParticipant().fullNameProperty().getValueSafe())).append("\"").append(",\n");
             chars.append("\t\t\"full_name_filter\": ").append("\"").append(escape(pr.getParticipant().fullNameProperty().getValueSafe()));
             if(!pr.getParticipant().fullNameProperty().getValueSafe().equals(StringUtils.stripAccents(pr.getParticipant().fullNameProperty().getValueSafe()))) 
-                chars.append(" ").append(StringUtils.stripAccents(escape(pr.getParticipant().fullNameProperty().getValueSafe())));
+                chars.append(" ").append(escape(StringUtils.stripAccents(pr.getParticipant().fullNameProperty().getValueSafe())));
             chars.append("\"").append(",\n");
             chars.append("\t\t\"first_name\": ").append("\"").append(escape(pr.getParticipant().getFirstName())).append("\"").append(",\n");
             chars.append("\t\t\"middle_name\": ").append("\"").append(escape(pr.getParticipant().getMiddleName())).append("\"").append(",\n");
@@ -193,7 +193,7 @@ public class OverallJSON implements RaceReportType{
                     chars.append("\t\t\"awards\": {\n");
                     List<String> awards = awardWinnersByBibMap.get(pr.getParticipant().getBib());
                     for(int i = 0; i< awards.size(); i++){
-                        chars.append("\t\t\t\"award_" + i + "\": \"").append(escape(awards.get(i))).append("\"").append(",\n");
+                        chars.append("\t\t\t\"award_" + i + "\": \"").append(awards.get(i)).append("\"").append(",\n");
                     }
                     chars.deleteCharAt(chars.lastIndexOf(","));
                     chars.append("\t\t},\n");
