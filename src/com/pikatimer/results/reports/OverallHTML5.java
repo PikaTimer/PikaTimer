@@ -47,6 +47,7 @@ public class OverallHTML5 implements RaceReportType{
     Boolean showDNF = true;
     Boolean showPace = true;
     Boolean showGun = true;
+    Boolean showAwards = true;
 
     Map<String,Boolean> supportedOptions = new HashMap();
     
@@ -60,6 +61,7 @@ public class OverallHTML5 implements RaceReportType{
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
         supportedOptions.put("hideCustomHeaders", false);
+        supportedOptions.put("showAwards", true);
     }
     
     private String escape(String s){
@@ -101,12 +103,14 @@ public class OverallHTML5 implements RaceReportType{
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
+        showAwards = supportedOptions.get("showAwards");
         
         Boolean showCountry = false;
         for (ProcessedResult x : prList){
             if (! x.getParticipant().countryProperty().isEmpty().get()) showCountry=true;
         }
         
+
         
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         Boolean textOnlyHeaders = race.getBooleanAttribute("textOnlyHeaders");
@@ -153,14 +157,17 @@ public class OverallHTML5 implements RaceReportType{
         }
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" ;
-        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.15/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.css\"/>\n" ;
-        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.3.1/b-flash-1.3.1/b-html5-1.3.1/b-print-1.3.1/r-2.1.1/sc-1.4.2/datatables.min.css\"/>" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.2.1/dt-1.10.16/fh-3.1.3/r-2.2.0/sc-1.4.3/datatables.min.css\"/>\n" ;
+        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.2.1/jszip-2.5.0/dt-1.10.16/b-1.4.2/b-flash-1.4.2/b-html5-1.4.2/b-print-1.4.2/r-2.2.0/sc-1.4.3/datatables.min.css\"/>" ;
         report +=   "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css\">\n" +
                     " \n" ;
         
         // our inline CSS
         report +=   "<link href=\"https://fonts.googleapis.com/css?family=Source+Sans+Pro|Open+Sans\" rel=\"stylesheet\">\n" +
                     "<style>\n" +
+                    ".fa.fa-trophy {\n" +
+                    "    color: gold;\n" +
+                    "}\n" +
                     "table.dataTable.display tbody tr.child {\n" +
                     "    background: white;\n" +
                     "}\n" +
@@ -336,11 +343,15 @@ public class OverallHTML5 implements RaceReportType{
 
         report += "<!-- Start DataTables -->\n";
         
-        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.15/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
-        else  report +=  "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.3.1/b-flash-1.3.1/b-html5-1.3.1/b-print-1.3.1/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.2.1/dt-1.10.16/fh-3.1.3/r-2.2.0/sc-1.4.3/datatables.min.js\"></script>\n" ;
+        else  {
+            report += "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/pdfmake.min.js\"></script>\n" +
+                      "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js\"></script>\n" +
+                      "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.2.1/jszip-2.5.0/dt-1.10.16/b-1.4.2/b-flash-1.4.2/b-html5-1.4.2/b-print-1.4.2/r-2.2.0/sc-1.4.3/datatables.min.js\"></script>\n" ;
+        }
 
         report +=           " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.16/sorting/natural.js\"></script>\n";
 
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
                     " // nth(n) function from http://stackoverflow.com/questions/13627308/add-st-nd-rd-and-th-ordinal-suffix-to-a-number \n" + 
@@ -348,6 +359,7 @@ public class OverallHTML5 implements RaceReportType{
                 
                 "function childData ( rData) {\n" +
                         "                \n" +
+                        "                               if (typeof rData == \"undefined\") { return \"\";}" +
                         "				var data = '<div class=\"detail\">';\n" +
                         "				data += '<div class=\"row\">';\n" +
                         "				data += '<div class=\"participant\">' // personal\n" +
@@ -384,11 +396,22 @@ public class OverallHTML5 implements RaceReportType{
                         "				\n" +
                         "                data += '</div>'; // row\n" +
                         "				\n";
-//        if (showSplits) {
-//            for (int i = 2; i < race.splitsProperty().size(); i++) {
-//                report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
-//            }
-//        }
+        if (showAwards) {
+            report += " if (rData.award_winner == \"yes\") {\n" +
+"					data += '<div class=\"row\">';\n" +
+"					data += '<div class=\"segment segment-title\">Award Winner:';\n" +
+"					data += '</div>';\n" +
+"					data += '</div>';\n" +
+"					data += '<div class=\"row\">';\n" +
+"					data += '<div class=\"segment\">'; \n" +
+"					for (i in rData.awards){\n" +
+"						data += '<div class=\"segment-time\">' + rData.awards[i];\n" +
+"						data += '</div>';\n" +
+"					}\n" +
+"					data += '</div>';\n" +
+"					data += '</div>';\n" +
+"				}";
+        }
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
                 chars.append("data += '<div class=\"row\">';\n");
@@ -475,7 +498,15 @@ public class OverallHTML5 implements RaceReportType{
                         "   data: resultsData,\n" +
                         "        \"columns\": [\n" +
                         "           { \"data\": null, \"defaultContent\": \"\", className: 'control', orderable: false, targets:   0 },\n" +
-                        "           { \"data\": \"oa_place\" },\n" +
+                        "           { \"data\": \"oa_place\", \"render\":  \n" +
+"					 function (data, type, row) {\n" +
+"						if (type == \"sort\" || type === 'type') return data;\n" +
+"						if (row.award_winner == \"yes\") \n" +
+"						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i> ' + row.oa_place;\n" +
+"						else return row.oa_place;\n" +
+"					 }\n" +
+"				 \n" +
+"			}," +
                         "           { \"data\": \"sex_place\" },\n" +
                         "           { \"data\": \"ag_place\" },\n" +
                         "           { \"data\": \"bib\" },\n" +
