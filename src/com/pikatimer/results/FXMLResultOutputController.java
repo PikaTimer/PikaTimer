@@ -57,6 +57,7 @@ public class FXMLResultOutputController {
     @FXML CheckBox showGunTimeCheckBox;
     @FXML CheckBox showSegmentsCheckBox;
     @FXML CheckBox showSegmentPaceCheckBox;
+    @FXML CheckBox showAwardsCheckBox;
     @FXML CheckBox hideCustomHeadersCheckBox;
     
     @FXML Label noOutputPpathsLabel;
@@ -236,6 +237,19 @@ public class FXMLResultOutputController {
                 showSegmentPaceCheckBox.visibleProperty().set(false);
                 showSegmentPaceCheckBox.managedProperty().unbind();
                 showSegmentPaceCheckBox.managedProperty().set(false);
+            }
+            
+            if (rrt.optionSupport("showAwards")) {
+                if (r.getBooleanAttribute("showAwards") == null){
+                    r.setBooleanAttribute("showAwards", true);
+                    attributeAdded = true;
+                }
+                showAwardsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showAwards"));
+                showAwardsCheckBox.visibleProperty().set(true);
+                showAwardsCheckBox.managedProperty().set(true);
+            } else {
+                showAwardsCheckBox.visibleProperty().set(false);
+                showAwardsCheckBox.managedProperty().set(false);
             }
             
             if (rrt.optionSupport("hideCustomHeaders")) {

@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.text.Font?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane fx:id="baseGridPane" hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultOutputController">
+<GridPane fx:id="baseGridPane" hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultOutputController">
    <columnConstraints>
       <ColumnConstraints hgrow="NEVER" maxWidth="260.0" minWidth="-Infinity" prefWidth="260.0" />
       <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="342.5" prefWidth="342.5" />
@@ -88,6 +88,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <children>
                         <CheckBox fx:id="showSegmentsCheckBox" mnemonicParsing="false" prefWidth="115.0" text="Show Segments" />
                         <CheckBox fx:id="showSegmentPaceCheckBox" mnemonicParsing="false" text="Show Segment Pace" />
+                     </children>
+                  </HBox>
+                  <HBox>
+                     <children>
+                        <CheckBox fx:id="showAwardsCheckBox" mnemonicParsing="false" prefWidth="115.0" text="Show Awards" />
                      </children>
                   </HBox>
                   <CheckBox fx:id="hideCustomHeadersCheckBox" mnemonicParsing="false" text="Hide Custom Headers/Footers" />
