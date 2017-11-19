@@ -3,13 +3,14 @@ TODO for 1.5 Release
 Bugs:
 DONE: Ultra Direct: Discover only scans 1st network adapter
 DONE: Ultra Direct: Save to file holds old target locations
-Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
 DONE: FTPS Upload: Upload to a temp file and then do a rename to get around file locking issues
 DONE: Text header/footer does not honor line feeds in text output files (search/replace \R for System.linefeed() )
 DONE: Single quotes in split names causes issues in the JSON parsing. Need to wrap in double quotes and escape all double quotes in any user editable field (split, segment, name, city, state, country, etc)
 DONE: Having the "in-progress" or "show dnf's" not checked during a race with no finishers yet results in problems in the OverallJSON that blows through the OverallHMTL5 report.
-Start time lookup: 2nd location shows all waves and adds extra waves to those races
 DONE: Awards are not populated on initial event creation
+Start time lookup: 2nd location shows all waves and adds extra waves to those races
+Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
+
 
 
 Features:
@@ -17,7 +18,7 @@ DONE: Participant: Custom Attributes (string, integer, number, date, time, list)
 DONE: Participant Import: Assign to race/wave based on an input field in the CSV file
 DONE: Participant Import: Import Custom Attributes
 DONE: Participant Export: Include Custom Attributes in list to export
-Participant: Bulk Assignments of bibs
+DONE: Participant: Bulk Assignments of bibs
 
 DONE: AgeGroup: 1 year option
 DONE: AgeGroup: Arbitrary group ranges (5->7, 8->9, 10->13, etc)
@@ -30,16 +31,17 @@ DONE: Awards: Custom Awards:
         DONE: group by (sex, age, age group), 
         DONE: skew by custom duration,
         DONE: depths (fixed, variable)
-Awards: Hide on report flag
-Awards: Hide in overall results report flag
+DONE: Awards: Hide on default awards report flag
+DONE: Awards: Hide in overall results report flag
 
-Split: Advanced toggle switch to enable additional options
+DONE: Split: Advanced toggle switch to enable additional options
+Split: Cutoff time (times after this are OCO'ed)
 Split: Min time to next split (under advanced display for the split)
-Split: Ignore split time support (aka "dead zone" or "pause"). Basically blank out the time from that segment. 
+Split: "Pause" split time support (aka "dead zone" or "ignore"). Basically don't count this time against the final. 
 Split: Mandatory split (stop if they are missing a time from the split)
 
-Segment: Hidden flag (don't display on results)
-Segment: Pace display (vs the global default)
+DONE: Segment: Hidden flag (don't display on results)
+DONE: Segment: Pace display (vs the global default)
 
 
 Timing: Ultra Direct -- filter after skew to permit "old" times to be adjusted forward  
@@ -47,16 +49,16 @@ Timing: Ultra Direct -- antenna on/off and power configuration
 Timing: Ultra Direct -- Remote Settings (including custom IP)
 Timing: Outreach client?
 
-Override: Penalty support w/ Note
+Override: Penalty/Bonus support w/ Note
 
-Results: Option to merge Country to State if not USA
-Results: Hide country/State if all are empty? 
+Results: Hide country/State if all are empty
 Results: Option to show selected custom attributes
 Results: Awards: Option to only show some awards 
 Results: Awards: HTML output option
-Results: HTML5: Flag award winners with an icon and display in detailed view
-Results: HTML5: DNF should show the note and if in progress, display the last seen location
-Results: HTML5: Segments: Per segment pace display override (swim/bike/run/transition)
+DONE: Results: Overall (Text): Option to show award winners
+DONE: Results: HTML5: Flag award winners with an icon and display in detailed view
+DONE Results: HTML5: DNF/Started should show the note and if in progress, display the last seen location
+DONE: Results: HTML5: Segments: Per segment pace display override (swim/bike/run/transition)
 Results: HTML5: Segments: Option to show splits on the segment section of the HTML5 report
 Results: HTML5: Show penalty w/ note if set
 
