@@ -379,9 +379,12 @@ public class OverallHTML5 implements RaceReportType{
                        "                                       return data; // row\n" +
                         "                               } else if ( rData.oa_place == \"DNF\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Did Not Finish  :-( </div>';\n" +
-                        "                               } else if ( rData.oa_place == \"Started\" ) {\n" +
+                       "					if (rData.note != \"\" ) data += '<div class=\"finish-stats\">' + rData.note + '</div>';\n";
+            if (inProgress) report += "					if (rData.last_seen != \"\" ) data += '<div class=\"finish-stats\">Last Seen: ' + rData.last_seen + '</div>';\n";
+            report +=   "                               } else if ( rData.oa_place == \"Started\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Started</div>';\n" +
                         "                                   data += '<div class=\"finish-stats bold\">Last Seen: ' + rData.last_seen + '</div>';\n" +
+                        "					if (rData.note != \"\" ) data += '<div class=\"finish-stats\">' + rData.note + '</div>';\n" +
                         "                               } else if ( rData.oa_place == \"OCO\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Over Cut Off  :-/</div>';\n" +
                         "                                   data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
