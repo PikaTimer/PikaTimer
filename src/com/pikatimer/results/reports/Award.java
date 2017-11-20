@@ -34,7 +34,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import org.apache.commons.lang3.StringUtils;
 
@@ -47,6 +49,8 @@ public class Award implements RaceReportType {
     IntegerProperty fullNameLength = new SimpleIntegerProperty(10);
     List<ProcessedResult> prList;
     
+    BooleanProperty showCountry = new SimpleBooleanProperty(true);
+    BooleanProperty showState = new SimpleBooleanProperty(true);
     
 
     Map<String,Boolean> supportedOptions = new HashMap();
@@ -79,6 +83,17 @@ public class Award implements RaceReportType {
 
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         if (customHeaders && supportedOptions.get("hideCustomHeaders")) customHeaders = false;
+        
+        Boolean showCO = false;
+        Boolean showST = false;
+        for (ProcessedResult x : resList){
+            if (! x.getParticipant().getCountry().isEmpty()) showCO=true;
+            if (! x.getParticipant().getState().isEmpty()) showST=true;
+        }
+        // Stupid lambda workarounds....
+        showCountry.setValue(showCO);
+        showState.setValue(showST);
+        
         
         // Take the list we recieved and filter all DNF's, DQ's, and folks 
         // with no finish times. 
@@ -176,7 +191,9 @@ public class Award implements RaceReportType {
         report += " SEX"; // 4R for the sex
         report += " AG   "; //6L for the AG Group
         report += " City               "; // 18L for the city
-        report += " ST "; // 4C for the state code
+        if (showState.get()) report += "ST  "; // 4C for the state code
+        if (showCountry.get()) report += " CO "; // 4C for the state code
+
         report += StringUtils.leftPad(" Time",dispFormatLength); // Need to adjust for the format code
         report += System.lineSeparator();
 
@@ -201,7 +218,8 @@ public class Award implements RaceReportType {
             report += StringUtils.rightPad(aw.processedResult.getAGCode(),5); //6L for the AG Group
             report += " ";
             report += StringUtils.rightPad(aw.participant.getCity(),18); // 18L for the city
-            report += StringUtils.leftPad(aw.participant.getState(),4); // 4C for the state code
+            if (showState.get())  report += StringUtils.center(aw.participant.getState(),4); // 4C for the state code
+            if (showCountry.get())  report += StringUtils.leftPad(aw.participant.getCountry(),4); // 4C for the state code
             report += StringUtils.leftPad(DurationFormatter.durationToString(aw.awardTime, dispFormat, roundMode), dispFormatLength);
             report += System.lineSeparator();
         }

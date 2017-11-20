@@ -106,8 +106,10 @@ public class OverallHTML5 implements RaceReportType{
         showAwards = supportedOptions.get("showAwards");
         
         Boolean showCountry = false;
+        Boolean showState = false;
         for (ProcessedResult x : prList){
-            if (! x.getParticipant().countryProperty().isEmpty().get()) showCountry=true;
+            if (! x.getParticipant().getCountry().isEmpty()) showCountry=true;
+            if (! x.getParticipant().getState().isEmpty()) showState=true;
         }
         
 
@@ -302,7 +304,7 @@ public class OverallHTML5 implements RaceReportType{
             report += "      <th data-priority=\"1000\">Middle</th>" +  System.lineSeparator();
             report += "      <th data-priority=\"1000\">Last</th>" +  System.lineSeparator();
             report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
-            report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
+            if (showState) report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
             if (showCountry) report += "      <th data-priority=\"45\">Country</th>" +  System.lineSeparator(); 
 
             // Insert split stuff here
@@ -365,8 +367,8 @@ public class OverallHTML5 implements RaceReportType{
                         "				data += '<div class=\"participant\">' // personal\n" +
                         "				data += '<div class=\"part-name\">' + rData.full_name + '</div>';\n" +
                         "				data += '<div class=\"part-stats\">Bib: ' + rData.bib + '</div>';\n" +
-                        "				data += '<div class=\"part-stats\">Age: ' + rData.age + '   Sex: ' + rData.sex + '   AG: ' + rData.ag + '</div>';\n" +
-                        "				data += '<div class=\"part-stats\">' + rData.city + ', ' + rData.state + '</div>';\n" ;
+                        "				data += '<div class=\"part-stats\">Age: ' + rData.age + '   Sex: ' + rData.sex + '   AG: ' + rData.ag + '</div>';\n";
+            if (showState) report +=                        "				data += '<div class=\"part-stats\">' + rData.city + ', ' + rData.state + '</div>';\n" ;
             if (showCountry) report +=            "				data += '<div class=\"part-stats\">' + rData.country + '</div>';\n";
             report +=  "				data += '</div>'; // personal\n" +
                         "				data += '<div class=\"overall\">';// time\n" +
@@ -526,8 +528,8 @@ public class OverallHTML5 implements RaceReportType{
                         "           { \"data\": \"middle_name\" },\n" +
                         "           { \"data\": \"last_name\" },\n" +
 
-                        "           { \"data\": \"city\" },\n" +
-                        "           { \"data\": \"state\" },\n";
+                        "           { \"data\": \"city\" },\n" ;
+            if (showState) report +=             "           { \"data\": \"state\" },\n";
             if (showCountry) report += "           { \"data\": \"country\" },\n";
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {

@@ -105,6 +105,16 @@ public class Overall implements RaceReportType{
         showGun = supportedOptions.get("showGun");
         showAwards = supportedOptions.get("showAwards");
         
+        Boolean showCO = false;
+        Boolean showST = false;
+        for (ProcessedResult x : prList){
+            if (! x.getParticipant().getCountry().isEmpty()) showCO=true;
+            if (! x.getParticipant().getState().isEmpty()) showST=true;
+        }
+        // Stupid lambda workarounds....
+        final Boolean showCountry = showCO;
+        final Boolean showState = showST;
+        
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         if (customHeaders && supportedOptions.get("hideCustomHeaders")) customHeaders = false;
         
@@ -177,8 +187,8 @@ public class Overall implements RaceReportType{
         report += " AG   "; //6L for the AG Group
         report += StringUtils.rightPad(" Name",fullNameLength.get()); // based on the longest name
         report += " City              "; // 18L for the city
-        report += " ST "; // 4C for the state code
-         
+        if (showState) report += " ST "; // 4C for the state code
+        if (showCountry) report += " CO "; // 4C for the country code 
         // Insert split stuff here
         if (showSplits) {
             for (int i = 2; i < race.splitsProperty().size(); i++) {
@@ -218,7 +228,7 @@ public class Overall implements RaceReportType{
         prList.forEach(pr -> {
             
             // if they are a DNF or DQ swap out the placement stats
-           Boolean hideTime = false; 
+            Boolean hideTime = false; 
             Boolean dnf = pr.getParticipant().getDNF();
             Boolean dq = pr.getParticipant().getDQ();
             if (dq) hideTime = true;
@@ -255,8 +265,8 @@ public class Overall implements RaceReportType{
             chars.append(StringUtils.rightPad(pr.getAGCode(),6));
             chars.append(StringUtils.rightPad(pr.getParticipant().fullNameProperty().getValueSafe(),fullNameLength.get()));
             chars.append(StringUtils.rightPad(pr.getParticipant().getCity(),18));
-            chars.append(StringUtils.center(pr.getParticipant().getState(),4));
-            
+            if (showState) chars.append(StringUtils.center(pr.getParticipant().getState(),4));
+            if (showCountry) chars.append(StringUtils.rightPad(pr.getParticipant().getCountry(),4));
             if (dq) { 
                 chars.append("    Reason: ").append(pr.getParticipant().getNote());
                 chars.append(System.lineSeparator());

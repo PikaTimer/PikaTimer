@@ -33,7 +33,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import org.apache.commons.lang3.StringUtils;
 
@@ -56,6 +58,9 @@ public class AgeGroup implements RaceReportType {
     IntegerProperty fullNameLength = new SimpleIntegerProperty(10);
     
     Map<String,Boolean> supportedOptions = new HashMap();
+    
+    BooleanProperty showCountry = new SimpleBooleanProperty(true);
+    BooleanProperty showState = new SimpleBooleanProperty(true);
     
     public AgeGroup(){
         supportedOptions.put("showDQ", true);
@@ -102,6 +107,16 @@ public class AgeGroup implements RaceReportType {
         
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         if (customHeaders && supportedOptions.get("hideCustomHeaders")) customHeaders = false;
+        
+                Boolean showCO = false;
+        Boolean showST = false;
+        for (ProcessedResult x : prList){
+            if (! x.getParticipant().getCountry().isEmpty()) showCO=true;
+            if (! x.getParticipant().getState().isEmpty()) showST=true;
+        }
+        // Stupid lambda workarounds....
+        showCountry.setValue(showCO);
+        showState.setValue(showST);
         
         // what is the longest name?
         
@@ -222,8 +237,8 @@ public class AgeGroup implements RaceReportType {
             chars.append(StringUtils.rightPad(pr.getAGCode(),6));
             chars.append(StringUtils.rightPad(pr.getParticipant().fullNameProperty().getValueSafe(),fullNameLength.get()));
             chars.append(StringUtils.rightPad(pr.getParticipant().getCity(),18));
-            chars.append(StringUtils.center(pr.getParticipant().getState(),4));
-            
+            if (showState.get()) chars.append(StringUtils.center(pr.getParticipant().getState(),4));
+            if (showCountry.get()) chars.append(StringUtils.rightPad(pr.getParticipant().getCountry(),4));
             if (dq) { 
                 chars.append("    Reason: ").append(pr.getParticipant().getNote());
                 chars.append(System.lineSeparator());
@@ -302,7 +317,8 @@ public class AgeGroup implements RaceReportType {
         report += " AG   "; //6L for the AG Group
         report += StringUtils.rightPad(" Name",fullNameLength.get()); // based on the longest name
         report += " City              "; // 18L for the city
-        report += " ST "; // 4C for the state code
+        if (showState.get() )report += " ST "; // 4C for the state code
+        if (showCountry.get() )report += " CO "; // 4C for the state code
          
         // Insert split stuff here
         if (showSplits) {

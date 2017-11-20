@@ -92,6 +92,16 @@ public class OverallHTML implements RaceReportType{
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
         
+        Boolean showCO = false;
+        Boolean showST = false;
+        for (ProcessedResult x : prList){
+            if (! x.getParticipant().getCountry().isEmpty()) showCO=true;
+            if (! x.getParticipant().getState().isEmpty()) showST=true;
+        }
+        // Stupid lambda workarounds....
+        final Boolean showCountry = showCO;
+        final Boolean showState = showST;
+        
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         Boolean textOnlyHeaders = race.getBooleanAttribute("textOnlyHeaders");
         if (customHeaders == null || (customHeaders == true && supportedOptions.get("hideCustomHeaders"))) customHeaders = false;
@@ -350,7 +360,8 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             report += "      <th data-priority=\"29\">AG</th>" +  System.lineSeparator(); //6L for the AG Group
             report += "      <th data-priority=\"1\">Name</th>" +  System.lineSeparator(); // based on the longest name
             report += "      <th data-priority=\"40\">City</th>" +  System.lineSeparator(); // 18L for the city
-            report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); // 4C for the state code
+            if (showState) report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); // 4C for the state code
+            if (showCountry) report += "      <th data-priority=\"40\">CO</th>" +  System.lineSeparator(); // 4C for the country
 
             // Insert split stuff here
             if (showSplits) {
@@ -449,7 +460,8 @@ report +=   "   \"fnInitComplete\": function () {\n" +
                 chars.append("<td>"+ pr.getAGCode() + "</td>" +  System.lineSeparator());
                 chars.append("<td>"+ pr.getParticipant().fullNameProperty().getValueSafe() + "</td>" +  System.lineSeparator());
                 chars.append("<td>"+ pr.getParticipant().getCity() + "</td>" +  System.lineSeparator());
-                chars.append("<td>"+ pr.getParticipant().getState() + "</td>" +  System.lineSeparator());
+                if (showState) chars.append("<td>"+ pr.getParticipant().getState() + "</td>" +  System.lineSeparator());
+                if (showCountry) chars.append("<td>"+ pr.getParticipant().getCountry() + "</td>" +  System.lineSeparator());
 
                 // Insert split stuff here 
                 if (showSplits) {
