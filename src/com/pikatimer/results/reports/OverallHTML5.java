@@ -288,7 +288,7 @@ public class OverallHTML5 implements RaceReportType{
             report += "    <div id=\"loading\" class=\"in-progress right\">" + "<BR>Loading..." + "</div>" + System.lineSeparator();
 
             //report += "<div id=\"results_table\" class=\"hide\">" +  System.lineSeparator();
-            report += "  <TABLE id=\"results\" class=\"display responsive dtr-column nowrap\" > " +  System.lineSeparator();
+            report += "  <TABLE id=\"results\" class=\"display responsive dtr-column nowrap compact\" > " +  System.lineSeparator();
             // print the headder
             report += "    <thead><tr>" +  System.lineSeparator();
             report += "      <th class=\"all\"></th>"+  System.lineSeparator(); // dummy for control box
