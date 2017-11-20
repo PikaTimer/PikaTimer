@@ -503,27 +503,38 @@ public class OverallHTML5 implements RaceReportType{
                         "   data: resultsData,\n" +
                         "        \"columns\": [\n" +
                         "           { \"data\": null, \"defaultContent\": \"\", className: 'control', orderable: false, targets:   0 },\n" +
-                        "           { \"data\": \"oa_place\", \"render\":  \n" +
-"					 function (data, type, row) {\n" +
-"						if (type == \"sort\" || type === 'type') return data;\n" +
-"						if (row.award_winner == \"yes\") \n" +
-"						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i> ' + row.oa_place;\n" +
-"						else return row.oa_place;\n" +
-"					 }\n" +
-"				 \n" +
-"			}," +
+                        "           { \"data\": \"oa_place\" },\n" +
+//                        "           { \"data\": \"oa_place\", \"render\":  \n" +
+//"					 function (data, type, row) {\n" +
+//"						if (type == \"sort\" || type === 'type') return data;\n" +
+//"						if (row.award_winner == \"yes\") \n" +
+//"						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i> ' + row.oa_place;\n" +
+//"						else return row.oa_place;\n" +
+//"					 }\n" +
+//"				 \n" +
+//"			}," +
                         "           { \"data\": \"sex_place\" },\n" +
                         "           { \"data\": \"ag_place\" },\n" +
                         "           { \"data\": \"bib\" },\n" +
                         "           { \"data\": \"age\" },\n" +
                         "           { \"data\": \"sex\" },\n" + // If this index changes, change the filter below
                         "           { \"data\": \"ag\" },\n" +  // ibid
-                        "           { \"data\": null, " +
-                        "                  \"render\": {\n" +
-                        "                       \"_\": \"full_name\",\n" +
-                        "                       \"filter\": \"full_name_filter\",\n" +
-                        "               } "
-                    +   "           },\n" +
+//                        "           { \"data\": null, " +
+//                        "                  \"render\": {\n" +
+//                        "                       \"_\": \"full_name\",\n" +
+//                        "                       \"filter\": \"full_name_filter\",\n" +
+//                        "               } "
+//                    +   "           },\n" +
+                         "           { \"data\": \"full_name\", \"render\":  \n" +
+"					 function (data, type, row) {\n" +
+"						if (type == \"sort\" || type === 'type') return data;\n" +
+"						if (type == \"filter\" || type === 'type') return row.full_name_filter;\n"    +              
+"						if (row.award_winner == \"yes\") \n" +
+"						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i> ' + row.full_name;\n" +
+"						else return row.full_name;\n" +
+"					 }\n" +
+"				 \n" +
+"			}," +
                         "           { \"data\": \"first_name\" },\n" +
                         "           { \"data\": \"middle_name\" },\n" +
                         "           { \"data\": \"last_name\" },\n" +
