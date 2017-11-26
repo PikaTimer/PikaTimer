@@ -139,7 +139,7 @@ public class OverallCSV implements RaceReportType{
         // Insert split stuff here
         if (showSplits) {
             for (int i = 2; i < race.splitsProperty().size(); i++) {
-                report += race.splitsProperty().get(i-1).getSplitName() + ",";
+                if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += race.splitsProperty().get(i-1).getSplitName() + ",";
             }
         }
         
@@ -225,8 +225,10 @@ public class OverallCSV implements RaceReportType{
             if (showSplits) {
             // do stuff
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    if (hideTime) chars.append(",");
-                    else chars.append(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)).append(",");
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) {
+                        if (hideTime) chars.append(",");
+                        else chars.append(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)).append(",");
+                    }
                 }
             }
             if (showSegments) {

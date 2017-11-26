@@ -366,7 +366,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             // Insert split stuff here
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
                 }
             }
             if (showSegments) {
@@ -467,9 +467,11 @@ report +=   "   \"fnInitComplete\": function () {\n" +
                 if (showSplits) {
                 // do stuff
                     for (int i = 2; i < race.splitsProperty().size(); i++) {
-                        if (!hideSplitTimes) 
-                            chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
-                        else chars.append("<td>---</td>" +  System.lineSeparator());
+                        if (!race.splitsProperty().get(i-1).getIgnoreTime()){
+                            if (!hideSplitTimes) 
+                                chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
+                            else chars.append("<td>---</td>" +  System.lineSeparator());
+                        }
                     }
                 }
 

@@ -508,8 +508,8 @@ public class FXMLRaceDetailsController {
             
             Integer colWidth = 200;
             VBox editor = new VBox();
-            editor.setSpacing(5);
-            editor.setPadding(new Insets(0,0,0,5));
+            editor.setSpacing(2);
+            editor.setPadding(new Insets(0,0,5,0));
             
             Label advLabel = new Label("Advanced Options:");
             advLabel.setStyle("-fx-font-size: 14px;");
@@ -579,19 +579,20 @@ public class FXMLRaceDetailsController {
                     System.out.println("Bad Cutoff Time (newValue: " + newValue + ")");
                 }
             });
-        
-            colWidth = 100;
             cutoffHBox.getChildren().setAll(splitCutoffLabel,cutoffTimeTextField);
+            
+            colWidth = 125;
             
             // Ignore split time toggle
             // If NOT Start or Finish
             HBox ignoreHBox = new HBox();
             ignoreHBox.setSpacing(5);
-            Label ignoreLabel = new Label("Ignore Time");
+            Label ignoreLabel = new Label("Ignore Time to this split");
             ignoreLabel.setPrefWidth(colWidth);
             ToggleSwitch ignoreToggleSwitch = new ToggleSwitch();
             ignoreToggleSwitch.setSelected(s.getIgnoreTime());
             ignoreHBox.getChildren().setAll(ignoreLabel,ignoreToggleSwitch);
+            
             
             // Mandatory toggle
             // If NOT Start or Finish
@@ -915,6 +916,7 @@ public class FXMLRaceDetailsController {
 
         
             raceSplitsListener=(ListChangeListener.Change<? extends Split> c) -> {
+                System.out.println("Splits have changed");
                 if (ResultsDAO.getInstance().getResults(selectedRace.getID()).size() > 0)splitUpdateResultsButton.visibleProperty().set(true);
             };
             raceSplits.addListener(raceSplitsListener);

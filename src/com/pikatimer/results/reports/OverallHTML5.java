@@ -310,7 +310,7 @@ public class OverallHTML5 implements RaceReportType{
             // Insert split stuff here
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "      <th data-priority=\"100\">" + escapeHTML(race.splitsProperty().get(i-1).getSplitName()) + "</th>" +  System.lineSeparator();
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "      <th data-priority=\"100\">" + escapeHTML(race.splitsProperty().get(i-1).getSplitName()) + "</th>" +  System.lineSeparator();
                 }
             }
             if (showSegments) {
@@ -455,10 +455,12 @@ public class OverallHTML5 implements RaceReportType{
                 if (showPace) report += "data += '<td></td>';\n";
                 report += "data += '</tr>';\n";
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) {
                     report += "data += '<tr><td>" + escape(race.splitsProperty().get(i-1).getSplitName()) + ":</td><td class=\"right\">  ' + rData.splits[\"split_" + Integer.toString(i-1) + "\"].display + '</td>';\n";
                     report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].delta_time + '</td>';\n";
                     if (showPace) report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].pace + '</td>';\n";
                     report += "data += '</tr>';\n";
+                    }
                 }
                 report += "data += '<tr><td>Finish:</td><td class=\"right\">  ' + rData.finish_display + '</td><td class=\"right up-half\">' + rData.finish_split_delta + '</td>';\n";
                 if (showPace) report += "data += '<td class=\"right up-half\">' + rData.finish_split_pace + '</td>';\n";
@@ -544,7 +546,7 @@ public class OverallHTML5 implements RaceReportType{
             if (showCountry) report += "           { \"data\": \"country\" },\n";
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "           { \"data\": \"splits.split_" + Integer.toString(i-1) + "\", \n" +
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "           { \"data\": \"splits.split_" + Integer.toString(i-1) + "\", \n" +
                                 "				\"render\": {\n" +
                                 "					_: 'display',\n" +
                                 "					sort: 'sort'\n" +

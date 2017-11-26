@@ -22,6 +22,7 @@ import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Objects;
+import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
@@ -188,8 +189,10 @@ public class Split {
     public void setSplitMinTime(Long c) {
         if(c != null) {
             //Fix this to watch for parse exceptions
+            //System.out.println("splitMinTimeProperty: was :" + splitMinTimeProperty.getValue().toString());
             splitMinTime = Duration.ofNanos(c);
-            splitMinTimeProperty.setValue(splitMinTime);
+            Platform.runLater(() -> {splitMinTimeProperty.setValue(splitMinTime);});
+            //System.out.println("splitMinTimeProperty: now :" + splitMinTimeProperty.getValue().toString());
         }
     }
     public Duration splitMinTimeDuration(){

@@ -602,7 +602,14 @@ public class ResultsDAO {
             //fix the start time
             if(r.getStartDuration().equals(r.getWaveStartDuration())) {
                 // zero gun time, look for a backup
-                while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxWaveStart) < 0) {
+                Duration maxStart = maxWaveStart;
+                
+                // If we have a 1st split time and there is a minimum time to that split, 
+                // use that to box in the max allowed start time. 
+                if (!r.getSplitTime(1).isZero() && !Duration.ZERO.equals(splitArray[1].splitMinTimeDuration())) { maxStart = r.getSplitTime(1).minus(splitArray[1].splitMinTimeDuration());} 
+
+                
+                while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxStart) < 0) {
                     if (r.getStartDuration().compareTo(c.getTimestamp())<0) {
                         r.setStartDuration(c.getTimestamp());
                         //System.out.println("Backup start time found for bib " + p.getBib());
@@ -874,21 +881,28 @@ public class ResultsDAO {
                             results.add(pr);
                             return;
                         }
-                        // Set the finish times unless they are a DNF
-                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero() && ! pr.getParticipant().getDNF()){
-                            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
-                            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
-                            pr.setSplit(splitSize, pr.getChipFinish());
-                        }
+                        
 
                         // Set the splits
+                        Duration paused = Duration.ZERO;
                         if(r.getSplits().size() > 2) {
                             for (int i = 2; i <  splitSize ; i++) {
-                                //if (res.getSplitTime(i) != null) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
-                                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+                                System.out.println("Split: " + r.getSplits().get(i-1).getSplitName() + " Ignore? " + r.getSplits().get(i-1).getIgnoreTime() );
+                                if (r.getSplits().get(i-1).getIgnoreTime() && !res.getSplitTime(i).isZero()) {
+                                    if (i == 2) paused = res.getSplitTime(i).minus(chipStartTime);
+                                    else if (!res.getSplitTime(i-1).isZero()) paused = paused.plus(res.getSplitTime(i).minus(res.getSplitTime(i-1)));
+                                    System.out.println("Paused time for " + pr.getParticipant().getBib() + " " + paused + " from " + res.getSplitTime(i)+ " minus " + res.getSplitTime(i-1) );
+                                }
+                                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
                             }
                         }
                         
+                        // Set the finish times unless they are a DNF
+                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero() && ! pr.getParticipant().getDNF()){
+                            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime).minus(paused));
+                            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime).minus(paused));
+                            pr.setSplit(splitSize, pr.getChipFinish());
+                        }
                         
                         // set the segment times unless they are a DNF
                         if (!pr.getParticipant().getDNF()) r.getSegments().forEach(seg -> {

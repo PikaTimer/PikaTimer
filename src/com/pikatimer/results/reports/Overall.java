@@ -192,7 +192,7 @@ public class Overall implements RaceReportType{
         // Insert split stuff here
         if (showSplits) {
             for (int i = 2; i < race.splitsProperty().size(); i++) {
-                report += StringUtils.leftPad(race.splitsProperty().get(i-1).getSplitName(),dispFormatLength);
+                if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += StringUtils.leftPad(race.splitsProperty().get(i-1).getSplitName(),dispFormatLength);
             }
         }
         
@@ -277,7 +277,7 @@ public class Overall implements RaceReportType{
             if (showSplits && ! hideTime) {
             // do stuff
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode), dispFormatLength));
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode), dispFormatLength));
                 }
             }
             if (showSegments) {
