@@ -18,10 +18,11 @@
 <?import org.controlsfx.control.PrefixSelectionComboBox?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardCategoryController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardCategoryController">
    <columnConstraints>
       <ColumnConstraints hgrow="NEVER" />
       <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
+      <ColumnConstraints hgrow="NEVER" />
       <ColumnConstraints hgrow="NEVER" />
    </columnConstraints>
    <rowConstraints>
@@ -57,18 +58,8 @@
             <Font size="16.0" />
          </font>
       </ToggleSwitch>
-      <VBox alignment="TOP_RIGHT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
+      <VBox alignment="TOP_RIGHT" spacing="5.0" GridPane.columnIndex="3" GridPane.rowIndex="2">
          <children>
-            <ToggleSwitch fx:id="visibleAwardsToggleSwitch" contentDisplay="CENTER" prefHeight="25.0" prefWidth="170.0" text="Visible on Awards">
-               <font>
-                  <Font size="16.0" />
-               </font>
-            </ToggleSwitch>
-            <ToggleSwitch fx:id="visibleOverallToggleSwitch" prefHeight="25.0" prefWidth="170.0" text="Visible on Overall">
-               <font>
-                  <Font size="16.0" />
-               </font>
-            </ToggleSwitch>
             <HBox maxWidth="1.7976931348623157E308" spacing="2.0">
                <children>
                   <Label text="Depth" HBox.hgrow="NEVER">
@@ -108,7 +99,7 @@
             <Font size="16.0" />
          </font>
       </ToggleSwitch>
-      <GridPane fx:id="customGridPane" hgap="4.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
+      <GridPane fx:id="customGridPane" hgap="4.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" GridPane.columnSpan="3" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
         <columnConstraints>
           <ColumnConstraints hgrow="NEVER" />
           <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="10.0" />
@@ -210,6 +201,16 @@
             <Separator maxWidth="1.7976931348623157E308" minHeight="-Infinity" />
          </children>
       </VBox>
+      <ToggleSwitch fx:id="visibleAwardsToggleSwitch" contentDisplay="CENTER" prefHeight="25.0" prefWidth="170.0" text="Visible on Awards" GridPane.columnIndex="3">
+         <font>
+            <Font size="16.0" />
+         </font>
+      </ToggleSwitch>
+      <ToggleSwitch fx:id="visibleOverallToggleSwitch" prefHeight="25.0" prefWidth="170.0" text="Visible on Overall" GridPane.columnIndex="3" GridPane.rowIndex="1">
+         <font>
+            <Font size="16.0" />
+         </font>
+      </ToggleSwitch>
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

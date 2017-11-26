@@ -46,6 +46,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -56,7 +57,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TableColumn.CellEditEvent;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -501,28 +501,29 @@ public class FXMLRaceDetailsController {
             if (s == null) return new Label("");
             
             
-            if (s.getPosition() == 1 || s.getPosition() == s.getRace().getSplits().size()) { // start or finish
-                Label errorLabel = new Label("There are no advanced options for the start or finish split");
+            if (s.getPosition() == 1 ) { // start split
+                Label errorLabel = new Label("There are no advanced options for the start split");
                 return errorLabel;
             } 
             
-            Integer colWidth = 100;
+            Integer colWidth = 200;
             VBox editor = new VBox();
             editor.setSpacing(5);
+            editor.setPadding(new Insets(0,0,0,5));
             
             Label advLabel = new Label("Advanced Options:");
             advLabel.setStyle("-fx-font-size: 14px;");
             advLabel.setPrefWidth(200);
             
 
-            // Min time to next split 
+            // Min time from previous 
             // If NOT Start or Finish
             HBox minTimeHBox = new HBox();
             minTimeHBox.setSpacing(5);
-            Label splitMinTimeLabel = new Label("Minimum Time");
+            Label splitMinTimeLabel = new Label("Minimum time from previous split: ");
             splitMinTimeLabel.setPrefWidth(colWidth);
             TextField minTimeTextField = new TextField(DurationFormatter.durationToString(s.splitMinTimeDuration()));
-            minTimeTextField.setPromptText("HH:MM:SS");
+            minTimeTextField.setPromptText("[HH:]MM:SS");
             minTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                 //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
                 if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
@@ -539,12 +540,27 @@ public class FXMLRaceDetailsController {
                 }
             });
             minTimeHBox.getChildren().setAll(splitMinTimeLabel,minTimeTextField);
+            
+            Button save = new Button("Save");
+            save.setOnAction(event -> {
+                // Min Time Time
+                if (DurationParser.parsable(minTimeTextField.getText(),Boolean.FALSE))
+                    s.setSplitMinTime(DurationParser.parse(minTimeTextField.getText(),Boolean.FALSE).toNanos());
+                else System.out.println("Min Split time of " +minTimeTextField.getText() + " is not parsable!");
+                
+                raceDAO.updateSplit(s);
+                param.toggleExpanded();
+            });
+            
+            editor.getChildren().addAll(advLabel,minTimeHBox,save);
+            
+            if (s.getPosition() != s.getRace().getSplits().size()) {
 
             // Cutoff Time
             // If NOT Start or Finish
             HBox cutoffHBox = new HBox();
             cutoffHBox.setSpacing(5);
-            Label splitCutoffLabel = new Label("Cutoff Time");
+            Label splitCutoffLabel = new Label("Maximum Elapsed Time to this split");
             splitCutoffLabel.setPrefWidth(colWidth);
             TextField cutoffTimeTextField = new TextField(DurationFormatter.durationToString(s.splitCutoffDuration()));
             cutoffTimeTextField.setPromptText("HH:MM:SS");
@@ -564,6 +580,7 @@ public class FXMLRaceDetailsController {
                 }
             });
         
+            colWidth = 100;
             cutoffHBox.getChildren().setAll(splitCutoffLabel,cutoffTimeTextField);
             
             // Ignore split time toggle
@@ -586,16 +603,16 @@ public class FXMLRaceDetailsController {
             mandatoryToggleSwitch.setSelected(s.getMandatorySplit());
             mandatoryHBox.getChildren().setAll(mandatoryLabel,mandatoryToggleSwitch);
 
-            // Note saying that there are no advanced options for the start/finish
             
-            Button save = new Button("Save Split");
+            
+            
             save.setOnAction(event -> {
                 // Min Time Time
-                if (DurationParser.parsable(minTimeTextField.getText()))
-                    s.setSplitMinTime(DurationParser.parse(minTimeTextField.getText(),Boolean.TRUE).toNanos());
-                
+                if (DurationParser.parsable(minTimeTextField.getText(),Boolean.FALSE))
+                    s.setSplitMinTime(DurationParser.parse(minTimeTextField.getText(),Boolean.FALSE).toNanos());
+                else System.out.println("Min Split time of " +minTimeTextField.getText() + " is not parsable!");
                 // Cutoff Time
-                if (DurationParser.parsable(cutoffTimeTextField.getText()))
+                if (DurationParser.parsable(cutoffTimeTextField.getText(),Boolean.TRUE))
                     s.setSplitCutoff(DurationParser.parse(cutoffTimeTextField.getText(),Boolean.TRUE).toNanos());
                 
                 s.setMandatorySplit(mandatoryToggleSwitch.selectedProperty().getValue());
@@ -606,8 +623,8 @@ public class FXMLRaceDetailsController {
                 param.toggleExpanded();
             });
             
-            editor.getChildren().addAll(advLabel,minTimeHBox,cutoffHBox,mandatoryHBox,ignoreHBox,save);
-            
+            editor.getChildren().setAll(advLabel,minTimeHBox,cutoffHBox,mandatoryHBox,ignoreHBox,save);
+            }
             return editor;
         });
         advancedSplitOptionsTableRowExpanderColumn.setMinWidth(50);

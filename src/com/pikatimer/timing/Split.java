@@ -17,7 +17,6 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.race.Race;
-import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
@@ -26,8 +25,10 @@ import java.util.Objects;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
@@ -73,12 +74,12 @@ public class Split {
     private Pace splitPace; // split_pace_unit
     private final StringProperty splitPaceString; 
     private final StringProperty splitName;
-    private  Duration splitCutoff = Duration.ZERO;
+    private Duration splitCutoff = Duration.ZERO;
     private Duration splitMinTime = Duration.ZERO;
     private final StringProperty splitCutoffString;
     private final BooleanProperty mandatoryProperty = new SimpleBooleanProperty();
     private final BooleanProperty ignoreProperty = new SimpleBooleanProperty();
-
+    private final ObjectProperty<Duration> splitMinTimeProperty = new SimpleObjectProperty(Duration.ZERO);
     
 
     public Split(Race r){
@@ -99,7 +100,7 @@ public class Split {
     }
    
     public static Callback<Split, Observable[]> extractor() {
-        return (Split s) -> new Observable[]{s.splitName,s.splitDistanceString,s.splitPosition,s.splitLocationString};
+        return (Split s) -> new Observable[]{s.splitName,s.splitDistanceString,s.splitPosition,s.splitLocationString,s.splitMinTimeProperty};
     }
 
     @Id
@@ -188,6 +189,7 @@ public class Split {
         if(c != null) {
             //Fix this to watch for parse exceptions
             splitMinTime = Duration.ofNanos(c);
+            splitMinTimeProperty.setValue(splitMinTime);
         }
     }
     public Duration splitMinTimeDuration(){

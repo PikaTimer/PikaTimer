@@ -63,6 +63,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -75,6 +76,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableCell;
@@ -139,11 +141,12 @@ public class FXMLTimingController {
     @FXML private TableColumn<CookedTimeData,Boolean> ignoreColumn;
     @FXML private CheckBox customChipBibCheckBox;
     
-    @FXML private TableView<TimeOverride> overrideTableView;
-    @FXML private TableColumn<TimeOverride,String> overrideBibColumn;
-    @FXML private TableColumn<TimeOverride,String> overrideTimeColumn;
-    @FXML private TableColumn<TimeOverride,String> overrideSplitColumn;
-    @FXML private TableColumn<TimeOverride,Boolean> overrideRelativeColumn;
+    @FXML private ListView<TimeOverride> overrideListView;
+//    @FXML private TableView<TimeOverride> overrideTableView;
+//    @FXML private TableColumn<TimeOverride,String> overrideBibColumn;
+//    @FXML private TableColumn<TimeOverride,String> overrideTimeColumn;
+//    @FXML private TableColumn<TimeOverride,String> overrideSplitColumn;
+//    @FXML private TableColumn<TimeOverride,Boolean> overrideRelativeColumn;
     
     @FXML private Button overrideEditButton;
     @FXML private Button overrideRemoveButton;
@@ -607,48 +610,116 @@ public class FXMLTimingController {
         
         
         // Override table
-        overrideTableView.setPlaceholder(new Label("No overrides have been entered yet"));
-        overrideTableView.setItems(timingDAO.getOverrides());
-        overrideBibColumn.setCellValueFactory(cellData -> {
-            return cellData.getValue().bibProperty();
-        });
-        overrideBibColumn.setComparator(new AlphanumericComparator());
+        overrideListView.setPlaceholder(new Label("No overrides have been entered yet"));
+        overrideListView.setItems(timingDAO.getOverrides());
+        overrideListView.setCellFactory(param -> new ListCell<TimeOverride>() {
+            Label locationLabel = new Label("Location: ");
+            Label bonusLabel = new Label("Bonus: ");
+            Label penaltyLabel = new Label("Penalty: ");
+            Label bib = new Label("");
+            Label fullName = new Label("");
+            Label split = new Label("");
+            Label time = new Label("");
+            Label note = new Label("");
+            VBox toVBox = new VBox();
+            HBox nameHBox = new HBox();
+            HBox timeHBox = new HBox();
+            
+            @Override
+            protected void updateItem(TimeOverride to, boolean empty) {
+                super.updateItem(to, empty);
                 
-        overrideSplitColumn.setCellValueFactory(cellData -> {
-            Split s = raceDAO.getSplitByID(cellData.getValue().getSplitId());
-            if (s== null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getSplitId());
-            } else {
-                return s.splitNameProperty();
+                if (empty || to == null || to.getBib() == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    
+                    bib.setText("Bib: " + to.getBib());
+                    fullName.textProperty().bind(ParticipantDAO.getInstance().getParticipantByBib(to.getBib()).fullNameProperty());
+                    nameHBox.setSpacing(5);
+                    nameHBox.getChildren().setAll(bib,fullName);
+                    nameHBox.setStyle("-fx-font-size: 14px;");
+                    
+                    if (null == to.getOverrideType()) {
+                        
+                    } else switch (to.getOverrideType()) {
+                        case OVERRIDE:
+                            split.textProperty().bind(raceDAO.getSplitByID(to.getSplitId()).splitNameProperty());
+                            time.setText(DurationFormatter.durationToString(to.getTimestamp()));
+                            timeHBox.getChildren().setAll(locationLabel,split,time);
+                            break;
+                        case PENALTY:
+                            time.setText(DurationFormatter.durationToString(to.getTimestamp()));
+                            timeHBox.getChildren().setAll(penaltyLabel,time);
+                            break;
+                        case BONUS:
+                            time.setText(DurationFormatter.durationToString(to.getTimestamp()));
+                            timeHBox.getChildren().setAll(bonusLabel,time);
+                        default:
+                            break;
+                    }
+                    timeHBox.setSpacing(5);
+                    
+                    if (to.getNote().isEmpty()) toVBox.getChildren().setAll(nameHBox,timeHBox);
+                    else {
+                        note.setText(to.getNote());
+                        toVBox.getChildren().setAll(nameHBox,timeHBox,note);
+                    }
+                    
+                    setText(null);
+                    setGraphic(toVBox);
+                    
+                    setOnMouseClicked(ev -> {
+                        if (ev.getClickCount() == 2 )
+                            editOverride(getItem());
+                    });
+                }
             }
         });
         
         
-        overrideTimeColumn.setCellValueFactory(cellData -> {
-            return cellData.getValue().timestampStringProperty();
-            //return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getTimestamp(), 3));
-        });
+//        overrideTableView.setPlaceholder(new Label("No overrides have been entered yet"));
+//        overrideTableView.setItems(timingDAO.getOverrides());
+//        overrideBibColumn.setCellValueFactory(cellData -> {
+//            return cellData.getValue().bibProperty();
+//        });
+//        overrideBibColumn.setComparator(new AlphanumericComparator());
+//                
+//        overrideSplitColumn.setCellValueFactory(cellData -> {
+//            Split s = raceDAO.getSplitByID(cellData.getValue().getSplitId());
+//            if (s== null) { return new SimpleStringProperty("Unknown: " + cellData.getValue().getSplitId());
+//            } else {
+//                return s.splitNameProperty();
+//            }
+//        });
+//        
+//        
+//        overrideTimeColumn.setCellValueFactory(cellData -> {
+//            return cellData.getValue().timestampStringProperty();
+//            //return new SimpleStringProperty(DurationFormatter.durationToString(cellData.getValue().getTimestamp(), 3));
+//        });
+//        
+//        overrideRelativeColumn.setCellValueFactory(cellData -> {
+//            return cellData.getValue().relativeProperty();
+//        });
+//        overrideRelativeColumn.setCellFactory(tc -> new CheckBoxTableCell());
+//        
+//        overrideTableView.setRowFactory((TableView<TimeOverride> tableView1) -> {
+//            final TableRow<TimeOverride> row = new TableRow<>();
+//
+//            row.setOnMouseClicked(event -> {
+//            if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+//                editOverride(overrideTableView.getSelectionModel().getSelectedItem());
+//            }
+//            });
+//        
+//        
+//            return row;
+//        
+//        });
         
-        overrideRelativeColumn.setCellValueFactory(cellData -> {
-            return cellData.getValue().relativeProperty();
-        });
-        overrideRelativeColumn.setCellFactory(tc -> new CheckBoxTableCell());
-        
-        overrideTableView.setRowFactory((TableView<TimeOverride> tableView1) -> {
-            final TableRow<TimeOverride> row = new TableRow<>();
-
-            row.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
-                editOverride(overrideTableView.getSelectionModel().getSelectedItem());
-            }
-            });
-        
-        
-            return row;
-        
-        });
-        
-        overrideEditButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
-        overrideRemoveButton.disableProperty().bind(overrideTableView.getSelectionModel().selectedItemProperty().isNull());
+        overrideEditButton.disableProperty().bind(overrideListView.getSelectionModel().selectedItemProperty().isNull());
+        overrideRemoveButton.disableProperty().bind(overrideListView.getSelectionModel().selectedItemProperty().isNull());
         
          timingLocListView.getSelectionModel().clearAndSelect(0);
          
@@ -813,15 +884,16 @@ public class FXMLTimingController {
     }
     
     public void editOverride(ActionEvent fxevent){
-        editOverride(overrideTableView.getSelectionModel().getSelectedItem());
+        editOverride(overrideListView.getSelectionModel().getSelectedItem());
     }
     
     public void editOverride(TimeOverride o){
         // Open a Dialog box and ask for four things:
         // 1) Bib
-        // 2) split (based on the bib)
-        // 3) Time
-        // 4) if that time is based on the time of day or a duration from the start
+        // 2) Type (override, penalty, bonus)
+        // 3) split (based on the bib)
+        // 4) Time
+        // 5) if that time is based on the time of day or a duration from the start
         // 
         // The dialog modifies a timeOverride object on the fly....
         if (o == null) return;
@@ -866,10 +938,12 @@ public class FXMLTimingController {
         
         bibTextField.setPrefWidth(50.0);
         Label participantLabel = new Label();
+        PrefixSelectionComboBox<TimeOverrideType> typeComboBox = new PrefixSelectionComboBox();
         PrefixSelectionComboBox<Split> splitComboBox = new PrefixSelectionComboBox();
         
+        Label splitLabel = new Label("Split:");
         
-        
+        typeComboBox.setItems(FXCollections.observableArrayList(TimeOverrideType.values()));
         
         
         splitComboBox.setVisibleRowCount(5);
@@ -912,10 +986,12 @@ public class FXMLTimingController {
         });
         
         
+        TextField noteTextField = new TextField(o.getNote());
         
-        CheckBox typeCheckBox = new CheckBox("Relative to start time");
-        typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
-        typeCheckBox.disableProperty().setValue(Boolean.TRUE);
+        
+        CheckBox relativeCheckBox = new CheckBox("Relative to start time");
+        relativeCheckBox.selectedProperty().setValue(Boolean.FALSE);
+        relativeCheckBox.disableProperty().setValue(Boolean.TRUE);
         
         TextField timeTextField = new TextField();
         timeTextField.setPromptText("HH:MM:SS.sss");
@@ -923,9 +999,14 @@ public class FXMLTimingController {
                     //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
             timeOK.setValue(false);
             
-            if (typeCheckBox.isSelected() && DurationParser.parsable(newValue)) timeOK.setValue(Boolean.TRUE);
-            if (!typeCheckBox.isSelected() && DurationParser.parsable(newValue, false)) timeOK.setValue(Boolean.TRUE);
-
+            if (TimeOverrideType.OVERRIDE.equals(typeComboBox.getValue())) {
+                if (relativeCheckBox.isSelected() && DurationParser.parsable(newValue)) timeOK.setValue(Boolean.TRUE);
+                else if (!relativeCheckBox.isSelected() && DurationParser.parsable(newValue, false)) timeOK.setValue(Boolean.TRUE);
+                else timeOK.setValue(false);
+            } else {
+                if (DurationParser.parsable(newValue)) timeOK.setValue(Boolean.TRUE);
+                else timeOK.setValue(false);
+            }
             if ( newValue.isEmpty() || newValue.matches("^[0-9]*(:?([0-5]?([0-9]?(:([0-5]?([0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
                 System.out.println("Possiblely good Time (newValue: " + newValue + ")");
             } else {
@@ -947,24 +1028,55 @@ public class FXMLTimingController {
 
         splitComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (splitComboBox.getSelectionModel().getSelectedItem() != null && splitComboBox.getSelectionModel().getSelectedItem().getPosition() == 1) {
-                typeCheckBox.selectedProperty().setValue(Boolean.FALSE);
-                typeCheckBox.disableProperty().setValue(Boolean.TRUE);
+                relativeCheckBox.selectedProperty().setValue(Boolean.FALSE);
+                relativeCheckBox.disableProperty().setValue(Boolean.TRUE);
             } else {
-                typeCheckBox.disableProperty().setValue(Boolean.FALSE);
+                relativeCheckBox.disableProperty().setValue(Boolean.FALSE);
             }
         });
         
+        typeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (TimeOverrideType.OVERRIDE.equals(newValue)){
+                splitComboBox.setVisible(true);
+                splitComboBox.setManaged(true);
+                splitLabel.setVisible(true);
+                splitLabel.setManaged(true);
+                relativeCheckBox.setVisible(true);
+                relativeCheckBox.setManaged(true);
+            } else {
+                splitComboBox.setVisible(false);
+                splitComboBox.setManaged(false);
+                splitLabel.setVisible(false);
+                splitLabel.setManaged(false);
+                relativeCheckBox.setVisible(false);
+                relativeCheckBox.setManaged(false);
+            }
+            dialog.getDialogPane().getScene().getWindow().sizeToScene();
+        });
+        typeComboBox.getSelectionModel().select(o.getOverrideType());
+
+                
         HBox bibLabelHBox = new HBox();
         bibLabelHBox.setSpacing(5.0);
         bibLabelHBox.getChildren().addAll(bibTextField,participantLabel);
+        bibLabelHBox.setAlignment(Pos.CENTER_LEFT);
         grid.add(new Label("Bib:"), 0, 0);
         grid.add(bibLabelHBox, 1, 0);
-        grid.add(new Label("Split:"), 0, 1);
-        grid.add(splitComboBox, 1, 1);
-        grid.add(new Label("Time:"),0,2);
-        grid.add(timeTextField,1,2);
+        
+        grid.add(new Label("Type"), 0, 1);
+        grid.add(typeComboBox,1,1);
+        
+        grid.add(splitLabel, 0, 2);
+        grid.add(splitComboBox, 1, 2);
+        
+        grid.add(new Label("Time:"),0,3);
+        grid.add(timeTextField,1,3);
         //grid.add(new Label("Time Since:"),0,3);
-        grid.add(typeCheckBox,1,3);
+        
+        grid.add(relativeCheckBox,1,4);
+        
+        grid.add(new Label("Note:"),0,5);
+        grid.add(noteTextField,1,5);
 
         // Disable create button unless everything is ok
         Node createButton = dialog.getDialogPane().lookupButton(createButtonType);
@@ -976,8 +1088,8 @@ public class FXMLTimingController {
         if (o.getID() != null) {
             Platform.runLater(() -> { 
                 bibTextField.setText(o.getBib());
-                
-                
+                bibTextField.setEditable(false); 
+                bibLabelHBox.getChildren().setAll(new Label(o.getBib()), participantLabel);
                 timeTextField.setText(DurationFormatter.durationToString(o.getTimestamp(), 3, Boolean.TRUE).replaceFirst("^(\\d:)", "0$1"));
                 try{
                     ObservableList<Split> splitList = FXCollections.observableArrayList();
@@ -986,7 +1098,7 @@ public class FXMLTimingController {
                     splitComboBox.getSelectionModel().selectFirst();
                 } catch (Exception e) {}
                 
-                typeCheckBox.setSelected(o.getRelative());
+                relativeCheckBox.setSelected(o.getRelative());
                 
                 bibTextField.setEditable(false);
                 splitComboBox.setEditable(false);
@@ -998,10 +1110,24 @@ public class FXMLTimingController {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == createButtonType) {
                 o.setBib( bibTextField.textProperty().getValueSafe());
-                o.setSplitId(splitComboBox.getValue().getID());
-                if (typeCheckBox.isSelected()) o.setTimestamp(DurationParser.parse(timeTextField.getText(), false));
-                else o.setTimestamp(DurationParser.parse(timeTextField.getText(), true));
-                o.setRelative(typeCheckBox.isSelected());
+                
+                if (TimeOverrideType.OVERRIDE.equals(typeComboBox.getValue())) {
+                    o.setOverrideType(typeComboBox.getValue());
+                    o.setSplitId(splitComboBox.getValue().getID());
+
+                    if (relativeCheckBox.isSelected()) o.setTimestamp(DurationParser.parse(timeTextField.getText(), false));
+                    else o.setTimestamp(DurationParser.parse(timeTextField.getText(), true));
+                    o.setRelative(relativeCheckBox.isSelected());
+                    o.setNote(noteTextField.getText());
+                    
+                } else {
+                    o.setOverrideType(typeComboBox.getValue());
+                    o.setSplitId(-1);
+                    o.setTimestamp(DurationParser.parse(timeTextField.getText(), false));
+                    o.setRelative(true);
+                    o.setNote(noteTextField.getText());
+                    
+                }
                 return o;
             }
             return null;
@@ -1019,7 +1145,7 @@ public class FXMLTimingController {
     }
     
     public void removeOverride(ActionEvent fxevent){
-        timingDAO.deleteOverride(overrideTableView.getSelectionModel().getSelectedItem());
+        timingDAO.deleteOverride(overrideListView.getSelectionModel().getSelectedItem());
     }
     
     

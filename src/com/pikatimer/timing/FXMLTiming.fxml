@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import org.controlsfx.control.CheckComboBox?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane fx:id="timingGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="515.0" prefWidth="754.0" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingController">
+<GridPane fx:id="timingGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="515.0" prefWidth="754.0" vgap="10.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingController">
    <columnConstraints>
       <ColumnConstraints fillWidth="false" hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="250.0" />
       <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="400.0" prefWidth="400.0" />
@@ -177,19 +177,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </VBox>
             <VBox>
                <children>
-                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Overrides" textAlignment="CENTER">
+                  <Label alignment="TOP_LEFT" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Overrides / Penalties / Bonuses" textAlignment="CENTER">
                      <font>
                         <Font size="18.0" />
                      </font>
                   </Label>
-                  <TableView fx:id="overrideTableView">
-                    <columns>
-                      <TableColumn fx:id="overrideBibColumn" prefWidth="50.0" text="Bib" />
-                      <TableColumn fx:id="overrideSplitColumn" text="Split" />
-                        <TableColumn fx:id="overrideTimeColumn" text="Time" />
-                        <TableColumn fx:id="overrideRelativeColumn" maxWidth="45.0" minWidth="24.0" prefWidth="33.0" text="R" />
-                    </columns>
-                  </TableView>
+                  <ListView fx:id="overrideListView" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
                   <HBox alignment="CENTER_RIGHT" spacing="5.0">
                      <children>
                         <Button fx:id="overrideClearAllButton" mnemonicParsing="false" onAction="#clearAllOverrides" text="Clear All" />
