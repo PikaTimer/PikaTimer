@@ -63,23 +63,24 @@ import org.hibernate.annotations.GenericGenerator;
 public class Split {
     
     //private final Wave self; 
-    private final IntegerProperty IDProperty; // split_id
+    private final IntegerProperty IDProperty = new SimpleIntegerProperty(); // split_id
     private Race race; // race_id
     private TimingLocation splitLocation; // timing_loc_id
-    private final StringProperty splitLocationString; 
-    private final IntegerProperty splitPosition; // split_seq_number
+    private final StringProperty splitLocationString = new SimpleStringProperty(); 
+    private final IntegerProperty splitPosition  = new SimpleIntegerProperty(); // split_seq_number
     private BigDecimal splitDistance; //
-    private final StringProperty splitDistanceString; // split_distance
+    private final StringProperty splitDistanceString = new SimpleStringProperty(); // split_distance
     private Unit splitDistanceUnit; // split_dist_unit
-    private final StringProperty splitDistanceUnitString; 
+    private final StringProperty splitDistanceUnitString = new SimpleStringProperty(); 
     private Pace splitPace; // split_pace_unit
-    private final StringProperty splitPaceString; 
-    private final StringProperty splitName;
+    private final StringProperty splitPaceString = new SimpleStringProperty();
+    private final StringProperty splitName = new SimpleStringProperty();
     private Duration splitCutoff = Duration.ZERO;
     private Duration splitMinTime = Duration.ZERO;
-    private final StringProperty splitCutoffString;
-    private final BooleanProperty mandatoryProperty = new SimpleBooleanProperty();
-    private final BooleanProperty ignoreProperty = new SimpleBooleanProperty();
+    private final StringProperty splitCutoffString = new SimpleStringProperty();
+    private final BooleanProperty mandatoryProperty = new SimpleBooleanProperty(false);
+    private final BooleanProperty ignoreProperty = new SimpleBooleanProperty(false);
+    private final BooleanProperty splitCutoffIsRelativeProperty = new SimpleBooleanProperty(true);
     private final ObjectProperty<Duration> splitMinTimeProperty = new SimpleObjectProperty(Duration.ZERO);
     
 
@@ -88,16 +89,6 @@ public class Split {
         this.setRace(r);
     }
    public Split() {
-        //this.self = this; 
-        this.IDProperty = new SimpleIntegerProperty();
-        this.splitName = new SimpleStringProperty();
-        this.splitDistanceString = new SimpleStringProperty();
-        this.splitCutoffString = new SimpleStringProperty();
-        this.splitPosition = new SimpleIntegerProperty();
-        this.splitDistanceUnitString = new SimpleStringProperty(); 
-        this.splitPaceString = new SimpleStringProperty();
-        this.splitLocationString = new SimpleStringProperty();
-        
     }
    
     public static Callback<Split, Observable[]> extractor() {
@@ -189,10 +180,11 @@ public class Split {
     public void setSplitMinTime(Long c) {
         if(c != null) {
             //Fix this to watch for parse exceptions
-            //System.out.println("splitMinTimeProperty: was :" + splitMinTimeProperty.getValue().toString());
+            System.out.println("splitMinTimeProperty: was :" + splitMinTimeProperty.getValue().toString());
             splitMinTime = Duration.ofNanos(c);
+            splitMinTimeProperty.setValue(splitMinTime);
             Platform.runLater(() -> {splitMinTimeProperty.setValue(splitMinTime);});
-            //System.out.println("splitMinTimeProperty: now :" + splitMinTimeProperty.getValue().toString());
+            System.out.println("splitMinTimeProperty: now :" + splitMinTimeProperty.getValue().toString());
         }
     }
     public Duration splitMinTimeDuration(){
@@ -266,6 +258,14 @@ public class Split {
         ignoreProperty.setValue(m);
     }
 
+    @Column(name="CUTOFF_ABSOLUTE")
+    
+    public Boolean getSplitCutoffIsRelative(){
+        return splitCutoffIsRelativeProperty.getValue();
+    }
+    public void setSplitCutoffIsRelative(Boolean m){
+        splitCutoffIsRelativeProperty.setValue(m);
+    }        
 
     @Override
     public int hashCode() {

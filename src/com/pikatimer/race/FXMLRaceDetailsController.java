@@ -524,6 +524,7 @@ public class FXMLRaceDetailsController {
             splitMinTimeLabel.setPrefWidth(colWidth);
             TextField minTimeTextField = new TextField(DurationFormatter.durationToString(s.splitMinTimeDuration()));
             minTimeTextField.setPromptText("[HH:]MM:SS");
+            minTimeTextField.setPrefWidth(75);
             minTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                 //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
                 if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
@@ -560,10 +561,11 @@ public class FXMLRaceDetailsController {
             // If NOT Start or Finish
             HBox cutoffHBox = new HBox();
             cutoffHBox.setSpacing(5);
-            Label splitCutoffLabel = new Label("Maximum Elapsed Time to this split");
+            Label splitCutoffLabel = new Label("Cutoff Time to this split");
             splitCutoffLabel.setPrefWidth(colWidth);
             TextField cutoffTimeTextField = new TextField(DurationFormatter.durationToString(s.splitCutoffDuration()));
             cutoffTimeTextField.setPromptText("HH:MM:SS");
+            cutoffTimeTextField.setPrefWidth(75);
             cutoffTimeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
                 //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
                 if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
@@ -579,9 +581,11 @@ public class FXMLRaceDetailsController {
                     System.out.println("Bad Cutoff Time (newValue: " + newValue + ")");
                 }
             });
-            cutoffHBox.getChildren().setAll(splitCutoffLabel,cutoffTimeTextField);
+            ToggleSwitch absoluteToggleSwitch = new ToggleSwitch("Relative to Start");
+            absoluteToggleSwitch.setSelected(s.getSplitCutoffIsRelative());
+            cutoffHBox.getChildren().setAll(splitCutoffLabel,cutoffTimeTextField,absoluteToggleSwitch);
             
-            colWidth = 125;
+            colWidth = 130;
             
             // Ignore split time toggle
             // If NOT Start or Finish
@@ -615,6 +619,7 @@ public class FXMLRaceDetailsController {
                 // Cutoff Time
                 if (DurationParser.parsable(cutoffTimeTextField.getText(),Boolean.TRUE))
                     s.setSplitCutoff(DurationParser.parse(cutoffTimeTextField.getText(),Boolean.TRUE).toNanos());
+                s.setSplitCutoffIsRelative(absoluteToggleSwitch.selectedProperty().getValue());
                 
                 s.setMandatorySplit(mandatoryToggleSwitch.selectedProperty().getValue());
                 s.setIgnoreTime(ignoreToggleSwitch.selectedProperty().getValue());

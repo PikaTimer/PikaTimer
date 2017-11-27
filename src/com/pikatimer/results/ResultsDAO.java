@@ -838,11 +838,12 @@ public class ResultsDAO {
     
     public void processReports(Race r, RaceReport rr){
         
-        Task processRaceReports = new Task<Void>() {
-
-                @Override 
-                public Void call() {
-                    try{
+        Task processRaceReports;
+        processRaceReports = new Task<Void>() {
+            
+            @Override
+            public Void call() {
+                try{
                     List<ProcessedResult> results = new ArrayList();
 
                     Integer splitSize = r.getSplits().size();
@@ -850,13 +851,13 @@ public class ResultsDAO {
                     // get the current results list
                     getResults(r.getID()).forEach(res -> {
                         ProcessedResult pr = new ProcessedResult();
-
+                        
                         // If there is no participant, then bail. 
                         // TODO: Maybe add an option to create a participant on the fly, but
                         // this could gete messy with all of the random RFID chips out there.
-                        // Either way, this would be handled on the timing tab, not here. 
-                        if(participantDAO.getParticipantByBib(res.getBib()) == null) return; 
-
+                        // Either way, this would be handled on the timing tab, not here.
+                        if(participantDAO.getParticipantByBib(res.getBib()) == null) return;
+                        
                         // Link in the participant
                         pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
                         // Set the AG code (e.g. M30-34) (age and gender are set automagically)
@@ -872,8 +873,8 @@ public class ResultsDAO {
                         pr.setWaveStartTime(waveStartTime);
                         
                         // by definition, you cross the start line at zero seconds
-                        pr.setSplit(1, Duration.ZERO); 
-
+                        pr.setSplit(1, Duration.ZERO);
+                        
                         //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
                         
                         // if they are DQ'ed then we don't care what their time is
@@ -894,6 +895,28 @@ public class ResultsDAO {
                                     System.out.println("Paused time for " + pr.getParticipant().getBib() + " " + paused + " from " + res.getSplitTime(i)+ " minus " + res.getSplitTime(i-1) );
                                 }
                                 if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
+                                
+                                // Is this a mandatory split that we are missing?
+                                if (r.getSplits().get(i-1).getMandatorySplit() && (pr.getSplit(i) == null || pr.getSplit(i).isZero())){
+                                    // Mandatory split
+                                    return;
+                                }
+                                // Check to see if we are over a cutoff for this split. 
+                                if (! res.getSplitTime(i).isZero() && !Duration.ZERO.equals(r.getSplits().get(i-1).splitCutoffDuration())){
+                                    if (r.getSplits().get(i-1).getSplitCutoffIsRelative()) {
+                                        if (pr.getSplit(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
+                                            pr.oco = TRUE;
+                                            pr.ocoSplit = i;
+                                            pr.ocoTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                        }
+                                    } else {
+                                        if (res.getSplitTime(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
+                                            pr.oco = TRUE;
+                                            pr.ocoSplit = i;
+                                            pr.ocoTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                        }
+                                    }
+                                }
                             }
                         }
                         
@@ -902,6 +925,27 @@ public class ResultsDAO {
                             pr.setChipFinish(res.getFinishDuration().minus(chipStartTime).minus(paused));
                             pr.setGunFinish(res.getFinishDuration().minus(waveStartTime).minus(paused));
                             pr.setSplit(splitSize, pr.getChipFinish());
+                        }
+                        
+                        // look for any bonus or penalty times
+                        Optional<List<TimeOverride>> overrides = timingDAO.getOverridesByBib(pr.getParticipant().getBib());
+                        if (overrides.isPresent() && pr.getChipFinish() != null) {
+                            overrides.get().forEach(o -> {
+                                if (TimeOverrideType.PENALTY.equals(o.getOverrideType())){
+                                    pr.penalty = true;
+                                    pr.penaltyTime = Duration.ofNanos(o.getTimestampLong());
+                                    pr.bonusPenaltyNote = o.getNote();
+                                    pr.setChipFinish(pr.getChipFinish().plus(pr.penaltyTime));
+                                    pr.setGunFinish(pr.getGunFinish().plus(pr.penaltyTime));
+                                } else if (TimeOverrideType.BONUS.equals(o.getOverrideType())){
+                                    pr.bonus = true;
+                                    pr.bonusTime = Duration.ofNanos(o.getTimestampLong());
+                                    pr.bonusPenaltyNote = o.getNote();
+                                    pr.setChipFinish(pr.getChipFinish().minus(pr.bonusTime));
+                                    pr.setGunFinish(pr.getGunFinish().minus(pr.bonusTime));
+                                } 
+                            
+                            });
                         }
                         
                         // set the segment times unless they are a DNF
@@ -964,7 +1008,7 @@ public class ResultsDAO {
                         });
                     });
                     
-                    // now sort them again 
+                    // now sort them again
                     results.sort(null); 
                     
                     // Now deal with ties. Ugh.
@@ -993,11 +1037,11 @@ public class ResultsDAO {
                                 placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
                                 pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
                             } else {
-                               lastResult.set(currentResult);
-                               placementCounter.clear();
-                               placementCounter.put("overall", pr.getOverall()); 
-                               placementCounter.put(pr.getSex(), pr.getSexPlace());
-                               placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
+                                lastResult.set(currentResult);
+                                placementCounter.clear();
+                                placementCounter.put("overall", pr.getOverall());
+                                placementCounter.put(pr.getSex(), pr.getSexPlace());
+                                placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
                             }
 
                         });
@@ -1023,33 +1067,33 @@ public class ResultsDAO {
                                     placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
                                     pr.setSegmentAGPlace(seg.getID(),placementCounter.get(pr.getSex()+pr.getAGCode()));
                                 } else {
-                                   lastResult.set(currentResult);
-                                   placementCounter.clear();
-                                   placementCounter.put("overall", pr.getSegmentOverallPlace(seg.getID())); 
-                                   placementCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID()));
-                                   placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
+                                    lastResult.set(currentResult);
+                                    placementCounter.clear();
+                                    placementCounter.put("overall", pr.getSegmentOverallPlace(seg.getID()));
+                                    placementCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID()));
+                                    placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
                                 }
 
                             });
                         });
                         
-                        // now sort them again 
+                        // now sort them again
                         results.sort(null); 
                     }
-
-
+                    
+                    
                     // for each report, feed it the results list
                     if (rr == null) {
                         r.raceReportsProperty().forEach(rr ->{
                             rr.processResult(results);
                         }); 
                     } else rr.processResultNow(results);
-                    } catch (Exception ex){
-                        ex.printStackTrace();
-                    }
-                    return null;
+                } catch (Exception ex){
+                    ex.printStackTrace();
                 }
-            };
+                return null;
+            }
+        };
             Thread processNewResultThread = new Thread(processRaceReports);
             processNewResultThread.setName("Thread-processRaceReports-" + r.getRaceName());
             processNewResultThread.setDaemon(true);

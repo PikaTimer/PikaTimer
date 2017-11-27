@@ -48,6 +48,21 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     Duration chipStartTime;
     Duration waveStartTime;
     
+    Boolean bonus;
+    Duration bonusTime;
+    
+    Boolean penalty;
+    Duration penaltyTime;
+    
+    String bonusPenaltyNote;
+    
+    Boolean oco;
+    Duration ocoTime;
+    Integer ocoSplit;
+    
+    
+            
+    
     private Integer latestSplitID = 0;
     
     
