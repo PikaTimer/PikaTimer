@@ -908,12 +908,14 @@ public class ResultsDAO {
                                             pr.oco = TRUE;
                                             pr.ocoSplit = i;
                                             pr.ocoTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                            return;
                                         }
                                     } else {
                                         if (res.getSplitTime(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
                                             pr.oco = TRUE;
                                             pr.ocoSplit = i;
                                             pr.ocoTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                            return;
                                         }
                                     }
                                 }
