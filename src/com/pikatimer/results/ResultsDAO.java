@@ -908,6 +908,7 @@ public class ResultsDAO {
                                             pr.oco = TRUE;
                                             pr.ocoSplit = i;
                                             pr.ocoTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                            results.add(pr);
                                             return;
                                         }
                                     } else {
@@ -915,6 +916,7 @@ public class ResultsDAO {
                                             pr.oco = TRUE;
                                             pr.ocoSplit = i;
                                             pr.ocoTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                            results.add(pr);
                                             return;
                                         }
                                     }
