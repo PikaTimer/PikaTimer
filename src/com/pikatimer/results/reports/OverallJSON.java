@@ -145,6 +145,9 @@ public class OverallJSON implements RaceReportType{
          
         final StringBuilder chars = new StringBuilder();
         
+        final Boolean  segmentsToShow = race.raceSegmentsProperty().stream().anyMatch(s -> !s.getHidden());
+        final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+        
         prList.forEach(pr -> {
             
             // if they are a DNF or DQ swap out the placement stats
@@ -187,6 +190,17 @@ public class OverallJSON implements RaceReportType{
             chars.append("\t\t\"state\": ").append("\"").append(escape(pr.getParticipant().getState())).append("\"").append(",\n");
             chars.append("\t\t\"country\": ").append("\"").append(escape(pr.getParticipant().getCountry())).append("\"").append(",\n");
             chars.append("\t\t\"note\": ").append("\"").append(escape(pr.getParticipant().getNote())).append("\"").append(",\n");
+            
+            if (penaltiesOrBonuses){
+                chars.append("\t\t\"penalty\": ").append("\"").append(pr.getPenalty().toString()).append("\"").append(",\n");
+                chars.append("\t\t\"bonus\": ").append("\"").append(pr.getBonus().toString()).append("\"").append(",\n");
+                chars.append("\t\t\"penalty_bonus_note\": ").append("\"").append(escape(pr.getBonusPenaltyNote())).append("\"").append(",\n");
+                chars.append("\t\t\"raw_chip_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getRawChipFinishTime(), dispFormat, roundMode)).append("\"").append(",\n");
+                chars.append("\t\t\"raw_gun_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getRawGunFinishTime(), dispFormat, roundMode)).append("\"").append(",\n");
+                chars.append("\t\t\"penalty_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getPenaltyTime(), dispFormat, roundMode)).append("\"").append(",\n");
+                chars.append("\t\t\"bonus_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getBonusTime(), dispFormat, roundMode)).append("\"").append(",\n");
+            }
+
             if (showAwards){
                 if (awardWinnersByBibMap.containsKey(pr.getParticipant().getBib())) {
                     chars.append("\t\t\"award_winner\": ").append("\"").append("yes").append("\"").append(",\n");
@@ -230,7 +244,7 @@ public class OverallJSON implements RaceReportType{
             if (showSplits) {
             // do stuff
                 chars.append("\t\t\"splits\": {\n");
-                for (int i = 2; i < race.splitsProperty().size(); i++) {
+                for (int i = 2; i <= race.splitsProperty().size(); i++) {
                     chars.append("\t\t\t\"split_").append(i-1).append("\": {\n");
                     if (hideTime || pr.getSplit(i) == null) {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
@@ -270,7 +284,7 @@ public class OverallJSON implements RaceReportType{
 
                 chars.append("\t\t},\n");
             }
-            if (showSegments) {
+            if (showSegments && segmentsToShow) {
                 Boolean ht = hideTime;
                 chars.append("\t\t\"segments\": {\n");
                 race.getSegments().forEach(seg -> {

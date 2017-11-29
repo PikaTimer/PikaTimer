@@ -284,6 +284,8 @@ public class OverallHTML5 implements RaceReportType{
                 report += System.lineSeparator();
             }
         } else {
+            final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+        
         // Start the table
             report += "    <div id=\"loading\" class=\"in-progress right\">" + "<BR>Loading..." + "</div>" + System.lineSeparator();
 
@@ -315,7 +317,6 @@ public class OverallHTML5 implements RaceReportType{
             }
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
-                Integer dispLeg = dispFormatLength;
                 race.raceSegmentsProperty().forEach(seg -> {
                     if (seg.getHidden()) return;
                     chars.append("      <th data-priority=\"80\">" + escapeHTML(seg.getSegmentName())+ "</th>" +  System.lineSeparator());
@@ -392,10 +393,18 @@ public class OverallHTML5 implements RaceReportType{
                         "                                   data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
                         "                                   data += '<div class=\"finish-stats\"> Cutoff: " + race.raceCutoffProperty().getValueSafe() + "</div>';\n" +
                         "				} else {\n" +
-                        "                                   data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Finish Time: </span>' + rData.finish_display + '</div>';\n";
+                        "                                   data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Finish Time: </span>' + rData.finish_display + '</div>';\n" ;
             if (showGun) report += "                                   data += '<div class=\"finish-stats\">Gun Time: ' + rData.gun_display + '</div>';\n"; 
             report +=   "                                   data += '<div class=\"finish-stats\">Overall: ' + nth(rData.oa_place) + '   Sex: ' + nth(rData.sex_place) + '   <span class=\"hide-mobile\">Age Group:</span><span class=\"show-mobile\">AG:</span> ' + nth(rData.ag_place) + '</div>';\n" ;
             if (showPace) report += "                                   data += '<div class=\"finish-stats\">Pace: ' + rData.finish_pace + '</div>';\n" ;
+            if (penaltiesOrBonuses) report +=   "                                    if (rData.penalty == \"true\" || rData.bonus == \"true\") { \n" +
+                                                "										if (rData.bonus == \"true\") { data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Time </span>Bonus: ' + rData.bonus_time + '</div>';}\n" +
+                                                "										if (rData.penalty == \"true\") { data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Time </span>Penalty: ' + rData.penalty_time + '</div>';}\n" +
+                                                "										data += '<div class=\"finish-stats\">Reason: ' + rData.penalty_bonus_note + '</div>';\n" +
+                                                "										data += '<div class=\"finish-stats\">Raw Chip Time: ' + rData.raw_chip_time + '</div>';\n" ;
+            if (penaltiesOrBonuses && showGun) report +=              "										data += '<div class=\"finish-stats\">Raw Gun Time: ' + rData.raw_gun_time + '</div>';\n" ;
+            if (penaltiesOrBonuses) report +=   "										}\n" ;
+            
             report +=   "				}" +
                         "				data += '</div>'; // time\n" +
                         "				\n" +
@@ -417,7 +426,8 @@ public class OverallHTML5 implements RaceReportType{
 "					data += '</div>';\n" +
 "				}";
         }
-            if (showSegments) {
+        
+            if (showSegments && race.raceSegmentsProperty().stream().anyMatch(s -> !s.getHidden())) {
                 final StringBuilder chars = new StringBuilder();
                 chars.append("data += '<div class=\"row\">';\n");
                 chars.append("data += '<div class=\"segment segment-title\">Segments: '; // time\n");
@@ -454,7 +464,7 @@ public class OverallHTML5 implements RaceReportType{
                 report += "data += '<tr><td>Start:</td><td class=\"right\">' + rData.start_display + '</td><td></td>';\n" ;
                 if (showPace) report += "data += '<td></td>';\n";
                 report += "data += '</tr>';\n";
-                for (int i = 2; i < race.splitsProperty().size(); i++) {
+                for (int i = 2; i <= race.splitsProperty().size(); i++) {
                     if (!race.splitsProperty().get(i-1).getIgnoreTime()) {
                     report += "data += '<tr><td>" + escape(race.splitsProperty().get(i-1).getSplitName()) + ":</td><td class=\"right\">  ' + rData.splits[\"split_" + Integer.toString(i-1) + "\"].display + '</td>';\n";
                     report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].delta_time + '</td>';\n";
@@ -462,11 +472,11 @@ public class OverallHTML5 implements RaceReportType{
                     report += "data += '</tr>';\n";
                     }
                 }
-                report += "data += '<tr><td>Finish:</td><td class=\"right\">  ' + rData.finish_display + '</td><td class=\"right up-half\">' + rData.finish_split_delta + '</td>';\n";
-                if (showPace) report += "data += '<td class=\"right up-half\">' + rData.finish_split_pace + '</td>';\n";
-                report += "data += '</tr>';\n";
-                if (showGun) report += "data += '<tr><td>Gun Time:</td><td class=\"right\"> ' + rData.gun_display + '</td><td></td>';\n";
-                if (showGun && showPace) report += "data += '<td></td>';\n";
+//                report += "data += '<tr><td>Finish:</td><td class=\"right\">  ' + rData.finish_display + '</td><td class=\"right up-half\">' + rData.finish_split_delta + '</td>';\n";
+//                if (showPace) report += "data += '<td class=\"right up-half\">' + rData.finish_split_pace + '</td>';\n";
+//                report += "data += '</tr>';\n";
+//                if (showGun) report += "data += '<tr><td>Gun Time:</td><td class=\"right\"> ' + rData.gun_display + '</td><td></td>';\n";
+//                if (showGun && showPace) report += "data += '<td></td>';\n";
                 report += "data += '</tr>';\n";
                 report += "data += '</table>';\n";
                 report += "data += '</div>';\n"; // split

@@ -937,12 +937,16 @@ public class ResultsDAO {
                                     pr.penalty = true;
                                     pr.penaltyTime = Duration.ofNanos(o.getTimestampLong());
                                     pr.bonusPenaltyNote = o.getNote();
+                                    pr.rawChipFinishTime=pr.getChipFinish();
+                                    pr.rawGunFinishTime=pr.getGunFinish();
                                     pr.setChipFinish(pr.getChipFinish().plus(pr.penaltyTime));
                                     pr.setGunFinish(pr.getGunFinish().plus(pr.penaltyTime));
                                 } else if (TimeOverrideType.BONUS.equals(o.getOverrideType())){
                                     pr.bonus = true;
                                     pr.bonusTime = Duration.ofNanos(o.getTimestampLong());
                                     pr.bonusPenaltyNote = o.getNote();
+                                    pr.rawChipFinishTime=pr.getChipFinish();
+                                    pr.rawGunFinishTime=pr.getGunFinish();
                                     pr.setChipFinish(pr.getChipFinish().minus(pr.bonusTime));
                                     pr.setGunFinish(pr.getGunFinish().minus(pr.bonusTime));
                                 } 
