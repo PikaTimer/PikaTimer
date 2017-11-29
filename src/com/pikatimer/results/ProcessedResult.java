@@ -58,6 +58,7 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     
     Boolean oco = false;
     Duration ocoTime= Duration.ZERO;
+    Duration ocoCutoffTime= Duration.ZERO;
     Integer ocoSplit =0;
     
     Duration rawChipFinishTime;
@@ -210,11 +211,14 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     public String getBonusPenaltyNote(){
         return bonusPenaltyNote;
     }
-    public Boolean getOCO(){
+    public Boolean getSplitOCO(){
         return oco;
     }
     public Duration getOCOTime(){
         return ocoTime;
+    }
+    public Duration getOCOCutoffTime(){
+        return ocoCutoffTime;
     }
     public Integer getOCOSplit(){
         return ocoSplit;

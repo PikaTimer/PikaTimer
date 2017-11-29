@@ -907,7 +907,8 @@ public class ResultsDAO {
                                         if (pr.getSplit(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
                                             pr.oco = TRUE;
                                             pr.ocoSplit = i;
-                                            pr.ocoTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                            pr.ocoTime = pr.getSplit(i);
+                                            pr.ocoCutoffTime = r.getSplits().get(i-1).splitCutoffDuration();
                                             results.add(pr);
                                             return;
                                         }
@@ -915,7 +916,8 @@ public class ResultsDAO {
                                         if (res.getSplitTime(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
                                             pr.oco = TRUE;
                                             pr.ocoSplit = i;
-                                            pr.ocoTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                            pr.ocoTime = res.getSplitTime(i);
+                                            pr.ocoCutoffTime = r.getSplits().get(i-1).splitCutoffDuration();
                                             results.add(pr);
                                             return;
                                         }

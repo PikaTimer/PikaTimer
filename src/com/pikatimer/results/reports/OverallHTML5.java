@@ -285,6 +285,7 @@ public class OverallHTML5 implements RaceReportType{
             }
         } else {
             final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+            final Boolean onCourseOCO = prList.stream().anyMatch(s -> s.getSplitOCO());
         
         // Start the table
             report += "    <div id=\"loading\" class=\"in-progress right\">" + "<BR>Loading..." + "</div>" + System.lineSeparator();
@@ -390,8 +391,14 @@ public class OverallHTML5 implements RaceReportType{
                         "					if (rData.note != \"\" ) data += '<div class=\"finish-stats\">' + rData.note + '</div>';\n" +
                         "                               } else if ( rData.oa_place == \"OCO\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Over Cut Off  :-/</div>';\n" +
-                        "                                   data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
-                        "                                   data += '<div class=\"finish-stats\"> Cutoff: " + race.raceCutoffProperty().getValueSafe() + "</div>';\n" +
+                        "					if (rData.on_course_oco == \"true\") {\n" +
+                        "						data += '<div class=\"finish-stats\"> Split: ' + rData.oco_split + '</div>';\n" +
+                        "						data += '<div class=\"finish-stats\"> Split time: ' + rData.oco_time + '</div>';\n" +
+                        "                                               data += '<div class=\"finish-stats\"> Cutoff time: ' + rData.oco_cutoff_time + '</div>';\n" +
+                        "					} else {" +
+                        "                                           data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
+                        "                                           data += '<div class=\"finish-stats\"> Cutoff: " + race.raceCutoffProperty().getValueSafe() + "</div>';\n" +
+                        "					}\n" +
                         "				} else {\n" +
                         "                                   data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Finish Time: </span>' + rData.finish_display + '</div>';\n" ;
             if (showGun) report += "                                   data += '<div class=\"finish-stats\">Gun Time: ' + rData.gun_display + '</div>';\n"; 

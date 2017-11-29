@@ -19,6 +19,7 @@ package com.pikatimer.results.reports;
 import com.pikatimer.race.AwardCategory;
 import com.pikatimer.race.AwardWinner;
 import com.pikatimer.race.Race;
+import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
@@ -147,6 +148,7 @@ public class OverallJSON implements RaceReportType{
         
         final Boolean  segmentsToShow = race.raceSegmentsProperty().stream().anyMatch(s -> !s.getHidden());
         final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+        final Boolean onCourseOCO = prList.stream().anyMatch(s -> s.getSplitOCO());
         
         prList.forEach(pr -> {
             
@@ -155,6 +157,8 @@ public class OverallJSON implements RaceReportType{
             Boolean dnf = pr.getParticipant().getDNF();
             Boolean dq = pr.getParticipant().getDQ();
             Boolean oco  = false;
+            Boolean splitOCO = pr.getSplitOCO();
+            
             if (dq) hideTime = true;
             
             if (pr.getChipFinish() == null) dnf = true;
@@ -200,7 +204,7 @@ public class OverallJSON implements RaceReportType{
                 chars.append("\t\t\"penalty_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getPenaltyTime(), dispFormat, roundMode)).append("\"").append(",\n");
                 chars.append("\t\t\"bonus_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getBonusTime(), dispFormat, roundMode)).append("\"").append(",\n");
             }
-
+            if (onCourseOCO) chars.append("\t\t\"on_course_oco\": ").append("\"").append(pr.getSplitOCO().toString()).append("\"").append(",\n");
             if (showAwards){
                 if (awardWinnersByBibMap.containsKey(pr.getParticipant().getBib())) {
                     chars.append("\t\t\"award_winner\": ").append("\"").append("yes").append("\"").append(",\n");
@@ -214,7 +218,15 @@ public class OverallJSON implements RaceReportType{
                 } else chars.append("\t\t\"award_winner\": ").append("\"").append("no").append("\"").append(",\n");
                 
             }
-            if (dq) {
+            if (splitOCO) {
+                    chars.append("\t\t\"oa_place\": ").append("\"").append("OCO").append("\",\n");
+                    chars.append("\t\t\"sex_place\": ").append("\"").append("~~").append("\",\n");
+                    chars.append("\t\t\"ag_place\": ").append("\"").append("~~").append("\",\n");
+                    chars.append("\t\t\"oco_split\": ").append("\"").append(RaceDAO.getInstance().getSplitByID(pr.getOCOSplit()).getSplitName()).append("\",\n");
+                    chars.append("\t\t\"oco_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getOCOTime(), dispFormat, roundMode)).append("\",\n");
+                    chars.append("\t\t\"oco_cutoff_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getOCOCutoffTime(), dispFormat, roundMode)).append("\",\n");
+                }
+            else if (dq) {
                 chars.append("\t\t\"oa_place\": ").append("\"").append("DQ").append("\",\n");
                 chars.append("\t\t\"sex_place\": ").append("\"").append("~~").append("\",\n");
                 chars.append("\t\t\"ag_place\": ").append("\"").append("~~").append("\",\n");
@@ -231,8 +243,8 @@ public class OverallJSON implements RaceReportType{
                     chars.append("\t\t\"ag_place\": ").append("\"").append(pr.getAGPlace().toString()).append("\",\n");
                 } else {
                     chars.append("\t\t\"oa_place\": ").append("\"").append("OCO").append("\",\n");
-                chars.append("\t\t\"sex_place\": ").append("\"").append("~~").append("\",\n");
-                chars.append("\t\t\"ag_place\": ").append("\"").append("~~").append("\",\n");
+                    chars.append("\t\t\"sex_place\": ").append("\"").append("~~").append("\",\n");
+                    chars.append("\t\t\"ag_place\": ").append("\"").append("~~").append("\",\n");
                 }
             } else {
                 chars.append("\t\t\"oa_place\": ").append("\"").append("DNF").append("\",\n");
