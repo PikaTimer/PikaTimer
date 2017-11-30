@@ -110,13 +110,9 @@ public class OverallCSV implements RaceReportType{
         String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
         
         
-        
+        final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
 
-        
-        
-        
-        
-        
+
         // print the headder
         report += "Event,";
         if (!raceName.isEmpty()) report += "Race,";
@@ -153,6 +149,7 @@ public class OverallCSV implements RaceReportType{
             report += chars.toString();
         }
         
+        if (penaltiesOrBonuses) report += "Adj,";
         // Chip time
         report += "Time";
        
@@ -193,7 +190,9 @@ public class OverallCSV implements RaceReportType{
             chars.append(eventDate).append(",");
             
             if (dq) chars.append("DQ,,,");
-            else if (inProgress && pr.getChipFinish() == null) {
+            else if (pr.getSplitOCO()){
+                chars.append("OCO,,,");
+            } else if (inProgress && pr.getChipFinish() == null) {
                 chars.append(",,,");
                 //hideTime = true;
             } else if (! dnf && ! dq) { 
@@ -249,6 +248,14 @@ public class OverallCSV implements RaceReportType{
             }
             if (dnf || dq) { 
                 hideTime = true;
+            }
+            
+            if (penaltiesOrBonuses){
+                if (pr.getBonus() || pr.getPenalty()) {
+                    if (pr.getBonus()) chars.append("-").append(DurationFormatter.durationToString(pr.getBonusTime(), dispFormat, roundMode));
+                    else chars.append("+").append(DurationFormatter.durationToString(pr.getPenaltyTime(), dispFormat, roundMode));
+                } 
+                chars.append(",");
             }
             // chip time
             if (! hideTime) chars.append(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode));

@@ -115,6 +115,8 @@ public class Overall implements RaceReportType{
         final Boolean showCountry = showCO;
         final Boolean showState = showST;
         
+        final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+        
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         if (customHeaders && supportedOptions.get("hideCustomHeaders")) customHeaders = false;
         
@@ -212,6 +214,8 @@ public class Overall implements RaceReportType{
             report += chars.toString();
         }
         
+        if (penaltiesOrBonuses) report += StringUtils.leftPad("Adj", dispFormatLength);
+
         // Chip time
         report += StringUtils.leftPad("Finish", dispFormatLength);
        
@@ -301,6 +305,12 @@ public class Overall implements RaceReportType{
             if (dnf) { 
                 chars.append(System.lineSeparator());
                 return;
+            }
+            if (penaltiesOrBonuses){
+                if (pr.getBonus() || pr.getPenalty()) {
+                    if (pr.getBonus()) chars.append(StringUtils.leftPad("-"+DurationFormatter.durationToString(pr.getBonusTime(), dispFormat, roundMode),dispFormatLength));
+                    else chars.append(StringUtils.leftPad("+"+DurationFormatter.durationToString(pr.getPenaltyTime(), dispFormat, roundMode),dispFormatLength));
+                } else chars.append(StringUtils.leftPad("---",dispFormatLength));
             }
             // chip time
             if (! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode), dispFormatLength));

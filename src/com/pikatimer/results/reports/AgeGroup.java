@@ -62,6 +62,8 @@ public class AgeGroup implements RaceReportType {
     BooleanProperty showCountry = new SimpleBooleanProperty(true);
     BooleanProperty showState = new SimpleBooleanProperty(true);
     
+    Boolean  penaltiesOrBonuses = false;
+    
     public AgeGroup(){
         supportedOptions.put("showDQ", true);
         supportedOptions.put("inProgress", false);
@@ -193,6 +195,8 @@ public class AgeGroup implements RaceReportType {
         Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
         String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
 
+        penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+         
         final StringBuilder chars = new StringBuilder();
         
         chars.append(printHeader());
@@ -274,6 +278,14 @@ public class AgeGroup implements RaceReportType {
                 chars.append(System.lineSeparator());
                 return;
             }
+            
+            if (penaltiesOrBonuses){
+                if (pr.getBonus() || pr.getPenalty()) {
+                    if (pr.getBonus()) chars.append(StringUtils.leftPad("-"+DurationFormatter.durationToString(pr.getBonusTime(), dispFormat, roundMode),dispFormatLength));
+                    else chars.append(StringUtils.leftPad("+"+DurationFormatter.durationToString(pr.getPenaltyTime(), dispFormat, roundMode),dispFormatLength));
+                } else chars.append(StringUtils.leftPad("---",dispFormatLength));
+            }
+            
             // chip time
             if (! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode), dispFormatLength));
             if (showGun && ! hideTime) chars.append(StringUtils.leftPad(DurationFormatter.durationToString(pr.getGunFinish(), dispFormat, roundMode), dispFormatLength));
@@ -344,6 +356,7 @@ public class AgeGroup implements RaceReportType {
             });
             report += chars.toString();
         }
+        if (penaltiesOrBonuses) report += StringUtils.leftPad("Adj", dispFormatLength);
         
         // Chip time
         report += StringUtils.leftPad("Finish", dispFormatLength);

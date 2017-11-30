@@ -111,6 +111,11 @@ public class OverallHTML implements RaceReportType{
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
         
+        
+        final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+
+                
+                
         Integer dispFormatLength;  // add a space
         if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
         else dispFormatLength = dispFormat.length()+1;
@@ -382,6 +387,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
                 });
                 report += chars.toString();
             }
+            if (penaltiesOrBonuses) report += "      <th data-priority=\"1\">Adj</th>";
             // Chip time
             report += "      <th data-priority=\"1\">Finish</th>" +  System.lineSeparator(); // 9R Need to adjust for the format code
 
@@ -495,6 +501,12 @@ report +=   "   \"fnInitComplete\": function () {\n" +
                     });
                 }
 
+                if (penaltiesOrBonuses){
+                    if (pr.getBonus() || pr.getPenalty()) {
+                        if (pr.getBonus()) chars.append("<td>-").append(DurationFormatter.durationToString(pr.getBonusTime(), dispFormat, roundMode)).append("</td>" +  System.lineSeparator());
+                        else chars.append("<td>+").append(DurationFormatter.durationToString(pr.getPenaltyTime(), dispFormat, roundMode)).append("</td>" +  System.lineSeparator());
+                    } else chars.append("<td>---</td>" +  System.lineSeparator());
+                }
                 // chip time
                 if (dq) chars.append("<td>"+ pr.getParticipant().getNote() + "</td>" +  System.lineSeparator());
                 else if (! hideTime) chars.append("<td>"+DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
