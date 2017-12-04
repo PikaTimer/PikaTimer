@@ -51,8 +51,14 @@ public class CustomAttribute {
     private final StringProperty name = new SimpleStringProperty();
     private List<String> allowable_values;
     private final ObservableList<String> allowableValuesList = FXCollections.observableArrayList();  
-    
+    private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());
+
     private Integer id;
+
+    @Override
+    public String toString() {
+        return name.getValueSafe();
+    }
     
     @Id
     @GenericGenerator(name="custom_attribute_id" , strategy="increment")
@@ -63,6 +69,20 @@ public class CustomAttribute {
     }
     public void setID(Integer id) {
         this.id = id;
+    }
+    
+    //    uuid varchar,
+    @Column(name="uuid")
+    public String getUUID() {
+       // System.out.println("RaceReport UUID is " + uuidProperty.get());
+        return uuidProperty.getValue(); 
+    }
+    public void setUUID(String  uuid) {
+        uuidProperty.setValue(uuid);
+        //System.out.println("RaceReport UUID is now " + uuidProperty.get());
+    }
+    public StringProperty uuidProperty() {
+        return uuidProperty; 
     }
     
     @Column(name="attribute_name")

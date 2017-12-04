@@ -185,8 +185,7 @@ public class RaceReport {
         return attributes.keySet();
     }
 
-    //Overall
-    //male
+    
     public Integer getIntegerAttribute(String key) {
         if (!intAttributes.containsKey(key)) {
             if (attributes.containsKey(key)) {
