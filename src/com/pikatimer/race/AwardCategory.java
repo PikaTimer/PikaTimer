@@ -69,6 +69,11 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="race_award_categories")
 public class AwardCategory {
     private RaceAwards raceAward;
+
+    @Override
+    public String toString() {
+        return nameProperty.getValueSafe();
+    }
     
     private final IntegerProperty IDProperty = new SimpleIntegerProperty();
     private final StringProperty uuidProperty = new SimpleStringProperty(java.util.UUID.randomUUID().toString());

@@ -55,6 +55,10 @@ public class Award implements RaceReportType {
     BooleanProperty showState = new SimpleBooleanProperty(true);
     
     Boolean showCustomAttributes = false;
+    
+    Boolean showIndividualAwards = false;
+    List<AwardCategory> individualAwardLlist = new ArrayList();
+    
     List<CustomAttribute> customAttributesList = new ArrayList();
     Map<Integer,Integer> customAttributeSizeMap = new HashMap();
     
@@ -63,6 +67,7 @@ public class Award implements RaceReportType {
     public Award(){
         supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("hideCustomHeaders", false);
+        supportedOptions.put("showIndividualAwards",false);
     }
     
     @Override
@@ -83,7 +88,8 @@ public class Award implements RaceReportType {
         supportedOptions.keySet().forEach(k -> supportedOptions.put(k, rr.getBooleanAttribute(k)));
         
         showCustomAttributes = supportedOptions.get("showCustomAttributes");
-
+        showIndividualAwards  = supportedOptions.get("showIndividualAwards");
+        
         Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
@@ -120,7 +126,13 @@ public class Award implements RaceReportType {
                     .collect(Collectors.toList())
                 ); 
         
-        
+        if (showIndividualAwards) individualAwardLlist = race.getAwards().getAwardCategories().stream().filter( a -> {
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                    return rr.getBooleanAttribute(a.getUUID());
+                return false;
+        }).collect(Collectors.toList());
+            
+            
         if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
             if (rr.getBooleanAttribute(a.getUUID()) != null )
                 return rr.getBooleanAttribute(a.getUUID());
@@ -152,7 +164,12 @@ public class Award implements RaceReportType {
             return report;
         }
         
-        
+        if (showIndividualAwards && individualAwardLlist.isEmpty()) {
+            report += "The option to show only selected results is enabled" + System.lineSeparator();
+            report += "but no reports have been selected" + System.lineSeparator();
+            report += "Please select at least 1 report to show for this report";
+            return report;
+        }
         Event event = Event.getInstance();  // fun with singletons... 
         
         Map<AwardCategory,Map<String,List<AwardWinner>>> awardWinnersMap = awardParams.getAwardWinners(prList);
@@ -186,7 +203,7 @@ public class Award implements RaceReportType {
             
         StringBuilder awardPrintout = new StringBuilder();
         awardParams.awardCategoriesProperty().forEach(ac -> {
-            if (!ac.getVisible()) return;
+            if ((showIndividualAwards && !individualAwardLlist.contains(ac)) || (!showIndividualAwards && !ac.getVisible())) return;
             Map<String,List<AwardWinner>> resultsMap = awardWinnersMap.get(ac);
             List<String> categories = resultsMap.keySet().stream().sorted((k1,k2) -> k1.compareTo(k2)).collect(Collectors.toList());
             categories.forEach(cat -> {
