@@ -67,6 +67,7 @@ public class FXMLResultOutputController {
     @FXML CheckBox showGunTimeCheckBox;
     @FXML CheckBox showSegmentsCheckBox;
     @FXML CheckBox showSegmentPaceCheckBox;
+    @FXML CheckBox showSegmentSplitsCheckBox;
     @FXML CheckBox showAwardsCheckBox;
     @FXML CheckBox hideCustomHeadersCheckBox;
     
@@ -256,14 +257,29 @@ public class FXMLResultOutputController {
                     attributeAdded = true;
                 }
                 showSegmentPaceCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSegmentPace"));
-                showSegmentPaceCheckBox.visibleProperty().bind(Bindings.size(r.getRace().raceSegmentsProperty()).greaterThan(0));
-                showSegmentPaceCheckBox.managedProperty().bind(Bindings.size(r.getRace().raceSegmentsProperty()).greaterThan(0));
+                showSegmentPaceCheckBox.visibleProperty().bind(showSegmentsCheckBox.selectedProperty());
+                showSegmentPaceCheckBox.managedProperty().bind(showSegmentsCheckBox.selectedProperty());
                 optionsLabel.visibleProperty().set(true);
             } else {
                 showSegmentPaceCheckBox.visibleProperty().unbind();
                 showSegmentPaceCheckBox.visibleProperty().set(false);
                 showSegmentPaceCheckBox.managedProperty().unbind();
                 showSegmentPaceCheckBox.managedProperty().set(false);
+            }
+            if (rrt.optionSupport("showSegmentSplits")) {
+                if (r.getBooleanAttribute("showSegmentSplits") == null) {
+                    r.setBooleanAttribute("showSegmentSplits", false);
+                    attributeAdded = true;
+                }
+                showSegmentSplitsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSegmentSplits"));
+                showSegmentSplitsCheckBox.visibleProperty().bind(showSegmentsCheckBox.selectedProperty());
+                showSegmentSplitsCheckBox.managedProperty().bind(showSegmentsCheckBox.selectedProperty());
+                optionsLabel.visibleProperty().set(true);
+            } else {
+                showSegmentSplitsCheckBox.visibleProperty().unbind();
+                showSegmentSplitsCheckBox.visibleProperty().set(false);
+                showSegmentSplitsCheckBox.managedProperty().unbind();
+                showSegmentSplitsCheckBox.managedProperty().set(false);
             }
             
             if (rrt.optionSupport("showAwards")) {
@@ -274,6 +290,7 @@ public class FXMLResultOutputController {
                 showAwardsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showAwards"));
                 showAwardsCheckBox.visibleProperty().set(true);
                 showAwardsCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
             } else {
                 showAwardsCheckBox.visibleProperty().set(false);
                 showAwardsCheckBox.managedProperty().set(false);
@@ -401,9 +418,18 @@ public class FXMLResultOutputController {
             }
             
         });
+        //        @FXML CheckBox showSegmentPaceCheckBox;
         showSegmentPaceCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
             if (!r.getBooleanAttribute("showSegmentPace").equals(new_val)){
                 r.setBooleanAttribute("showSegmentPace", new_val);
+                resultsDAO.saveRaceReport(r);
+            }
+            
+        });
+//        @FXML CheckBox showSegmentSplitsCheckBox;
+        showSegmentSplitsCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            if (!r.getBooleanAttribute("showSegmentSplits").equals(new_val)){
+                r.setBooleanAttribute("showSegmentSplits", new_val);
                 resultsDAO.saveRaceReport(r);
             }
             

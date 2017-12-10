@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
@@ -91,7 +92,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <CheckBox fx:id="showSegmentPaceCheckBox" mnemonicParsing="false" text="Show Segment Pace" />
                      </children>
                   </HBox>
-                  <HBox fx:id="customAttributesHBox" alignment="CENTER_LEFT" fillHeight="false" maxWidth="1.7976931348623157E308" spacing="5.0">
+                  <HBox fillHeight="false" spacing="5.0">
+                     <children>
+                        <Pane prefWidth="120.0" />
+                        <CheckBox fx:id="showSegmentSplitsCheckBox" mnemonicParsing="false" text="Show Segment Splits" />
+                     </children>
+                  </HBox>
+                  <HBox fx:id="customAttributesHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                      <children>
                         <CheckBox fx:id="customAttributesCheckBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="17.0" prefWidth="120.0" text="Custom Attributes" />
                         <CheckComboBox fx:id="customAttributesCheckComboBox" maxWidth="1.7976931348623157E308" HBox.hgrow="SOMETIMES" />

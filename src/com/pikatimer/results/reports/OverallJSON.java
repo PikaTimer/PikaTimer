@@ -55,6 +55,8 @@ public class OverallJSON implements RaceReportType{
     Boolean showSplits = false;
     Boolean showSegments = false;
     Boolean showSegmentPace = false;
+    Boolean showSegmentSplits = false;
+
     Boolean showDNF = true;
     Boolean showPace = true;
     Boolean showGun = true;
@@ -71,6 +73,7 @@ public class OverallJSON implements RaceReportType{
         supportedOptions.put("showSplits", false);
         supportedOptions.put("showSegments", true);
         supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showSegmentSplits", false);
         supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
@@ -108,6 +111,7 @@ public class OverallJSON implements RaceReportType{
         showSplits = supportedOptions.get("showSplits");
         showSegments = supportedOptions.get("showSegments");
         showSegmentPace = supportedOptions.get("showSegmentPace");
+        showSegmentSplits = supportedOptions.get("showSegmentSplits");
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
@@ -119,6 +123,8 @@ public class OverallJSON implements RaceReportType{
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
         
+        // we use the splits to display the segment splits
+        if (showSegmentSplits) showSplits = true;
         
         if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
             if (rr.getBooleanAttribute(a.getUUID()) != null )

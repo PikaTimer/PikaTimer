@@ -48,6 +48,7 @@ public class OverallHTML5 implements RaceReportType{
     Boolean showSplits = false;
     Boolean showSegments = false;
     Boolean showSegmentPace = false;
+    Boolean showSegmentSplits = false;
     Boolean showDNF = true;
     Boolean showPace = true;
     Boolean showGun = true;
@@ -64,6 +65,7 @@ public class OverallHTML5 implements RaceReportType{
         supportedOptions.put("showSplits", false);
         supportedOptions.put("showSegments", true);
         supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showSegmentSplits", false);
         supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
@@ -108,6 +110,7 @@ public class OverallHTML5 implements RaceReportType{
         showSplits = supportedOptions.get("showSplits");
         showSegments = supportedOptions.get("showSegments");
         showSegmentPace = supportedOptions.get("showSegmentPace");
+        showSegmentSplits = supportedOptions.get("showSegmentSplits");
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
@@ -479,6 +482,40 @@ public class OverallHTML5 implements RaceReportType{
                         if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) 
                             chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getID()+ "\"].pace + '</div>';\n");
                     }
+                    if (showSegmentSplits){
+                        chars.append("data += '<div class=\"row\">'; \n");
+                        chars.append("data += '<div class=\"segment-stats\">'; \n");
+                        chars.append("data += '<table class=\"split-time\">' ;\n");
+                        chars.append("data += '<thead><tr>';\n");
+                        chars.append("data += '<th>Split</th>';\n");
+                        chars.append("data += '<th>Elapsed</th>';\n");
+                        chars.append("data += '<th>Difference</th>';\n");
+                        if (showSegmentPace) chars.append("data += '<th class=\"right\">Pace</th>';\n");
+                        chars.append("data += '</tr></thead>';\n");
+                        for (int i = seg.getStartSplitPosition(); i < seg.getEndSplitPosition()+1; i++) {
+                            if (i == 1){ // the start, so pull the data from the start
+                                chars.append("data += '<tr><td>Start:</td><td class=\"right\">' + rData.start_display + '</td><td></td>';\n");
+                                if (showSegmentPace) chars.append("data += '<td></td>';\n");
+                                chars.append("data += '</tr>';\n");
+                            } else if (!race.splitsProperty().get(i-1).getIgnoreTime()) {
+                                chars.append("data += '<tr><td>" + escape(race.splitsProperty().get(i-1).getSplitName()) + ":</td><td class=\"right\">  ' + rData.splits[\"split_" + Integer.toString(i-1) + "\"].display + '</td>';\n");
+                                // if the first split of the segment
+                                // don't show the elapsed time from the previous segment
+                                if (i == seg.getStartSplitPosition()){ 
+                                    chars.append("data += '<td></td>';\n");
+                                    if (showSegmentPace) chars.append("data += '<td></td>';\n");
+                                } else {
+                                    chars.append("data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].delta_time + '</td>';\n");
+                                    if (showSegmentPace) chars.append("data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].pace + '</td>';\n");
+                                }
+                                chars.append("data += '</tr>';\n");
+                            }
+                            }
+                        chars.append("data += '</tr>';\n");
+                        chars.append("data += '</table>';\n");
+                        chars.append("data += '</div>';\n"); // split
+                        chars.append("data += '</div>';\n"); // row
+                    }
                     chars.append("data += '</div>';\n"); // segment
                 });
                 chars.append("data += '</div>';\n"); // row
@@ -506,11 +543,6 @@ public class OverallHTML5 implements RaceReportType{
                     report += "data += '</tr>';\n";
                     }
                 }
-//                report += "data += '<tr><td>Finish:</td><td class=\"right\">  ' + rData.finish_display + '</td><td class=\"right up-half\">' + rData.finish_split_delta + '</td>';\n";
-//                if (showPace) report += "data += '<td class=\"right up-half\">' + rData.finish_split_pace + '</td>';\n";
-//                report += "data += '</tr>';\n";
-//                if (showGun) report += "data += '<tr><td>Gun Time:</td><td class=\"right\"> ' + rData.gun_display + '</td><td></td>';\n";
-//                if (showGun && showPace) report += "data += '<td></td>';\n";
                 report += "data += '</tr>';\n";
                 report += "data += '</table>';\n";
                 report += "data += '</div>';\n"; // split
