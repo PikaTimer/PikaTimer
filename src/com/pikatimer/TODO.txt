@@ -12,7 +12,6 @@ Start time lookup: 2nd location shows all waves and adds extra waves to those ra
 Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
 
 
-
 Features:
 DONE: Participant: Custom Attributes (string, integer, number, date, time, list)
 DONE: Participant Import: Assign to race/wave based on an input field in the CSV file
@@ -35,10 +34,11 @@ DONE: Awards: Hide on default awards report flag
 DONE: Awards: Hide in overall results report flag
 
 DONE: Split: Advanced toggle switch to enable additional options
-Split: Cutoff time (times after this are OCO'ed)
-Split: Min time to next split (under advanced display for the split)  
-Split: "Pause" split time support (aka "dead zone" or "ignore"). Basically don't count this time against the final. 
-Split: Mandatory split (stop if they are missing a time from the split)
+DONE: Split: Min time to next split (under advanced display for the split)
+DONE: Split: Cutoff time (times after this are OCO'ed)
+DONE: Split: Cutoff time: Relative vs TOD
+DONE: Split: "Pause" split time support (aka "dead zone" or "ignore"). Basically don't count this time against the final. 
+DONE: Split: Mandatory split (stop if they are missing a time from the split)
 
 DONE: Segment: Hidden flag (don't display on results)
 DONE: Segment: Pace display (vs the global default)
@@ -48,17 +48,20 @@ Timing: Ultra Direct -- filter after skew to permit "old" times to be adjusted f
 Timing: Ultra Direct -- antenna on/off and power configuration
 Timing: Ultra Direct -- Remote Settings (including custom IP)
 
-Override: Penalty/Bonus support w/ Note
+DONE: Override: Penalty/Bonus support w/ Note
 
+DONE: Results: HTML5: Segments: Option to show splits on the segment section of the HTML5 report
+DONE: Results: Awards: Option to only show some awards 
+DONE: Results: Option to show selected custom attributes
+DONE: Results: Overall (Text): Show penalty/bonus time
+DONE: Results: Overall (HTML): Show penalty/bonus time
 DONE: Results: Hide country/State if all are empty
-Results: Option to show selected custom attributes
-Results: Awards: Option to only show some awards 
 DONE: Results: Overall (Text): Option to show award winners
 DONE: Results: HTML5: Flag award winners with an icon and display in detailed view
-DONE Results: HTML5: DNF/Started should show the note and if in progress, display the last seen location
+DONE: Results: HTML5: DNF/Started should show the note and if in progress, display the last seen location
+DONE: Results: HTML5: Show split OCO with time
 DONE: Results: HTML5: Segments: Per segment pace display override (swim/bike/run/transition)
-Results: HTML5: Segments: Option to show splits on the segment section of the HTML5 report
-Results: HTML5: Show penalty w/ note if set
+DONE: Results: HTML5: Show penalty/bonus w/ note if set
 
 
 FUTURE: 
