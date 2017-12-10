@@ -17,6 +17,8 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
@@ -27,9 +29,12 @@ import com.pikatimer.util.Pace;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  *
@@ -48,7 +53,9 @@ public class OverallCSV implements RaceReportType{
     Boolean showDNF = true;
     Boolean showPace = true;
     Boolean showGun = true;
-
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
+    
     Map<String,Boolean> supportedOptions = new HashMap();
     
     public OverallCSV(){
@@ -57,6 +64,7 @@ public class OverallCSV implements RaceReportType{
         supportedOptions.put("showSplits", false);
         supportedOptions.put("showSegments", true);
         supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
@@ -96,7 +104,7 @@ public class OverallCSV implements RaceReportType{
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
-        
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
         
         
         String dispFormat = race.getStringAttribute("TimeDisplayFormat").replace("[","").replace("}","");
@@ -104,7 +112,12 @@ public class OverallCSV implements RaceReportType{
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
         
         
-        
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
         
         Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
         String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
@@ -132,10 +145,15 @@ public class OverallCSV implements RaceReportType{
         report += "ST,"; // 4C for the state code
         report += "CO,"; // country
          
+        if (showCustomAttributes) {
+            for( CustomAttribute a: customAttributesList){
+                report += escape(a.getName()) +",";
+            }
+        }
         // Insert split stuff here
         if (showSplits) {
             for (int i = 2; i < race.splitsProperty().size(); i++) {
-                if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += race.splitsProperty().get(i-1).getSplitName() + ",";
+                if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += escape(race.splitsProperty().get(i-1).getSplitName()) + ",";
             }
         }
         
@@ -143,8 +161,8 @@ public class OverallCSV implements RaceReportType{
             final StringBuilder chars = new StringBuilder();
             race.raceSegmentsProperty().forEach(seg -> {
                 if(seg.getHidden() ) return;
-                chars.append(seg.getSegmentName()).append(",");
-                if (showSegmentPace&& ! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) chars.append(seg.getSegmentName()).append(" Pace,"); 
+                chars.append(escape(seg.getSegmentName())).append(",");
+                if (showSegmentPace&& ! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) chars.append(escape(seg.getSegmentName())).append(" Pace,"); 
             });
             report += chars.toString();
         }
@@ -220,6 +238,11 @@ public class OverallCSV implements RaceReportType{
             chars.append("\"").append(pr.getParticipant().getCountry()).append("\"").append(",");
 
 
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    chars.append("\"").append(escape(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe())).append("\"").append(",");
+                }
+            }
             // Insert split stuff here 
             if (showSplits) {
             // do stuff
@@ -282,6 +305,9 @@ public class OverallCSV implements RaceReportType{
         return report;
     }
     
+    private String escape(String s){
+        return StringEscapeUtils.escapeCsv(s);
+    }
     
     
 }

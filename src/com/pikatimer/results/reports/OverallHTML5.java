@@ -17,6 +17,8 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
@@ -27,9 +29,11 @@ import com.pikatimer.util.Pace;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
@@ -48,6 +52,9 @@ public class OverallHTML5 implements RaceReportType{
     Boolean showPace = true;
     Boolean showGun = true;
     Boolean showAwards = true;
+    
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
 
     Map<String,Boolean> supportedOptions = new HashMap();
     
@@ -57,6 +64,7 @@ public class OverallHTML5 implements RaceReportType{
         supportedOptions.put("showSplits", false);
         supportedOptions.put("showSegments", true);
         supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
@@ -104,7 +112,8 @@ public class OverallHTML5 implements RaceReportType{
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
         showAwards = supportedOptions.get("showAwards");
-        
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
+
         Boolean showCountry = false;
         Boolean showState = false;
         for (ProcessedResult x : prList){
@@ -122,6 +131,13 @@ public class OverallHTML5 implements RaceReportType{
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
+        
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
         
         Integer dispFormatLength;  // add a space
         if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
@@ -309,7 +325,11 @@ public class OverallHTML5 implements RaceReportType{
             report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
             if (showState) report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
             if (showCountry) report += "      <th data-priority=\"45\">Country</th>" +  System.lineSeparator(); 
-
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += "      <th data-priority=\"200\">"+escapeHTML(a.getName())+ "</th>" +  System.lineSeparator();
+                }
+            }
             // Insert split stuff here
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
@@ -372,6 +392,13 @@ public class OverallHTML5 implements RaceReportType{
                         "				data += '<div class=\"part-stats\">Age: ' + rData.age + '   Sex: ' + rData.sex + '   AG: ' + rData.ag + '</div>';\n";
             if (showState) report +=                        "				data += '<div class=\"part-stats\">' + rData.city + ', ' + rData.state + '</div>';\n" ;
             if (showCountry) report +=            "				data += '<div class=\"part-stats\">' + rData.country + '</div>';\n";
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += "				data += '<div class=\"part-stats\">" + escape(a.getName()) +": ' + rData.custom_" + escape(a.getName()) +" + '</div>';\n";
+                }
+            }
+            
+            
             report +=  "				data += '</div>'; // personal\n" +
                         "				data += '<div class=\"overall\">';// time\n" +
                         "                               if ( rData.oa_place == \"DQ\" ) {\n" +
@@ -561,6 +588,11 @@ public class OverallHTML5 implements RaceReportType{
                         "           { \"data\": \"city\" },\n" ;
             if (showState) report +=             "           { \"data\": \"state\" },\n";
             if (showCountry) report += "           { \"data\": \"country\" },\n";
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += "           { \"data\": \"custom_" + escape(a.getName()) +"\" },\n";
+                }
+            }
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
                     if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "           { \"data\": \"splits.split_" + Integer.toString(i-1) + "\", \n" +

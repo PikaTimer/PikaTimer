@@ -17,6 +17,8 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.AwardCategory;
 import com.pikatimer.race.AwardWinner;
 import com.pikatimer.race.Race;
@@ -52,10 +54,14 @@ public class Award implements RaceReportType {
     BooleanProperty showCountry = new SimpleBooleanProperty(true);
     BooleanProperty showState = new SimpleBooleanProperty(true);
     
-
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
+    Map<Integer,Integer> customAttributeSizeMap = new HashMap();
+    
     Map<String,Boolean> supportedOptions = new HashMap();
     
     public Award(){
+        supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("hideCustomHeaders", false);
     }
     
@@ -76,6 +82,8 @@ public class Award implements RaceReportType {
         race = rr.getRace(); 
         supportedOptions.keySet().forEach(k -> supportedOptions.put(k, rr.getBooleanAttribute(k)));
         
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
+
         Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
@@ -112,6 +120,27 @@ public class Award implements RaceReportType {
                     .collect(Collectors.toList())
                 ); 
         
+        
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
+        
+        // how long are these things?
+        if (showCustomAttributes) {
+            customAttributesList.forEach((a) -> {
+                int l = a.getName().length() + 1;
+                customAttributeSizeMap.put(a.getID(),l);
+                for (ProcessedResult p: prList){
+                    if (l <= p.getParticipant().getCustomAttribute(a.getID()).getValueSafe().length()){
+                        l = p.getParticipant().getCustomAttribute(a.getID()).getValueSafe().length() + 1;
+                        customAttributeSizeMap.put(a.getID(),l);
+                    }
+                }
+            });
+        }
         
         String report = new String();
         
@@ -192,8 +221,12 @@ public class Award implements RaceReportType {
         report += " AG   "; //6L for the AG Group
         report += " City               "; // 18L for the city
         if (showState.get()) report += "ST  "; // 4C for the state code
-        if (showCountry.get()) report += " CO "; // 4C for the state code
-
+        if (showCountry.get()) report += " CO"; // 4C for the state code
+        if (showCustomAttributes) {
+            for( CustomAttribute a: customAttributesList){
+                report += StringUtils.rightPad(" " + a.getName(),customAttributeSizeMap.get(a.getID()));
+            }
+        }
         report += StringUtils.leftPad(" Time",dispFormatLength); // Need to adjust for the format code
         report += System.lineSeparator();
 
@@ -220,6 +253,11 @@ public class Award implements RaceReportType {
             report += StringUtils.rightPad(aw.participant.getCity(),18); // 18L for the city
             if (showState.get())  report += StringUtils.center(aw.participant.getState(),4); // 4C for the state code
             if (showCountry.get())  report += StringUtils.leftPad(aw.participant.getCountry(),4); // 4C for the state code
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += StringUtils.rightPad(" " + aw.participant.getCustomAttribute(a.getID()).getValueSafe(),customAttributeSizeMap.get(a.getID()));
+                }
+            }
             report += StringUtils.leftPad(DurationFormatter.durationToString(aw.awardTime, dispFormat, roundMode), dispFormatLength);
             report += System.lineSeparator();
         }

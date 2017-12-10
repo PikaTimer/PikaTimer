@@ -888,7 +888,7 @@ public class ResultsDAO {
                         Duration paused = Duration.ZERO;
                         if(r.getSplits().size() > 2) {
                             for (int i = 2; i <  splitSize ; i++) {
-                                System.out.println("Split: " + r.getSplits().get(i-1).getSplitName() + " Ignore? " + r.getSplits().get(i-1).getIgnoreTime() );
+                                //System.out.println("Split: " + r.getSplits().get(i-1).getSplitName() + " Ignore? " + r.getSplits().get(i-1).getIgnoreTime() );
                                 if (r.getSplits().get(i-1).getIgnoreTime() && !res.getSplitTime(i).isZero()) {
                                     if (i == 2) paused = res.getSplitTime(i).minus(chipStartTime);
                                     else if (!res.getSplitTime(i-1).isZero()) paused = paused.plus(res.getSplitTime(i).minus(res.getSplitTime(i-1)));

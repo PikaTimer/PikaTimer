@@ -16,6 +16,8 @@
  */
 package com.pikatimer.results.reports;
 
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.AwardCategory;
 import com.pikatimer.race.AwardWinner;
 import com.pikatimer.race.Race;
@@ -57,7 +59,10 @@ public class OverallJSON implements RaceReportType{
     Boolean showPace = true;
     Boolean showGun = true;
     Boolean showAwards = true;
-
+    
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
+    
     Map<String,Boolean> supportedOptions = new HashMap();
     
     public OverallJSON(){
@@ -66,6 +71,7 @@ public class OverallJSON implements RaceReportType{
         supportedOptions.put("showSplits", false);
         supportedOptions.put("showSegments", true);
         supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
@@ -106,6 +112,7 @@ public class OverallJSON implements RaceReportType{
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
         showAwards = supportedOptions.get("showAwards");
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
         
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String dispTimestamp = race.getStringAttribute("TimeDisplayFormat").replace("[","").replace("}","");
@@ -113,7 +120,12 @@ public class OverallJSON implements RaceReportType{
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
         
         
-        
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
         
         Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
         String cutoffTimeString = DurationFormatter.durationToString(cutoffTime, dispFormat, roundMode);
@@ -194,6 +206,13 @@ public class OverallJSON implements RaceReportType{
             chars.append("\t\t\"state\": ").append("\"").append(escape(pr.getParticipant().getState())).append("\"").append(",\n");
             chars.append("\t\t\"country\": ").append("\"").append(escape(pr.getParticipant().getCountry())).append("\"").append(",\n");
             chars.append("\t\t\"note\": ").append("\"").append(escape(pr.getParticipant().getNote())).append("\"").append(",\n");
+            
+            
+            if (showCustomAttributes) {
+                customAttributesList.forEach((a) -> {
+                    chars.append("\t\t\"custom_" + escape(a.getName()) + "\": ").append("\"").append(escape(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe())).append("\"").append(",\n");
+                });
+            }
             
             if (penaltiesOrBonuses){
                 chars.append("\t\t\"penalty\": ").append("\"").append(pr.getPenalty().toString()).append("\"").append(",\n");

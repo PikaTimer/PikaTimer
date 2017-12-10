@@ -17,6 +17,8 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
@@ -57,6 +59,10 @@ public class AgeGroup implements RaceReportType {
     Boolean showGun = true;
     IntegerProperty fullNameLength = new SimpleIntegerProperty(10);
     
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
+    Map<Integer,Integer> customAttributeSizeMap = new HashMap();
+    
     Map<String,Boolean> supportedOptions = new HashMap();
     
     BooleanProperty showCountry = new SimpleBooleanProperty(true);
@@ -74,6 +80,8 @@ public class AgeGroup implements RaceReportType {
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
         supportedOptions.put("hideCustomHeaders", false);
+        supportedOptions.put("showCustomAttributes", false);
+
     }
     
     @Override
@@ -106,7 +114,8 @@ public class AgeGroup implements RaceReportType {
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
-        
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
+
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         if (customHeaders && supportedOptions.get("hideCustomHeaders")) customHeaders = false;
         
@@ -153,6 +162,26 @@ public class AgeGroup implements RaceReportType {
                     .collect(Collectors.groupingBy(pr -> {return pr.getSex() + pr.getAGCode();}));
         
         
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
+        
+        // how long are these things?
+        if (showCustomAttributes) {
+            customAttributesList.forEach((a) -> {
+                int l = a.getName().length() + 1;
+                customAttributeSizeMap.put(a.getID(),l);
+                for (ProcessedResult p: prList){
+                    if (l <= p.getParticipant().getCustomAttribute(a.getID()).getValueSafe().length()){
+                        l = p.getParticipant().getCustomAttribute(a.getID()).getValueSafe().length() + 1;
+                        customAttributeSizeMap.put(a.getID(),l);
+                    }
+                }
+            });
+        }
         
         List<String> agCatList = new ArrayList(agResultsMap.keySet());
         agCatList.sort(new AlphanumericComparator());       
@@ -248,6 +277,12 @@ public class AgeGroup implements RaceReportType {
                 chars.append(System.lineSeparator());
                 return;
             }
+            
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    chars.append(StringUtils.rightPad(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe(),customAttributeSizeMap.get(a.getID())));
+                }
+            }
 
             // Insert split stuff here 
             if (showSplits && ! hideTime) {
@@ -332,6 +367,11 @@ public class AgeGroup implements RaceReportType {
         if (showState.get() )report += " ST "; // 4C for the state code
         if (showCountry.get() )report += " CO "; // 4C for the state code
          
+        if (showCustomAttributes) {
+            for( CustomAttribute a: customAttributesList){
+                report += StringUtils.rightPad(a.getName(),customAttributeSizeMap.get(a.getID()));
+            }
+        }
         // Insert split stuff here
         if (showSplits) {
             // do stuff

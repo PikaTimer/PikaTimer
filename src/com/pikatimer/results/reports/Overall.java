@@ -17,6 +17,8 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.AwardCategory;
 import com.pikatimer.race.AwardWinner;
 import com.pikatimer.race.Race;
@@ -56,6 +58,10 @@ public class Overall implements RaceReportType{
     Boolean showPace = true;
     Boolean showGun = true;
     Boolean showAwards = true;
+    
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
+    Map<Integer,Integer> customAttributeSizeMap = new HashMap();
 
     Map<String,Boolean> supportedOptions = new HashMap();
     
@@ -70,6 +76,8 @@ public class Overall implements RaceReportType{
         supportedOptions.put("showGun", true);
         supportedOptions.put("hideCustomHeaders", false);
         supportedOptions.put("showAwards",true);
+        supportedOptions.put("showCustomAttributes", false);
+
     }
     
     @Override
@@ -104,7 +112,8 @@ public class Overall implements RaceReportType{
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
         showAwards = supportedOptions.get("showAwards");
-        
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
+
         Boolean showCO = false;
         Boolean showST = false;
         for (ProcessedResult x : prList){
@@ -123,6 +132,27 @@ public class Overall implements RaceReportType{
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
+        
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
+        
+        // how long are these things?
+        if (showCustomAttributes) {
+            customAttributesList.forEach((a) -> {
+                int l = a.getName().length() + 1;
+                customAttributeSizeMap.put(a.getID(),l);
+                for (ProcessedResult p: prList){
+                    if (l <= p.getParticipant().getCustomAttribute(a.getID()).getValueSafe().length()){
+                        l = p.getParticipant().getCustomAttribute(a.getID()).getValueSafe().length() + 1;
+                        customAttributeSizeMap.put(a.getID(),l);
+                    }
+                }
+            });
+        }
         
         Map<String,List<String>> awardWinnersByBibMap = new HashMap();
         if (showAwards){
@@ -191,6 +221,11 @@ public class Overall implements RaceReportType{
         report += " City              "; // 18L for the city
         if (showState) report += " ST "; // 4C for the state code
         if (showCountry) report += " CO "; // 4C for the country code 
+        if (showCustomAttributes) {
+            for( CustomAttribute a: customAttributesList){
+                report += StringUtils.rightPad(a.getName(),customAttributeSizeMap.get(a.getID()));
+            }
+        }
         // Insert split stuff here
         if (showSplits) {
             for (int i = 2; i < race.splitsProperty().size(); i++) {
@@ -275,6 +310,12 @@ public class Overall implements RaceReportType{
                 chars.append("    Reason: ").append(pr.getParticipant().getNote());
                 chars.append(System.lineSeparator());
                 return;
+            }
+            
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    chars.append(StringUtils.rightPad(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe(),customAttributeSizeMap.get(a.getID())));
+                }
             }
 
             // Insert split stuff here 

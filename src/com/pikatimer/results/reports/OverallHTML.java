@@ -17,6 +17,8 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
@@ -27,9 +29,12 @@ import com.pikatimer.util.Pace;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  *
@@ -46,6 +51,9 @@ public class OverallHTML implements RaceReportType{
     Boolean showDNF = true;
     Boolean showPace = true;
     Boolean showGun = true;
+    
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
 
     Map<String,Boolean> supportedOptions = new HashMap();
     
@@ -55,10 +63,16 @@ public class OverallHTML implements RaceReportType{
         supportedOptions.put("showSplits", false);
         supportedOptions.put("showSegments", true);
         supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showCustomAttributes", false);
+
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
         supportedOptions.put("hideCustomHeaders", false);
+    }
+    
+    private String escapeHTML(String s){
+        return StringEscapeUtils.escapeHtml4(s);
     }
     
     @Override
@@ -91,6 +105,7 @@ public class OverallHTML implements RaceReportType{
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
         
         Boolean showCO = false;
         Boolean showST = false;
@@ -111,6 +126,12 @@ public class OverallHTML implements RaceReportType{
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
         
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
         
         final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
 
@@ -310,9 +331,9 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             report += System.lineSeparator();
         }
         
-        report += "<div class=\"event-info\">" + event.getEventName() + System.lineSeparator();;
+        report += "<div class=\"event-info\">" + escapeHTML(event.getEventName()) + System.lineSeparator();;
         if (RaceDAO.getInstance().listRaces().size() > 1) 
-            report += "<br>" + race.getRaceName();
+            report += "<br>" + escapeHTML(race.getRaceName());
         report += "</div>" + System.lineSeparator();
         
         report += "<div class=\"event-date\">" + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</div>" + System.lineSeparator();
@@ -368,10 +389,15 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             if (showState) report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); // 4C for the state code
             if (showCountry) report += "      <th data-priority=\"40\">CO</th>" +  System.lineSeparator(); // 4C for the country
 
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += "      <th data-priority=\"200\">"+escapeHTML(a.getName())+ "</th>" +  System.lineSeparator();
+                }
+            }
             // Insert split stuff here
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "      <th data-priority=\"100\">" + escapeHTML(race.splitsProperty().get(i-1).getSplitName()) + "</th>" +  System.lineSeparator();
                 }
             }
             if (showSegments) {
@@ -379,7 +405,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
                 Integer dispLeg = dispFormatLength;
                 race.raceSegmentsProperty().forEach(seg -> {
                     if(seg.getHidden()) return;
-                    chars.append("      <th data-priority=\"80\">" + seg.getSegmentName()+ "</th>" +  System.lineSeparator());
+                    chars.append("      <th data-priority=\"80\">" + escapeHTML(seg.getSegmentName())+ "</th>" +  System.lineSeparator());
                     if (showSegmentPace) {
                         if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace())))
                             chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator());
@@ -464,10 +490,16 @@ report +=   "   \"fnInitComplete\": function () {\n" +
                 chars.append("<td>"+ pr.getAge().toString() + "</td>" +  System.lineSeparator());
                 chars.append("<td>"+ pr.getSex() + "</td>" +  System.lineSeparator());
                 chars.append("<td>"+ pr.getAGCode() + "</td>" +  System.lineSeparator());
-                chars.append("<td>"+ pr.getParticipant().fullNameProperty().getValueSafe() + "</td>" +  System.lineSeparator());
-                chars.append("<td>"+ pr.getParticipant().getCity() + "</td>" +  System.lineSeparator());
-                if (showState) chars.append("<td>"+ pr.getParticipant().getState() + "</td>" +  System.lineSeparator());
-                if (showCountry) chars.append("<td>"+ pr.getParticipant().getCountry() + "</td>" +  System.lineSeparator());
+                chars.append("<td>"+ escapeHTML(pr.getParticipant().fullNameProperty().getValueSafe())+ "</td>" +  System.lineSeparator());
+                chars.append("<td>"+ escapeHTML(pr.getParticipant().getCity()) + "</td>" +  System.lineSeparator());
+                if (showState) chars.append("<td>"+ escapeHTML(pr.getParticipant().getState()) + "</td>" +  System.lineSeparator());
+                if (showCountry) chars.append("<td>"+ escapeHTML(pr.getParticipant().getCountry()) + "</td>" +  System.lineSeparator());
+                
+                if (showCustomAttributes) {
+                    for( CustomAttribute a: customAttributesList){
+                        chars.append("<td>").append(escapeHTML(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe())).append("</td>" +  System.lineSeparator());
+                    }
+                }
 
                 // Insert split stuff here 
                 if (showSplits) {
