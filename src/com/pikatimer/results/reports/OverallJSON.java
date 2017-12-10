@@ -26,6 +26,7 @@ import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
 import com.pikatimer.timing.CookedTimeData;
+import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.DurationFormatter;
@@ -287,16 +288,30 @@ public class OverallJSON implements RaceReportType{
                         chars.append("\t\t\t\t\t\"display\": ").append("\"\"").append(",\n");
                         chars.append("\t\t\t\t\t\"delta_time\": ").append("\"\"").append(",\n");
                         if (showPace) chars.append("\t\t\t\t\t\"pace\": ").append("\"\"").append(",\n");
+                        if (showSegments && segmentsToShow && showSegmentPace && showSegmentSplits){
+                            for(Segment seg: race.getSegments()){
+                                if (seg.getHidden() || seg.getStartSplitPosition() > i || seg.getEndSplitPosition() < i) continue;
+                                chars.append("\t\t\t\t\t\"segment_").append(seg.getID()).append("_pace\": ").append("\"~~\"").append(",\n");
+                            }
+                        }
                         chars.append("\t\t\t\t\t\"sort\": ").append("\"~~\"").append("\n");
-                    }
-                    else {
+                    } else {
                         chars.append("\t\t\t\t\t\"display\": ").append("\"").append(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)).append("\",\n");
                         
-                        if (i == 2) { // 1st split
+                        if (i == 2) { // 1st split after start
                             chars.append("\t\t\t\t\t\"delta_time\": ").append("\"").append(DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)).append("\",\n");
                             if (showPace) {
                                 if (hideTime || pr.getSplit(i) == null || race.splitsProperty().get(i-1).getSplitDistance().compareTo(BigDecimal.ZERO) == 0) chars.append(",\n\t\t\t\t\t\"pace\": ").append("\"~~\"").append(",\n");
                                 else chars.append("\t\t\t\t\t\"pace\": \"").append(pace.getPace(race.splitsProperty().get(i-1).getSplitDistance().floatValue(), race.getRaceDistanceUnits(), pr.getSplit(i))).append("\",\n");
+                            }
+                            if (showSegments && segmentsToShow && showSegmentPace && showSegmentSplits){
+                                for(Segment seg: race.getSegments()){
+                                    if (seg.getHidden() || seg.getStartSplitPosition() > i || seg.getEndSplitPosition() < i) continue;
+                                    if (hideTime || pr.getSplit(i) == null || race.splitsProperty().get(i-1).getSplitDistance().compareTo(BigDecimal.ZERO) == 0) chars.append("\t\t\t\"segment_").append(seg.getID()).append("_pace\": ").append("\"~~\"").append("\n");
+                                    else if (seg.getUseCustomPace())
+                                        chars.append("\t\t\t\t\t\"segment_").append(seg.getID()).append("_pace\": \"").append(seg.getCustomPace().getPace(race.splitsProperty().get(i-1).getSplitDistance().floatValue(), race.getRaceDistanceUnits(), pr.getSplit(i))).append("\",\n");
+                                    else chars.append("\t\t\t\t\t\"segment_").append(seg.getID()).append("_pace\": \"").append(pace.getPace(race.splitsProperty().get(i-1).getSplitDistance().floatValue(), race.getRaceDistanceUnits(), pr.getSplit(i))).append("\",\n");
+                                }
                             }
                         } else {
                             Split thisSplit = race.splitsProperty().get(i-1);
@@ -309,7 +324,15 @@ public class OverallJSON implements RaceReportType{
                                 if (thisSplit.getSplitDistance().compareTo(previousSplit.getSplitDistance()) == 0 || pr.getSplit(i) == null || pr.getSplit(i-1) == null)
                                     chars.append("\t\t\t\t\t\"pace\": ").append("\"\"").append(",\n");
                                 else chars.append("\t\t\t\t\t\"pace\": \"").append(pace.getPace(thisSplit.getSplitDistance().subtract(previousSplit.getSplitDistance()).floatValue(), race.getRaceDistanceUnits(), pr.getSplit(i).minus(pr.getSplit(i-1)))).append("\",\n");
-
+                            }
+                            if (showSegments && segmentsToShow && showSegmentPace && showSegmentSplits){
+                                for(Segment seg: race.getSegments()){
+                                    if (seg.getHidden() || seg.getStartSplitPosition() > i || seg.getEndSplitPosition() < i) continue;
+                                    if (hideTime || pr.getSplit(i) == null || race.splitsProperty().get(i-1).getSplitDistance().compareTo(BigDecimal.ZERO) == 0 || pr.getSplit(i) == null || pr.getSplit(i-1) == null) chars.append("\t\t\t\"segment_").append(seg.getID()).append("_pace\": ").append("\"~~\"").append(",\n");
+                                    else if (seg.getUseCustomPace())
+                                        chars.append("\t\t\t\t\t\"segment_").append(seg.getID()).append("_pace\": \"").append(seg.getCustomPace().getPace(thisSplit.getSplitDistance().subtract(previousSplit.getSplitDistance()).floatValue(), race.getRaceDistanceUnits(), pr.getSplit(i).minus(pr.getSplit(i-1)))).append("\",\n");
+                                    else chars.append("\t\t\t\t\t\"segment_").append(seg.getID()).append("_pace\": \"").append(pace.getPace(thisSplit.getSplitDistance().subtract(previousSplit.getSplitDistance()).floatValue(), race.getRaceDistanceUnits(), pr.getSplit(i).minus(pr.getSplit(i-1)))).append("\",\n");
+                                }
                             }
                         }
                         chars.append("\t\t\t\t\t\"sort\": ").append("\"").append(DurationFormatter.durationToString(pr.getSplit(i), dispTimestamp, roundMode)).append("\"\n");

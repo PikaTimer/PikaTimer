@@ -506,7 +506,7 @@ public class OverallHTML5 implements RaceReportType{
                                     if (showSegmentPace) chars.append("data += '<td></td>';\n");
                                 } else {
                                     chars.append("data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].delta_time + '</td>';\n");
-                                    if (showSegmentPace) chars.append("data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].pace + '</td>';\n");
+                                    if (showSegmentPace) chars.append("data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].segment_" + seg.getID() + "_pace + '</td>';\n");
                                 }
                                 chars.append("data += '</tr>';\n");
                             }
