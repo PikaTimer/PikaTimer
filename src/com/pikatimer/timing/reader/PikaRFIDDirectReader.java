@@ -33,9 +33,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
@@ -53,7 +51,6 @@ import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -155,7 +152,8 @@ public class PikaRFIDDirectReader implements TimingReader {
     ChoiceBox<String> beeperVolumeChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Off", "Soft", "Loud"));
     
     Button setClockButton = new Button("Sync Time...");
-    Button remoteSettingsButton = new Button("Remote...");
+    Button remoteSettingsButton = new Button("Remote Server...");
+    Button antennaSettingsButton = new Button("Antenna Options...");
     Label modeLabel = new Label("Reader Mode:");
     Label gatingLabel = new Label("Gating Interval:");
     Label volumeLabel = new Label("Beeper Volume:");
@@ -330,7 +328,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             HBox fileHBox = new HBox();
             fileHBox.setSpacing(4);
             fileHBox.setAlignment(Pos.CENTER_LEFT);
-
+            fileTextField.setPrefWidth(150);
             fileHBox.getChildren().addAll(saveToFileCheckBox,fileTextField,fileButton);
             
             VBox advancedVBox = new VBox();
@@ -370,12 +368,18 @@ public class PikaRFIDDirectReader implements TimingReader {
             
             beeperVolumeChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 System.out.println("beeperVolumeChoiceBox listener: Existing volume: " + ultraSettings.get("21"));
-                if ("Off".equals(newVal)) {
-                    if (!"0".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
-                } else if ("Soft".equals(newVal)) {
-                    if (!"1".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
-                } else if ("Loud".equals(newVal)) {
-                    if (!"2".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                if (null != newVal) switch (newVal) {
+                    case "Off":
+                        if (!"0".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                        break;
+                    case "Soft":
+                        if (!"1".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                        break;
+                    case "Loud":
+                        if (!"2".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                        break;
+                    default:
+                        break;
                 }
                 
             });
@@ -391,10 +395,14 @@ public class PikaRFIDDirectReader implements TimingReader {
             HBox advancedHBox2 = new HBox();
             advancedHBox2.setSpacing(4);
             advancedHBox2.setAlignment(Pos.CENTER_LEFT);
+            HBox advancedHBox3 = new HBox();
+            advancedHBox3.setSpacing(4);
+            advancedHBox3.setAlignment(Pos.CENTER_LEFT);
             
-            advancedHBox1.getChildren().addAll(volumeLabel,beeperVolumeChoiceBox,setClockButton,remoteSettingsButton);
-            advancedHBox2.getChildren().addAll(modeLabel,reader1ModeChoiceBox,gatingLabel,gatingIntervalSpinner,updateSettingsButton);
-            advancedVBox.getChildren().addAll(advancedHBox1,advancedHBox2);
+            advancedHBox1.getChildren().addAll(volumeLabel,beeperVolumeChoiceBox,modeLabel,reader1ModeChoiceBox,gatingLabel,gatingIntervalSpinner);
+            advancedHBox2.getChildren().addAll(setClockButton,remoteSettingsButton,antennaSettingsButton);
+            advancedHBox3.getChildren().addAll(updateSettingsButton);
+            advancedVBox.getChildren().addAll(advancedHBox1,advancedHBox2,advancedHBox3);
                         
             advancedVBox.disableProperty().bind(connectedStatus.and(readingStatus).or(connectedStatus.not()));
             
@@ -432,6 +440,9 @@ public class PikaRFIDDirectReader implements TimingReader {
             });
             remoteSettingsButton.setOnAction((event) -> {
                 remoteDialog();
+            });
+            antennaSettingsButton.setOnAction((event) -> {
+                antennaDialog();
             });
             batteryProgressBar.visibleProperty().bind(connectToggleSwitch.selectedProperty());
             batteryProgressBar.setMaxHeight(30.0);
@@ -967,6 +978,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                 Boolean firstConnect = true;
                 @Override public Void call() {
                     Boolean socketError = false;
+                    Boolean readRetry = false;
                     while(connectToUltra) {
                         Platform.runLater(() -> {
                             statusLabel.setText("Connecting to " + ultraIP + "...");
@@ -980,7 +992,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                         ) {
                             connectToUltra = true; // we got here so we have a good connection
                             success = true;
-                            ultraSocket.setSoTimeout(20000); // 20 seconds. In theory we get a voltage every 10
+                            ultraSocket.setSoTimeout(15000); // 15 seconds. In theory we get a voltage every 10
                             ultraOutput = new DataOutputStream(new BufferedOutputStream(rawOutput));
                             Platform.runLater(() -> {
                                 connectedStatus.setValue(true);
@@ -998,36 +1010,50 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 firstConnect = false;
                             }
                             
-                            while(connectToUltra) {
-                                read = -255; 
-                                line = "";
-                                while (read != 10 && connectToUltra) {
-                                    read = input.read();
-                                    if (read == -1) {
-                                        connectToUltra = false;
-                                        System.out.println("End of stream!" + Integer.toHexString(read));
-                                    } if (read != 10) {
-                                        line = line +  Character.toString ((char) read);
-                                    //    System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
-                                    } else {
-                                        processLine(line);
+                                while(connectToUltra) {
+                                    read = -255; 
+                                    line = "";
+                                    try {
+                                        while (read != 10 && connectToUltra) {
+                                            read = input.read();
+                                            readRetry = false;
+                                            if (read == -1) {
+                                                connectToUltra = false;
+                                                System.out.println("End of stream!" + Integer.toHexString(read));
+                                            } if (read != 10) {
+                                                line = line +  Character.toString ((char) read);
+                                            //    System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
+                                            } else {
+                                                processLine(line);
+                                            }
+                                        }
+                                    } catch(java.net.SocketTimeoutException e){
+                                        System.out.println("Socket Timeout Exception...");
+                                        if (readRetry) {
+                                            System.out.println("...2nd One in a row so we will bail");
+                                            throw e;
+                                        } else {
+                                            System.out.println("...First one so let's ask for status");
+                                            readRetry=true;
+                                            getReadStatus();
+                                        }
                                     }
                                 }
-                            }
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             System.out.println(e);
-                            socketError = true;
-                            
-                            Platform.runLater(() -> {
-                                if (! success) { connectToUltra = false; connectedStatus.setValue(false);}
-                                statusLabel.setText("Error: " + e.getLocalizedMessage());
-                            });
-                            if (success) try {
-                                Thread.sleep(2000);
-                            } catch (InterruptedException ex) {
-                                Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
-                            } 
+                            if (connectToUltra){ 
+                                socketError = true;
+                                System.out.println("RFIDDirectReader Connection Exception: " + e.getMessage());
+                                Platform.runLater(() -> {
+                                    if (! success) { connectToUltra = false; connectedStatus.setValue(false);}
+                                    statusLabel.setText("Error: " + e.getLocalizedMessage());
+                                });
+                                if (success) try {
+                                    Thread.sleep(2000);
+                                } catch (InterruptedException ex) {
+                                    Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+                                } 
+                            }
                         } finally {
                             if (!socketError){
                                 Platform.runLater(() -> {
@@ -1053,9 +1079,6 @@ public class PikaRFIDDirectReader implements TimingReader {
         connectToUltra = false;
     }
     
-    
-
-    
     private void processLine(String line) {
         System.out.println("Read Line: " + line);
         
@@ -1066,7 +1089,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         else if (line.startsWith("S")) type="status";
         else if (line.startsWith("U")) type="command";
         else if (line.startsWith("u")) type="command"; // general command
-        else if (line.substring(0,8).matches("^\\d+:\\d+:\\d+.*")) type = "time"; //time ens with a special char
+        else if (line.substring(0,8).matches("^\\d+:\\d+:\\d+.*")) type = "time"; //time ends with a special char
         else System.out.println("Unknown line: \"" + line + "\"");
 
         switch(type){
@@ -1639,6 +1662,16 @@ public class PikaRFIDDirectReader implements TimingReader {
             new Thread(ultraCommand).start();
     }
     
+    private void antennaDialog(){
+        // Open a dialog box
+        Dialog<Boolean> dialog = new Dialog();
+        dialog.setTitle("Antenna settings");
+        dialog.setHeaderText("Enable/Disable antenna settings for " + ultraIP);
+        ButtonType setButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(setButtonType, ButtonType.CANCEL);
+        
+        
+    }
     private void remoteDialog(){
         
         // Yeah, yeah, we should return an optional with an object that has the
@@ -1648,21 +1681,75 @@ public class PikaRFIDDirectReader implements TimingReader {
         // Open a dialog box
         Dialog<Boolean> dialog = new Dialog();
         dialog.setTitle("Remote settings");
-        dialog.setHeaderText("Set the remote settings for " + ultraIP);
+        dialog.setHeaderText("Configure the remote settings for " + ultraIP);
         ButtonType setButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(setButtonType, ButtonType.CANCEL);
+        Node saveButton = dialog.getDialogPane().lookupButton(setButtonType);
+        
         
         // set the gprsChoiceBox
         Label gprsLabel = new Label("Connection Type");
         ChoiceBox<String> gprsChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Off", "Internal Modem", "LAN"));
+        // Port
+        Label portLabel = new Label("Remote Server Port");
+        TextField portTextField = new TextField("11111");
         
         //Server
+        String customIP = "";
         Label serverLabel = new Label("Server");
-        ChoiceBox<String> serverChoiceBox = new ChoiceBox(FXCollections.observableArrayList("USA1.RFIDTiming.com", "Europe1.RFIDTiming.com"));
+        ChoiceBox<String> serverChoiceBox = new ChoiceBox(FXCollections.observableArrayList("USA1.RFIDTiming.com", "Europe1.RFIDTiming.com", "Custom"));
+        Label customServer = new Label("Remote Server IP");
+        TextField customServerTextField = new TextField();
+        // This is way more complicated than it should be...
+        customServerTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            Boolean revert = false;
+            if (!"Custom".equals(serverChoiceBox.getSelectionModel().getSelectedItem())) return;
+            if (newValue.isEmpty()) saveButton.disableProperty().set(true);
+            if (customIP == null || newValue.isEmpty() || customIP.equals(newValue)) {
+                saveButton.disableProperty().set(false);
+                return;
+            }
+            if (newValue.matches("[\\d\\.]+")) { // numbers and dots only for the inital pass
+                String octets[] = newValue.split("\\.");
+                if (octets.length != 4) saveButton.disableProperty().set(true);
+                if (octets.length > 4){ // too many octets, cut a few and it will be fine
+                    revert = true;
+                } else {
+                    Boolean validIP = true;
+                    for(String octet: octets) {
+                        try {
+                            Integer o = Integer.parseInt(octet);
+                            System.out.println("Octet : " + o);
+                            if (o > 255) {
+                                validIP = false;
+                                revert = true;
+                            }
+                        } catch (Exception e){
+                            System.out.println("Octet Exception: " + e.getLocalizedMessage());
 
-        // Port
-        Label portLabel = new Label("Port");
-        TextField portTextField = new TextField("11111");
+                            validIP = false;
+                        }
+                    }
+                    if (validIP && octets.length == 4) {
+                        System.out.println("Valid IP : " + customIP);
+                        saveButton.disableProperty().set(false);
+                    }
+                    else{
+                        saveButton.disableProperty().set(true);
+                    }
+                }
+            } else { //just say no
+                revert = true;
+            }
+            if (revert) {
+                    saveButton.disableProperty().set(true);
+                    Platform.runLater(() -> { 
+                    int c = customServerTextField.getCaretPosition();
+                    customServerTextField.setText(oldValue);
+                    customServerTextField.positionCaret(c);
+                }); 
+            }
+        });
         
         // LAN
         Label gatewayLabel = new Label("Gateway");
