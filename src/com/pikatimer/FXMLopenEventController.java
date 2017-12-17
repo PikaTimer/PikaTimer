@@ -20,7 +20,6 @@ package com.pikatimer;
 import com.pikatimer.event.EventDAO;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.RaceDAO;
-import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.PikaFilePathWrapper;
 import javafx.event.ActionEvent;
@@ -38,6 +37,8 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -169,10 +170,16 @@ public class FXMLopenEventController {
                         try {
                             final Pane myPane = (Pane)loader.load();
                             Scene myScene = new Scene(myPane);
+                            
+                            // F11 to toggle fullscreen mode
+                            myScene.getAccelerators().put(new KeyCodeCombination(KeyCode.F11), () -> {
+                                primaryStage.setFullScreen(primaryStage.fullScreenProperty().not().get());
+                            });
+        
                             Platform.runLater(() -> {
                                 //Pane myPane = (Pane)loader.load();
                                 //LoadingProgressBar.setProgress(0.75);
-
+                                
                                 primaryStage.setScene(myScene);
                                 //LoadingProgressBar.setProgress(0.95);
                                 primaryStage.show();
