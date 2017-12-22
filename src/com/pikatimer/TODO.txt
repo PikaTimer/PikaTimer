@@ -8,8 +8,10 @@ DONE: Text header/footer does not honor line feeds in text output files (search/
 DONE: Single quotes in split names causes issues in the JSON parsing. Need to wrap in double quotes and escape all double quotes in any user editable field (split, segment, name, city, state, country, etc)
 DONE: Having the "in-progress" or "show dnf's" not checked during a race with no finishers yet results in problems in the OverallJSON that blows through the OverallHMTL5 report.
 DONE: Awards are not populated on initial event creation
-Start time lookup: 2nd location shows all waves and adds extra waves to those races
+DONE: Ultra Direct: Better connection timeout handling
+DONE: Start time lookup: Odd behavior at times. e.g. 2nd location shows all waves and adds extra waves to those races
 Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
+
 
 
 Features:
@@ -44,9 +46,8 @@ DONE: Segment: Hidden flag (don't display on results)
 DONE: Segment: Pace display (vs the global default)
 
 
-Timing: Ultra Direct -- filter after skew to permit "old" times to be adjusted forward  
-Timing: Ultra Direct -- antenna on/off and power configuration
-Timing: Ultra Direct -- Remote Settings (including custom IP)
+DONE: Timing: Ultra Direct -- antenna on/off and power configuration
+DONE: Timing: Ultra Direct -- Remote Settings (including custom IP)
 
 DONE: Override: Penalty/Bonus support w/ Note
 
@@ -88,6 +89,8 @@ Logging
 
 Timing: 
     --Ultra Direct: Half hour time zone detection and warning. 
+    --Ultra Direct: filter after skew to permit "old" times to be adjusted forward  
+    --Ultra Direct: option to auto-set skew if the clock is off and we can't fix it
     --Outreach client?
     --Bulk Skew based on custom field (for a predict race)
 
@@ -96,8 +99,8 @@ Races:
     --Cumulative vs differential distance for splits specification?
     --Ability to set split specific distance unit for a split
     --Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
-
-    --Ability to Flag a race as a relay race
+    --Relay Race Support
+    --Lap Race Support
 
 Participants:
     -- Option on the event page to limit participants to only one race/wave
