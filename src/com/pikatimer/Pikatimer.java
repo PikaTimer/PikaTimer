@@ -20,6 +20,8 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -34,7 +36,7 @@ public class Pikatimer extends Application {
     private static Stage mainStage;
     private static String jdbcURL; // Holds the jdbcURL for the open db
     
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "1.5 Beta 1";
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -69,6 +71,8 @@ public class Pikatimer extends Application {
         
         primaryStage.setTitle("PikaTimer " + VERSION);
         
+        
+        
         Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLopenEvent.fxml"));
         Scene myScene = new Scene(myPane);
         
@@ -78,6 +82,11 @@ public class Pikatimer extends Application {
         primaryStage.setX((primaryScreenBounds.getWidth() - primaryStage.getWidth())/2);  
         primaryStage.setY((primaryScreenBounds.getHeight() - primaryStage.getHeight())/2);  
  
+        // F11 to toggle fullscreen mode
+        myScene.getAccelerators().put(new KeyCodeCombination(KeyCode.F11), () -> {
+            mainStage.setFullScreen(mainStage.fullScreenProperty().not().get());
+        });
+        
         primaryStage.setScene(myScene);
         primaryStage.show();
         

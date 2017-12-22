@@ -17,10 +17,12 @@ The entire system is released under the GPLv3 Open Source license. PikaTimer is 
 * Ability to flag a timing input as a "backup" 
 * Time overrides for a participant on a per split basis
 * Participants may be entered into multiple races
+* Custom Participant Attributes
+* Custom Award Definitions
 * Regular expression based search for participants and raw results
 * Ability to "skew" the time for any given timing input 
 * Support for races that are longer than a single day
-* 5 or 10 year age group setup
+* 1, 5, 10, or Custom year age group setup
 * Alphanumeric bib support
 * Built in database engine (H2) that stores the entire event in a single file for for backups, copying, archiving, etc.
 * Outputs basic Overall, Age Group, and Awards text based reports
@@ -28,6 +30,8 @@ The entire system is released under the GPLv3 Open Source license. PikaTimer is 
 * Automatically upload reports to an FTP, FTPS (FTP over TLS), or SFTP (FTP over SSH) server
 * Output awards file based on gun or chip time for Overall / Masters / AG
 * DQ / DNF / DNS flags for runners and the ability to exclude them on results
+* Ability to add a time bonus or penalty to any participant
+* On-course cutoff enforcement
 * In-Progress report options that show runners who started but have not yet finished
 * Windows x64 based native application
 
