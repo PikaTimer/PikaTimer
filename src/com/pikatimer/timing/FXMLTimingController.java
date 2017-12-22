@@ -1187,26 +1187,15 @@ public class FXMLTimingController {
             startTimes.sort((p1, p2) -> p1.compareTo(p2));
             if (!startTimes.isEmpty()) startTimesByLocation.put(tlID, FXCollections.observableArrayList(startTimes));
         });
+        
+        // Debug output
         startTimesByLocation.keySet().forEach(k -> {
             startTimesByLocation.get(k).forEach(d -> {
                 System.out.println("Found Start: TL#" + k + " -> " + DurationFormatter.durationToString(d));
             });
         });
-        // for each race/wave, see if we have any start times
-        Map<Integer,List<Wave>> wavesByLocation = new HashMap();
-        BooleanProperty startsFound = new SimpleBooleanProperty(false);
-        RaceDAO.getInstance().listRaces().forEach(race -> {
-            if (race.getSplits() == null || race.getSplits().isEmpty()) {
-                System.out.println(" RACE HAS NO SPLITS!!! " + race.getRaceName());
-                return;
-            }
-            Integer tlID = race.getSplits().get(0).getTimingLocationID();
-            if (!wavesByLocation.containsKey(tlID)) wavesByLocation.put(tlID, race.getWaves());
-            else wavesByLocation.get(tlID).addAll(race.getWaves());
-            if (!startTimesByLocation.isEmpty()) startsFound.set(true);
-        });
         
-        if (!startsFound.get()) {
+        if (startTimesByLocation.isEmpty()) {
             // No start times, complain and bail
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("No Start Times...");
@@ -1217,6 +1206,18 @@ public class FXMLTimingController {
             return;
         }
         
+        // for each race/wave, see if we have any start times
+        Map<Integer,List<Wave>> wavesByLocation = new HashMap();
+        RaceDAO.getInstance().listRaces().forEach(race -> {
+            if (race.getSplits() == null || race.getSplits().isEmpty()) {
+                System.out.println(" RACE HAS NO SPLITS!!! " + race.getRaceName());
+                return;
+            }
+            Integer tlID = race.getSplits().get(0).getTimingLocationID();
+            if (wavesByLocation.containsKey(tlID)) wavesByLocation.get(tlID).addAll(race.getWaves());
+            else wavesByLocation.put(tlID, new ArrayList(race.getWaves()));
+             
+        });
         
         
 
@@ -1374,7 +1375,9 @@ public class FXMLTimingController {
             
         });
         
-
+        Label manualAddLabel = new Label("To manuall adjust the start times,\ngo to the Event Details tab.");
+         manualAddLabel.setFont(new Font(16));
+        scrollVBox.getChildren().add(manualAddLabel);
     
         
 
