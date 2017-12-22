@@ -66,8 +66,10 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -85,6 +87,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -92,6 +95,7 @@ import static javafx.scene.layout.Region.USE_PREF_SIZE;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
+import org.controlsfx.control.PrefixSelectionComboBox;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -167,6 +171,7 @@ public class PikaRFIDDirectReader implements TimingReader {
     protected final BooleanProperty readingStatus = new SimpleBooleanProperty();
     protected final BooleanProperty connectedStatus = new SimpleBooleanProperty();
     protected final BooleanProperty isJoey = new SimpleBooleanProperty(false);
+    protected final BooleanProperty isSingleReader = new SimpleBooleanProperty(true);
 
     private Boolean connectToUltra = false;
     private Boolean externalInitiated = false;
@@ -721,6 +726,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                     try {
                         if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
                             aquired = true;
+                            ultraSettings.clear();
 
                             String command = "r";
                             ultraOutput.writeBytes(command);
@@ -810,11 +816,18 @@ public class PikaRFIDDirectReader implements TimingReader {
                             // Do we have a Joey or Ultra?
                             if ("255.255.255.255".equals(ultraSettings.get("1A"))) {
                                 System.out.println("We have a Joey");
+                                isSingleReader.set(true);
                                 Platform.runLater(() -> isJoey.set(true));
                             } else {
+                                Platform.runLater(() -> isJoey.set(false));
                                 System.out.println("We have an Ultra");
                                 // do we have an ultra-4 or ultra-8? 
-                                // TODO
+                                // ping the ip in 1A to see if it exists. 
+                                isSingleReader.set(!InetAddress.getByName(ultraSettings.get("1B")).isReachable(1000));
+                                // if we failed, try one more time just in case we lost a packet
+                                if (!isSingleReader.get()) isSingleReader.set(!InetAddress.getByName(ultraSettings.get("1B")).isReachable(1000));
+                                if (!isSingleReader.get()) System.out.println("We have an ultra 8");
+                                else System.out.println("We have an ultra 4");
                             }
                         } else {
                             // timeout
@@ -1667,9 +1680,341 @@ public class PikaRFIDDirectReader implements TimingReader {
         // Open a dialog box
         Dialog<Boolean> dialog = new Dialog();
         dialog.setTitle("Antenna settings");
-        dialog.setHeaderText("Enable/Disable antenna settings for " + ultraIP);
-        ButtonType setButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(setButtonType, ButtonType.CANCEL);
+        String type = "";
+        if (isJoey.get()) type = "Joey";
+        else if (isSingleReader.get()) type = "Ultra-4";
+        else type = "Ultra-8";
+        
+        dialog.setHeaderText("Antenna and Power settings for " + type + " at "+ ultraIP);
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+        
+        //VBox dialogVBox = new VBox();
+        GridPane antennaGridPane = new GridPane();
+        Map<String,CheckBox> antennaMap = new HashMap();
+        
+        antennaGridPane.setHgap(1);
+        antennaGridPane.setVgap(4);
+        
+        Label portsLabel = new Label("Ports");
+        antennaGridPane.add(portsLabel,1,0,4,1);
+        GridPane.setHalignment(portsLabel, HPos.CENTER);
+        
+        // Power Option of 1 -> 32 (inclusive)
+        PrefixSelectionComboBox<String> readerAPower = new PrefixSelectionComboBox();
+        PrefixSelectionComboBox<String> readerBPower = new PrefixSelectionComboBox();
+        for(Integer p = 32; p>0; p--){
+            readerAPower.getItems().add(p.toString());
+            readerBPower.getItems().add(p.toString());
+        }
+        
+        // Reader 'A'
+        for(int port = 1; port < 5; port++){
+            antennaMap.put("A" + port,new CheckBox());
+            System.out.println("Requesting ultraSetting " + String.format("%02x", 11 + port).toUpperCase());
+            if (ultraSettings.containsKey(String.format("%02x", 11 + port).toUpperCase())) {
+                if ("1".equals(ultraSettings.get(String.format("%02x", 11 + port).toUpperCase()))) antennaMap.get("A" + port).setSelected(true);
+                else antennaMap.get("A" + port).setSelected(false);
+            } else antennaMap.get("A" + port).setSelected(false);
+            antennaGridPane.add(new Label(Integer.toString(port)),port,1);
+            antennaGridPane.add(antennaMap.get("A" + port),port,2);
+        } 
+        if (!isJoey.get()) {
+            antennaGridPane.add(new Label("Power"), 5,1);
+            antennaGridPane.add(readerAPower, 5,2);
+            if (ultraSettings.containsKey("18")){
+                System.out.println("Reader A power set to " + ultraSettings.get("18"));
+                readerAPower.getSelectionModel().select(ultraSettings.get("18"));
+            } else readerAPower.getSelectionModel().selectFirst();
+            
+            antennaMap.put("ABackup",new CheckBox());
+            if (ultraSettings.containsKey("26")) {
+                if ("1".equals(ultraSettings.get("26"))) antennaMap.get("ABackup").setSelected(true);
+                else antennaMap.get("ABackup").setSelected(false);
+            } else antennaMap.get("ABackup").setSelected(false);
+            antennaGridPane.add(new Label("  "),6,1);
+            Label antBackupLlabel = new Label("Antenna 4\nis backup");
+            antennaGridPane.add(antBackupLlabel,7,0,1,2);
+            GridPane.setValignment(antBackupLlabel, VPos.BOTTOM);
+            antennaGridPane.add(antennaMap.get("ABackup"),7,2);
+        }
+        
+        // Reader 'B' but only if we have one...
+        if (!isSingleReader.get()){
+            Label readerALabel = new Label("Reader A ");
+            antennaGridPane.add(readerALabel, 0, 2);
+            Label readerBLabel = new Label("Reader B ");
+            antennaGridPane.add(readerBLabel, 0, 3);
+            for(int port = 1; port < 5; port++){
+                antennaMap.put("B" + port,new CheckBox());
+                System.out.println("Requesting ultraSetting " + Integer.toHexString(15 + port));
+                if (ultraSettings.containsKey(Integer.toHexString(15 + port))) {
+                    if ("1".equals(ultraSettings.get(Integer.toHexString(15 + port)))) antennaMap.get("B" + port).setSelected(true);
+                    else antennaMap.get("B" + port).setSelected(false);
+                } else antennaMap.get("B" + port).setSelected(false);
+                antennaGridPane.add(antennaMap.get("B" + port),port,3);
+            } 
+            
+            antennaGridPane.add(readerBPower, 5,3);
+            if (ultraSettings.containsKey("19")){
+                readerBPower.getSelectionModel().select(ultraSettings.get("19"));
+                System.out.println("Reader B power set to " + ultraSettings.get("19"));
+            } else readerBPower.getSelectionModel().selectFirst();
+            
+            antennaMap.put("BBackup",new CheckBox());
+            if (ultraSettings.containsKey("27")) {
+                if ("1".equals(ultraSettings.get("27"))) antennaMap.get("BBackup").setSelected(true);
+                else antennaMap.get("BBackup").setSelected(false);
+            } else antennaMap.get("BBackup").setSelected(false);
+            antennaGridPane.add(antennaMap.get("BBackup"),7,3);
+        }
+        
+        dialog.getDialogPane().setContent(antennaGridPane);
+        
+        // if good, save the settings
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+        
+        
+        Optional result = dialog.showAndWait();
+        
+        if (result.isPresent()) {
+            
+            // If an Ultra-8
+            if (!isSingleReader.get()) {
+                // Reader B, 1 -> 4
+                // Power Setting
+                // Backup setting
+            }
+            
+            // Play the task game
+            Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                        try {
+                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                                aquired = true;
+                                Boolean commit=false;
+                                Boolean restartInterface=false;
+                                
+                                
+                                // 0x0C -> 0x0F Reader A, Antenna 1 -4
+                                // 0x10 -> 0x13 Reader B, Antenna 1 -> 4
+                                // 0x18 -> Reader A Power
+                                // 0x26 -> Reader A Ant 4 as Backup (Ultra Only)
+                                
+                                // Reader A, 1 -> 4
+                                for(int port = 1; port < 5; port++){
+                                    String p = String.format("%02x", 11 + port).toUpperCase();
+                                    if (!ultraSettings.containsKey(p) || 
+                                        (antennaMap.get("A" + port).selectedProperty().get() && "0".equals(ultraSettings.get(p))) ||
+                                        (!antennaMap.get("A" + port).selectedProperty().get() && "1".equals(ultraSettings.get(p)))){
+                                        System.out.println("AntennaDialog(): Setting " + p + " to " + antennaMap.get("A" + port).selectedProperty().get());
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(11 + port);  // 0x0C -> 0x0F
+                                        if (antennaMap.get("A" + port).selectedProperty().get()) ultraOutput.writeByte(1);
+                                        else ultraOutput.writeByte(0);
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '" + p + "' to enable/disable the antenna");
+                                        }
+                                    }
+                                } 
+                                if (!isJoey.get()) {
+                                    // Power Setting
+                                    if (!ultraSettings.containsKey("18") || 
+                                            !ultraSettings.get("18").equals(readerAPower.getSelectionModel().getSelectedItem()) ){
+                                        System.out.println("AntennaDialog(): Sending Reader A power (0x18) command to " + readerAPower.getSelectionModel().getSelectedItem());
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(24);  // 0x18
+                                        ultraOutput.writeBytes(readerAPower.getSelectionModel().getSelectedItem());
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '0x18' to set the Reader A port 4 backupflag");
+                                        }
+                                    }
+
+                                    // If an Ultra backup setting
+                                    if (!ultraSettings.containsKey("26") || 
+                                            (antennaMap.get("ABackup").selectedProperty().get() && "0".equals(ultraSettings.get("26"))) ||
+                                            (!antennaMap.get("ABackup").selectedProperty().get() && "1".equals(ultraSettings.get("26")))
+                                        ){
+                                        System.out.println("remoteDialog(): Sending Reader A port 4 backup (0x26) command");
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(38);  // 0x26
+                                        if (antennaMap.get("ABackup").selectedProperty().get()) ultraOutput.writeByte(1);
+                                        else ultraOutput.writeByte(0);
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '0x18' to set the Reader A Power Command");
+                                        }
+                                    }
+                                }
+            
+                                if (!isSingleReader.get()){
+                                    
+                                    // 0x10 -> 0x13 Reader B, Antenna 1 -> 4
+                                    // 0x19 -> Reader B Power
+                                    // 0x27 -> Reader B Ant 4 as Backup (Ultra Only)
+
+                                    // Reader A, 1 -> 4
+                                    for(int port = 1; port < 5; port++){
+                                        String p = String.format("%02x", 15 + port).toUpperCase();
+                                        if (!ultraSettings.containsKey(p) || 
+                                            (antennaMap.get("B" + port).selectedProperty().get() && "0".equals(ultraSettings.get(p))) ||
+                                            (!antennaMap.get("B" + port).selectedProperty().get() && "1".equals(ultraSettings.get(p)))){
+                                            System.out.println("AntennaDialog(): Setting " + p + " to " + antennaMap.get("B" + port).selectedProperty().get());
+                                            ultraOutput.flush();
+                                            ultraOutput.writeBytes("u");
+                                            ultraOutput.writeByte(15 + port);  // 0x0C -> 0x0F
+                                            if (antennaMap.get("B" + port).selectedProperty().get()) ultraOutput.writeByte(1);
+                                            else ultraOutput.writeByte(0);
+                                            ultraOutput.writeByte(255);
+                                            ultraOutput.flush();
+                                            String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                            if (result != null) {
+                                                commit=true;
+                                            } else {
+                                            // timeout
+                                                System.out.println("Timeout with command '" + p + "' to enable/disable the antenna");
+                                            }
+                                        }
+
+                                    } 
+                                    if (!ultraSettings.containsKey("19") || 
+                                        !ultraSettings.get("19").equals(readerBPower.getSelectionModel().getSelectedItem()) ){
+                                        System.out.println("remoteDialog(): Sending Reader B power (0x19) command to " + readerBPower.getSelectionModel().getSelectedItem());
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(25);  // 0x19
+                                        ultraOutput.writeBytes(readerBPower.getSelectionModel().getSelectedItem());
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '0x19' to set the Reader B Power Command");
+                                        }
+                                    }
+
+                                    // If an Ultra backup setting
+                                    if (!ultraSettings.containsKey("27") || 
+                                            (antennaMap.get("BBackup").selectedProperty().get() && "0".equals(ultraSettings.get("27"))) ||
+                                            (!antennaMap.get("BBackup").selectedProperty().get() && "1".equals(ultraSettings.get("27")))
+                                        ){
+                                        System.out.println("remoteDialog(): Sending Reader B port 4 backup (0x27) command");
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(39);  // 0x27
+                                        if (antennaMap.get("BBackup").selectedProperty().get()) ultraOutput.writeByte(1);
+                                        else ultraOutput.writeByte(0);
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '0x27' to set the Reader B port 4 backup flag");
+                                        }
+                                    }
+                                }
+                                
+                                if (commit){
+                                    System.out.println("remoteDialog(): Sending commit (u 0xFF 0xFF) command");
+                                    ultraOutput.flush();
+
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        restartInterface = true;
+
+                                        // Reader A
+                                        for(int port = 1; port < 5; port++){
+                                            String p = String.format("%02x", 11 + port).toUpperCase();
+                                            if (antennaMap.get("A" + port).selectedProperty().get()) ultraSettings.put(p,"1");
+                                            else ultraSettings.put(p,"0");
+                                        } 
+                                        if (!isJoey.get()){
+                                            ultraSettings.put("18",readerAPower.getSelectionModel().getSelectedItem());
+                                            if (antennaMap.get("ABackup").selectedProperty().get()) ultraSettings.put("26","1");
+                                            else ultraSettings.put("26","0");
+                                        }
+                                        if (!isSingleReader.get()){
+                                            // Reader B
+                                            for(int port = 1; port < 5; port++){
+                                                String p = String.format("%02x", 15 + port).toUpperCase();
+                                                if (antennaMap.get("B" + port).selectedProperty().get()) ultraSettings.put(p,"1");
+                                                else ultraSettings.put(p,"0");
+                                            } 
+                                                ultraSettings.put("19",readerBPower.getSelectionModel().getSelectedItem());
+                                                if (antennaMap.get("BBackup").selectedProperty().get()) ultraSettings.put("27","1");
+                                                else ultraSettings.put("27","0");
+                                        }
+                                        
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command 'u[0xFF][0xFF]'");
+                                    }
+                                }
+                                if (restartInterface){ // This will result in a disconnect
+                                    System.out.println("Sending reset interface (0x2D) command");
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(45);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    
+                                }
+                            } else {
+                                // timeout
+                                System.out.println("Timeout waiting to send command '?'");
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                        } finally {
+                            if (aquired) System.out.println("Relasing transmit lock");
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+        };
+        new Thread(ultraCommand).start();
+            
+            
+            
+        }
         
         
     }
