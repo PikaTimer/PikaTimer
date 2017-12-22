@@ -16,8 +16,43 @@
  */
 /**
  * Author:  John Garner <segfaultcoredump@gmail.com>
- * Created: Oct 11, 2017
+ * Created: Dec 22, 2017
  */
+
+/* Unused table */
+drop table participant_attributes;
+
+
+create table custom_participant_attributes (
+    id int,
+    attribute_name varchar,
+    attribute_type varchar,
+    UUID varchar
+
+);
+
+create table custom_participant_attributes_values (
+    id int,
+    value varchar
+);
+
+create table participant_attributes (
+    participant_id int,
+    attribute_id int,
+    attribute_value varchar
+);
+
+alter table race_age_groups add (
+    null_to_zero boolean,
+    custom_increments boolean,
+    custom_names boolean
+);
+
+create table race_age_group_increments (
+    ag_id int,
+    increment_start int,
+    increment_name varchar
+);
 
 create table race_award_categories (
     id int,
@@ -37,7 +72,9 @@ create table race_award_categories (
     subdivide boolean,
     skew boolean,
     skew_type varchar,
-    skew_attribute int
+    skew_attribute int,
+    visible boolean,
+    visible_overall boolean
 );
 
 create table race_award_category_depths (
@@ -58,4 +95,19 @@ create table race_award_category_subdivide_list (
     attribute varchar
 );
 
-commit;
+alter table race_split add (
+    ignore_time boolean,
+    mandatory boolean,
+    CUTOFF_ABSOLUTE boolean
+);
+
+alter table race_segment add (
+    hidden boolean,
+    use_custom_pace boolean
+);
+
+alter table overrides add (
+    type varchar, 
+    note varchar
+); 
+
