@@ -17,6 +17,8 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
@@ -27,9 +29,12 @@ import com.pikatimer.util.Pace;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  *
@@ -46,6 +51,9 @@ public class OverallHTML implements RaceReportType{
     Boolean showDNF = true;
     Boolean showPace = true;
     Boolean showGun = true;
+    
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
 
     Map<String,Boolean> supportedOptions = new HashMap();
     
@@ -55,10 +63,16 @@ public class OverallHTML implements RaceReportType{
         supportedOptions.put("showSplits", false);
         supportedOptions.put("showSegments", true);
         supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showCustomAttributes", false);
+
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
         supportedOptions.put("hideCustomHeaders", false);
+    }
+    
+    private String escapeHTML(String s){
+        return StringEscapeUtils.escapeHtml4(s);
     }
     
     @Override
@@ -91,6 +105,17 @@ public class OverallHTML implements RaceReportType{
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
+        
+        Boolean showCO = false;
+        Boolean showST = false;
+        for (ProcessedResult x : prList){
+            if (! x.getParticipant().getCountry().isEmpty()) showCO=true;
+            if (! x.getParticipant().getState().isEmpty()) showST=true;
+        }
+        // Stupid lambda workarounds....
+        final Boolean showCountry = showCO;
+        final Boolean showState = showST;
         
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         Boolean textOnlyHeaders = race.getBooleanAttribute("textOnlyHeaders");
@@ -101,6 +126,17 @@ public class OverallHTML implements RaceReportType{
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
         
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
+        
+        final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+
+                
+                
         Integer dispFormatLength;  // add a space
         if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
         else dispFormatLength = dispFormat.length()+1;
@@ -295,17 +331,31 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             report += System.lineSeparator();
         }
         
-        report += "<div class=\"event-info\">" + event.getEventName() + System.lineSeparator();;
+        report += "<div class=\"event-info\">" + escapeHTML(event.getEventName()) + System.lineSeparator();;
         if (RaceDAO.getInstance().listRaces().size() > 1) 
-            report += "<br>" + race.getRaceName();
+            report += "<br>" + escapeHTML(race.getRaceName());
         report += "</div>" + System.lineSeparator();
         
         report += "<div class=\"event-date\">" + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</div>" + System.lineSeparator();
         report += System.lineSeparator();
         
+        Boolean dataToShow = false;
         if(inProgress) {
             report += "    <div class=\"in-progress\">" + "*In Progress*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
+            if (!prList.isEmpty()) dataToShow = true;
+        } else {
+            if (! prList.isEmpty()){
+                if (showDNF) dataToShow = true;
+                else {
+                    for(ProcessedResult f: prList){
+                        if (f.getChipFinish() != null ) {
+                            dataToShow = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         
         if (customHeaders){
@@ -313,7 +363,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             else report += race.getStringAttribute("htmlMessage");
             report += System.lineSeparator();
         }
-        if(prList.isEmpty()) {
+        if(!dataToShow) {
             report += "    <div class=\"in-progress\">" + "<BR>*No Results Have Been Posted Yet*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
             if (customHeaders){
@@ -336,23 +386,34 @@ report +=   "   \"fnInitComplete\": function () {\n" +
             report += "      <th data-priority=\"29\">AG</th>" +  System.lineSeparator(); //6L for the AG Group
             report += "      <th data-priority=\"1\">Name</th>" +  System.lineSeparator(); // based on the longest name
             report += "      <th data-priority=\"40\">City</th>" +  System.lineSeparator(); // 18L for the city
-            report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); // 4C for the state code
+            if (showState) report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); // 4C for the state code
+            if (showCountry) report += "      <th data-priority=\"40\">CO</th>" +  System.lineSeparator(); // 4C for the country
 
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += "      <th data-priority=\"200\">"+escapeHTML(a.getName())+ "</th>" +  System.lineSeparator();
+                }
+            }
             // Insert split stuff here
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "      <th data-priority=\"100\">" + escapeHTML(race.splitsProperty().get(i-1).getSplitName()) + "</th>" +  System.lineSeparator();
                 }
             }
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
                 Integer dispLeg = dispFormatLength;
-                race.getSegments().forEach(seg -> {
-                    chars.append("      <th data-priority=\"80\">" + seg.getSegmentName()+ "</th>" +  System.lineSeparator());
-                    if (showSegmentPace) chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator()); // pace.getFieldWidth()+1
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if(seg.getHidden()) return;
+                    chars.append("      <th data-priority=\"80\">" + escapeHTML(seg.getSegmentName())+ "</th>" +  System.lineSeparator());
+                    if (showSegmentPace) {
+                        if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace())))
+                            chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator());
+                    } // pace.getFieldWidth()+1
                 });
                 report += chars.toString();
             }
+            if (penaltiesOrBonuses) report += "      <th data-priority=\"1\">Adj</th>";
             // Chip time
             report += "      <th data-priority=\"1\">Finish</th>" +  System.lineSeparator(); // 9R Need to adjust for the format code
 
@@ -389,6 +450,7 @@ report +=   "   \"fnInitComplete\": function () {\n" +
 
                 Boolean oco = false;
                 if (dnf || dq) oco = false;
+                else if (inProgress && pr.getChipFinish() == null) ; // They havent finished yet
                 else if (cutoffTime.isZero() 
                             || cutoffTime.compareTo(pr.getChipFinish()) >= 0 
                             || cutoffTimeString.equals(DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode))) {
@@ -428,35 +490,55 @@ report +=   "   \"fnInitComplete\": function () {\n" +
                 chars.append("<td>"+ pr.getAge().toString() + "</td>" +  System.lineSeparator());
                 chars.append("<td>"+ pr.getSex() + "</td>" +  System.lineSeparator());
                 chars.append("<td>"+ pr.getAGCode() + "</td>" +  System.lineSeparator());
-                chars.append("<td>"+ pr.getParticipant().fullNameProperty().getValueSafe() + "</td>" +  System.lineSeparator());
-                chars.append("<td>"+ pr.getParticipant().getCity() + "</td>" +  System.lineSeparator());
-                chars.append("<td>"+ pr.getParticipant().getState() + "</td>" +  System.lineSeparator());
+                chars.append("<td>"+ escapeHTML(pr.getParticipant().fullNameProperty().getValueSafe())+ "</td>" +  System.lineSeparator());
+                chars.append("<td>"+ escapeHTML(pr.getParticipant().getCity()) + "</td>" +  System.lineSeparator());
+                if (showState) chars.append("<td>"+ escapeHTML(pr.getParticipant().getState()) + "</td>" +  System.lineSeparator());
+                if (showCountry) chars.append("<td>"+ escapeHTML(pr.getParticipant().getCountry()) + "</td>" +  System.lineSeparator());
+                
+                if (showCustomAttributes) {
+                    for( CustomAttribute a: customAttributesList){
+                        chars.append("<td>").append(escapeHTML(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe())).append("</td>" +  System.lineSeparator());
+                    }
+                }
 
                 // Insert split stuff here 
                 if (showSplits) {
                 // do stuff
                     for (int i = 2; i < race.splitsProperty().size(); i++) {
-                        if (!hideSplitTimes) 
-                            chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
-                        else chars.append("<td>---</td>" +  System.lineSeparator());
+                        if (!race.splitsProperty().get(i-1).getIgnoreTime()){
+                            if (!hideSplitTimes) 
+                                chars.append("<td>"+ DurationFormatter.durationToString(pr.getSplit(i), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
+                            else chars.append("<td>---</td>" +  System.lineSeparator());
+                        }
                     }
                 }
 
                 if (showSegments) {
                     Boolean hst = hideSplitTimes;
-                    race.getSegments().forEach(seg -> {
+                    race.raceSegmentsProperty().forEach(seg -> {
+                        if (seg.getHidden()) return;
                         if (!hst) 
                             chars.append("<td>"+ DurationFormatter.durationToString(pr.getSegmentTime(seg.getID()), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());
                         else chars.append("<td>---</td>" +  System.lineSeparator());
-                        if (showSegmentPace) {
-                            if (!hst)
-                                if (pr.getSegmentTime(seg.getID()) != null ) chars.append("<td>"+ pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))+ "</td>" +  System.lineSeparator());
+                        if (showSegmentPace ) {
+                            if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) {
+                                if (!hst)
+                                    if (pr.getSegmentTime(seg.getID()) != null ) {
+                                        if (seg.getUseCustomPace()) chars.append("<td>"+ seg.getCustomPace().getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))+ "</td>" +  System.lineSeparator());
+                                        else chars.append("<td>"+ pace.getPace(seg.getSegmentDistance(), race.getRaceDistanceUnits(), pr.getSegmentTime(seg.getID()))+ "</td>" +  System.lineSeparator());
+                                    } else chars.append("<td>---</td>" +  System.lineSeparator());
                                 else chars.append("<td>---</td>" +  System.lineSeparator());
-                            else chars.append("<td>---</td>" +  System.lineSeparator());
+                            }
                         }
                     });
                 }
 
+                if (penaltiesOrBonuses){
+                    if (pr.getBonus() || pr.getPenalty()) {
+                        if (pr.getBonus()) chars.append("<td>-").append(DurationFormatter.durationToString(pr.getBonusTime(), dispFormat, roundMode)).append("</td>" +  System.lineSeparator());
+                        else chars.append("<td>+").append(DurationFormatter.durationToString(pr.getPenaltyTime(), dispFormat, roundMode)).append("</td>" +  System.lineSeparator());
+                    } else chars.append("<td>---</td>" +  System.lineSeparator());
+                }
                 // chip time
                 if (dq) chars.append("<td>"+ pr.getParticipant().getNote() + "</td>" +  System.lineSeparator());
                 else if (! hideTime) chars.append("<td>"+DurationFormatter.durationToString(pr.getChipFinish(), dispFormat, roundMode)+ "</td>" +  System.lineSeparator());

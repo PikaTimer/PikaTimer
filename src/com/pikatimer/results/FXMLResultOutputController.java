@@ -16,11 +16,20 @@
  */
 package com.pikatimer.results;
 
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.AwardCategory;
 import com.pikatimer.race.RaceDAO;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -33,6 +42,7 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ToggleSwitch;
 
 
@@ -57,7 +67,18 @@ public class FXMLResultOutputController {
     @FXML CheckBox showGunTimeCheckBox;
     @FXML CheckBox showSegmentsCheckBox;
     @FXML CheckBox showSegmentPaceCheckBox;
+    @FXML CheckBox showSegmentSplitsCheckBox;
+    @FXML CheckBox showAwardsCheckBox;
     @FXML CheckBox hideCustomHeadersCheckBox;
+    
+    @FXML HBox customAttributesHBox;
+    @FXML CheckBox customAttributesCheckBox;
+    @FXML CheckComboBox<CustomAttribute> customAttributesCheckComboBox;
+    
+    
+    @FXML HBox specificAwardsHBox;
+    @FXML CheckBox showSpecificAwardsCheckBox;
+    @FXML CheckComboBox<AwardCategory> customAwardsCheckComboBox;
     
     @FXML Label noOutputPpathsLabel;
     
@@ -69,15 +90,23 @@ public class FXMLResultOutputController {
     RaceReport thisRaceReport; 
     final RaceDAO raceDAO = RaceDAO.getInstance();
     final ResultsDAO resultsDAO = ResultsDAO.getInstance();
+    final ParticipantDAO participantDAO = ParticipantDAO.getInstance();
     
     final Map<RaceOutputTarget,HBox> rotHBoxMap = new ConcurrentHashMap();
+    
+    private List<CustomAttribute> selectedCustomAttributesList;
+    private final BooleanProperty customAttributeUpdateInProgress = new SimpleBooleanProperty(false);
+    
+   
+    private List<AwardCategory> selectedIndividualAwardList;
+    private final BooleanProperty individualAwardUpdateInProgress = new SimpleBooleanProperty(false);
     
     /**
      * Initializes the controller class.
      */
     public void initialize() {
-        // TODO
-        outputTypeChoiceBox.getItems().setAll(ReportTypes.values());
+        
+       outputTypeChoiceBox.getItems().setAll(ReportTypes.values());
        outputTargetsVBox.setFillWidth(true);
        
        noOutputPpathsLabel.visibleProperty().bind(Bindings.size(outputTargetsVBox.getChildren()).isEqualTo(0));
@@ -228,14 +257,78 @@ public class FXMLResultOutputController {
                     attributeAdded = true;
                 }
                 showSegmentPaceCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSegmentPace"));
-                showSegmentPaceCheckBox.visibleProperty().bind(Bindings.size(r.getRace().raceSegmentsProperty()).greaterThan(0));
-                showSegmentPaceCheckBox.managedProperty().bind(Bindings.size(r.getRace().raceSegmentsProperty()).greaterThan(0));
+                showSegmentPaceCheckBox.visibleProperty().bind(showSegmentsCheckBox.selectedProperty());
+                showSegmentPaceCheckBox.managedProperty().bind(showSegmentsCheckBox.selectedProperty());
                 optionsLabel.visibleProperty().set(true);
             } else {
                 showSegmentPaceCheckBox.visibleProperty().unbind();
                 showSegmentPaceCheckBox.visibleProperty().set(false);
                 showSegmentPaceCheckBox.managedProperty().unbind();
                 showSegmentPaceCheckBox.managedProperty().set(false);
+            }
+            if (rrt.optionSupport("showSegmentSplits")) {
+                if (r.getBooleanAttribute("showSegmentSplits") == null) {
+                    r.setBooleanAttribute("showSegmentSplits", false);
+                    attributeAdded = true;
+                }
+                showSegmentSplitsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSegmentSplits"));
+                showSegmentSplitsCheckBox.visibleProperty().bind(showSegmentsCheckBox.selectedProperty());
+                showSegmentSplitsCheckBox.managedProperty().bind(showSegmentsCheckBox.selectedProperty());
+                optionsLabel.visibleProperty().set(true);
+            } else {
+                showSegmentSplitsCheckBox.visibleProperty().unbind();
+                showSegmentSplitsCheckBox.visibleProperty().set(false);
+                showSegmentSplitsCheckBox.managedProperty().unbind();
+                showSegmentSplitsCheckBox.managedProperty().set(false);
+            }
+            
+            if (rrt.optionSupport("showAwards")) {
+                if (r.getBooleanAttribute("showAwards") == null){
+                    r.setBooleanAttribute("showAwards", true);
+                    attributeAdded = true;
+                }
+                showAwardsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showAwards"));
+                showAwardsCheckBox.visibleProperty().set(true);
+                showAwardsCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
+            } else {
+                showAwardsCheckBox.visibleProperty().set(false);
+                showAwardsCheckBox.managedProperty().set(false);
+            }
+            
+            //@FXML HBox customAttributesHBox
+            //@FXML CheckBox customAttributesCheckBox;
+            //@FXML CheckComboBox customAttributesCheckComboBox;
+            if (rrt.optionSupport("showCustomAttributes")){
+                if (r.getBooleanAttribute("showCustomAttributes") == null){
+                    r.setBooleanAttribute("showCustomAttributes", false);
+                    attributeAdded = true;
+                }
+                customAttributesCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showCustomAttributes"));
+                customAttributeTracker();
+                customAttributesHBox.visibleProperty().set(true);
+                customAttributesHBox.managedProperty().set(true);
+            } else {
+                customAttributesHBox.visibleProperty().set(false);
+                customAttributesHBox.managedProperty().set(false);
+            }
+
+            //@FXML CheckBox showSpecificAwardsCheckBox;
+            //@FXML CheckComboBox customAwardsCheckComboBox;
+            if (rrt.optionSupport("showIndividualAwards")){
+                if (r.getBooleanAttribute("showIndividualAwards") == null){
+                    r.setBooleanAttribute("showIndividualAwards", false);
+                    attributeAdded = true;
+                }
+                showSpecificAwardsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showIndividualAwards"));
+                individualAwardTracker();
+                showSpecificAwardsCheckBox.visibleProperty().set(true);
+                showSpecificAwardsCheckBox.managedProperty().set(true);
+                //awardSelectionTracker();
+            } else {
+                showSpecificAwardsCheckBox.visibleProperty().set(false);
+                showSpecificAwardsCheckBox.managedProperty().set(false);
+                showSpecificAwardsCheckBox.selectedProperty().setValue(false);
             }
             
             if (rrt.optionSupport("hideCustomHeaders")) {
@@ -325,9 +418,18 @@ public class FXMLResultOutputController {
             }
             
         });
+        //        @FXML CheckBox showSegmentPaceCheckBox;
         showSegmentPaceCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
             if (!r.getBooleanAttribute("showSegmentPace").equals(new_val)){
                 r.setBooleanAttribute("showSegmentPace", new_val);
+                resultsDAO.saveRaceReport(r);
+            }
+            
+        });
+//        @FXML CheckBox showSegmentSplitsCheckBox;
+        showSegmentSplitsCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            if (!r.getBooleanAttribute("showSegmentSplits").equals(new_val)){
+                r.setBooleanAttribute("showSegmentSplits", new_val);
                 resultsDAO.saveRaceReport(r);
             }
             
@@ -343,7 +445,23 @@ public class FXMLResultOutputController {
             resultsDAO.saveRaceReport(r);
         });
         
-        
+        //@FXML CheckBox showSpecificAwards;
+            //@FXML CheckComboBox customAwardsCheckComboBox;
+        customAwardsCheckComboBox.visibleProperty().bind(showSpecificAwardsCheckBox.selectedProperty());
+        customAwardsCheckComboBox.managedProperty().bind(showSpecificAwardsCheckBox.selectedProperty());
+        showSpecificAwardsCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showIndividualAwards", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        //@FXML CheckBox customAttributesCheckBox;
+        //@FXML CheckComboBox customAttributesCheckComboBox;
+        customAttributesCheckComboBox.visibleProperty().bind(customAttributesCheckBox.selectedProperty());
+        customAttributesCheckComboBox.managedProperty().bind(customAttributesCheckBox.selectedProperty());    
+
+        customAttributesCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showCustomAttributes", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
     }
     
     public void removeRaceReport(ActionEvent fxevent){
@@ -431,6 +549,103 @@ public class FXMLResultOutputController {
         thisRaceReport.removeRaceOutputTarget(t);
         resultsDAO.removeRaceReportOutputTarget(t);
         t.setID(-1);
+    }
+
+    private void individualAwardTracker(){
+        System.out.println("ResultOutputController::individualAwardTracker() called...");
+        if (selectedIndividualAwardList == null) {
+            selectedIndividualAwardList = new ArrayList();
+                       
+            thisRaceReport.getRace().getAwards().awardCategoriesProperty().addListener((ListChangeListener) listener -> {individualAwardTracker();});
+            
+            
+            customAwardsCheckComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends AwardCategory> change) -> {
+                
+                System.out.println("ResultOutputController::customAttributesCheckComboBox(changeListener) fired...");
+                if (individualAwardUpdateInProgress.getValue()) return;
+                System.out.println("Changes to process...");
+                while (change.next() ) {
+                    change.getRemoved().forEach(removed -> {
+                        
+                        thisRaceReport.setBooleanAttribute(removed.getUUID(), false);
+                    });
+                    change.getAddedSubList().forEach(added -> {
+                        thisRaceReport.setBooleanAttribute(added.getUUID(), true);
+                    });
+                }
+                resultsDAO.saveRaceReport(thisRaceReport);
+                
+                //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
+            });
+        }
+        
+        individualAwardUpdateInProgress.setValue(true);
+        // Update the available custom attributes
+        customAwardsCheckComboBox.getItems().setAll(thisRaceReport.getRace().getAwards().awardCategoriesProperty());
+        
+        // Update the checks because the CheckComboBox does not preserve them :-/ 
+        selectedIndividualAwardList = thisRaceReport.getRace().getAwards().awardCategoriesProperty().stream().filter(a -> { 
+            if (thisRaceReport.getBooleanAttribute(a.getUUID()) != null )
+                return thisRaceReport.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        customAwardsCheckComboBox.getCheckModel().clearChecks();
+        selectedIndividualAwardList.forEach (t -> {
+            System.out.println("Checking the checkbox for " + t.toString());
+            customAwardsCheckComboBox.getCheckModel().check(t);
+        });
+        individualAwardUpdateInProgress.setValue(false);
+    }
+    
+        
+    private void customAttributeTracker() {
+        System.out.println("ResultOutputController::customAttributesTracker() called...");
+        if (selectedCustomAttributesList == null) {
+            selectedCustomAttributesList = new ArrayList();
+                       
+            customAttributesCheckBox.visibleProperty().bind(Bindings.isNotEmpty(participantDAO.getCustomAttributes()));
+            customAttributesCheckBox.managedProperty().bind(Bindings.isNotEmpty(participantDAO.getCustomAttributes()));
+            
+            
+            participantDAO.getCustomAttributes().addListener((ListChangeListener) listener -> {customAttributeTracker();});
+            
+            
+            customAttributesCheckComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener.Change<? extends CustomAttribute> change) -> {
+                
+                System.out.println("ResultOutputController::customAttributesCheckComboBox(changeListener) fired...");
+                if (customAttributeUpdateInProgress.getValue()) return;
+                System.out.println("Changes to process...");
+                while (change.next() ) {
+                    change.getRemoved().forEach(removed -> {
+                        
+                        thisRaceReport.setBooleanAttribute(removed.getUUID(), false);
+                    });
+                    change.getAddedSubList().forEach(added -> {
+                        thisRaceReport.setBooleanAttribute(added.getUUID(), true);
+                    });
+                }
+                resultsDAO.saveRaceReport(thisRaceReport);
+                
+                //System.out.println(waveComboBox.getCheckModel().getCheckedItems());
+            });
+        }
+        
+        customAttributeUpdateInProgress.setValue(true);
+        // Update the available custom attributes
+        customAttributesCheckComboBox.getItems().setAll(participantDAO.getCustomAttributes());
+        
+        // Update the checks because the CheckComboBox does not preserve them :-/ 
+        selectedCustomAttributesList = participantDAO.getCustomAttributes().stream().filter(a -> { 
+            if (thisRaceReport.getBooleanAttribute(a.getUUID()) != null )
+                return thisRaceReport.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        customAttributesCheckComboBox.getCheckModel().clearChecks();
+        selectedCustomAttributesList.forEach (t -> {
+            System.out.println("Checking the checkbox for " + t.toString());
+            customAttributesCheckComboBox.getCheckModel().check(t);
+        });
+        customAttributeUpdateInProgress.setValue(false);
     }
     
 }

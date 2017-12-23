@@ -48,6 +48,23 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     Duration chipStartTime;
     Duration waveStartTime;
     
+    Boolean bonus = false;
+    Duration bonusTime = Duration.ZERO;
+    
+    Boolean penalty = false;
+    Duration penaltyTime= Duration.ZERO;
+    
+    String bonusPenaltyNote ="";
+    
+    Boolean oco = false;
+    Duration ocoTime= Duration.ZERO;
+    Duration ocoCutoffTime= Duration.ZERO;
+    Integer ocoSplit =0;
+    
+    Duration rawChipFinishTime;
+    Duration rawGunFinishTime;
+            
+    
     private Integer latestSplitID = 0;
     
     
@@ -177,6 +194,42 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     public void setSegmentAGPlace(Integer id, Integer place){
         segmentPlacement.putIfAbsent(id, new HashMap<>());
         segmentPlacement.get(id).put("AG", place);
+    }
+    public Boolean getBonus(){
+        return bonus;
+    }
+    public Duration getBonusTime(){
+        return bonusTime;
+    }
+    
+    public Boolean getPenalty(){
+        return penalty;
+    }
+    public Duration getPenaltyTime(){
+        return penaltyTime;
+    }
+    public String getBonusPenaltyNote(){
+        return bonusPenaltyNote;
+    }
+    public Boolean getSplitOCO(){
+        return oco;
+    }
+    public Duration getOCOTime(){
+        return ocoTime;
+    }
+    public Duration getOCOCutoffTime(){
+        return ocoCutoffTime;
+    }
+    public Integer getOCOSplit(){
+        return ocoSplit;
+    }
+    public Duration getRawChipFinishTime(){
+        if (rawChipFinishTime != null) return rawChipFinishTime;
+        else return chipFinishTime;
+    }
+    public Duration getRawGunFinishTime(){
+        if (rawGunFinishTime != null) return rawGunFinishTime;
+        else return rawGunFinishTime;
     }
     
     @Override

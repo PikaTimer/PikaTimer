@@ -25,7 +25,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,7 +52,6 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
-import javax.persistence.OrderColumn;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -92,7 +90,7 @@ public class Race {
     private final ObservableList<Segment> raceSegments = FXCollections.observableArrayList(Segment.extractor());
     //private final Race self; 
 
-    private RaceAwards awards; 
+    private RaceAwards awards;
     private AgeGroups ageGroups;
 
     private Map<String,String> attributes = new HashMap();
@@ -298,18 +296,22 @@ public class Race {
         raceSplitList = raceSplits.sorted((Split o1, Split o2) -> o1.getPosition().compareTo(o2.getPosition()));
     }
     
-    @OneToOne(cascade=CascadeType.ALL)  
+    @OneToOne(cascade=CascadeType.ALL,fetch = FetchType.EAGER)  
     @PrimaryKeyJoinColumn
     public RaceAwards getAwards() {
         return awards;
     }
     public void setAwards(RaceAwards a) {
-        awards = a;
+        System.out.println("Race::setAwards called.... ");
+        if (awards == null) awards = a;
+        
+        if (awards != null && awards.equals(a)) System.out.println("Race::setAwards called to set the awards to an equal awards object... ");
         // make sure awards is linked back to us
         if (awards != null && awards.getRace() != this) awards.setRace(this);
+        
     }
     
-    @OneToOne(cascade=CascadeType.ALL)  
+    @OneToOne(cascade=CascadeType.ALL,fetch = FetchType.EAGER)  
     @PrimaryKeyJoinColumn
     public AgeGroups getAgeGroups() {
         return ageGroups;
@@ -361,6 +363,9 @@ public class Race {
     }
     public ObservableList<Segment> raceSegmentsProperty() {
         return raceSegments.sorted((s1, s2)-> s1.compareTo(s2)); 
+    }
+    public ObservableList<Segment> unsortedSegmentsProperty() {
+        return raceSegments; 
     }
     public void addRaceSegment(Segment s) {
         s.setRace(this);

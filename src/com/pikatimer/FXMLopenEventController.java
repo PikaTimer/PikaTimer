@@ -20,7 +20,6 @@ package com.pikatimer;
 import com.pikatimer.event.EventDAO;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.RaceDAO;
-import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.PikaFilePathWrapper;
 import javafx.event.ActionEvent;
@@ -38,6 +37,8 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -89,9 +90,8 @@ public class FXMLopenEventController {
     @FXML
     protected void openDB(File dbFile) {
         
-        PikaPreferences.getInstance().setRecentFile(dbFile); // stash this for future use
-        globalPrefs.put("PikaEventHome", dbFile.getParent());
-        System.setProperty("user.dir", dbFile.getParent());
+        System.out.println("Opening " + dbFile.getAbsolutePath());
+
         
         OpenHBox.setVisible(false);
         OpenHBox.setManaged(false);
@@ -103,7 +103,9 @@ public class FXMLopenEventController {
         //LoadingLabel.setVisible(true);
         LoadingProgressBar.setProgress(-1);
 
-
+        PikaPreferences.getInstance().setRecentFile(dbFile); // stash this for future use
+        globalPrefs.put("PikaEventHome", dbFile.getParent());
+        System.setProperty("user.dir", dbFile.getParent());
 
         System.out.println("Just hid the Open stuff and revealed the Loading stuff");
         
@@ -130,6 +132,7 @@ public class FXMLopenEventController {
                             flyway.setDataSource(jdbcURL, "sa", null);
                             flyway.migrate();
                         } catch (Exception ex) {
+                            ex.printStackTrace();
                             Platform.runLater(() -> {
                                 Alert alert = new Alert(AlertType.ERROR);
                                 alert.setTitle("Unable to Open Event");
@@ -167,10 +170,16 @@ public class FXMLopenEventController {
                         try {
                             final Pane myPane = (Pane)loader.load();
                             Scene myScene = new Scene(myPane);
+                            
+                            // F11 to toggle fullscreen mode
+                            myScene.getAccelerators().put(new KeyCodeCombination(KeyCode.F11), () -> {
+                                primaryStage.setFullScreen(primaryStage.fullScreenProperty().not().get());
+                            });
+        
                             Platform.runLater(() -> {
                                 //Pane myPane = (Pane)loader.load();
                                 //LoadingProgressBar.setProgress(0.75);
-
+                                
                                 primaryStage.setScene(myScene);
                                 //LoadingProgressBar.setProgress(0.95);
                                 primaryStage.show();
@@ -219,6 +228,7 @@ public class FXMLopenEventController {
                 new FileChooser.ExtensionFilter("All files", "*")
             );
         File file = fileChooser.showOpenDialog(rootGridPane.getScene().getWindow());
+        System.out.println("Opening existing file....");
         if (file != null) {
             
             // does the file end in .mv.db? 

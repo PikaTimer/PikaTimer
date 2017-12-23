@@ -17,15 +17,17 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.AwardCategory;
+import com.pikatimer.race.AwardWinner;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
-import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.DurationFormatter;
-import com.pikatimer.util.Pace;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -34,7 +36,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import org.apache.commons.lang3.StringUtils;
 
@@ -47,12 +51,23 @@ public class Award implements RaceReportType {
     IntegerProperty fullNameLength = new SimpleIntegerProperty(10);
     List<ProcessedResult> prList;
     
+    BooleanProperty showCountry = new SimpleBooleanProperty(true);
+    BooleanProperty showState = new SimpleBooleanProperty(true);
     
-
+    Boolean showCustomAttributes = false;
+    
+    Boolean showIndividualAwards = false;
+    List<AwardCategory> individualAwardLlist = new ArrayList();
+    
+    List<CustomAttribute> customAttributesList = new ArrayList();
+    Map<Integer,Integer> customAttributeSizeMap = new HashMap();
+    
     Map<String,Boolean> supportedOptions = new HashMap();
     
     public Award(){
+        supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("hideCustomHeaders", false);
+        supportedOptions.put("showIndividualAwards",false);
     }
     
     @Override
@@ -72,6 +87,9 @@ public class Award implements RaceReportType {
         race = rr.getRace(); 
         supportedOptions.keySet().forEach(k -> supportedOptions.put(k, rr.getBooleanAttribute(k)));
         
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
+        showIndividualAwards  = supportedOptions.get("showIndividualAwards");
+        
         Duration cutoffTime = Duration.ofNanos(race.getRaceCutoff());
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
@@ -79,6 +97,17 @@ public class Award implements RaceReportType {
 
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         if (customHeaders && supportedOptions.get("hideCustomHeaders")) customHeaders = false;
+        
+        Boolean showCO = false;
+        Boolean showST = false;
+        for (ProcessedResult x : resList){
+            if (! x.getParticipant().getCountry().isEmpty()) showCO=true;
+            if (! x.getParticipant().getState().isEmpty()) showST=true;
+        }
+        // Stupid lambda workarounds....
+        showCountry.setValue(showCO);
+        showState.setValue(showST);
+        
         
         // Take the list we recieved and filter all DNF's, DQ's, and folks 
         // with no finish times. 
@@ -97,6 +126,33 @@ public class Award implements RaceReportType {
                     .collect(Collectors.toList())
                 ); 
         
+        if (showIndividualAwards) individualAwardLlist = race.getAwards().getAwardCategories().stream().filter( a -> {
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                    return rr.getBooleanAttribute(a.getUUID());
+                return false;
+        }).collect(Collectors.toList());
+            
+            
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
+        
+        // how long are these things?
+        if (showCustomAttributes) {
+            customAttributesList.forEach((a) -> {
+                int l = a.getName().length() + 1;
+                customAttributeSizeMap.put(a.getID(),l);
+                for (ProcessedResult p: prList){
+                    if (l <= p.getParticipant().getCustomAttribute(a.getID()).getValueSafe().length()){
+                        l = p.getParticipant().getCustomAttribute(a.getID()).getValueSafe().length() + 1;
+                        customAttributeSizeMap.put(a.getID(),l);
+                    }
+                }
+            });
+        }
         
         String report = new String();
         
@@ -107,10 +163,16 @@ public class Award implements RaceReportType {
             report += "Go to the Award tab and select " + race.getRaceName() + " to configure the award depths.";
             return report;
         }
+        
+        if (showIndividualAwards && individualAwardLlist.isEmpty()) {
+            report += "The option to show only selected results is enabled" + System.lineSeparator();
+            report += "but no reports have been selected" + System.lineSeparator();
+            report += "Please select at least 1 report to show for this report";
+            return report;
+        }
         Event event = Event.getInstance();  // fun with singletons... 
         
-        //rr.getKnownAttributeNames().forEach(s -> {System.out.println("Award: Known Attribute: " + s);});
-
+        Map<AwardCategory,Map<String,List<AwardWinner>>> awardWinnersMap = awardParams.getAwardWinners(prList);
         
         // what is the longest name?
         fullNameLength.setValue(10);
@@ -139,162 +201,23 @@ public class Award implements RaceReportType {
             report += System.lineSeparator();
         }
             
-        // Sort out who gets what
-        Boolean pull = awardParams.getBooleanAttribute("OverallPull");
-        Boolean chip = awardParams.getBooleanAttribute("OverallChip");
-        Integer depth = awardParams.getIntegerAttribute("OverallFemaleDepth");
-        
-        // Overall Female
-        report += StringUtils.center("********Overall Female********",80) + System.lineSeparator();    
+        StringBuilder awardPrintout = new StringBuilder();
+        awardParams.awardCategoriesProperty().forEach(ac -> {
+            if ((showIndividualAwards && !individualAwardLlist.contains(ac)) || (!showIndividualAwards && !ac.getVisible())) return;
+            Map<String,List<AwardWinner>> resultsMap = awardWinnersMap.get(ac);
+            List<String> categories = resultsMap.keySet().stream().sorted((k1,k2) -> k1.compareTo(k2)).collect(Collectors.toList());
+            categories.forEach(cat -> {
+                String description = (ac.getName() + " " +  cat).trim();
+                awardPrintout.append(StringUtils.center("********" + description +"********",80) + System.lineSeparator());
+                awardPrintout.append(outputHeader());
+                awardPrintout.append(printWinners(resultsMap.get(cat)));
+                awardPrintout.append(System.lineSeparator());
+                awardPrintout.append(System.lineSeparator());
+            });
             
-        List<ProcessedResult> overall; // a filtered and sorted list
-        if (chip) overall = prList.stream()
-                .filter(p -> p.getSex().equalsIgnoreCase("F"))
-                .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
-                .collect(Collectors.toList());
-        else overall = prList.stream()
-                .filter(p -> p.getSex().equalsIgnoreCase("F"))
-                .sorted((p1, p2) -> p1.getGunFinish().compareTo(p2.getGunFinish()))
-                .collect(Collectors.toList());
-        
-        report += outputHeader();
-        report += printWinners(overall, depth, pull, chip);
-
-        
-        report += System.lineSeparator();
-        report += System.lineSeparator();
-
-        // Overall Male    
-        depth = awardParams.getIntegerAttribute("OverallMaleDepth");
-        report += StringUtils.center("*********Overall Male*********",80) + System.lineSeparator();    
-        if (chip) overall = prList.stream()
-                .filter(p -> p.getSex().equalsIgnoreCase("M"))
-                .filter(p -> p.getChipFinish() != null)
-                .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
-                .collect(Collectors.toList());
-        else overall = prList.stream()
-                .filter(p -> p.getSex().equalsIgnoreCase("M"))
-                .filter(p -> p.getGunFinish() != null)
-                .sorted((p1, p2) -> p1.getGunFinish().compareTo(p2.getGunFinish()))
-                .collect(Collectors.toList());
-        
-        report += outputHeader();
-        report += printWinners(overall, depth, pull, chip);
-            
-        report += System.lineSeparator();
-        report += System.lineSeparator();
-
-        // Masters
-        pull = awardParams.getBooleanAttribute("MastersPull");
-        Integer startAge = race.getAgeGroups().getMasters();
-        chip = awardParams.getBooleanAttribute("MastersChip");
-        // Masters Female   
-        
-        // Masters Male
-        depth = awardParams.getIntegerAttribute("MastersFemaleDepth");
-        
-        report += StringUtils.center("********Female Masters********",80) + System.lineSeparator();   
-        List<ProcessedResult> masters;
-        if (chip) masters = prList.stream()
-                .filter(p -> p.getSex().equalsIgnoreCase("F"))
-                .filter(p -> p.getAge().compareTo(startAge) >= 0)
-                .filter(p -> p.getChipFinish() != null)
-                .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
-                .collect(Collectors.toList());
-        else masters = prList.stream()
-                .filter(p -> p.getSex().equalsIgnoreCase("F"))
-                .filter(p -> p.getAge().compareTo(startAge) >= 0)
-                .filter(p -> p.getGunFinish() != null)
-                .sorted((p1, p2) -> p1.getGunFinish().compareTo(p2.getGunFinish()))
-                .collect(Collectors.toList());
-        
-        report += outputHeader();
-        report += printWinners(masters, depth, pull, chip);
-        report += System.lineSeparator();
-        report += System.lineSeparator();
-        
-        depth = awardParams.getIntegerAttribute("MastersMaleDepth");
-
-        report += StringUtils.center("*********Male Masters*********",80) + System.lineSeparator();   
-
-        if (chip) masters = prList.stream()
-                .filter(p -> p.getSex().equalsIgnoreCase("M"))
-                .filter(p -> p.getAge().compareTo(startAge) >= 0)
-                .filter(p -> p.getChipFinish() != null)
-                .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
-                .collect(Collectors.toList());
-        else masters = prList.stream()
-                .filter(p -> p.getSex().equalsIgnoreCase("M"))
-                .filter(p -> p.getAge().compareTo(startAge) >= 0)
-                .filter(p -> p.getGunFinish() != null)
-                .sorted((p1, p2) -> p1.getGunFinish().compareTo(p2.getGunFinish()))
-                .collect(Collectors.toList());
-        
-        report += outputHeader();
-        report += printWinners(masters, depth, pull, chip);
-         
-        report += System.lineSeparator();
-        report += System.lineSeparator();
-        
-        // Age Group Awards
-        List<ProcessedResult> agList; // a filtered and sorted list
-        Boolean agPull = awardParams.getBooleanAttribute("AGPull");
-        
-        Boolean agChip = awardParams.getBooleanAttribute("AGChip");
-
-        int agFemaleDepth = awardParams.getIntegerAttribute("AGFemaleDepth");
-        int agMaleDepth = awardParams.getIntegerAttribute("AGMaleDepth");
-        
-        if (chip) agList = prList.stream()
-                .filter(p -> p.getChipFinish() != null)
-                .sorted((p1, p2) -> p1.getChipFinish().compareTo(p2.getChipFinish()))
-                .collect(Collectors.toList());
-        else agList = prList.stream()
-                .filter(p -> p.getGunFinish()!= null)
-                .sorted((p1, p2) -> p1.getGunFinish().compareTo(p2.getGunFinish()))
-                .collect(Collectors.toList());
-        
-        agList.forEach(r -> {
-            String agCat;
-            
-            if (r.getParticipant().getSex().startsWith("F")) {
-                if (!agAwardMap.containsKey("Female " + r.getAGCode())) agAwardMap.put("Female " + r.getAGCode(), new ArrayList());
-                agAwardMap.get("Female " + r.getAGCode()).add(r);
-            } else {
-                if (!agAwardMap.containsKey("Male " + r.getAGCode())) agAwardMap.put("Male " + r.getAGCode(), new ArrayList());
-                agAwardMap.get("Male " + r.getAGCode()).add(r);
-            }
-            
-        
         
         });
-        
-        StringBuilder chars = new StringBuilder();
-        
-        List<String> agCatList = new ArrayList(agAwardMap.keySet());
-        agCatList.sort(new AlphanumericComparator());       
-        agCatList.forEach(ag -> {
-            
-            chars.append(StringUtils.center(StringUtils.center(ag,30, "*"),80)).append(System.lineSeparator());
-            chars.append(System.lineSeparator());
-            if(ag.startsWith("F")) {
-                chars.append(outputHeader());
-                chars.append(printWinners(agAwardMap.get(ag), agFemaleDepth, agPull, agChip));
-                
-            } else {
-                chars.append(outputHeader());
-                chars.append(printWinners(agAwardMap.get(ag), agMaleDepth, agPull, agChip)); 
-            }
-            chars.append(System.lineSeparator());
-            chars.append(System.lineSeparator());
-        });
-        
-        report += chars.toString();
-        
-        if (customHeaders && race.getStringAttribute("textFooter") != null && !race.getStringAttribute("textFooter").isEmpty()) {
-            report += race.getStringAttribute("textFooter");
-            report += System.lineSeparator();
-        }
+        report += awardPrintout.toString();
         
         return report;
       }
@@ -314,79 +237,50 @@ public class Award implements RaceReportType {
         report += " SEX"; // 4R for the sex
         report += " AG   "; //6L for the AG Group
         report += " City               "; // 18L for the city
-        report += " ST "; // 4C for the state code
+        if (showState.get()) report += "ST  "; // 4C for the state code
+        if (showCountry.get()) report += " CO"; // 4C for the state code
+        if (showCustomAttributes) {
+            for( CustomAttribute a: customAttributesList){
+                report += StringUtils.rightPad(" " + a.getName(),customAttributeSizeMap.get(a.getID()));
+            }
+        }
         report += StringUtils.leftPad(" Time",dispFormatLength); // Need to adjust for the format code
         report += System.lineSeparator();
 
         return report;
     }
     
-    private String printWinners(List<ProcessedResult> overall, int depth, boolean pull, boolean chip) {
+    private String printWinners(List<AwardWinner> winners) {
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Integer dispFormatLength;  // add a space
         if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
         else dispFormatLength = dispFormat.length()+1;
         
-        Boolean permitTies = race.getBooleanAttribute("permitTies") != null && race.getBooleanAttribute("permitTies");
-        //System.out.println("Award::printWinners: permitTies is " + permitTies);
-        
         String report = new String();
-        if (overall.size() < depth) depth = overall.size();
-        
-        Integer currentPlace = 0;
-        String lastTime = "";
-        String currentTime;
-        
-        for (int i = 0; i < depth; i++) {
-            //if (overall.size() < i || overall.get(i) == null) break;
-            if (chip) currentTime = DurationFormatter.durationToString(overall.get(i).getChipFinish(), dispFormat, roundMode);
-            else currentTime = DurationFormatter.durationToString(overall.get(i).getGunFinish(), dispFormat, roundMode);
+        for(AwardWinner aw: winners) {
             
-            //System.out.println("Award::printWinners: Comparing previous " + lastTime + " to " + currentTime);
-            if (permitTies && !lastTime.equals(currentTime)) currentPlace++;
-            else if (!permitTies) currentPlace++;
-            
-            lastTime = currentTime;
-            
-            report += StringUtils.center(currentPlace.toString(),6); // 4R chars 
-            report += StringUtils.rightPad(overall.get(i).getParticipant().fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
-            report += StringUtils.leftPad(overall.get(i).getParticipant().getBib(),5); // 5R chars for the bib #
-            report += StringUtils.leftPad(overall.get(i).getAge().toString(),4); // 4R for the age
-            report += StringUtils.leftPad(overall.get(i).getSex(),4); // 4R for the sex
-            report += StringUtils.leftPad(overall.get(i).getAGCode(),6); //6L for the AG Group
+           report += StringUtils.center(aw.awardPlace.toString(),6); // 4R chars  
+           report += StringUtils.rightPad(aw.participant.fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
+            report += StringUtils.leftPad(aw.participant.getBib(),5); // 5R chars for the bib #
+            report += StringUtils.leftPad(aw.participant.getAge().toString(),4); // 4R for the age
+            report += StringUtils.center(aw.participant.getSex(),5); // 4R for the sex
+            report += StringUtils.rightPad(aw.processedResult.getAGCode(),5); //6L for the AG Group
             report += " ";
-            report += StringUtils.rightPad(overall.get(i).getParticipant().getCity(),18); // 18L for the city
-            report += StringUtils.leftPad(overall.get(i).getParticipant().getState(),4); // 4C for the state code
-            report += StringUtils.leftPad(currentTime, dispFormatLength);
-            if (pull) prList.remove(overall.get(i));
-            report += System.lineSeparator();
-            
-        }
-        
-        if (permitTies && depth < overall.size()){
-            int i = depth;
-            if (chip) currentTime = DurationFormatter.durationToString(overall.get(depth).getChipFinish(), dispFormat, roundMode);
-            else currentTime = DurationFormatter.durationToString(overall.get(depth).getGunFinish(), dispFormat, roundMode);
-            
-            if(lastTime.equals(currentTime)) {
-                report += StringUtils.center(currentPlace.toString(),6); // 4R chars 
-                report += StringUtils.rightPad(overall.get(i).getParticipant().fullNameProperty().getValue(),fullNameLength.get()); // based on the longest name
-                report += StringUtils.leftPad(overall.get(i).getParticipant().getBib(),5); // 5R chars for the bib #
-                report += StringUtils.leftPad(overall.get(i).getAge().toString(),4); // 4R for the age
-                report += StringUtils.leftPad(overall.get(i).getSex(),4); // 4R for the sex
-                report += StringUtils.leftPad(overall.get(i).getAGCode(),6); //6L for the AG Group
-                report += " ";
-                report += StringUtils.rightPad(overall.get(i).getParticipant().getCity(),18); // 18L for the city
-                report += StringUtils.leftPad(overall.get(i).getParticipant().getState(),4); // 4C for the state code
-                report += StringUtils.leftPad(currentTime, dispFormatLength);
-                if (pull) prList.remove(overall.get(i));
-                report += System.lineSeparator();
+            report += StringUtils.rightPad(aw.participant.getCity(),18); // 18L for the city
+            if (showState.get())  report += StringUtils.center(aw.participant.getState(),4); // 4C for the state code
+            if (showCountry.get())  report += StringUtils.leftPad(aw.participant.getCountry(),4); // 4C for the state code
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += StringUtils.rightPad(" " + aw.participant.getCustomAttribute(a.getID()).getValueSafe(),customAttributeSizeMap.get(a.getID()));
+                }
             }
+            report += StringUtils.leftPad(DurationFormatter.durationToString(aw.awardTime, dispFormat, roundMode), dispFormatLength);
+            report += System.lineSeparator();
         }
-        
         return report;
     }
+    
 
     
 }

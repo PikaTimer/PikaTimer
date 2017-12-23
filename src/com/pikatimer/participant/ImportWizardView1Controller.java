@@ -24,7 +24,6 @@ import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
 import java.io.File;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -34,7 +33,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -138,7 +136,6 @@ public class ImportWizardView1Controller {
             
         }
         // TODO:
-        // Assign by attribute
         // Cleanup Names
         // Cleanup City / State (by zip?)
         

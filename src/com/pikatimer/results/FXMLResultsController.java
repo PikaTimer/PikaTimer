@@ -684,7 +684,7 @@ public class FXMLResultsController  {
                         result.ifPresent(reason -> {
                             // if yes, dq with note
                             perps.forEach(perp -> {
-                                perp.setStatus(Status.DQ);
+                                perp.setStatus(Status.DNF);
                                 perp.setNote(reason);
                                 participantDAO.updateParticipant(perp);
                             });

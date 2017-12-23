@@ -18,8 +18,13 @@ package com.pikatimer.util;
 
 import com.pikatimer.Pikatimer;
 import com.pikatimer.event.EventOptions;
+import com.pikatimer.participant.CustomAttribute;
 import com.pikatimer.participant.Participant;
+import com.pikatimer.race.AgeGroupIncrement;
 import com.pikatimer.race.AgeGroups;
+import com.pikatimer.race.AwardCategory;
+import com.pikatimer.race.AwardDepth;
+import com.pikatimer.race.AwardFilter;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.Wave;
@@ -84,7 +89,11 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(Participant.class);
         cfg.addAnnotatedClass(Race.class);
         cfg.addAnnotatedClass(RaceAwards.class);
+        cfg.addAnnotatedClass(AwardCategory.class);
+        cfg.addAnnotatedClass(AwardDepth.class);
+        cfg.addAnnotatedClass(AwardFilter.class);
         cfg.addAnnotatedClass(AgeGroups.class);
+        cfg.addAnnotatedClass(AgeGroupIncrement.class);
         cfg.addAnnotatedClass(Split.class);
         cfg.addAnnotatedClass(Segment.class);
         cfg.addAnnotatedClass(TimingLocation.class);
@@ -99,12 +108,13 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(RaceReport.class);
         cfg.addAnnotatedClass(RaceOutputTarget.class);
         cfg.addAnnotatedClass(EventOptions.class);
+        cfg.addAnnotatedClass(CustomAttribute.class);
         
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
         cfg.setProperty("hibernate.connection.username", "sa");
         cfg.setProperty("hibernate.connection.password", "");
-        //cfg.setProperty("hibernate.show_sql", "true");
+        cfg.setProperty("hibernate.show_sql", "true");
         cfg.setProperty("hibernate.jdbc.batch_size","100"); 
         
         cfg.setProperty("hibernate.enable_lazy_load_no_trans", "true");

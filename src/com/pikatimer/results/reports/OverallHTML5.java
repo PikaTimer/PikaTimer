@@ -17,6 +17,8 @@
 package com.pikatimer.results.reports;
 
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.CustomAttribute;
+import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
@@ -27,9 +29,12 @@ import com.pikatimer.util.Pace;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  *
@@ -43,9 +48,14 @@ public class OverallHTML5 implements RaceReportType{
     Boolean showSplits = false;
     Boolean showSegments = false;
     Boolean showSegmentPace = false;
+    Boolean showSegmentSplits = false;
     Boolean showDNF = true;
     Boolean showPace = true;
     Boolean showGun = true;
+    Boolean showAwards = true;
+    
+    Boolean showCustomAttributes = false;
+    List<CustomAttribute> customAttributesList = new ArrayList();
 
     Map<String,Boolean> supportedOptions = new HashMap();
     
@@ -55,12 +65,21 @@ public class OverallHTML5 implements RaceReportType{
         supportedOptions.put("showSplits", false);
         supportedOptions.put("showSegments", true);
         supportedOptions.put("showSegmentPace", false);
+        supportedOptions.put("showSegmentSplits", false);
+        supportedOptions.put("showCustomAttributes", false);
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
         supportedOptions.put("hideCustomHeaders", false);
+        supportedOptions.put("showAwards", true);
     }
     
+    private String escape(String s){
+        return StringEscapeUtils.escapeHtml4(s).replace("'", "\\'").replace("\t", " ").replace("\\R", " ");
+    }
+    private String escapeHTML(String s){
+        return StringEscapeUtils.escapeHtml4(s);
+    }
     @Override
     public void init(Race r) {
         race = r;
@@ -91,15 +110,21 @@ public class OverallHTML5 implements RaceReportType{
         showSplits = supportedOptions.get("showSplits");
         showSegments = supportedOptions.get("showSegments");
         showSegmentPace = supportedOptions.get("showSegmentPace");
+        showSegmentSplits = supportedOptions.get("showSegmentSplits");
         showDNF = supportedOptions.get("showDNF");
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
-        
+        showAwards = supportedOptions.get("showAwards");
+        showCustomAttributes = supportedOptions.get("showCustomAttributes");
+
         Boolean showCountry = false;
+        Boolean showState = false;
         for (ProcessedResult x : prList){
-            if (! x.getParticipant().countryProperty().isEmpty().get()) showCountry=true;
+            if (! x.getParticipant().getCountry().isEmpty()) showCountry=true;
+            if (! x.getParticipant().getState().isEmpty()) showState=true;
         }
         
+
         
         Boolean customHeaders = race.getBooleanAttribute("useCustomHeaders");
         Boolean textOnlyHeaders = race.getBooleanAttribute("textOnlyHeaders");
@@ -109,6 +134,13 @@ public class OverallHTML5 implements RaceReportType{
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
         Pace pace = Pace.valueOf(race.getStringAttribute("PaceDisplayFormat"));
+        
+        if (showCustomAttributes) customAttributesList= ParticipantDAO.getInstance().getCustomAttributes().stream().filter(a -> { 
+            if (rr.getBooleanAttribute(a.getUUID()) != null )
+                return rr.getBooleanAttribute(a.getUUID());
+            return false;
+        }).collect(Collectors.toList());
+        if (showCustomAttributes && customAttributesList.isEmpty()) showCustomAttributes = false;
         
         Integer dispFormatLength;  // add a space
         if (dispFormat.contains("[HH:]")) dispFormatLength = dispFormat.length()-1; // get rid of the two brackets and add a space
@@ -146,14 +178,17 @@ public class OverallHTML5 implements RaceReportType{
         }
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" ;
-        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.15/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.css\"/>\n" ;
-        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.3.1/b-flash-1.3.1/b-html5-1.3.1/b-print-1.3.1/r-2.1.1/sc-1.4.2/datatables.min.css\"/>" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.2.1/dt-1.10.16/fh-3.1.3/r-2.2.0/sc-1.4.3/datatables.min.css\"/>\n" ;
+        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.2.1/jszip-2.5.0/dt-1.10.16/b-1.4.2/b-flash-1.4.2/b-html5-1.4.2/b-print-1.4.2/r-2.2.0/sc-1.4.3/datatables.min.css\"/>" ;
         report +=   "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css\">\n" +
                     " \n" ;
         
         // our inline CSS
         report +=   "<link href=\"https://fonts.googleapis.com/css?family=Source+Sans+Pro|Open+Sans\" rel=\"stylesheet\">\n" +
                     "<style>\n" +
+                    ".fa.fa-trophy {\n" +
+                    "    color: gold;\n" +
+                    "}\n" +
                     "table.dataTable.display tbody tr.child {\n" +
                     "    background: white;\n" +
                     "}\n" +
@@ -232,9 +267,23 @@ public class OverallHTML5 implements RaceReportType{
         report += "<div class=\"event-date\">" + event.getLocalEventDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) + "</div>" + System.lineSeparator();
         report += System.lineSeparator();
         
+        Boolean dataToShow = false;
         if(inProgress) {
             report += "    <div class=\"in-progress\">" + "*In Progress*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
+            if (!prList.isEmpty()) dataToShow = true;
+        } else {
+            if (! prList.isEmpty()){
+                if (showDNF) dataToShow = true;
+                else {
+                    for(ProcessedResult f: prList){
+                        if (f.getChipFinish() != null ) {
+                            dataToShow = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         
         if (customHeaders){
@@ -243,7 +292,9 @@ public class OverallHTML5 implements RaceReportType{
             report += System.lineSeparator();
         }
         
-        if(prList.isEmpty()) {
+        
+        
+        if(!dataToShow) {
             report += "    <div class=\"in-progress\">" + "<BR>*No Results Have Been Posted Yet*" + "</div>" + System.lineSeparator();
             report += System.lineSeparator();
             if (customHeaders){
@@ -252,11 +303,14 @@ public class OverallHTML5 implements RaceReportType{
                 report += System.lineSeparator();
             }
         } else {
+            final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
+            final Boolean onCourseOCO = prList.stream().anyMatch(s -> s.getSplitOCO());
+        
         // Start the table
             report += "    <div id=\"loading\" class=\"in-progress right\">" + "<BR>Loading..." + "</div>" + System.lineSeparator();
 
             //report += "<div id=\"results_table\" class=\"hide\">" +  System.lineSeparator();
-            report += "  <TABLE id=\"results\" class=\"display responsive dtr-column nowrap\" > " +  System.lineSeparator();
+            report += "  <TABLE id=\"results\" class=\"display responsive dtr-column nowrap compact\" > " +  System.lineSeparator();
             // print the headder
             report += "    <thead><tr>" +  System.lineSeparator();
             report += "      <th class=\"all\"></th>"+  System.lineSeparator(); // dummy for control box
@@ -268,21 +322,28 @@ public class OverallHTML5 implements RaceReportType{
             report += "      <th data-priority=\"3\">Sex</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"5\">AG</th>" +  System.lineSeparator(); 
             report += "      <th data-priority=\"1\" class=\"all\">Name</th>" +  System.lineSeparator(); 
+            report += "      <th data-priority=\"1000\">First</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"1000\">Middle</th>" +  System.lineSeparator();
+            report += "      <th data-priority=\"1000\">Last</th>" +  System.lineSeparator();
             report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
-            report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
+            if (showState) report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
             if (showCountry) report += "      <th data-priority=\"45\">Country</th>" +  System.lineSeparator(); 
-
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += "      <th data-priority=\"200\">"+escapeHTML(a.getName())+ "</th>" +  System.lineSeparator();
+                }
+            }
             // Insert split stuff here
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "      <th data-priority=\"100\">" + escapeHTML(race.splitsProperty().get(i-1).getSplitName()) + "</th>" +  System.lineSeparator();
                 }
             }
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
-                Integer dispLeg = dispFormatLength;
-                race.getSegments().forEach(seg -> {
-                    chars.append("      <th data-priority=\"80\">" + seg.getSegmentName()+ "</th>" +  System.lineSeparator());
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if (seg.getHidden()) return;
+                    chars.append("      <th data-priority=\"80\">" + escapeHTML(seg.getSegmentName())+ "</th>" +  System.lineSeparator());
                     //if (showSegmentPace) chars.append("      <th data-priority=\"95\"> Pace</th>" +  System.lineSeparator()); // pace.getFieldWidth()+1
                 });
                 report += chars.toString();
@@ -309,11 +370,15 @@ public class OverallHTML5 implements RaceReportType{
 
         report += "<!-- Start DataTables -->\n";
         
-        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/dt-1.10.15/fh-3.1.2/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
-        else  report +=  "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.3.1/b-flash-1.3.1/b-html5-1.3.1/b-print-1.3.1/r-2.1.1/sc-1.4.2/datatables.min.js\"></script>\n" ;
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.2.1/dt-1.10.16/fh-3.1.3/r-2.2.0/sc-1.4.3/datatables.min.js\"></script>\n" ;
+        else  {
+            report += "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/pdfmake.min.js\"></script>\n" +
+                      "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js\"></script>\n" +
+                      "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.2.1/jszip-2.5.0/dt-1.10.16/b-1.4.2/b-flash-1.4.2/b-html5-1.4.2/b-print-1.4.2/r-2.2.0/sc-1.4.3/datatables.min.js\"></script>\n" ;
+        }
 
         report +=           " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.12/sorting/natural.js\"></script>\n";
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.16/sorting/natural.js\"></script>\n";
 
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
                     " // nth(n) function from http://stackoverflow.com/questions/13627308/add-st-nd-rd-and-th-ordinal-suffix-to-a-number \n" + 
@@ -321,14 +386,22 @@ public class OverallHTML5 implements RaceReportType{
                 
                 "function childData ( rData) {\n" +
                         "                \n" +
+                        "                               if (typeof rData == \"undefined\") { return \"\";}" +
                         "				var data = '<div class=\"detail\">';\n" +
                         "				data += '<div class=\"row\">';\n" +
                         "				data += '<div class=\"participant\">' // personal\n" +
                         "				data += '<div class=\"part-name\">' + rData.full_name + '</div>';\n" +
                         "				data += '<div class=\"part-stats\">Bib: ' + rData.bib + '</div>';\n" +
-                        "				data += '<div class=\"part-stats\">Age: ' + rData.age + '   Sex: ' + rData.sex + '   AG: ' + rData.ag + '</div>';\n" +
-                        "				data += '<div class=\"part-stats\">' + rData.city + ', ' + rData.state + '</div>';\n" ;
+                        "				data += '<div class=\"part-stats\">Age: ' + rData.age + '   Sex: ' + rData.sex + '   AG: ' + rData.ag + '</div>';\n";
+            if (showState) report +=                        "				data += '<div class=\"part-stats\">' + rData.city + ', ' + rData.state + '</div>';\n" ;
             if (showCountry) report +=            "				data += '<div class=\"part-stats\">' + rData.country + '</div>';\n";
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += "				data += '<div class=\"part-stats\">" + escape(a.getName()) +": ' + rData.custom_" + escape(a.getName()) +" + '</div>';\n";
+                }
+            }
+            
+            
             report +=  "				data += '</div>'; // personal\n" +
                         "				data += '<div class=\"overall\">';// time\n" +
                         "                               if ( rData.oa_place == \"DQ\" ) {\n" +
@@ -340,29 +413,58 @@ public class OverallHTML5 implements RaceReportType{
                        "                                       return data; // row\n" +
                         "                               } else if ( rData.oa_place == \"DNF\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Did Not Finish  :-( </div>';\n" +
-                        "                               } else if ( rData.oa_place == \"Started\" ) {\n" +
+                       "					if (rData.note != \"\" ) data += '<div class=\"finish-stats\">' + rData.note + '</div>';\n";
+            if (inProgress) report += "					if (rData.last_seen != \"\" ) data += '<div class=\"finish-stats\">Last Seen: ' + rData.last_seen + '</div>';\n";
+            report +=   "                               } else if ( rData.oa_place == \"Started\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Started</div>';\n" +
                         "                                   data += '<div class=\"finish-stats bold\">Last Seen: ' + rData.last_seen + '</div>';\n" +
+                        "					if (rData.note != \"\" ) data += '<div class=\"finish-stats\">' + rData.note + '</div>';\n" +
                         "                               } else if ( rData.oa_place == \"OCO\" ) {\n" +
                         "					data += '<div class=\"finish-time\">Over Cut Off  :-/</div>';\n" +
-                        "                                   data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
-                        "                                   data += '<div class=\"finish-stats\"> Cutoff: " + race.raceCutoffProperty().getValueSafe() + "</div>';\n" +
+                        "					if (rData.on_course_oco == \"true\") {\n" +
+                        "						data += '<div class=\"finish-stats\"> Split: ' + rData.oco_split + '</div>';\n" +
+                        "						data += '<div class=\"finish-stats\"> Split time: ' + rData.oco_time + '</div>';\n" +
+                        "                                               data += '<div class=\"finish-stats\"> Cutoff time: ' + rData.oco_cutoff_time + '</div>';\n" +
+                        "					} else {" +
+                        "                                           data += '<div class=\"finish-stats\"> Finish time: ' + rData.finish_display + '</div>';\n" +
+                        "                                           data += '<div class=\"finish-stats\"> Cutoff: " + race.raceCutoffProperty().getValueSafe() + "</div>';\n" +
+                        "					}\n" +
                         "				} else {\n" +
-                        "                                   data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Finish Time: </span>' + rData.finish_display + '</div>';\n";
+                        "                                   data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Finish Time: </span>' + rData.finish_display + '</div>';\n" ;
             if (showGun) report += "                                   data += '<div class=\"finish-stats\">Gun Time: ' + rData.gun_display + '</div>';\n"; 
             report +=   "                                   data += '<div class=\"finish-stats\">Overall: ' + nth(rData.oa_place) + '   Sex: ' + nth(rData.sex_place) + '   <span class=\"hide-mobile\">Age Group:</span><span class=\"show-mobile\">AG:</span> ' + nth(rData.ag_place) + '</div>';\n" ;
             if (showPace) report += "                                   data += '<div class=\"finish-stats\">Pace: ' + rData.finish_pace + '</div>';\n" ;
+            if (penaltiesOrBonuses) report +=   "                                    if (rData.penalty == \"true\" || rData.bonus == \"true\") { \n" +
+                                                "										if (rData.bonus == \"true\") { data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Time </span>Bonus: ' + rData.bonus_time + '</div>';}\n" +
+                                                "										if (rData.penalty == \"true\") { data += '<div class=\"finish-time\"><span class=\"hide-mobile\">Time </span>Penalty: ' + rData.penalty_time + '</div>';}\n" +
+                                                "										data += '<div class=\"finish-stats\">Reason: ' + rData.penalty_bonus_note + '</div>';\n" +
+                                                "										data += '<div class=\"finish-stats\">Raw Chip Time: ' + rData.raw_chip_time + '</div>';\n" ;
+            if (penaltiesOrBonuses && showGun) report +=              "										data += '<div class=\"finish-stats\">Raw Gun Time: ' + rData.raw_gun_time + '</div>';\n" ;
+            if (penaltiesOrBonuses) report +=   "										}\n" ;
+            
             report +=   "				}" +
                         "				data += '</div>'; // time\n" +
                         "				\n" +
                         "                data += '</div>'; // row\n" +
                         "				\n";
-//        if (showSplits) {
-//            for (int i = 2; i < race.splitsProperty().size(); i++) {
-//                report += "      <th data-priority=\"100\">" + race.splitsProperty().get(i-1).getSplitName() + "</th>" +  System.lineSeparator();
-//            }
-//        }
-            if (showSegments) {
+        if (showAwards) {
+            report += " if (rData.award_winner == \"yes\") {\n" +
+"					data += '<div class=\"row\">';\n" +
+"					data += '<div class=\"segment segment-title\">Award Winner:';\n" +
+"					data += '</div>';\n" +
+"					data += '</div>';\n" +
+"					data += '<div class=\"row\">';\n" +
+"					data += '<div class=\"segment\">'; \n" +
+"					for (i in rData.awards){\n" +
+"						data += '<div class=\"segment-time\">' + rData.awards[i];\n" +
+"						data += '</div>';\n" +
+"					}\n" +
+"					data += '</div>';\n" +
+"					data += '</div>';\n" +
+"				}";
+        }
+        
+            if (showSegments && race.raceSegmentsProperty().stream().anyMatch(s -> !s.getHidden())) {
                 final StringBuilder chars = new StringBuilder();
                 chars.append("data += '<div class=\"row\">';\n");
                 chars.append("data += '<div class=\"segment segment-title\">Segments: '; // time\n");
@@ -370,12 +472,50 @@ public class OverallHTML5 implements RaceReportType{
                 chars.append("data += '</div>';\n");
 
                 chars.append("data += '<div class=\"row\">';\n");
-                race.getSegments().forEach(seg -> {
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if (seg.getHidden()) return;
                     chars.append("data += '<div class=\"segment\">'; // time\n");
-                    chars.append("data += '<div class=\"segment-head\">" + seg.getSegmentName()+ "</div>';\n" );
-                    chars.append("data += '<div class=\"segment-time\">Time: ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].display + '</div>';\n");
-                    chars.append("data += '<div class=\"segment-stats\">Overall: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].oa_place) + '   Sex: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].sex_place) + '   AG: ' + nth(rData.segments[\"segment_"+seg.getSegmentName()+ "\"].ag_place) + '</div>';\n");
-                    if (showSegmentPace) chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getSegmentName()+ "\"].pace + '</div>';\n");
+                    chars.append("data += '<div class=\"segment-head\">" + escape(seg.getSegmentName())+ "</div>';\n" );
+                    chars.append("data += '<div class=\"segment-time\">Time: ' + rData.segments[\"segment_"+seg.getID()+ "\"].display + '</div>';\n");
+                    chars.append("data += '<div class=\"segment-stats\">Overall: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].oa_place) + '   Sex: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].sex_place) + '   AG: ' + nth(rData.segments[\"segment_"+seg.getID()+ "\"].ag_place) + '</div>';\n");
+                    if (showSegmentPace) {
+                        if (! (seg.getUseCustomPace() && Pace.NONE.equals(seg.getCustomPace()))) 
+                            chars.append("data += '<div class=\"segment-stats\">Pace:  ' + rData.segments[\"segment_"+seg.getID()+ "\"].pace + '</div>';\n");
+                    }
+                    if (showSegmentSplits){
+                        chars.append("data += '<div class=\"row\">'; \n");
+                        chars.append("data += '<div class=\"segment-stats\">'; \n");
+                        chars.append("data += '<table class=\"split-time\">' ;\n");
+                        chars.append("data += '<thead><tr>';\n");
+                        chars.append("data += '<th>Split</th>';\n");
+                        chars.append("data += '<th>Elapsed</th>';\n");
+                        chars.append("data += '<th>Difference</th>';\n");
+                        if (showSegmentPace) chars.append("data += '<th class=\"right\">Pace</th>';\n");
+                        chars.append("data += '</tr></thead>';\n");
+                        for (int i = seg.getStartSplitPosition(); i < seg.getEndSplitPosition()+1; i++) {
+                            if (i == 1){ // the start, so pull the data from the start
+                                chars.append("data += '<tr><td>Start:</td><td class=\"right\">' + rData.start_display + '</td><td></td>';\n");
+                                if (showSegmentPace) chars.append("data += '<td></td>';\n");
+                                chars.append("data += '</tr>';\n");
+                            } else if (!race.splitsProperty().get(i-1).getIgnoreTime()) {
+                                chars.append("data += '<tr><td>" + escape(race.splitsProperty().get(i-1).getSplitName()) + ":</td><td class=\"right\">  ' + rData.splits[\"split_" + Integer.toString(i-1) + "\"].display + '</td>';\n");
+                                // if the first split of the segment
+                                // don't show the elapsed time from the previous segment
+                                if (i == seg.getStartSplitPosition()){ 
+                                    chars.append("data += '<td></td>';\n");
+                                    if (showSegmentPace) chars.append("data += '<td></td>';\n");
+                                } else {
+                                    chars.append("data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].delta_time + '</td>';\n");
+                                    if (showSegmentPace) chars.append("data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].segment_" + seg.getID() + "_pace + '</td>';\n");
+                                }
+                                chars.append("data += '</tr>';\n");
+                            }
+                            }
+                        chars.append("data += '</tr>';\n");
+                        chars.append("data += '</table>';\n");
+                        chars.append("data += '</div>';\n"); // split
+                        chars.append("data += '</div>';\n"); // row
+                    }
                     chars.append("data += '</div>';\n"); // segment
                 });
                 chars.append("data += '</div>';\n"); // row
@@ -395,17 +535,14 @@ public class OverallHTML5 implements RaceReportType{
                 report += "data += '<tr><td>Start:</td><td class=\"right\">' + rData.start_display + '</td><td></td>';\n" ;
                 if (showPace) report += "data += '<td></td>';\n";
                 report += "data += '</tr>';\n";
-                for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "data += '<tr><td>" + race.splitsProperty().get(i-1).getSplitName() + ":</td><td class=\"right\">  ' + rData.splits[\"split_" + Integer.toString(i-1) + "_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].display + '</td>';\n";
-                    report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].delta_time + '</td>';\n";
-                    if (showPace) report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "_"+ race.splitsProperty().get(i-1).getSplitName() + "\"].pace + '</td>';\n";
+                for (int i = 2; i <= race.splitsProperty().size(); i++) {
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) {
+                    report += "data += '<tr><td>" + escape(race.splitsProperty().get(i-1).getSplitName()) + ":</td><td class=\"right\">  ' + rData.splits[\"split_" + Integer.toString(i-1) + "\"].display + '</td>';\n";
+                    report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].delta_time + '</td>';\n";
+                    if (showPace) report += "data += '<td class=\"right up-half\">  ' + rData.splits[\"split_"+ Integer.toString(i-1) + "\"].pace + '</td>';\n";
                     report += "data += '</tr>';\n";
+                    }
                 }
-                report += "data += '<tr><td>Finish:</td><td class=\"right\">  ' + rData.finish_display + '</td><td class=\"right up-half\">' + rData.finish_split_delta + '</td>';\n";
-                if (showPace) report += "data += '<td class=\"right up-half\">' + rData.finish_split_pace + '</td>';\n";
-                report += "data += '</tr>';\n";
-                if (showGun) report += "data += '<tr><td>Gun Time:</td><td class=\"right\"> ' + rData.gun_display + '</td><td></td>';\n";
-                if (showGun && showPace) report += "data += '<td></td>';\n";
                 report += "data += '</tr>';\n";
                 report += "data += '</table>';\n";
                 report += "data += '</div>';\n"; // split
@@ -445,24 +582,52 @@ public class OverallHTML5 implements RaceReportType{
                         "        \"columns\": [\n" +
                         "           { \"data\": null, \"defaultContent\": \"\", className: 'control', orderable: false, targets:   0 },\n" +
                         "           { \"data\": \"oa_place\" },\n" +
+//                        "           { \"data\": \"oa_place\", \"render\":  \n" +
+//"					 function (data, type, row) {\n" +
+//"						if (type == \"sort\" || type === 'type') return data;\n" +
+//"						if (row.award_winner == \"yes\") \n" +
+//"						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i> ' + row.oa_place;\n" +
+//"						else return row.oa_place;\n" +
+//"					 }\n" +
+//"				 \n" +
+//"			}," +
                         "           { \"data\": \"sex_place\" },\n" +
                         "           { \"data\": \"ag_place\" },\n" +
                         "           { \"data\": \"bib\" },\n" +
                         "           { \"data\": \"age\" },\n" +
                         "           { \"data\": \"sex\" },\n" + // If this index changes, change the filter below
                         "           { \"data\": \"ag\" },\n" +  // ibid
-                        "           { \"data\": null, " +
-                        "                  \"render\": {\n" +
-                        "                       \"_\": \"full_name\",\n" +
-                        "                       \"filter\": \"full_name_filter\",\n" +
-                        "               } "
-                    +   "           },\n" +
-                        "           { \"data\": \"city\" },\n" +
-                        "           { \"data\": \"state\" },\n";
+//                        "           { \"data\": null, " +
+//                        "                  \"render\": {\n" +
+//                        "                       \"_\": \"full_name\",\n" +
+//                        "                       \"filter\": \"full_name_filter\",\n" +
+//                        "               } "
+//                    +   "           },\n" +
+                         "           { \"data\": \"full_name\", \"render\":  \n" +
+"					 function (data, type, row) {\n" +
+"						if (type == \"sort\" || type === 'type') return data;\n" +
+"						if (type == \"filter\" || type === 'type') return row.full_name_filter;\n"    +              
+"						if (row.award_winner == \"yes\") \n" +
+"						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i> ' + row.full_name;\n" +
+"						else return row.full_name;\n" +
+"					 }\n" +
+"				 \n" +
+"			}," +
+                        "           { \"data\": \"first_name\" },\n" +
+                        "           { \"data\": \"middle_name\" },\n" +
+                        "           { \"data\": \"last_name\" },\n" +
+
+                        "           { \"data\": \"city\" },\n" ;
+            if (showState) report +=             "           { \"data\": \"state\" },\n";
             if (showCountry) report += "           { \"data\": \"country\" },\n";
+            if (showCustomAttributes) {
+                for( CustomAttribute a: customAttributesList){
+                    report += "           { \"data\": \"custom_" + escape(a.getName()) +"\" },\n";
+                }
+            }
             if (showSplits) {
                 for (int i = 2; i < race.splitsProperty().size(); i++) {
-                    report += "           { \"data\": \"splits.split_" + Integer.toString(i-1) + "_"+ race.splitsProperty().get(i-1).getSplitName() + "\", \n" +
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += "           { \"data\": \"splits.split_" + Integer.toString(i-1) + "\", \n" +
                                 "				\"render\": {\n" +
                                 "					_: 'display',\n" +
                                 "					sort: 'sort'\n" +
@@ -473,8 +638,9 @@ public class OverallHTML5 implements RaceReportType{
             if (showSegments) {
                 final StringBuilder chars = new StringBuilder();
                 Integer dispLeg = dispFormatLength;
-                race.getSegments().forEach(seg -> {
-                    chars.append("           { \"data\": \"segments.segment_" +  seg.getSegmentName() + "\", \n" +
+                race.raceSegmentsProperty().forEach(seg -> {
+                    if (seg.getHidden()) return;
+                    chars.append("           { \"data\": \"segments.segment_" +  seg.getID()+ "\", \n" +
                                 "				\"render\": {\n" +
                                 "					_: 'display',\n" +
                                 "					sort: 'sort'\n" +
@@ -511,6 +677,7 @@ public class OverallHTML5 implements RaceReportType{
                         "        {\n" +
                         "            extend: 'csv',\n" +
                         "            text: 'Export to CSV',\n" +
+                        "                    bom: 'true',\n" +
                         "            exportOptions: {\n" +
                         "                modifier: {\n" +
                         "                    search: 'none'\n" +

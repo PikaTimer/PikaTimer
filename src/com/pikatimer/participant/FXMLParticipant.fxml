@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
@@ -28,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
@@ -112,7 +114,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <PropertyValueFactory property="state" />
                  </cellValueFactory>
              </TableColumn>
-            <TableColumn fx:id="countryColumn" prefWidth="51.0" text="Country" />
+            <TableColumn fx:id="countryColumn" prefWidth="51.0" text="Country">
+                <cellValueFactory>
+                     <PropertyValueFactory property="country" />
+                 </cellValueFactory>
+             </TableColumn>
             <TableColumn fx:id="raceColumn" prefWidth="124.0" text="Race/Wave" />
             <TableColumn fx:id="statusColumn" prefWidth="124.0" text="Status" />
         </columns>  
@@ -121,15 +127,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
              <fx:reference source="lastNameColumn" />
         </sortOrder>
        </TableView>
-      <GridPane GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
-         <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
-         </columnConstraints>
-         <rowConstraints>
-            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
-         </rowConstraints>
+      <HBox spacing="5.0" GridPane.hgrow="NEVER">
          <children>
-            <VBox fx:id="formVBox" spacing="5.0">
+            <Button fx:id="importButton" focusTraversable="false" mnemonicParsing="false" onAction="#importParticipants" prefHeight="25.0" prefWidth="60.0" text="Import" textAlignment="CENTER" />
+            <Button fx:id="exportButton" mnemonicParsing="false" onAction="#exportParticipants" prefWidth="60.0" text="Export" />
+            <Pane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+            <Button fx:id="clearButton" focusTraversable="false" mnemonicParsing="false" onAction="#clearParticipants" prefWidth="60.0" text="Clear All" textAlignment="CENTER" />
+         </children>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </HBox>
+      <HBox alignment="CENTER_RIGHT" spacing="10.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2">
+         <children>
+            <Button fx:id="customAtrtributesButton" mnemonicParsing="false" onAction="#setupCustomAttributes" text="Setup Custom Attributes..." />
+            <Button fx:id="bulkBibAssignmentButton" mnemonicParsing="false" onAction="#bulkBibAssignment" text="Bulk Bib Assignment..." />
+            <Pane HBox.hgrow="ALWAYS" />
+            <Button fx:id="deleteParticipantsButton" alignment="CENTER_RIGHT" onAction="#deleteParticipants" text="Remove" />
+         </children>
+      </HBox>
+      <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-padding: 0;" GridPane.hgrow="NEVER" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+         <content>
+            <VBox fx:id="formVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0">
                <children>
                   <HBox>
                      <children>
@@ -272,38 +291,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <TextField fx:id="noteTextField" prefWidth="90" promptText="Note" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
-                  <HBox alignment="CENTER_LEFT" spacing="5.0">
-                      <children>
-                        <Label prefHeight="20.0" prefWidth="50.0" text="" />  
-                        <Button fx:id="formResetButton" onAction="#resetForm" text="Clear Form" />
-                        <Label maxWidth="1.7976931348623157E308" prefHeight="20.0" prefWidth="1" text="" HBox.hgrow="ALWAYS" />
-                        <Button fx:id="formAddButton" onAction="#addPerson" text="Add" />
-                        <Button fx:id="formUpdateButton" managed="false" onAction="#updateParticipant" text="Update" visible="false" />
-                      </children>
-                  </HBox>
+                  <VBox fx:id="customAttributesVBox" spacing="5.0" VBox.vgrow="ALWAYS" />
                </children>
             </VBox>
-         </children>
-      </GridPane>
-      <HBox spacing="5.0" GridPane.hgrow="NEVER">
-         <children>
-            <Button fx:id="importButton" focusTraversable="false" mnemonicParsing="false" onAction="#importParticipants" prefHeight="25.0" prefWidth="60.0" text="Import" textAlignment="CENTER" />
-            <Button fx:id="exportButton" mnemonicParsing="false" onAction="#exportParticipants" prefWidth="60.0" text="Export" />
-            <Button fx:id="clearButton" focusTraversable="false" mnemonicParsing="false" onAction="#clearParticipants" prefWidth="60.0" text="Clear All" textAlignment="CENTER" />
-         </children>
-         <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </padding>
-      </HBox>
-      <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2">
-         <children>
-            <Button fx:id="deleteParticipantsButton" alignment="CENTER_RIGHT" onAction="#deleteParticipants" text="Remove" />
-         </children>
+         </content>
+      </ScrollPane>
+      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.rowIndex="2">
+          <children>
+            <Label prefHeight="20.0" prefWidth="50.0" text="" />  
+            <Button fx:id="formResetButton" onAction="#resetForm" text="Clear Form" />
+            <Label maxWidth="1.7976931348623157E308" prefHeight="20.0" prefWidth="1" text="" HBox.hgrow="ALWAYS" />
+            <Button fx:id="formAddButton" onAction="#addPerson" text="Add" />
+            <Button fx:id="formUpdateButton" managed="false" onAction="#updateParticipant" text="Update" visible="false" />
+          </children>
       </HBox>
    </children>
    <columnConstraints>
-      <ColumnConstraints hgrow="NEVER" maxWidth="220.0" minWidth="220.0" prefWidth="220.0" />
-      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="300.0" prefWidth="674.5" />
+      <ColumnConstraints hgrow="NEVER" maxWidth="250.0" minWidth="250.0" prefWidth="250.0" />
+      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="300.0" prefWidth="636.5" />
    </columnConstraints>
    <rowConstraints>
       <RowConstraints />

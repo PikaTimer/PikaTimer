@@ -16,9 +16,11 @@
  */
 package com.pikatimer.timing;
 
-import com.pikatimer.race.Wave;
 import com.pikatimer.util.DurationFormatter;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
@@ -31,6 +33,8 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.util.Callback;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -51,11 +55,14 @@ public class TimeOverride {
     private Integer splitId;
     private Duration timestamp;
     //private Boolean relativeTime; 
-    private StringProperty bibProperty = new SimpleStringProperty();
-    private IntegerProperty splitIdProperty = new SimpleIntegerProperty();
-    private BooleanProperty relativeProperty = new SimpleBooleanProperty(false);
-    private ObjectProperty<Duration> durationProperty = new SimpleObjectProperty();
-    private StringProperty timestampStringProperty = new SimpleStringProperty();
+    private final StringProperty bibProperty = new SimpleStringProperty();
+    private final IntegerProperty splitIdProperty = new SimpleIntegerProperty();
+    private final BooleanProperty relativeProperty = new SimpleBooleanProperty(false);
+    private final ObjectProperty<Duration> durationProperty = new SimpleObjectProperty();
+    private final StringProperty timestampStringProperty = new SimpleStringProperty();
+    
+    private final StringProperty noteStringProperty = new SimpleStringProperty();
+    private TimeOverrideType overrideType = TimeOverrideType.OVERRIDE;
 
     
     public static Callback<TimeOverride, Observable[]> extractor() {
@@ -71,6 +78,20 @@ public class TimeOverride {
     }
     public void setID(Integer id) {
         timeOverrideID=id;
+    }
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name="type")
+    public TimeOverrideType getOverrideType() {
+        if (overrideType == null) return TimeOverrideType.OVERRIDE;
+        return overrideType;
+    }
+    public void setOverrideType(TimeOverrideType ot) {
+        if (ot != null) {
+            overrideType = ot;
+        } else {
+            System.out.println("setOverrideType called with NULL!!!");
+        }
     }
 
     @Column(name="override_time")
@@ -116,6 +137,18 @@ public class TimeOverride {
         return bibProperty;
     }
     
+    @Column(name="note")
+    public String getNote() {
+        return noteStringProperty.getValueSafe();
+    }
+
+    public void setNote(String bib) {
+        noteStringProperty.setValue(bib);
+    }
+    public StringProperty noteProperty() {
+        return noteStringProperty;
+    }
+    
     @Column(name="split_id") 
     public Integer getSplitId() {
         //System.out.println("RawTimeData: Returning timingLocationInputId of " + timingLocationInputId);
@@ -141,6 +174,6 @@ public class TimeOverride {
     public BooleanProperty relativeProperty(){
         return relativeProperty;
     }
-    
+
     
 }

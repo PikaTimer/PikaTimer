@@ -16,12 +16,18 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.race.RaceDAO;
+import com.pikatimer.race.Wave;
+import com.pikatimer.race.WaveAssignment;
 import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.util.AlphanumericComparator;
 import java.util.List; 
 import com.pikatimer.util.HibernateUtil;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,6 +57,8 @@ public class ParticipantDAO {
     //Semaphore semaphore = new Semaphore(1);
     
     private static final CountDownLatch participantsLoadedLatch = new CountDownLatch(1);
+    
+    private static final ObservableList<CustomAttribute> customAttributeList = FXCollections.observableArrayList(CustomAttribute.extractor());
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -121,6 +129,7 @@ public class ParticipantDAO {
             @Override 
             public Void call() {
                 final List<Participant> list;// = new ArrayList<>();
+                final List<CustomAttribute> attributeList;
 
 
                 Session s=HibernateUtil.getSessionFactory().getCurrentSession();
@@ -129,14 +138,17 @@ public class ParticipantDAO {
 
                 try {  
                     list=s.createQuery("from Participant").list();
-                 
+                    attributeList=s.createQuery("from CustomAttribute").list();
 
                     System.out.println("ParticipantDAO::refreshParticipantsList found " + list.size() + " Participants");
                     //if(!participantsList.isEmpty()) participantsList.clear();
 
                     Platform.runLater(() -> {
                             participantsList.setAll(list);
+                            customAttributeList.setAll(attributeList);
                     });
+                    
+                    
                     list.forEach(p -> {
                         Participant2BibMap.put(p, p.getBib()); 
                         Bib2ParticipantMap.put(p.getBib(),p); 
@@ -291,6 +303,61 @@ public class ParticipantDAO {
             Logger.getLogger(ParticipantDAO.class.getName()).log(Level.SEVERE, null, ex);
         }
         return ID2ParticipantMap.get(id); 
+    }
+    
+    public ObservableList<CustomAttribute> getCustomAttributes() {
+        return customAttributeList;
+    }
+    
+    public void saveCustomAttribute(CustomAttribute cr){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        s.saveOrUpdate(cr);
+        s.getTransaction().commit();
+        if (!customAttributeList.contains(cr)) customAttributeList.add(cr);
+    }
+    public void deleteCustomAttribute(CustomAttribute cr){
+        if (customAttributeList.contains(cr)) {
+            customAttributeList.remove(cr);
+        
+            Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+            s.beginTransaction();
+            s.delete(cr);
+            s.getTransaction().commit();
+        }
+        
+    }
+    
+    public Set<Wave> getWaveByBib(String bib) {
+        AlphanumericComparator comp = new AlphanumericComparator(); 
+        
+        Set<Wave> waves = new HashSet<>();
+        Map raceMap = new HashMap(); 
+        
+        System.out.println("Only one wave to assign them to...");
+
+        // If there is only one...
+        if (RaceDAO.getInstance().listWaves().size() == 1) {
+            System.out.println("Only one wave to assign them to...");
+            waves.add(RaceDAO.getInstance().listWaves().get(0));
+            return waves;
+        }
+        
+        RaceDAO.getInstance().listWaves().forEach(i -> {
+            if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
+                String start = i.getWaveAssignmentStart(); 
+                String end = i.getWaveAssignmentEnd(); 
+                if (!(start.isEmpty() && end.isEmpty()) && (comp.compare(start, bib) <= 0 || start.isEmpty()) && (comp.compare(end, bib) >= 0 || end.isEmpty())) {
+                    if(!raceMap.containsKey(i.getRace())) {
+                        //System.out.println("Bib " + bibTextField.getText() + " matched wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
+                        raceMap.put(i.getRace(), true); 
+                        waves.add(i); 
+                    }
+                }
+            }
+        });
+        
+        return waves; 
     }
 } 
 

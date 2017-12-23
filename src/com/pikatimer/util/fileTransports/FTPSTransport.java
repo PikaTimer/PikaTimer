@@ -122,12 +122,19 @@ public class FTPSTransport implements FileTransport{
                                 //InputStream data = IOUtils.toInputStream(contents, "UTF-8");
                                 InputStream data = IOUtils.toInputStream(contents);
                                 String fn = filename;
+                                String tmpFn = fn + ".PikaTmp";
                                 Platform.runLater(() -> { 
                                     if (encrypted) transferStatus.set("Transfering (Secure) " + fn);
                                     else transferStatus.set("Transfering " + fn);
                                 });
                                 long startTime = System.nanoTime();
-                                ftpClient.storeFile(filename, data);
+                                
+                                // To get around file locking issues, 
+                                // we upload to a temp fie and then do a delete / rename
+                                
+                                ftpClient.storeFile(tmpFn, data);
+                                ftpClient.dele(filename); // This may fail if the file does not exist
+                                ftpClient.rename(tmpFn, fn);
                                 long endTime = System.nanoTime();
                                 lastTransferTimestamp = endTime;
 

@@ -38,7 +38,8 @@ public enum Pace {
     YPS, // Yards per Second
     FPS, // Feet per Second
     MP100M, // Minutes per 100M
-    MP100Y; // Minutes per 100Y
+    MP100Y, // Minutes per 100Y
+    NONE;  // Blank
     
     private static final Map<Pace, String> PACE_MAP = createMap();
 
@@ -53,6 +54,7 @@ public enum Pace {
         result.put(FPS, "XX f/s (Feet per Second)");
         result.put(MP100M, "MM:SS/100m (Minutes per 100 Meters)");
         result.put(MP100Y, "MM:SS/100y (Minutes per 100 Yards)");
+        result.put(NONE, "None / Blank");
         return Collections.unmodifiableMap(result);
     }
 
@@ -97,6 +99,8 @@ public enum Pace {
             case MP100Y: // Minutes per 100Y
                 dist = new BigDecimal(u.convertTo(d, Unit.FEET));
                 return DurationFormatter.durationToString(t.dividedBy(dist.longValue()).multipliedBy(300L),0, TRUE, RoundingMode.HALF_UP).replaceFirst("^0:", "") + "/100Y";
+            case NONE:
+                return "";
         }
        return "???";
     }
@@ -118,6 +122,8 @@ public enum Pace {
             case MP100Y:
                 // XX:XX/100y
                 return 10; 
+            case NONE:
+                return 0;
         }
         return 10;
     }

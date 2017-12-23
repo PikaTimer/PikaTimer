@@ -33,9 +33,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
@@ -47,12 +45,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -63,12 +61,15 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -86,6 +87,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -93,6 +95,7 @@ import static javafx.scene.layout.Region.USE_PREF_SIZE;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
+import org.controlsfx.control.PrefixSelectionComboBox;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -151,10 +154,14 @@ public class PikaRFIDDirectReader implements TimingReader {
             
     ChoiceBox<String> reader1ModeChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Start", "Finish"));
     Spinner<Integer> gatingIntervalSpinner = new Spinner<>(1, 20, 3);    
+    ChoiceBox<String> beeperVolumeChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Off", "Soft", "Loud"));
     
     Button setClockButton = new Button("Sync Time...");
+    Button remoteSettingsButton = new Button("Remote Server...");
+    Button antennaSettingsButton = new Button("Antenna Options...");
     Label modeLabel = new Label("Reader Mode:");
     Label gatingLabel = new Label("Gating Interval:");
+    Label volumeLabel = new Label("Beeper Volume:");
     Button updateSettingsButton = new Button("Update");
             
     private Map<String,String> ultraSettings = new HashMap();
@@ -164,6 +171,7 @@ public class PikaRFIDDirectReader implements TimingReader {
     protected final BooleanProperty readingStatus = new SimpleBooleanProperty();
     protected final BooleanProperty connectedStatus = new SimpleBooleanProperty();
     protected final BooleanProperty isJoey = new SimpleBooleanProperty(false);
+    protected final BooleanProperty isSingleReader = new SimpleBooleanProperty(true);
 
     private Boolean connectToUltra = false;
     private Boolean externalInitiated = false;
@@ -326,12 +334,12 @@ public class PikaRFIDDirectReader implements TimingReader {
             HBox fileHBox = new HBox();
             fileHBox.setSpacing(4);
             fileHBox.setAlignment(Pos.CENTER_LEFT);
-
+            fileTextField.setPrefWidth(150);
             fileHBox.getChildren().addAll(saveToFileCheckBox,fileTextField,fileButton);
             
-            HBox advancedHBox = new HBox();
-            advancedHBox.setSpacing(4);
-            advancedHBox.setAlignment(Pos.CENTER_LEFT);
+            VBox advancedVBox = new VBox();
+            advancedVBox.setSpacing(4);
+            advancedVBox.setAlignment(Pos.CENTER_LEFT);
             
             gatingIntervalSpinner.setMaxWidth(60);
             gatingIntervalSpinner.setEditable(true);
@@ -364,16 +372,47 @@ public class PikaRFIDDirectReader implements TimingReader {
             reader1ModeChoiceBox.managedProperty().bind(isJoey.not());
             reader1ModeChoiceBox.visibleProperty().bind(isJoey.not());
             
+            beeperVolumeChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                System.out.println("beeperVolumeChoiceBox listener: Existing volume: " + ultraSettings.get("21"));
+                if (null != newVal) switch (newVal) {
+                    case "Off":
+                        if (!"0".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                        break;
+                    case "Soft":
+                        if (!"1".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                        break;
+                    case "Loud":
+                        if (!"2".equals(ultraSettings.get("21"))) updateSettingsButton.setVisible(true);
+                        break;
+                    default:
+                        break;
+                }
+                
+            });
+            
             updateSettingsButton.setVisible(false);
             updateSettingsButton.setOnAction(action -> {
                 updateReaderSettings();
             });
             
-            advancedHBox.getChildren().addAll(setClockButton,modeLabel,reader1ModeChoiceBox,gatingLabel,gatingIntervalSpinner,updateSettingsButton);
+            HBox advancedHBox1 = new HBox();
+            advancedHBox1.setSpacing(4);
+            advancedHBox1.setAlignment(Pos.CENTER_LEFT);
+            HBox advancedHBox2 = new HBox();
+            advancedHBox2.setSpacing(4);
+            advancedHBox2.setAlignment(Pos.CENTER_LEFT);
+            HBox advancedHBox3 = new HBox();
+            advancedHBox3.setSpacing(4);
+            advancedHBox3.setAlignment(Pos.CENTER_LEFT);
             
-            advancedHBox.disableProperty().bind(connectedStatus.and(readingStatus).or(connectedStatus.not()));
+            advancedHBox1.getChildren().addAll(volumeLabel,beeperVolumeChoiceBox,modeLabel,reader1ModeChoiceBox,gatingLabel,gatingIntervalSpinner);
+            advancedHBox2.getChildren().addAll(setClockButton,remoteSettingsButton,antennaSettingsButton);
+            advancedHBox3.getChildren().addAll(updateSettingsButton);
+            advancedVBox.getChildren().addAll(advancedHBox1,advancedHBox2,advancedHBox3);
+                        
+            advancedVBox.disableProperty().bind(connectedStatus.and(readingStatus).or(connectedStatus.not()));
             
-            settingsVBox.getChildren().addAll(fileHBox,advancedHBox);
+            settingsVBox.getChildren().addAll(fileHBox,advancedVBox);
             
             settingsTitlePane.setText("Advanced Settings");
             settingsTitlePane.setContent(settingsVBox);
@@ -405,7 +444,12 @@ public class PikaRFIDDirectReader implements TimingReader {
             setClockButton.setOnAction((event) -> {
                 setClockDialog();
             });
-            
+            remoteSettingsButton.setOnAction((event) -> {
+                remoteDialog();
+            });
+            antennaSettingsButton.setOnAction((event) -> {
+                antennaDialog();
+            });
             batteryProgressBar.visibleProperty().bind(connectToggleSwitch.selectedProperty());
             batteryProgressBar.setMaxHeight(30.0);
             
@@ -453,6 +497,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             fileTextField.setText(backupFile);
             fileTextField.focusedProperty().addListener((ob, oldVal, newVal) -> {
                 if (!newVal) {
+                    outputFile = null; // clear the reference to the old file
                     if (fileTextField.getText().isEmpty()){
                         saveToFileCheckBox.setSelected(false);
                         if (!backupFile.isEmpty()) {
@@ -510,6 +555,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                 File file = fileChooser.showSaveDialog(fileButton.getScene().getWindow());
                 if (file != null) {
                     Platform.runLater(() -> fileTextField.setText(file.getAbsolutePath()));
+                    outputFile=null;
                 }
             });
             
@@ -621,7 +667,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                                     Boolean newStatus = false;
                                     if (result.substring(2, 3).startsWith("1")) newStatus = true;
                                     else newStatus = false;
-                                    if (newStatus != currentStatus){
+                                    if (!Objects.equals(newStatus, currentStatus)){
                                         externalInitiated = true;
                                         Platform.runLater(() -> {
                                             if (result.substring(2, 3).startsWith("1")) readingStatus.setValue(Boolean.TRUE);
@@ -673,10 +719,14 @@ public class PikaRFIDDirectReader implements TimingReader {
         Task ultraCommand = new Task<Void>() {
             @Override public Void call() {
                 if (connectedStatus.get()) {
+                    
+                    Platform.runLater(() -> updateSettingsButton.setVisible(false));
+                    
                     Boolean aquired = false;
                     try {
                         if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
                             aquired = true;
+                            ultraSettings.clear();
 
                             String command = "r";
                             ultraOutput.writeBytes(command);
@@ -728,7 +778,18 @@ public class PikaRFIDDirectReader implements TimingReader {
                             } while(result != null);
                             
                             
-                            
+                            //Beeper Volume Factor
+                            try{
+                                if (!ultraSettings.containsKey("21")) System.out.println("We don't know what the beeper volume is");
+                                else {
+                                    Integer volume =Integer.parseInt(ultraSettings.get("21"));
+                                    Platform.runLater(() -> beeperVolumeChoiceBox.getSelectionModel().clearAndSelect(volume));
+                                    System.out.println("Setting the volume to " + volume);
+                                }
+                            } catch (Exception e){
+                                Platform.runLater(() -> beeperVolumeChoiceBox.getSelectionModel().selectFirst());
+                                System.out.println("Beeper volume parse error!");
+                            }
                             
                             //Gating Factor
                             try{
@@ -755,11 +816,18 @@ public class PikaRFIDDirectReader implements TimingReader {
                             // Do we have a Joey or Ultra?
                             if ("255.255.255.255".equals(ultraSettings.get("1A"))) {
                                 System.out.println("We have a Joey");
+                                isSingleReader.set(true);
                                 Platform.runLater(() -> isJoey.set(true));
                             } else {
+                                Platform.runLater(() -> isJoey.set(false));
                                 System.out.println("We have an Ultra");
                                 // do we have an ultra-4 or ultra-8? 
-                                // TODO
+                                // ping the ip in 1A to see if it exists. 
+                                isSingleReader.set(!InetAddress.getByName(ultraSettings.get("1B")).isReachable(1000));
+                                // if we failed, try one more time just in case we lost a packet
+                                if (!isSingleReader.get()) isSingleReader.set(!InetAddress.getByName(ultraSettings.get("1B")).isReachable(1000));
+                                if (!isSingleReader.get()) System.out.println("We have an ultra 8");
+                                else System.out.println("We have an ultra 4");
                             }
                         } else {
                             // timeout
@@ -924,6 +992,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                 Boolean firstConnect = true;
                 @Override public Void call() {
                     Boolean socketError = false;
+                    Boolean readRetry = false;
                     while(connectToUltra) {
                         Platform.runLater(() -> {
                             statusLabel.setText("Connecting to " + ultraIP + "...");
@@ -937,7 +1006,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                         ) {
                             connectToUltra = true; // we got here so we have a good connection
                             success = true;
-                            ultraSocket.setSoTimeout(20000); // 20 seconds. In theory we get a voltage every 10
+                            ultraSocket.setSoTimeout(15000); // 15 seconds. In theory we get a voltage every 10
                             ultraOutput = new DataOutputStream(new BufferedOutputStream(rawOutput));
                             Platform.runLater(() -> {
                                 connectedStatus.setValue(true);
@@ -955,36 +1024,50 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 firstConnect = false;
                             }
                             
-                            while(connectToUltra) {
-                                read = -255; 
-                                line = "";
-                                while (read != 10 && connectToUltra) {
-                                    read = input.read();
-                                    if (read == -1) {
-                                        connectToUltra = false;
-                                        System.out.println("End of stream!" + Integer.toHexString(read));
-                                    } if (read != 10) {
-                                        line = line +  Character.toString ((char) read);
-                                    //    System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
-                                    } else {
-                                        processLine(line);
+                                while(connectToUltra) {
+                                    read = -255; 
+                                    line = "";
+                                    try {
+                                        while (read != 10 && connectToUltra) {
+                                            read = input.read();
+                                            readRetry = false;
+                                            if (read == -1) {
+                                                connectToUltra = false;
+                                                System.out.println("End of stream!" + Integer.toHexString(read));
+                                            } if (read != 10) {
+                                                line = line +  Character.toString ((char) read);
+                                            //    System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
+                                            } else {
+                                                processLine(line);
+                                            }
+                                        }
+                                    } catch(java.net.SocketTimeoutException e){
+                                        System.out.println("Socket Timeout Exception...");
+                                        if (readRetry) {
+                                            System.out.println("...2nd One in a row so we will bail");
+                                            throw e;
+                                        } else {
+                                            System.out.println("...First one so let's ask for status");
+                                            readRetry=true;
+                                            getReadStatus();
+                                        }
                                     }
                                 }
-                            }
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             System.out.println(e);
-                            socketError = true;
-                            
-                            Platform.runLater(() -> {
-                                if (! success) { connectToUltra = false; connectedStatus.setValue(false);}
-                                statusLabel.setText("Error: " + e.getLocalizedMessage());
-                            });
-                            if (success) try {
-                                Thread.sleep(2000);
-                            } catch (InterruptedException ex) {
-                                Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
-                            } 
+                            if (connectToUltra){ 
+                                socketError = true;
+                                System.out.println("RFIDDirectReader Connection Exception: " + e.getMessage());
+                                Platform.runLater(() -> {
+                                    if (! success) { connectToUltra = false; connectedStatus.setValue(false);}
+                                    statusLabel.setText("Error: " + e.getLocalizedMessage());
+                                });
+                                if (success) try {
+                                    Thread.sleep(2000);
+                                } catch (InterruptedException ex) {
+                                    Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+                                } 
+                            }
                         } finally {
                             if (!socketError){
                                 Platform.runLater(() -> {
@@ -1010,9 +1093,6 @@ public class PikaRFIDDirectReader implements TimingReader {
         connectToUltra = false;
     }
     
-    
-
-    
     private void processLine(String line) {
         System.out.println("Read Line: " + line);
         
@@ -1023,7 +1103,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         else if (line.startsWith("S")) type="status";
         else if (line.startsWith("U")) type="command";
         else if (line.startsWith("u")) type="command"; // general command
-        else if (line.substring(0,8).matches("^\\d+:\\d+:\\d+.*")) type = "time"; //time ens with a special char
+        else if (line.substring(0,8).matches("^\\d+:\\d+:\\d+.*")) type = "time"; //time ends with a special char
         else System.out.println("Unknown line: \"" + line + "\"");
 
         switch(type){
@@ -1157,7 +1237,8 @@ public class PikaRFIDDirectReader implements TimingReader {
             System.out.println("PikaRFIDDirectReader::saveToFile: opening " + newFile.getAbsolutePath());
             Boolean goodFile=false;
             try {
-                if (newFile.canWrite() || newFile.createNewFile()) {
+                // Not a directory and we can write to it _or_ we can create it
+                if ((!newFile.isDirectory() && newFile.isFile() && newFile.canWrite())  || newFile.createNewFile()) {
                     outputFile = new PrintWriter(new FileOutputStream(newFile, true));
                 }
             } catch (IOException ex) {
@@ -1204,6 +1285,9 @@ public class PikaRFIDDirectReader implements TimingReader {
                     
                     // Find the server using UDP broadcast
                     //Loop while the dialog box is open
+                    // UDP Broadcast code borrowed from https://demey.io/network-discovery-using-udp-broadcast/
+                    // with a few modifications to protect the guilty and to bring it up to date
+                    // (e.g., try-with-resources 
                     while (dialogClosed.not().get()) {
                         try(DatagramSocket broadcastSocket = new DatagramSocket()) {
                             broadcastSocket.setBroadcast(true);
@@ -1213,6 +1297,33 @@ public class PikaRFIDDirectReader implements TimingReader {
                             // Send a packet to 255.255.255.255 on port 2000
                             DatagramPacket probeDatagramPacket = new DatagramPacket(packetData, packetData.length, InetAddress.getByName("255.255.255.255"), 2000);
                             broadcastSocket.send(probeDatagramPacket);
+                            
+                            System.out.println("Sent UDP Broadcast to 255.255.255.255");
+                            // Broadcast the message over all the network interfaces
+                            
+                            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                            while (interfaces.hasMoreElements()) {
+                              NetworkInterface networkInterface = interfaces.nextElement();
+
+                              if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                                continue; // Don't want to broadcast to the loopback interface
+                              }
+
+                              for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                                InetAddress broadcast = interfaceAddress.getBroadcast();
+                                if (broadcast == null) {
+                                  continue;
+                                }
+                                // Send the broadcast package!
+                                try {
+                                  DatagramPacket sendPacket = new DatagramPacket(packetData, packetData.length, broadcast, 8888);
+                                  broadcastSocket.send(sendPacket);
+                                  System.out.println("Sent UDP Broadcast to " + broadcast.getHostAddress());
+                                } catch (Exception e) {
+                                }
+                              }
+                            }
+
 
                             //Wait for a response
                             try {
@@ -1564,6 +1675,931 @@ public class PikaRFIDDirectReader implements TimingReader {
             };
             new Thread(ultraCommand).start();
     }
+    
+    private void antennaDialog(){
+        // Open a dialog box
+        Dialog<Boolean> dialog = new Dialog();
+        dialog.setTitle("Antenna settings");
+        String type = "";
+        if (isJoey.get()) type = "Joey";
+        else if (isSingleReader.get()) type = "Ultra-4";
+        else type = "Ultra-8";
+        
+        dialog.setHeaderText("Antenna and Power settings for " + type + " at "+ ultraIP);
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+        
+        //VBox dialogVBox = new VBox();
+        GridPane antennaGridPane = new GridPane();
+        Map<String,CheckBox> antennaMap = new HashMap();
+        
+        antennaGridPane.setHgap(1);
+        antennaGridPane.setVgap(4);
+        
+        Label portsLabel = new Label("Ports");
+        antennaGridPane.add(portsLabel,1,0,4,1);
+        GridPane.setHalignment(portsLabel, HPos.CENTER);
+        
+        // Power Option of 1 -> 32 (inclusive)
+        PrefixSelectionComboBox<String> readerAPower = new PrefixSelectionComboBox();
+        PrefixSelectionComboBox<String> readerBPower = new PrefixSelectionComboBox();
+        for(Integer p = 32; p>0; p--){
+            readerAPower.getItems().add(p.toString());
+            readerBPower.getItems().add(p.toString());
+        }
+        
+        // Reader 'A'
+        for(int port = 1; port < 5; port++){
+            antennaMap.put("A" + port,new CheckBox());
+            System.out.println("Requesting ultraSetting " + String.format("%02x", 11 + port).toUpperCase());
+            if (ultraSettings.containsKey(String.format("%02x", 11 + port).toUpperCase())) {
+                if ("1".equals(ultraSettings.get(String.format("%02x", 11 + port).toUpperCase()))) antennaMap.get("A" + port).setSelected(true);
+                else antennaMap.get("A" + port).setSelected(false);
+            } else antennaMap.get("A" + port).setSelected(false);
+            antennaGridPane.add(new Label(Integer.toString(port)),port,1);
+            antennaGridPane.add(antennaMap.get("A" + port),port,2);
+        } 
+        if (!isJoey.get()) {
+            antennaGridPane.add(new Label("Power"), 5,1);
+            antennaGridPane.add(readerAPower, 5,2);
+            if (ultraSettings.containsKey("18")){
+                System.out.println("Reader A power set to " + ultraSettings.get("18"));
+                readerAPower.getSelectionModel().select(ultraSettings.get("18"));
+            } else readerAPower.getSelectionModel().selectFirst();
+            
+            antennaMap.put("ABackup",new CheckBox());
+            if (ultraSettings.containsKey("26")) {
+                if ("1".equals(ultraSettings.get("26"))) antennaMap.get("ABackup").setSelected(true);
+                else antennaMap.get("ABackup").setSelected(false);
+            } else antennaMap.get("ABackup").setSelected(false);
+            antennaGridPane.add(new Label("  "),6,1);
+            Label antBackupLlabel = new Label("Antenna 4\nis backup");
+            antennaGridPane.add(antBackupLlabel,7,0,1,2);
+            GridPane.setValignment(antBackupLlabel, VPos.BOTTOM);
+            antennaGridPane.add(antennaMap.get("ABackup"),7,2);
+        }
+        
+        // Reader 'B' but only if we have one...
+        if (!isSingleReader.get()){
+            Label readerALabel = new Label("Reader A ");
+            antennaGridPane.add(readerALabel, 0, 2);
+            Label readerBLabel = new Label("Reader B ");
+            antennaGridPane.add(readerBLabel, 0, 3);
+            for(int port = 1; port < 5; port++){
+                antennaMap.put("B" + port,new CheckBox());
+                System.out.println("Requesting ultraSetting " + Integer.toHexString(15 + port));
+                if (ultraSettings.containsKey(Integer.toHexString(15 + port))) {
+                    if ("1".equals(ultraSettings.get(Integer.toHexString(15 + port)))) antennaMap.get("B" + port).setSelected(true);
+                    else antennaMap.get("B" + port).setSelected(false);
+                } else antennaMap.get("B" + port).setSelected(false);
+                antennaGridPane.add(antennaMap.get("B" + port),port,3);
+            } 
+            
+            antennaGridPane.add(readerBPower, 5,3);
+            if (ultraSettings.containsKey("19")){
+                readerBPower.getSelectionModel().select(ultraSettings.get("19"));
+                System.out.println("Reader B power set to " + ultraSettings.get("19"));
+            } else readerBPower.getSelectionModel().selectFirst();
+            
+            antennaMap.put("BBackup",new CheckBox());
+            if (ultraSettings.containsKey("27")) {
+                if ("1".equals(ultraSettings.get("27"))) antennaMap.get("BBackup").setSelected(true);
+                else antennaMap.get("BBackup").setSelected(false);
+            } else antennaMap.get("BBackup").setSelected(false);
+            antennaGridPane.add(antennaMap.get("BBackup"),7,3);
+        }
+        
+        dialog.getDialogPane().setContent(antennaGridPane);
+        
+        // if good, save the settings
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+        
+        
+        Optional result = dialog.showAndWait();
+        
+        if (result.isPresent()) {
+            
+            // If an Ultra-8
+            if (!isSingleReader.get()) {
+                // Reader B, 1 -> 4
+                // Power Setting
+                // Backup setting
+            }
+            
+            // Play the task game
+            Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                        try {
+                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                                aquired = true;
+                                Boolean commit=false;
+                                Boolean restartInterface=false;
+                                
+                                
+                                // 0x0C -> 0x0F Reader A, Antenna 1 -4
+                                // 0x10 -> 0x13 Reader B, Antenna 1 -> 4
+                                // 0x18 -> Reader A Power
+                                // 0x26 -> Reader A Ant 4 as Backup (Ultra Only)
+                                
+                                // Reader A, 1 -> 4
+                                for(int port = 1; port < 5; port++){
+                                    String p = String.format("%02x", 11 + port).toUpperCase();
+                                    if (!ultraSettings.containsKey(p) || 
+                                        (antennaMap.get("A" + port).selectedProperty().get() && "0".equals(ultraSettings.get(p))) ||
+                                        (!antennaMap.get("A" + port).selectedProperty().get() && "1".equals(ultraSettings.get(p)))){
+                                        System.out.println("AntennaDialog(): Setting " + p + " to " + antennaMap.get("A" + port).selectedProperty().get());
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(11 + port);  // 0x0C -> 0x0F
+                                        if (antennaMap.get("A" + port).selectedProperty().get()) ultraOutput.writeByte(1);
+                                        else ultraOutput.writeByte(0);
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '" + p + "' to enable/disable the antenna");
+                                        }
+                                    }
+                                } 
+                                if (!isJoey.get()) {
+                                    // Power Setting
+                                    if (!ultraSettings.containsKey("18") || 
+                                            !ultraSettings.get("18").equals(readerAPower.getSelectionModel().getSelectedItem()) ){
+                                        System.out.println("AntennaDialog(): Sending Reader A power (0x18) command to " + readerAPower.getSelectionModel().getSelectedItem());
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(24);  // 0x18
+                                        ultraOutput.writeBytes(readerAPower.getSelectionModel().getSelectedItem());
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '0x18' to set the Reader A port 4 backupflag");
+                                        }
+                                    }
+
+                                    // If an Ultra backup setting
+                                    if (!ultraSettings.containsKey("26") || 
+                                            (antennaMap.get("ABackup").selectedProperty().get() && "0".equals(ultraSettings.get("26"))) ||
+                                            (!antennaMap.get("ABackup").selectedProperty().get() && "1".equals(ultraSettings.get("26")))
+                                        ){
+                                        System.out.println("remoteDialog(): Sending Reader A port 4 backup (0x26) command");
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(38);  // 0x26
+                                        if (antennaMap.get("ABackup").selectedProperty().get()) ultraOutput.writeByte(1);
+                                        else ultraOutput.writeByte(0);
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '0x18' to set the Reader A Power Command");
+                                        }
+                                    }
+                                }
+            
+                                if (!isSingleReader.get()){
+                                    
+                                    // 0x10 -> 0x13 Reader B, Antenna 1 -> 4
+                                    // 0x19 -> Reader B Power
+                                    // 0x27 -> Reader B Ant 4 as Backup (Ultra Only)
+
+                                    // Reader A, 1 -> 4
+                                    for(int port = 1; port < 5; port++){
+                                        String p = String.format("%02x", 15 + port).toUpperCase();
+                                        if (!ultraSettings.containsKey(p) || 
+                                            (antennaMap.get("B" + port).selectedProperty().get() && "0".equals(ultraSettings.get(p))) ||
+                                            (!antennaMap.get("B" + port).selectedProperty().get() && "1".equals(ultraSettings.get(p)))){
+                                            System.out.println("AntennaDialog(): Setting " + p + " to " + antennaMap.get("B" + port).selectedProperty().get());
+                                            ultraOutput.flush();
+                                            ultraOutput.writeBytes("u");
+                                            ultraOutput.writeByte(15 + port);  // 0x0C -> 0x0F
+                                            if (antennaMap.get("B" + port).selectedProperty().get()) ultraOutput.writeByte(1);
+                                            else ultraOutput.writeByte(0);
+                                            ultraOutput.writeByte(255);
+                                            ultraOutput.flush();
+                                            String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                            if (result != null) {
+                                                commit=true;
+                                            } else {
+                                            // timeout
+                                                System.out.println("Timeout with command '" + p + "' to enable/disable the antenna");
+                                            }
+                                        }
+
+                                    } 
+                                    if (!ultraSettings.containsKey("19") || 
+                                        !ultraSettings.get("19").equals(readerBPower.getSelectionModel().getSelectedItem()) ){
+                                        System.out.println("remoteDialog(): Sending Reader B power (0x19) command to " + readerBPower.getSelectionModel().getSelectedItem());
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(25);  // 0x19
+                                        ultraOutput.writeBytes(readerBPower.getSelectionModel().getSelectedItem());
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '0x19' to set the Reader B Power Command");
+                                        }
+                                    }
+
+                                    // If an Ultra backup setting
+                                    if (!ultraSettings.containsKey("27") || 
+                                            (antennaMap.get("BBackup").selectedProperty().get() && "0".equals(ultraSettings.get("27"))) ||
+                                            (!antennaMap.get("BBackup").selectedProperty().get() && "1".equals(ultraSettings.get("27")))
+                                        ){
+                                        System.out.println("remoteDialog(): Sending Reader B port 4 backup (0x27) command");
+                                        ultraOutput.flush();
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(39);  // 0x27
+                                        if (antennaMap.get("BBackup").selectedProperty().get()) ultraOutput.writeByte(1);
+                                        else ultraOutput.writeByte(0);
+                                        ultraOutput.writeByte(255);
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            commit=true;
+
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command '0x27' to set the Reader B port 4 backup flag");
+                                        }
+                                    }
+                                }
+                                
+                                if (commit){
+                                    System.out.println("remoteDialog(): Sending commit (u 0xFF 0xFF) command");
+                                    ultraOutput.flush();
+
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        restartInterface = true;
+
+                                        // Reader A
+                                        for(int port = 1; port < 5; port++){
+                                            String p = String.format("%02x", 11 + port).toUpperCase();
+                                            if (antennaMap.get("A" + port).selectedProperty().get()) ultraSettings.put(p,"1");
+                                            else ultraSettings.put(p,"0");
+                                        } 
+                                        if (!isJoey.get()){
+                                            ultraSettings.put("18",readerAPower.getSelectionModel().getSelectedItem());
+                                            if (antennaMap.get("ABackup").selectedProperty().get()) ultraSettings.put("26","1");
+                                            else ultraSettings.put("26","0");
+                                        }
+                                        if (!isSingleReader.get()){
+                                            // Reader B
+                                            for(int port = 1; port < 5; port++){
+                                                String p = String.format("%02x", 15 + port).toUpperCase();
+                                                if (antennaMap.get("B" + port).selectedProperty().get()) ultraSettings.put(p,"1");
+                                                else ultraSettings.put(p,"0");
+                                            } 
+                                                ultraSettings.put("19",readerBPower.getSelectionModel().getSelectedItem());
+                                                if (antennaMap.get("BBackup").selectedProperty().get()) ultraSettings.put("27","1");
+                                                else ultraSettings.put("27","0");
+                                        }
+                                        
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command 'u[0xFF][0xFF]'");
+                                    }
+                                }
+                                if (restartInterface){ // This will result in a disconnect
+                                    System.out.println("Sending reset interface (0x2D) command");
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(45);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    
+                                }
+                            } else {
+                                // timeout
+                                System.out.println("Timeout waiting to send command '?'");
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                        } finally {
+                            if (aquired) System.out.println("Relasing transmit lock");
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+        };
+        new Thread(ultraCommand).start();
+            
+            
+            
+        }
+        
+        
+    }
+    private void remoteDialog(){
+        // Settings 
+        // 0x01:Remote Type (0 = off, 1 = gprs, 2 = lan)
+        // 0x02: IP of remote server for GPRS. Send in hex? See 0x29
+        // 0x03: Port for remote server
+        // 0x04: APN name
+        // 0x05: APPN User
+        // 0x06: APN password
+        // 0x29: URL for http uploading (er, IP)
+        //       173.192.106.122 for USA1.RFIDTiming.com
+        //       82.113.145.195 for EUROPE1.RFIDTiming.com
+        // 0x2A: Gateway for LAN
+        // 0x2B: DNS Server for (0x29) or blank if IP
+        // 0x2C: ??? -- looks like our non-dhcp IP for joey's 
+        // 0x2E: Enable / Disable sending to remote: 0 or 1 
+        
+        // Yeah, yeah, we should return an optional with an object that has the
+        // settings in it. Or a boolean and then we can just yank them from 
+        // the nodes and call it a good day. 
+        
+        // Open a dialog box
+        Dialog<Boolean> dialog = new Dialog();
+        dialog.setTitle("Remote settings");
+        dialog.setHeaderText("Configure the remote settings for " + ultraIP);
+        ButtonType setButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(setButtonType, ButtonType.CANCEL);
+        Node saveButton = dialog.getDialogPane().lookupButton(setButtonType);
+        
+        ToggleSwitch enableRemoteToggleSwitch = new ToggleSwitch("Send data to remote Server");
+        if (ultraSettings.containsKey("2E") && "1".equals(ultraSettings.get("2E"))) enableRemoteToggleSwitch.setSelected(true);
+        else enableRemoteToggleSwitch.setSelected(false);
+        
+        // set the gprsChoiceBox
+        // The options are in a specific order to reflect what the Ultra/Joey wants (0 = off, 1 = gprs, 2 = lan)
+        Label gprsLabel = new Label("Connection Type");
+        ChoiceBox<String> gprsChoiceBox = new ChoiceBox(FXCollections.observableArrayList("Off", "Internal Modem", "LAN"));
+        HBox typeHBox = new HBox();
+        typeHBox.setSpacing(4);
+        typeHBox.getChildren().setAll(gprsLabel,gprsChoiceBox);
+        
+        
+        // Port
+        Label portLabel = new Label("Remote Server Port");
+        TextField portTextField = new TextField();
+        portTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue == null || newValue.isEmpty()) return;
+            if (!newValue.matches("\\d+")) {
+                    Platform.runLater(() -> { 
+                    int c = portTextField.getCaretPosition();
+                    portTextField.setText(oldValue);
+                    portTextField.positionCaret(c);
+                }); 
+            }
+        });
+        
+        if (ultraSettings.containsKey("03")) portTextField.setText(ultraSettings.get("03"));
+        else portTextField.setText("11111");
+        HBox portHBox = new HBox();
+        portHBox.setSpacing(4);
+        portHBox.getChildren().setAll(portLabel,portTextField);
+        
+        //Server
+        String customIP = "";
+        Label serverLabel = new Label("Remote Server");
+        ChoiceBox<String> serverChoiceBox = new ChoiceBox(FXCollections.observableArrayList("USA1.RFIDTiming.com", "EUROPE1.RFIDTiming.com", "Custom"));
+        Label customServerLabel = new Label("Remote Server IP");
+        TextField customServerTextField = new TextField();
+        VBox serverVBox = new VBox();
+        serverVBox.setSpacing(4);
+        HBox serverHBox = new HBox();
+        serverHBox.setSpacing(4);
+        
+        serverHBox.getChildren().setAll(serverLabel,serverChoiceBox);
+        
+        HBox customServerHBox = new HBox();
+        customServerHBox.setSpacing(4);
+        customServerHBox.getChildren().setAll(customServerLabel,customServerTextField);
+        serverVBox.getChildren().setAll(serverHBox,customServerHBox);
+        
+        serverChoiceBox.getSelectionModel().selectedItemProperty().addListener((ov, oldType, newType) -> {
+            if ("Custom".equals(newType)){
+                customServerHBox.setVisible(true);
+                customServerHBox.setManaged(true);
+                saveButton.disableProperty().set(true);
+                dialog.getDialogPane().getScene().getWindow().sizeToScene();
+            } else {
+                customServerHBox.setVisible(false);
+                customServerHBox.setManaged(false);
+                saveButton.disableProperty().set(false);
+                dialog.getDialogPane().getScene().getWindow().sizeToScene();
+            }
+        });
+        
+        String currentIP ="";
+        //       173.192.106.122 for USA1.RFIDTiming.com
+        //       82.113.145.195 for EUROPE1.RFIDTiming.com
+        try {
+            Integer remoteInt = Integer.parseInt(ultraSettings.get("01"));
+            
+            if (remoteInt == 1 && ultraSettings.containsKey("02")) currentIP = ultraSettings.get("02");
+            if (remoteInt == 2 && ultraSettings.containsKey("29")) currentIP = ultraSettings.get("29");
+            else currentIP = "173.192.106.122";
+            
+        } catch (Exception e){
+            serverChoiceBox.getSelectionModel().selectFirst();
+            currentIP = "173.192.106.122";
+        }
+        System.out.println("Current IP: \"" + currentIP + "\"");
+        if ("173.192.106.122".equals(currentIP)) serverChoiceBox.getSelectionModel().select(0);
+        else if ("82.113.145.195".equals(currentIP)) serverChoiceBox.getSelectionModel().select(1);
+        else {
+            serverChoiceBox.getSelectionModel().selectLast();
+            customServerTextField.setText(currentIP);
+        }
+        
+        
+        // This is way more complicated than it should be...
+        customServerTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            Boolean revert = false;
+            if (!"Custom".equals(serverChoiceBox.getSelectionModel().getSelectedItem())) {
+                saveButton.disableProperty().set(false);
+                return;
+            }
+            if (newValue.isEmpty()) saveButton.disableProperty().set(true);
+            
+            if (newValue.matches("[\\d\\.]+")) { // numbers and dots only for the inital pass
+                String octets[] = newValue.split("\\.");
+                if (octets.length != 4) saveButton.disableProperty().set(true);
+                if (octets.length > 4){ // too many octets, cut a few and it will be fine
+                    revert = true;
+                } else {
+                    Boolean validIP = true;
+                    for(String octet: octets) {
+                        try {
+                            Integer o = Integer.parseInt(octet);
+                            System.out.println("Octet : " + o);
+                            if (o > 255) {
+                                validIP = false;
+                                revert = true;
+                            }
+                        } catch (Exception e){
+                            System.out.println("Octet Exception: " + e.getLocalizedMessage());
+
+                            validIP = false;
+                        }
+                    }
+                    if (validIP && octets.length == 4) {
+                        System.out.println("Valid IP : " + customIP);
+                        saveButton.disableProperty().set(false);
+                    }
+                    else{
+                        saveButton.disableProperty().set(true);
+                    }
+                }
+            } else { //just say no
+                revert = true;
+            }
+            if (revert) {
+                    Platform.runLater(() -> { 
+                    int c = customServerTextField.getCaretPosition();
+                    customServerTextField.setText(oldValue);
+                    customServerTextField.positionCaret(c);
+                }); 
+            }
+        });
+        
+        // LAN
+        Label gatewayLabel = new Label("Gateway");
+        TextField gatewayTextField = new TextField();
+        if (ultraSettings.containsKey("2A")) gatewayTextField.setText(ultraSettings.get("2A"));
+
+        HBox gatewayHBox = new HBox();
+        gatewayHBox.setSpacing(4);
+        gatewayHBox.getChildren().setAll(gatewayLabel,gatewayTextField);
+        
+        // 3G modem
+        Label apnNameLabel = new Label("APN Name");
+        TextField apnNameTextField = new TextField();
+        if (ultraSettings.containsKey("04")) apnNameTextField.setText(ultraSettings.get("04"));
+        HBox apnNameHBox = new HBox();
+        apnNameHBox.setSpacing(4);
+        apnNameHBox.getChildren().setAll(apnNameLabel,apnNameTextField);
+        
+        Label apnUserNameLabel = new Label("APN Username");
+        TextField apnUserNameTextField = new TextField();
+        if (ultraSettings.containsKey("05")) apnUserNameTextField.setText(ultraSettings.get("05"));
+        HBox apnUserNameHBox = new HBox();
+        apnUserNameHBox.setSpacing(4);
+        apnUserNameHBox.getChildren().setAll(apnUserNameLabel,apnUserNameTextField);
+        
+        Label apnPasswordLabel = new Label("APN Password");
+        TextField apnPasswordTextField = new TextField();
+        if (ultraSettings.containsKey("06")) apnPasswordTextField.setText(ultraSettings.get("06"));
+        HBox apnPasswordHBox = new HBox();
+        apnPasswordHBox.setSpacing(4);
+        apnPasswordHBox.getChildren().setAll(apnPasswordLabel,apnPasswordTextField);
+        
+        VBox apnVBox = new VBox();
+        apnVBox.setSpacing(4);
+        apnVBox.getChildren().setAll(apnNameHBox,apnUserNameHBox,apnPasswordHBox);
+        
+        VBox configVBox = new VBox();
+        configVBox.setSpacing(4);
+        configVBox.getChildren().setAll(portHBox,serverVBox,gatewayHBox,apnVBox);
+        
+        gprsChoiceBox.getSelectionModel().selectedItemProperty().addListener((ov, oldType, newType) -> {
+            if (null != newType) //("Off", "Internal Modem", "LAN")
+            switch (newType) {
+                case "Off":
+                    // Hide the config options VBox
+                    configVBox.setVisible(false);
+                    configVBox.setManaged(false);
+                    // resize the dialog box
+                    dialog.getDialogPane().getScene().getWindow().sizeToScene();
+                    break;
+                case "Internal Modem":
+                    // Show the config options VBox
+                    configVBox.setVisible(true);
+                    configVBox.setManaged(true);
+                    // Show APN related stuff
+                    apnVBox.setVisible(true);
+                    apnVBox.setManaged(true);
+                    // hide gateway
+                    gatewayHBox.setVisible(false);
+                    gatewayHBox.setManaged(false);
+                    // resize the dialog box
+                    dialog.getDialogPane().getScene().getWindow().sizeToScene();
+                    break;
+                case "LAN":
+                    // Show the config options VBox
+                    configVBox.setVisible(true);
+                    configVBox.setManaged(true);
+                    // show gateway
+                    gatewayHBox.setVisible(true);
+                    gatewayHBox.setManaged(true);
+                    // Hide APN related stuff
+                    apnVBox.setVisible(false);
+                    apnVBox.setManaged(false);
+                    
+                    // resize the dialog box
+                    dialog.getDialogPane().getScene().getWindow().sizeToScene();
+                    break;
+                default:
+                    gprsChoiceBox.getSelectionModel().selectFirst();
+            }
+        
+        });
+        
+        
+        try {
+            gprsChoiceBox.getSelectionModel().select(Integer.parseInt(ultraSettings.get("01")));
+        } catch (Exception e){
+            gprsChoiceBox.getSelectionModel().selectFirst();
+        }
+        
+        VBox dialogVBox = new VBox();
+        dialogVBox.setSpacing(4);
+        dialogVBox.getChildren().setAll(enableRemoteToggleSwitch,typeHBox,configVBox);
+        
+        dialog.getDialogPane().setContent(dialogVBox);
+        
+        // if good, save the settings
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == setButtonType) {
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+        
+        double labelWidth = 110;
+        portLabel.setPrefWidth(labelWidth);
+        gprsLabel.setPrefWidth(labelWidth);
+        serverLabel.setPrefWidth(labelWidth);
+        customServerLabel.setPrefWidth(labelWidth);
+        gatewayLabel.setPrefWidth(labelWidth);
+        apnNameLabel.setPrefWidth(labelWidth);
+        apnUserNameLabel.setPrefWidth(labelWidth);
+        apnPasswordLabel.setPrefWidth(labelWidth);
+
+        Optional<Boolean> result = dialog.showAndWait();
+
+        if (result.isPresent()) {
+            // Play the task game
+            Task ultraCommand = new Task<Void>() {
+                @Override public Void call() {
+                    if (connectedStatus.get()) {
+                        Boolean aquired = false;
+                        try {
+                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                                aquired = true;
+                                Boolean commit=false;
+                                Boolean restartInterface=false;
+                                
+                                
+                                // 0x29: URL for http uploading (er, IP)
+                                //       173.192.106.122 for USA1.RFIDTiming.com
+                                //       82.113.145.195 for EUROPE1.RFIDTiming.com
+                                // 0x2A: Gateway for LAN
+                                // 0x2B: DNS Server for (0x29) or blank if IP
+                                
+                                
+                                // 0x2E: Enable / Disable sending to remote: 0 or 1 
+                                if (!ultraSettings.containsKey("2E") || 
+                                        (enableRemoteToggleSwitch.selectedProperty().get() && "0".equals(ultraSettings.get("2E"))) ||
+                                        (!enableRemoteToggleSwitch.selectedProperty().get() && "1".equals(ultraSettings.get("2E")))
+                                    ){
+                                    System.out.println("remoteDialog(): Sending enable/disable (0x2E) command");
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(46);  // 0x2E
+                                    if (enableRemoteToggleSwitch.selectedProperty().get()) ultraOutput.writeByte(1);
+                                    else ultraOutput.writeByte(0);
+                                    ultraOutput.writeByte(255);
+                                    
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                        
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x2E' to set the send to remote flag");
+                                    }
+                                }
+                                
+                                // 0x01:Remote Type (0 = off, 1 = gprs, 2 = lan)
+                                if (!ultraSettings.containsKey("01") || 
+                                        !Integer.toString(gprsChoiceBox.getSelectionModel().getSelectedIndex()).equals(ultraSettings.get("01"))
+                                    ){
+                                    System.out.println("remoteDialog(): Sending Remote Type (0x01) command to " + Integer.toString(gprsChoiceBox.getSelectionModel().getSelectedIndex()));
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(1);  // 0x01
+                                    ultraOutput.writeByte(gprsChoiceBox.getSelectionModel().getSelectedIndex());
+                                    ultraOutput.writeByte(255);
+                                    
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                        
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x01' to set the remote type flag");
+                                    }
+                                }
+                                
+                                // 0x03: Port for remote server
+                                if (!ultraSettings.containsKey("03") || 
+                                        !portTextField.getText().equals(ultraSettings.get("03"))
+                                    ){
+                                    System.out.println("remoteDialog(): Sending Remote Port (0x03) command to " + portTextField.getText());
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(3);  // 0x03
+                                    ultraOutput.writeBytes(portTextField.getText());
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x03' to set the remote type flag");
+                                    }
+                                }
+
+                                // 0x04: APN name
+                                if (!ultraSettings.containsKey("04") || 
+                                        !apnNameTextField.getText().equals(ultraSettings.get("04"))
+                                    ){
+                                    System.out.println("remoteDialog(): Sending Remote Port (0x04) command to " + apnNameTextField.getText());
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(4);  // 0x03
+                                    ultraOutput.writeBytes(apnNameTextField.getText());
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x04' to set the rapn name");
+                                    }
+                                }
+                                
+                                // 0x05: APPN user
+                                if (!ultraSettings.containsKey("05") || 
+                                        !apnUserNameTextField.getText().equals(ultraSettings.get("05"))
+                                    ){
+                                    System.out.println("remoteDialog(): Sending apn UserName (0x05) command to " + apnUserNameTextField.getText());
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(5);  // 0x03
+                                    ultraOutput.writeBytes(apnUserNameTextField.getText());
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x05' to set the rapn name");
+                                    }
+                                }
+                                // 0x06: APN password
+                                if (!ultraSettings.containsKey("06") || 
+                                        !apnPasswordTextField.getText().equals(ultraSettings.get("06"))
+                                    ){
+                                    System.out.println("remoteDialog(): Sending apnPassword (0x06) command to " + apnPasswordTextField.getText());
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(6);  // 0x03
+                                    ultraOutput.writeBytes(apnPasswordTextField.getText());
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x06' to set the rapn name");
+                                    }
+                                }
+                                
+                                // 0x02: IP of remote server for GPRS. Send in hex? See 0x29
+                                // 0x29: URL for http uploading (er, IP)
+                                //       173.192.106.122 for USA1.RFIDTiming.com
+                                //       82.113.145.195 for EUROPE1.RFIDTiming.com
+                                // We set both 0x02 and 0x29 to the same effective value
+                                // to prevent really odd things
+                                
+                                String newIP = "";
+                                switch (serverChoiceBox.getSelectionModel().getSelectedIndex()) {
+                                    case 0:
+                                        newIP="173.192.106.122";
+                                        break;
+                                    case 1:
+                                        newIP="82.113.145.195";
+                                        break;
+                                    default:
+                                        newIP=customServerTextField.getText();
+                                        break;
+                                }
+                                // 0x02: URL for http uploading (er, IP)
+                                if ((!ultraSettings.containsKey("02") || 
+                                        !newIP.equals(ultraSettings.get("02")) ) && 
+                                        newIP.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")
+                                    ){
+                                    System.out.println("remoteDialog(): Sending Remote IP (0x02) command to " + newIP);
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(2);  // 0x02
+                                    String[] ipBytes = newIP.split("\\.");
+                                    for(String o: ipBytes){
+                                        ultraOutput.writeByte(Integer.parseUnsignedInt(o));
+                                    }
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x02' to set the remote server");
+                                    }
+                                }
+                                // 0x29: URL for http uploading (er, IP)
+                                if (!ultraSettings.containsKey("29") || 
+                                        !newIP.equals(ultraSettings.get("29"))
+                                    ){
+                                    System.out.println("remoteDialog(): Sending Remote IP (0x29) command to " + newIP);
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(41);  // 0x29
+                                    ultraOutput.writeBytes(newIP);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x29' to set the rapn name");
+                                    }
+                                }
+                                        
+                                // 0x2A: Gateway for LAN
+                                if ((!ultraSettings.containsKey("2A") || 
+                                        !gatewayTextField.getText().equals(ultraSettings.get("2A")) ) && 
+                                        gatewayTextField.getText().matches("\\d+\\.\\d+\\.\\d+\\.\\d+")
+                                    ){
+                                    System.out.println("remoteDialog(): Sending Remote IP (0x2A) command to " + gatewayTextField.getText());
+                                    ultraOutput.flush();
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(2);  // 0x02
+                                    String[] ipBytes = gatewayTextField.getText().split("\\.");
+                                    for(String o: ipBytes){
+                                        ultraOutput.writeByte(Integer.parseUnsignedInt(o));
+                                    }
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        commit=true;
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command '0x02' to set the remote server");
+                                    }
+                                }
+                                if (commit){
+                                    System.out.println("remoteDialog(): Sending commit (u 0xFF 0xFF) command");
+                                    ultraOutput.flush();
+
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                    if (result != null) {
+                                        // 0x2E: Enable / Disable sending to remote: 0 or 1 
+                                        if (enableRemoteToggleSwitch.selectedProperty().get()) ultraSettings.put("2E","1");
+                                        else ultraSettings.put("2E","0");
+                                        
+                                        // 0x01:Remote Type (0 = off, 1 = gprs, 2 = lan)
+                                        ultraSettings.put("01",Integer.toString(gprsChoiceBox.getSelectionModel().getSelectedIndex()));
+                                        
+                                        // 0x03: Port for remote server
+                                        ultraSettings.put("03",portTextField.getText());
+                                        
+                                        // 0x04: APN name
+                                        ultraSettings.put("04",apnNameTextField.getText());
+                                        // 0x05: APPN user
+                                        ultraSettings.put("05",apnUserNameTextField.getText());
+                                        // 0x06: APN password
+                                        ultraSettings.put("06",apnPasswordTextField.getText());
+                                        
+                                        // 0x29: URL for http uploading (er, IP)
+                                        if (newIP.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) ultraSettings.put("29",newIP);
+                                        // 0x02: IP of remote server for GPRS. Send in hex? See 0x29
+                                        if (newIP.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) ultraSettings.put("02",newIP);
+                                        
+                                        // 0x2A: Gateway for LAN
+                                        if (gatewayTextField.getText().matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) ultraSettings.put("2A",gatewayTextField.getText());
+
+                                    } else {
+                                    // timeout
+                                        System.out.println("Timeout with command 't'");
+                                    }
+                                }
+                                if (restartInterface){ // This will result in a disconnect
+                                    System.out.println("setClock(): Sending reset interface (0x2D) command");
+                                    
+                                    ultraOutput.flush();
+
+                                    ultraOutput.writeBytes("u");
+                                    ultraOutput.writeByte(45);
+                                    ultraOutput.writeByte(255);
+                                    ultraOutput.flush();
+                                    
+                                }
+                            } else {
+                                // timeout
+                                System.out.println("Timeout waiting to send command '?'");
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                        } finally {
+                            if (aquired) System.out.println("Relasing transmit lock");
+                            if (aquired) okToSend.release();
+                        }
+                    }
+                    return null;
+                }
+        };
+        new Thread(ultraCommand).start();
+            
+        }
+    }
+    
     private void setClockDialog(){
         Integer localTZ = TimeZone.getDefault().getOffset(System.currentTimeMillis())/3600000;
         Integer ultraTZ = Integer.parseInt(ultraSettings.get("23"));
@@ -1770,6 +2806,37 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 Boolean commit=false;
                                 Boolean restartInterface=false;
                                 
+                                // Beeper Volume
+                                String volume = beeperVolumeChoiceBox.getSelectionModel().getSelectedItem();
+                                if (volume != null) {
+                                    byte val = 3;
+                                    if (volume.equals("Off")) val = 0;
+                                    else if (volume.equals("Soft")) val = 1;
+                                    else if (volume.equals("Loud")) val = 2;
+                                    
+                                    System.out.println("updateReaderSettings(): Setting beeper volume (0x21) " + volume + "(" + Byte.toString(val) + ")");
+
+                                    if (val != 3) {
+                                        ultraOutput.flush();
+
+                                        ultraOutput.writeBytes("u");
+                                        ultraOutput.writeByte(33);  // 0x21, volume
+                                        ultraOutput.writeByte(val);
+                                        ultraOutput.writeByte(255);
+
+                                        ultraOutput.flush();
+                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                        if (result != null) {
+                                            ultraSettings.put("21",Byte.toString(val));
+                                            commit=true;
+                                        } else {
+                                        // timeout
+                                            System.out.println("Timeout with command 'u0x21'");
+                                        }
+                                    }
+                                } else {
+                                   System.out.println("updateReaderSettings(): Beeper volume is NULL!");
+                                }
                                 // Mode
                                 String mode = reader1ModeChoiceBox.getSelectionModel().getSelectedItem();
                                 if (! isJoey.get() && mode != null){

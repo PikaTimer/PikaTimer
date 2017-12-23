@@ -61,13 +61,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                </font>
             </Label>
             <CheckBox fx:id="waveByBibCheckBox" mnemonicParsing="false" text="Assign Race/Wave by Bib Number" />
+            <CheckBox fx:id="waveByAttributeCheckBox" mnemonicParsing="false" text="Assign by Import Attribute" />
             <HBox alignment="CENTER_LEFT" spacing="10.0" VBox.vgrow="NEVER">
                <children>
                   <CheckBox fx:id="waveHardCodeCheckBox" mnemonicParsing="false" text="Assign All to Race/Wave" />
                   <ComboBox fx:id="waveComboBox" />
                </children>
             </HBox>
-            <CheckBox fx:id="waveByAttributeCheckBox" mnemonicParsing="false" text="Assign by Import Attribute" visible="false" />
          </children>
          <padding>
             <Insets top="5.0" />

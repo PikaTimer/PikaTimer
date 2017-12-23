@@ -17,16 +17,19 @@
 package com.pikatimer.timing;
 
 import com.pikatimer.race.Race;
-import com.pikatimer.results.ReportDestination;
-import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Objects;
+import javafx.application.Platform;
 import javafx.beans.Observable;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
@@ -60,21 +63,25 @@ import org.hibernate.annotations.GenericGenerator;
 public class Split {
     
     //private final Wave self; 
-    private final IntegerProperty IDProperty; // split_id
+    private final IntegerProperty IDProperty = new SimpleIntegerProperty(); // split_id
     private Race race; // race_id
     private TimingLocation splitLocation; // timing_loc_id
-    private final StringProperty splitLocationString; 
-    private final IntegerProperty splitPosition; // split_seq_number
+    private final StringProperty splitLocationString = new SimpleStringProperty(); 
+    private final IntegerProperty splitPosition  = new SimpleIntegerProperty(); // split_seq_number
     private BigDecimal splitDistance; //
-    private final StringProperty splitDistanceString; // split_distance
+    private final StringProperty splitDistanceString = new SimpleStringProperty(); // split_distance
     private Unit splitDistanceUnit; // split_dist_unit
-    private final StringProperty splitDistanceUnitString; 
+    private final StringProperty splitDistanceUnitString = new SimpleStringProperty(); 
     private Pace splitPace; // split_pace_unit
-    private final StringProperty splitPaceString; 
-    private final StringProperty splitName;
-    private  Duration splitCutoff;
-    private final StringProperty splitCutoffString;
-    
+    private final StringProperty splitPaceString = new SimpleStringProperty();
+    private final StringProperty splitName = new SimpleStringProperty();
+    private Duration splitCutoff = Duration.ZERO;
+    private Duration splitMinTime = Duration.ZERO;
+    private final StringProperty splitCutoffString = new SimpleStringProperty();
+    private final BooleanProperty mandatoryProperty = new SimpleBooleanProperty(false);
+    private final BooleanProperty ignoreProperty = new SimpleBooleanProperty(false);
+    private final BooleanProperty splitCutoffIsRelativeProperty = new SimpleBooleanProperty(true);
+    private final ObjectProperty<Duration> splitMinTimeProperty = new SimpleObjectProperty(Duration.ZERO);
     
 
     public Split(Race r){
@@ -82,19 +89,10 @@ public class Split {
         this.setRace(r);
     }
    public Split() {
-        //this.self = this; 
-        this.IDProperty = new SimpleIntegerProperty();
-        this.splitName = new SimpleStringProperty();
-        this.splitDistanceString = new SimpleStringProperty();
-        this.splitCutoffString = new SimpleStringProperty();
-        this.splitPosition = new SimpleIntegerProperty();
-        this.splitDistanceUnitString = new SimpleStringProperty(); 
-        this.splitPaceString = new SimpleStringProperty();
-        this.splitLocationString = new SimpleStringProperty();
     }
    
     public static Callback<Split, Observable[]> extractor() {
-        return (Split s) -> new Observable[]{s.splitName,s.splitDistanceString,s.splitPosition,s.splitLocationString};
+        return (Split s) -> new Observable[]{s.splitName,s.splitDistanceString,s.splitPosition,s.splitLocationString,s.splitMinTimeProperty};
     }
 
     @Id
@@ -171,6 +169,28 @@ public class Split {
         return splitName;
     }
     
+    @Column(name="MIN_TIME",nullable=true)
+    public Long getSplitMinTime() {
+        if( splitMinTime != null) {
+            return splitMinTime.toNanos();
+        } else {
+            return 0L;
+        }
+    }
+    public void setSplitMinTime(Long c) {
+        if(c != null) {
+            //Fix this to watch for parse exceptions
+            System.out.println("splitMinTimeProperty: was :" + splitMinTimeProperty.getValue().toString());
+            splitMinTime = Duration.ofNanos(c);
+            splitMinTimeProperty.setValue(splitMinTime);
+            Platform.runLater(() -> {splitMinTimeProperty.setValue(splitMinTime);});
+            System.out.println("splitMinTimeProperty: now :" + splitMinTimeProperty.getValue().toString());
+        }
+    }
+    public Duration splitMinTimeDuration(){
+        return splitMinTime; 
+    }
+    
     
     @Column(name="CUTOFF_TIME",nullable=true)
     public Long getSplitCutoff() {
@@ -184,15 +204,15 @@ public class Split {
         if(c != null) {
             //Fix this to watch for parse exceptions
             splitCutoff = Duration.ofNanos(c);
-            splitCutoffString.set(DurationFormatter.durationToString(splitCutoff, 0, Boolean.TRUE));
         }
     }
-    public Duration splitCutoffProperty(){
+    public Duration splitCutoffDuration(){
         return splitCutoff; 
     }
-    public StringProperty splitCutoffStringProperty(){
-        return splitCutoffString;
-    }
+    
+    
+    
+    
     
     @Column(name="SPLIT_DISTANCE")
     public BigDecimal getSplitDistance() {
@@ -222,19 +242,30 @@ public class Split {
         return splitDistanceUnitString; 
     }
     
-    /*    @Override
-    public boolean equals(Object obj) {
-    if (obj == null || getClass() != obj.getClass()) {
-    return false;
+    @Column(name="MANDATORY")
+    public Boolean getMandatorySplit(){
+        return mandatoryProperty.getValue();
     }
-    //System.out.println("Wave.equals called: " + IDProperty.getValue() + " vs " + ((Wave)obj).IDProperty.getValue() );
-    return this.IDProperty.getValue().equals(((Split)obj).IDProperty.getValue());
+    public void setMandatorySplit(Boolean m){
+        mandatoryProperty.setValue(m);
     }
     
-    @Override
-    public int hashCode() {
-    return 7 + 5*IDProperty.intValue(); // 5 and 7 are random prime numbers
-    }*/
+    @Column(name="IGNORE_TIME")
+    public Boolean getIgnoreTime(){
+        return ignoreProperty.getValue();
+    }
+    public void setIgnoreTime(Boolean m){
+        ignoreProperty.setValue(m);
+    }
+
+    @Column(name="CUTOFF_ABSOLUTE")
+    
+    public Boolean getSplitCutoffIsRelative(){
+        return splitCutoffIsRelativeProperty.getValue();
+    }
+    public void setSplitCutoffIsRelative(Boolean m){
+        splitCutoffIsRelativeProperty.setValue(m);
+    }        
 
     @Override
     public int hashCode() {

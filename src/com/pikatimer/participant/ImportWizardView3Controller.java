@@ -16,6 +16,7 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
@@ -26,15 +27,10 @@ import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.HashMap;
@@ -98,6 +94,24 @@ public class ImportWizardView3Controller {
                 Boolean dupeCheck = false;
                 Boolean mergeDupes = false;
                 
+                Map<String,Wave> waveMap = new HashMap();
+                Map<String,Race> raceMap = new HashMap();
+                
+                if (model.getWaveAssignByAttribute()) {
+                    System.out.println("Setting up raceMap and waveMap");
+                    RaceDAO.getInstance().listRaces().forEach(race -> {
+                        raceMap.put(race.getRaceName(), race);
+                        System.out.println("Race \"" + race.getRaceName() + "\" added");
+                    });
+                    RaceDAO.getInstance().listWaves().forEach(wave -> {
+                        waveMap.put(wave.getWaveName(), wave);
+                        System.out.println("Wave \"" + wave.getWaveName() + "\" added");
+
+                    });
+                    
+                }
+                    
+                
                 if (!participantDAO.listParticipants().isEmpty()) {
                     existingRunners = true;
                     // add check to see if we should clear first
@@ -156,15 +170,28 @@ public class ImportWizardView3Controller {
                     while (rs.next()) {
                         numAdded++; 
                         
-                        Map<String,String> attributes = new HashMap<>();
+                        Map<String,String> attributes = new HashMap();
+                        Map<Integer,String> customAttributes = new HashMap();
                         
+                        String pendingWave = "";
+                        String pendingRace = ""; 
                         for (int i = 0; i < meta.getColumnCount(); i++) {
                             if (mapping.get(meta.getColumnLabel(i+1)) != null && !"".equals(rs.getString(i+1))) {
-                                //System.out.println(rs.getString(i+1) + " -> " + mapping.get(meta.getColumnLabel(i+1)));
-                                attributes.put(mapping.get(meta.getColumnLabel(i+1)),rs.getString(i+1)); 
+                                String key = mapping.get(meta.getColumnLabel(i+1));
+                                System.out.println(rs.getString(i+1) + " -> " + key);
+                                if (key.equals("WAVE")) {
+                                    pendingWave = rs.getString(i+1);
+                                } else if (key.equals("RACE")) {
+                                    pendingRace = rs.getString(i+1);
+                                } else if (key.matches("^\\d$")) {
+                                    customAttributes.put(Integer.parseInt(key), rs.getString(i+1));
+                                } else {
+                                    attributes.put(key,rs.getString(i+1));
+                                } 
                             }
                         }
                         Participant p = new Participant(attributes); 
+                        p.setCustomAttributes(customAttributes);
                         
                         String key = p.getFirstName()+p.getLastName() + p.getAge()+p.getSex();
                         key = key.toLowerCase();
@@ -185,6 +212,7 @@ public class ImportWizardView3Controller {
                                 Participant np = p; // cuz lambdas don't like changes
                                 Platform.runLater(() -> {
                                     np.setAttributes(attributes);
+                                    np.setCustomAttributes(customAttributes);
                                     participantDAO.updateParticipant(np);
                                 });
                                 
@@ -206,16 +234,32 @@ public class ImportWizardView3Controller {
                         }
                         
                         if(model.getWaveAssignByBib()) {
-                            p.setWaves(getWaveByBib(attributes.get("bib")));
+                            p.setWaves(participantDAO.getWaveByBib(attributes.get("bib")));
                         } else if (model.getWaveAssignByAttribute()) {
-                           // todo
+                            System.out.println("Assigning wave by attribute: \"" + pendingWave + "\" / \"" + pendingRace + "\"");
+                           if (pendingWave.isEmpty() && !pendingRace.isEmpty()){
+                               if (raceMap.containsKey(pendingRace)){
+                                   p.setWaves(raceMap.get(pendingRace).getWaves().get(0));
+                               }
+                           } else if (!pendingWave.isEmpty() && pendingRace.isEmpty()){
+                               if (waveMap.containsKey(pendingWave)){
+                                   p.setWaves(waveMap.get(pendingWave));
+                               }
+                           } else if (!pendingWave.isEmpty() && !pendingRace.isEmpty()) {
+                               // Well crap, we have both....
+                               if (waveMap.containsKey(pendingWave)){
+                                   p.setWaves(waveMap.get(pendingWave));
+                               } else if (raceMap.containsKey(pendingRace)){
+                                   p.setWaves(raceMap.get(pendingRace).getWaves().get(0));
+                               } // else they are screwed..... Sorry.... 
+                           }
+                           if (p.wavesObservableList().size() > 0 ) System.out.println("Now in wave " + p.wavesObservableList().get(0).getWaveName());
+                           else System.out.println("Not in any wave/race!!!");
                         } else {
                             p.addWave(model.getAssignedWave()); 
                         }
                         
                         participantDAO.addParticipant(p);
-                        //System.out.println("Adding ...");
-                        //TODO: merge vs add
                         //TODO: Cleanup Name Capitalization (if selected)
                         //TODO: City / State Title Case (if selected)
                         //TODO: Cleanup City/State (if zip specified)
@@ -252,27 +296,6 @@ public class ImportWizardView3Controller {
     
    
     
-    private Set<Wave> getWaveByBib(String bib) {
-        AlphanumericComparator comp = new AlphanumericComparator(); 
-        
-        Set<Wave> waves = new HashSet<>();
-        Map raceMap = new HashMap(); 
-        
-        RaceDAO.getInstance().listWaves().forEach(i -> {
-            if (i.getWaveAssignmentMethod() == WaveAssignment.BIB) {
-                String start = i.getWaveAssignmentStart(); 
-                String end = i.getWaveAssignmentEnd(); 
-                if (!(start.isEmpty() && end.isEmpty()) && (comp.compare(start, bib) <= 0 || start.isEmpty()) && (comp.compare(end, bib) >= 0 || end.isEmpty())) {
-                    if(!raceMap.containsKey(i.getRace())) {
-                        //System.out.println("Bib " + bibTextField.getText() + " matched wave " + i.getWaveName() + " results: "+ comp.compare(start, bibTextField.getText()) + " and " + comp.compare(end, bibTextField.getText()) );
-                        raceMap.put(i.getRace(), true); 
-                        waves.add(i); 
-                    }
-                }
-            }
-        });
-        
-        return waves; 
-    }
+    
     
 }

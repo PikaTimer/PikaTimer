@@ -25,6 +25,7 @@ import com.pikatimer.race.Wave;
 import com.pikatimer.timing.CookedTimeData;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimeOverride;
+import com.pikatimer.timing.TimeOverrideType;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.HibernateUtil;
@@ -291,14 +292,15 @@ public class ResultsDAO {
         Map<Integer,Duration> overrideMap = new HashMap();
         if (bibOverrides.isPresent()) {
             bibOverrides.get().forEach(to -> {
-                if (!to.getRelative()) {
-                    overrideMap.put(to.getSplitId(), to.getTimestamp());
-                    System.out.println("Override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
-                } else {
-                    // we have to convert the relative -> actual time
-                    System.out.println("Relative override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
-
-                    overrideMap.put(to.getSplitId(), to.getTimestamp().negated());
+                if (TimeOverrideType.OVERRIDE.equals(to.getOverrideType())) {
+                    if (!to.getRelative()) {
+                        overrideMap.put(to.getSplitId(), to.getTimestamp());
+                        System.out.println("Override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
+                    } else {
+                        // we have to convert the relative -> actual time
+                        System.out.println("Relative override found for splitID of " + to.getSplitId() + " for " + to.getTimestamp());
+                        overrideMap.put(to.getSplitId(), to.getTimestamp().negated());
+                    }
                 }
             });
         }
@@ -407,16 +409,23 @@ public class ResultsDAO {
                     }
                     
                     for (int ot = splitIndex; ot < splits.size(); ot++) {
-                        if (overrides[ot] != null && !overrides[ot].isNegative() && overrides[ot].minusMinutes(10).compareTo(ctd.getTimestamp()) < 0) {
+                        
+                        // MIN_TIME_TO_SPLIT
+                        Duration backWindowDuration = Duration.ofMinutes(5);
+                        Duration forwardWindowDuration = Duration.ofMinutes(5);
+                        if (ot <splits.size()-1 && !Duration.ZERO.equals(splitArray[ot+1].splitMinTimeDuration())) { forwardWindowDuration = splitArray[ot+1].splitMinTimeDuration();} 
+                        if (!Duration.ZERO.equals(splitArray[ot].splitMinTimeDuration())) { backWindowDuration = splitArray[ot].splitMinTimeDuration();} 
+                        
+                        if (overrides[ot] != null && !overrides[ot].isNegative() && overrides[ot].minus(backWindowDuration).compareTo(ctd.getTimestamp()) < 0) {
                             splitIndex= ot;
                             r.setSplitTime(splitArray[splitIndex].getPosition(), overrides[splitIndex]);
                             System.out.println("Found an override for " + splitIndex + " that is too close to the current times");
 
-                            // TODO: Fix this 
-                            Duration splitMax = overrides[ot].plusMinutes(10); 
+                            
+                            Duration splitMax = overrides[ot].plus(forwardWindowDuration); 
 
                             // now consume the rest of the hits at this split until we 
-                            // hit the max//
+                            // hit the max time for this split
                             do { 
                                 //System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
                                 if (times.hasNext()) ctd = times.next();
@@ -434,8 +443,12 @@ public class ResultsDAO {
                 } else if (hasOverrides && overrides[splitIndex] != null) {
                     //System.out.println("We have an override for " + splitIndex + " incrementing and moving on.");
                     r.setSplitTime(splitArray[splitIndex].getPosition(), overrides[splitIndex]);
-                    // TODO: Fix this 
-                    Duration splitMax = overrides[splitIndex].plusMinutes(5); 
+                    
+                    // MIN_TIME_TO_SPLIT
+                    Duration forwardWindowDuration = Duration.ofMinutes(5);
+                    if (splitIndex <splits.size()-1 && !Duration.ZERO.equals(splitArray[splitIndex+1].splitMinTimeDuration())) { forwardWindowDuration = splitArray[splitIndex+1].splitMinTimeDuration();} 
+                        
+                    Duration splitMax = overrides[splitIndex].plus(forwardWindowDuration); 
                     while (ctd != null && splitMax.compareTo(ctd.getTimestamp()) > 0 ) {
                         if (times.hasNext()) ctd = times.next();
                         else ctd = null;
@@ -443,10 +456,35 @@ public class ResultsDAO {
                     
                     splitIndex++; // we pre-filled the split times earlier
                 } else if (ctd.getTimestamp().compareTo(waveStart) < 0 ) {
-                    if (splitIndex == 0 && ctd.getTimingLocationId().equals(splitArray[splitIndex].getTimingLocationID())) r.setSplitTime(splitIndex, ctd.getTimestamp());
-                    if (times.hasNext()) ctd = times.next();
-                    else ctd = null;
-                    //System.out.println("ResultsDAO.processBib: tossing ctd's that were before the wave start");
+                    System.out.println("ResultsDAO.processBib: tossing ctd's that were before the wave start");
+                    // This will eat all times before the start time.
+                    while (ctd != null && ctd.getTimestamp().compareTo(waveStart) < 0) {
+                        System.out.println("Tossing pre-start time of " + ctd.getTimestamp().toString());
+                        if (splitIndex == 0 && ctd.getTimingLocationId().equals(splitArray[splitIndex].getTimingLocationID())) r.setSplitTime(splitIndex, ctd.getTimestamp());
+                        if (times.hasNext()) ctd = times.next();
+                        else ctd = null;
+                    }
+                    
+                    // If the next CTD is not for the start line... start tossing up to the min time to the first split. 
+                    if (ctd != null && splitIndex == 0 && !ctd.getTimingLocationId().equals(splitArray[splitIndex].getTimingLocationID())){
+                        
+                        // We don't really have a start time, so eat any times toward the next split under the min_tim_to_split value
+                        
+                        // MIN_TIME_TO_SPLIT
+                        Duration forwardWindowDuration = Duration.ofMinutes(5);
+                        if (splitIndex <splits.size()-1 && !Duration.ZERO.equals(splitArray[splitIndex+1].splitMinTimeDuration())) { forwardWindowDuration = splitArray[splitIndex+1].splitMinTimeDuration();} 
+
+                        Duration splitMax = waveStart.plus(forwardWindowDuration);  
+                        System.out.println("Start forward splitMax is now " + DurationFormatter.durationToString(splitMax));
+                        // now consume the rest of the hits at this split until we 
+                        // either hit another location or hit the max
+                        while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 ) { 
+                            if (times.hasNext()) ctd = times.next();
+                            else ctd = null;
+                        } ;
+                        
+                    }
+                    
                 } else if (Objects.equals(ctd.getTimingLocationId(), splitArray[splitIndex].getTimingLocationID())) {
                     //System.out.println("ResultsDAO.processBib: timing Location ID's match!");
 
@@ -462,7 +500,18 @@ public class ResultsDAO {
                             else ctd = null;
                         } while (ctd != null && (ctd.getTimingLocationId() == splitArray[splitIndex].getTimingLocationID() && ctd.getTimestamp().compareTo(maxWaveStart) < 0) );
                     
-                    
+                        // MIN_TIME_TO_SPLIT
+                        Duration forwardWindowDuration = Duration.ofMinutes(5);
+                        if (splitIndex <splits.size()-1 && !Duration.ZERO.equals(splitArray[splitIndex+1].splitMinTimeDuration())) { forwardWindowDuration = splitArray[splitIndex+1].splitMinTimeDuration();} 
+
+                        Duration splitMax = r.getStartDuration().plus(forwardWindowDuration);  
+                        System.out.println("Start forward splitMax is now " + DurationFormatter.durationToString(splitMax));
+                        // now consume the rest of the hits at this split until we 
+                        // either hit another location or hit the max
+                        do { 
+                            if (times.hasNext()) ctd = times.next();
+                            else ctd = null;
+                        } while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 );
                     
                     } else if (splitIndex == splits.size() -1 ) { // finish line
                         //System.out.println("We made it to the finish line!");
@@ -473,15 +522,18 @@ public class ResultsDAO {
                         //System.out.println("We are at split " + splitIndex + " in " + ctd.getTimestamp());
                         r.setSplitTime(splitArray[splitIndex].getPosition(), ctd.getTimestamp());
                         
-                        // TODO: Fix this 
-                        Duration splitMax = ctd.getTimestamp().plusMinutes(5); 
+                        // MIN_TIME_TO_SPLIT
+                        Duration forwardWindowDuration = Duration.ofMinutes(5);
+                        if (splitIndex <splits.size()-1 && !Duration.ZERO.equals(splitArray[splitIndex+1].splitMinTimeDuration())) { forwardWindowDuration = splitArray[splitIndex+1].splitMinTimeDuration();} 
+
+                        Duration splitMax = ctd.getTimestamp().plus(forwardWindowDuration);  
                         
                         // now consume the rest of the hits at this split until we 
                         // either hit another location or hit the max
                         do { 
                             if (times.hasNext()) ctd = times.next();
                             else ctd = null;
-                        } while (ctd != null && ctd.getTimingLocationId() == splitArray[splitIndex].getTimingLocationID() && ctd.getTimestamp().compareTo(splitMax) < 0 );
+                        } while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 );
                         splitIndex++;
                     }
                 } else { // walk the splitArray until we get a match
@@ -550,7 +602,14 @@ public class ResultsDAO {
             //fix the start time
             if(r.getStartDuration().equals(r.getWaveStartDuration())) {
                 // zero gun time, look for a backup
-                while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxWaveStart) < 0) {
+                Duration maxStart = maxWaveStart;
+                
+                // If we have a 1st split time and there is a minimum time to that split, 
+                // use that to box in the max allowed start time. 
+                if (!r.getSplitTime(1).isZero() && !Duration.ZERO.equals(splitArray[1].splitMinTimeDuration())) { maxStart = r.getSplitTime(1).minus(splitArray[1].splitMinTimeDuration());} 
+
+                
+                while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxStart) < 0) {
                     if (r.getStartDuration().compareTo(c.getTimestamp())<0) {
                         r.setStartDuration(c.getTimestamp());
                         //System.out.println("Backup start time found for bib " + p.getBib());
@@ -573,7 +632,12 @@ public class ResultsDAO {
             for (int si = 2; backupTimeIndex < maxBackupTimes  && si < splits.size() ; si++){
                // System.out.println("Evaluating si " + si + " for bib "+ p.getBib());
                 if (!r.getSplitTime(si).isZero() ) {
-                    lastSeen = r.getSplitTime(si).plusMinutes(5); //TODO Fix this
+                    
+                    // MIN_TIME_TO_SPLIT
+                    Duration forwardWindowDuration = Duration.ofMinutes(5);
+                    if (splitIndex <splits.size()-1 && !Duration.ZERO.equals(splitArray[splitIndex+1].splitMinTimeDuration())) { forwardWindowDuration = splitArray[splitIndex+1].splitMinTimeDuration();} 
+
+                    lastSeen = r.getSplitTime(si).plus(forwardWindowDuration); 
                     //System.out.println(" Previously seen at si " + si + " at " + lastSeen);
 
                     // consume any backup times older than this
@@ -593,36 +657,49 @@ public class ResultsDAO {
 
                     while (r.getSplitTime(si).isZero() ){
                         if (Objects.equals(c.getTimingLocationId(), splitArray[si-1].getTimingLocationID()) ) {
-                            //System.out.println(" Split time found for bib " + p.getBib() + " " + c.getTimestamp() + " " + lastSeen + " " + nextSeen);
-                            if (c.getTimestamp().compareTo(lastSeen) > 0  && (nextSeen.isZero() || c.getTimestamp().compareTo(nextSeen.minusMinutes(5)) < 0)) {
+                            System.out.println(" Split time found for bib " + p.getBib() + " " + c.getTimestamp() + " " + lastSeen + " " + nextSeen);
+                            
+                            // MIN_TIME_TO_SPLIT
+                            Duration backWindowDuration = Duration.ofMinutes(5);
+                             if (splitIndex <splits.size()-1 && !Duration.ZERO.equals(splitArray[splitIndex+1].splitMinTimeDuration())) { backWindowDuration = splitArray[splitIndex+1].splitMinTimeDuration();} 
+
+                            if (c.getTimestamp().compareTo(lastSeen) > 0  && (nextSeen.isZero() || c.getTimestamp().compareTo(nextSeen.minus(backWindowDuration)) < 0)) {
                                 r.setSplitTime(si,c.getTimestamp());
                                 lastSeen=c.getTimestamp();
                                // System.out.println(" Split match found for bib " + p.getBib() + " at " + lastSeen);
                             }
                         }
                         if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
-                        else break;
+                        else { 
+                            //we hit the bottom, reset the backupTimeIndex to zero to restart our search
+                            System.out.println(" Hit backup bottom, restarting search");
+                            backupTimeIndex=0;
+                            break;
+                        };
                     }
                 }
             }
             
             
-            if (backupTimeIndex == maxBackupTimes ) return; // out of times
+            if (backupTimeIndex == maxBackupTimes ) {
+                System.out.println("No more backup times found for bib " + p.getBib());
+                return; // out of backup times
+            } 
             
             // now fix the finish time 
             if (r.getFinishDuration() == null || r.getFinishDuration().isZero()) { // we need a finish time
                 int finishSplit = splits.size()-1;
                 
                 // find the last time we saw this runner
-                
                 for (int si = 1; si < finishSplit; si++ ){
                     if (r.getSplitTime(si) != Duration.ZERO) lastSeen = r.getSplitTime(si);
                 }
-                
+                backupTimeIndex=0;
+                c = backupTimesList.get(backupTimeIndex++);
                 while (r.getFinishDuration() == null || r.getFinishDuration().isZero() ){
                     if (Objects.equals(c.getTimingLocationId(), splitArray[finishSplit].getTimingLocationID()) ) {
                         if (c.getTimestamp().compareTo(lastSeen) > 0) r.setFinishDuration(c.getTimestamp());
-                        System.out.println("Finish start time found for bib " + p.getBib());
+                        System.out.println("Backup finish time found for bib " + p.getBib());
                     }
                     if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
                     else break;
@@ -761,11 +838,12 @@ public class ResultsDAO {
     
     public void processReports(Race r, RaceReport rr){
         
-        Task processRaceReports = new Task<Void>() {
-
-                @Override 
-                public Void call() {
-                    try{
+        Task processRaceReports;
+        processRaceReports = new Task<Void>() {
+            
+            @Override
+            public Void call() {
+                try{
                     List<ProcessedResult> results = new ArrayList();
 
                     Integer splitSize = r.getSplits().size();
@@ -773,13 +851,13 @@ public class ResultsDAO {
                     // get the current results list
                     getResults(r.getID()).forEach(res -> {
                         ProcessedResult pr = new ProcessedResult();
-
+                        
                         // If there is no participant, then bail. 
                         // TODO: Maybe add an option to create a participant on the fly, but
                         // this could gete messy with all of the random RFID chips out there.
-                        // Either way, this would be handled on the timing tab, not here. 
-                        if(participantDAO.getParticipantByBib(res.getBib()) == null) return; 
-
+                        // Either way, this would be handled on the timing tab, not here.
+                        if(participantDAO.getParticipantByBib(res.getBib()) == null) return;
+                        
                         // Link in the participant
                         pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
                         // Set the AG code (e.g. M30-34) (age and gender are set automagically)
@@ -795,8 +873,8 @@ public class ResultsDAO {
                         pr.setWaveStartTime(waveStartTime);
                         
                         // by definition, you cross the start line at zero seconds
-                        pr.setSplit(1, Duration.ZERO); 
-
+                        pr.setSplit(1, Duration.ZERO);
+                        
                         //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
                         
                         // if they are DQ'ed then we don't care what their time is
@@ -804,21 +882,81 @@ public class ResultsDAO {
                             results.add(pr);
                             return;
                         }
-                        // Set the finish times unless they are a DNF
-                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero() && ! pr.getParticipant().getDNF()){
-                            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime));
-                            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime));
-                            pr.setSplit(splitSize, pr.getChipFinish());
-                        }
+                        
 
                         // Set the splits
+                        Duration paused = Duration.ZERO;
                         if(r.getSplits().size() > 2) {
                             for (int i = 2; i <  splitSize ; i++) {
-                                //if (res.getSplitTime(i) != null) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
-                                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime));
+                                //System.out.println("Split: " + r.getSplits().get(i-1).getSplitName() + " Ignore? " + r.getSplits().get(i-1).getIgnoreTime() );
+                                if (r.getSplits().get(i-1).getIgnoreTime() && !res.getSplitTime(i).isZero()) {
+                                    if (i == 2) paused = res.getSplitTime(i).minus(chipStartTime);
+                                    else if (!res.getSplitTime(i-1).isZero()) paused = paused.plus(res.getSplitTime(i).minus(res.getSplitTime(i-1)));
+                                    System.out.println("Paused time for " + pr.getParticipant().getBib() + " " + paused + " from " + res.getSplitTime(i)+ " minus " + res.getSplitTime(i-1) );
+                                }
+                                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
+                                
+                                // Is this a mandatory split that we are missing?
+                                if (r.getSplits().get(i-1).getMandatorySplit() && (pr.getSplit(i) == null || pr.getSplit(i).isZero())){
+                                    // Mandatory split
+                                    return;
+                                }
+                                // Check to see if we are over a cutoff for this split. 
+                                if (! res.getSplitTime(i).isZero() && !Duration.ZERO.equals(r.getSplits().get(i-1).splitCutoffDuration())){
+                                    if (r.getSplits().get(i-1).getSplitCutoffIsRelative()) {
+                                        if (pr.getSplit(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
+                                            pr.oco = TRUE;
+                                            pr.ocoSplit = i;
+                                            pr.ocoTime = pr.getSplit(i);
+                                            pr.ocoCutoffTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                            results.add(pr);
+                                            return;
+                                        }
+                                    } else {
+                                        if (res.getSplitTime(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
+                                            pr.oco = TRUE;
+                                            pr.ocoSplit = i;
+                                            pr.ocoTime = res.getSplitTime(i);
+                                            pr.ocoCutoffTime = r.getSplits().get(i-1).splitCutoffDuration();
+                                            results.add(pr);
+                                            return;
+                                        }
+                                    }
+                                }
                             }
                         }
                         
+                        // Set the finish times unless they are a DNF
+                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero() && ! pr.getParticipant().getDNF()){
+                            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime).minus(paused));
+                            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime).minus(paused));
+                            pr.setSplit(splitSize, pr.getChipFinish());
+                        }
+                        
+                        // look for any bonus or penalty times
+                        Optional<List<TimeOverride>> overrides = timingDAO.getOverridesByBib(pr.getParticipant().getBib());
+                        if (overrides.isPresent() && pr.getChipFinish() != null) {
+                            overrides.get().forEach(o -> {
+                                if (TimeOverrideType.PENALTY.equals(o.getOverrideType())){
+                                    pr.penalty = true;
+                                    pr.penaltyTime = Duration.ofNanos(o.getTimestampLong());
+                                    pr.bonusPenaltyNote = o.getNote();
+                                    pr.rawChipFinishTime=pr.getChipFinish();
+                                    pr.rawGunFinishTime=pr.getGunFinish();
+                                    pr.setChipFinish(pr.getChipFinish().plus(pr.penaltyTime));
+                                    pr.setGunFinish(pr.getGunFinish().plus(pr.penaltyTime));
+                                } else if (TimeOverrideType.BONUS.equals(o.getOverrideType())){
+                                    pr.bonus = true;
+                                    pr.bonusTime = Duration.ofNanos(o.getTimestampLong());
+                                    pr.bonusPenaltyNote = o.getNote();
+                                    pr.rawChipFinishTime=pr.getChipFinish();
+                                    pr.rawGunFinishTime=pr.getGunFinish();
+                                    pr.setChipFinish(pr.getChipFinish().minus(pr.bonusTime));
+                                    pr.setGunFinish(pr.getGunFinish().minus(pr.bonusTime));
+                                } 
+                            
+                            });
+                        }
                         
                         // set the segment times unless they are a DNF
                         if (!pr.getParticipant().getDNF()) r.getSegments().forEach(seg -> {
@@ -880,7 +1018,7 @@ public class ResultsDAO {
                         });
                     });
                     
-                    // now sort them again 
+                    // now sort them again
                     results.sort(null); 
                     
                     // Now deal with ties. Ugh.
@@ -909,11 +1047,11 @@ public class ResultsDAO {
                                 placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
                                 pr.setAGPlace(placementCounter.get(pr.getSex()+pr.getAGCode()));
                             } else {
-                               lastResult.set(currentResult);
-                               placementCounter.clear();
-                               placementCounter.put("overall", pr.getOverall()); 
-                               placementCounter.put(pr.getSex(), pr.getSexPlace());
-                               placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
+                                lastResult.set(currentResult);
+                                placementCounter.clear();
+                                placementCounter.put("overall", pr.getOverall());
+                                placementCounter.put(pr.getSex(), pr.getSexPlace());
+                                placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getAGPlace());
                             }
 
                         });
@@ -939,33 +1077,33 @@ public class ResultsDAO {
                                     placementCounter.putIfAbsent(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
                                     pr.setSegmentAGPlace(seg.getID(),placementCounter.get(pr.getSex()+pr.getAGCode()));
                                 } else {
-                                   lastResult.set(currentResult);
-                                   placementCounter.clear();
-                                   placementCounter.put("overall", pr.getSegmentOverallPlace(seg.getID())); 
-                                   placementCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID()));
-                                   placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
+                                    lastResult.set(currentResult);
+                                    placementCounter.clear();
+                                    placementCounter.put("overall", pr.getSegmentOverallPlace(seg.getID()));
+                                    placementCounter.put(pr.getSex(), pr.getSegmentSexPlace(seg.getID()));
+                                    placementCounter.put(pr.getSex()+pr.getAGCode(),pr.getSegmentAGPlace(seg.getID()));
                                 }
 
                             });
                         });
                         
-                        // now sort them again 
+                        // now sort them again
                         results.sort(null); 
                     }
-
-
+                    
+                    
                     // for each report, feed it the results list
                     if (rr == null) {
                         r.raceReportsProperty().forEach(rr ->{
                             rr.processResult(results);
                         }); 
                     } else rr.processResultNow(results);
-                    } catch (Exception ex){
-                        ex.printStackTrace();
-                    }
-                    return null;
+                } catch (Exception ex){
+                    ex.printStackTrace();
                 }
-            };
+                return null;
+            }
+        };
             Thread processNewResultThread = new Thread(processRaceReports);
             processNewResultThread.setName("Thread-processRaceReports-" + r.getRaceName());
             processNewResultThread.setDaemon(true);

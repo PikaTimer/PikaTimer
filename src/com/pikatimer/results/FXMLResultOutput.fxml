@@ -27,12 +27,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import org.controlsfx.control.CheckComboBox?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane fx:id="baseGridPane" hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultOutputController">
+<GridPane fx:id="baseGridPane" hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.results.FXMLResultOutputController">
    <columnConstraints>
       <ColumnConstraints hgrow="NEVER" maxWidth="260.0" minWidth="-Infinity" prefWidth="260.0" />
       <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="342.5" prefWidth="342.5" />
@@ -66,28 +68,51 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </Label>
             <VBox spacing="5.0">
                <children>
-                  <HBox spacing="5.0">
+                  <HBox fillHeight="false" spacing="5.0">
                      <children>
-                        <CheckBox fx:id="inProgressCheckBox" mnemonicParsing="false" prefWidth="115.0" text="In-Progress" />
+                        <CheckBox fx:id="inProgressCheckBox" mnemonicParsing="false" prefWidth="120.0" text="In-Progress" />
                         <CheckBox fx:id="showGunTimeCheckBox" mnemonicParsing="false" text="Show Gun Time" />
                      </children>
                   </HBox>
-                  <HBox spacing="5.0">
+                  <HBox fillHeight="false" spacing="5.0">
                      <children>
-                        <CheckBox fx:id="showDQCheckBox" mnemonicParsing="false" prefWidth="115.0" text="Show DQ's" />
+                        <CheckBox fx:id="showDQCheckBox" mnemonicParsing="false" prefWidth="120.0" text="Show DQ's" />
                         <CheckBox fx:id="showDNFCheckBox" mnemonicParsing="false" text="Show DNF's" />
                      </children>
                   </HBox>
-                  <HBox alignment="CENTER_LEFT" spacing="5.0">
+                  <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                      <children>
-                        <CheckBox fx:id="showPaceCheckBox" mnemonicParsing="false" prefWidth="115.0" text="Show Pace" />
+                        <CheckBox fx:id="showPaceCheckBox" mnemonicParsing="false" prefWidth="120.0" text="Show Pace" />
                         <CheckBox fx:id="showSplitsCheckBox" mnemonicParsing="false" text="Show Splits" />
                      </children>
                   </HBox>
-                  <HBox spacing="5.0">
+                  <HBox fillHeight="false" spacing="5.0">
                      <children>
-                        <CheckBox fx:id="showSegmentsCheckBox" mnemonicParsing="false" prefWidth="115.0" text="Show Segments" />
+                        <CheckBox fx:id="showSegmentsCheckBox" mnemonicParsing="false" prefWidth="120.0" text="Show Segments" />
                         <CheckBox fx:id="showSegmentPaceCheckBox" mnemonicParsing="false" text="Show Segment Pace" />
+                     </children>
+                  </HBox>
+                  <HBox fillHeight="false" spacing="5.0">
+                     <children>
+                        <Pane prefWidth="120.0" />
+                        <CheckBox fx:id="showSegmentSplitsCheckBox" mnemonicParsing="false" text="Show Segment Splits" />
+                     </children>
+                  </HBox>
+                  <HBox fx:id="customAttributesHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
+                     <children>
+                        <CheckBox fx:id="customAttributesCheckBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="17.0" prefWidth="120.0" text="Custom Attributes" />
+                        <CheckComboBox fx:id="customAttributesCheckComboBox" maxWidth="1.7976931348623157E308" HBox.hgrow="SOMETIMES" />
+                     </children>
+                  </HBox>
+                  <HBox fx:id="specificAwardsHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
+                     <children>
+                        <CheckBox fx:id="showSpecificAwardsCheckBox" mnemonicParsing="false" prefWidth="120.0" text="Specific Awards" />
+                        <CheckComboBox fx:id="customAwardsCheckComboBox" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                     </children>
+                  </HBox>
+                  <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
+                     <children>
+                        <CheckBox fx:id="showAwardsCheckBox" mnemonicParsing="false" prefWidth="120.0" text="Show Awards" />
                      </children>
                   </HBox>
                   <CheckBox fx:id="hideCustomHeadersCheckBox" mnemonicParsing="false" text="Hide Custom Headers/Footers" />

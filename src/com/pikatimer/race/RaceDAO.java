@@ -78,11 +78,11 @@ public class RaceDAO {
     
     public void addSplit (Split w) {
         Race r = w.getRace();
-        r.addSplit(w);
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
         s.save(w);
         s.getTransaction().commit();
+        r.addSplit(w);
         //System.out.println("Adding Split id: " + w.getID() + "to" + w.getRace().getRaceName());
         updateSplitOrder(r);
         splitMap.put(w.getID(), w);
@@ -97,6 +97,10 @@ public class RaceDAO {
         
         try {  
             list=s.createQuery("from Race order by ID").list();
+            if (list != null) list.forEach(r -> {
+                AgeGroups ag = r.getAgeGroups();
+                if (ag != null) ag.getCustomIncrementsList();
+            });
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } 
@@ -257,10 +261,17 @@ public class RaceDAO {
         s.getTransaction().commit();
      }
     
-    public void updateAwards(RaceAwards a){
+    public void updateAwardCategory(AwardCategory a){
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction(); 
         s.saveOrUpdate(a);
+        s.getTransaction().commit();
+    }
+    
+    public void removeAwardCategory(AwardCategory a){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        s.delete(a);
         s.getTransaction().commit();
     }
 

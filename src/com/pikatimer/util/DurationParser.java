@@ -66,7 +66,7 @@ public class DurationParser {
     public static final Boolean parsable(String s, boolean hours){
         if (s == null || s.isEmpty()) return Boolean.TRUE;
         else if (hours && s.matches("^-?\\d+:[0-5][0-9](:[0-5][0-9](\\.\\d*)?)?$")) return Boolean.TRUE;
-        else if (s.matches("^-?((\\d+:)?[0-5][0-9]:)?[0-5][0-9](\\.\\d*)?$")) return Boolean.TRUE;
+        else if (s.matches("^-?((\\d+:)?[0-5]?[0-9]:)?[0-5][0-9](\\.\\d*)?$")) return Boolean.TRUE;
         else return Boolean.FALSE;
     }
     

@@ -28,16 +28,23 @@ import io.datafx.controller.flow.FlowHandler;
 import io.datafx.controller.flow.container.DefaultFlowContainer;
 import java.io.File;
 import java.io.IOException;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Double.MAX_VALUE;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDate;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -46,7 +53,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -63,6 +70,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -70,29 +78,37 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import static javafx.scene.layout.Region.USE_PREF_SIZE;
 import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PrefixSelectionChoiceBox;
+import org.controlsfx.control.ToggleSwitch;
 /**
  *
  * @author jcgarner
@@ -137,10 +153,23 @@ public class FXMLParticipantController  {
     
     @FXML private Button deleteParticipantsButton;
     
+    @FXML private Button customAtrtributesButton;
+    @FXML private VBox customAttributesVBox;
+    
+    @FXML private Button bulkBibAssignmentButton;
+    
+    private final List<TableColumn> customAttributesColumns = new ArrayList();
+    private final Map<Integer,TextField> customAttributesTextFields = new HashMap();
+    private final Map<Integer,PrefixSelectionChoiceBox<String>> customAttributesChoiceBoxes = new HashMap();
+    private final Map<Integer,DatePicker> customAttributesDatePickers = new HashMap();
+    private final Map<Integer,CheckBox> customAttributesCheckBox = new HashMap();
+    
     private ObservableList<Participant> participantsList;
     private ParticipantDAO participantDAO;
     private Participant editedParticipant; 
     FilteredList<Participant> filteredParticipantsList ;
+    
+    
     
     @FXML
     protected void initialize() {
@@ -583,6 +612,10 @@ public class FXMLParticipantController  {
         
         // Add button only enabled if both the first and last names are empty
         formAddButton.disableProperty().bind(Bindings.and(firstNameField.textProperty().isEmpty(), lastNameField.textProperty().isEmpty()));
+        
+        
+        // Custom attribute setup
+        displayCustomAttributes();
 
     }
     
@@ -618,6 +651,39 @@ public class FXMLParticipantController  {
             
             p.setNote(noteTextField.getText());
             p.setStatus(statusPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
+            
+            //custom attributes
+            participantDAO.getCustomAttributes().forEach(a -> {
+                Integer aID = a.getID();
+                switch (a.getAttributeType()) {
+                    case LIST:
+                        {
+                            p.setCustomAttribute(aID, customAttributesChoiceBoxes.get(aID).getValue());
+                            break;
+                        }
+                    case DATE:
+                        {
+                            try {
+                            p.setCustomAttribute(aID, customAttributesDatePickers.get(aID).getValue().format(DateTimeFormatter.ISO_DATE));
+                            } catch (Exception e){
+                                p.setCustomAttribute(aID, "");
+                            }
+                            break;
+                        }
+                    case BOOLEAN:
+                        {
+                            p.setCustomAttribute(aID, customAttributesCheckBox.get(aID).selectedProperty().getValue().toString());
+                            break;
+                        }
+                    default:
+                        {
+                            p.setCustomAttribute(aID, customAttributesTextFields.get(aID).getText());                        
+                            break;
+                        }
+                }
+            });
+            
+            
             //participantsList.add(p);
             participantDAO.addParticipant(p);
             
@@ -678,6 +744,38 @@ public class FXMLParticipantController  {
         });
         //waveComboBox.getCheckModel().check(null);
         
+        //custom attributes
+        participantDAO.getCustomAttributes().forEach(a -> {
+            Integer aID = a.getID();
+            switch (a.getAttributeType()) {
+                case LIST:
+                    {
+                        if(! editedParticipant.getCustomAttribute(aID).getValueSafe().isEmpty())
+                            customAttributesChoiceBoxes.get(aID).getSelectionModel().select(editedParticipant.getCustomAttribute(aID).getValueSafe());
+                        else customAttributesChoiceBoxes.get(aID).getSelectionModel().selectFirst();
+                        break;
+                    }
+                case DATE:
+                    {
+                        if(! editedParticipant.getCustomAttribute(aID).getValueSafe().isEmpty())
+                            customAttributesDatePickers.get(aID).setValue(LocalDate.parse(editedParticipant.getCustomAttribute(aID).getValueSafe(), DateTimeFormatter.ISO_DATE));
+                        else customAttributesDatePickers.get(aID).setValue(null);
+                        break;
+                    }
+                case BOOLEAN:
+                    {
+                        if(! editedParticipant.getCustomAttribute(aID).getValueSafe().isEmpty())
+                            customAttributesCheckBox.get(aID).setSelected(Boolean.parseBoolean(editedParticipant.getCustomAttribute(aID).getValueSafe()));
+                        else customAttributesCheckBox.get(aID).setSelected(false);
+                        break;
+                    }
+                default:
+                    {
+                        customAttributesTextFields.get(aID).setText(editedParticipant.getCustomAttribute(aID).getValueSafe());
+                        break;
+                    }
+            }
+        });
 
         
         // Make the update button visible and hide the add button
@@ -691,7 +789,7 @@ public class FXMLParticipantController  {
     
     public void updateParticipant(ActionEvent fxevent){
         
-        if (!firstNameField.getText().isEmpty() && !lastNameField.getText().isEmpty()) {
+        if (!(firstNameField.getText().isEmpty() && lastNameField.getText().isEmpty())) {
             
             // pull the list of checked waves
             editedParticipant.setBib(bibTextField.getText());
@@ -725,8 +823,38 @@ public class FXMLParticipantController  {
                 editedParticipant.setWaves(waveComboBox.getCheckModel().getCheckedItems());
             }
             
-            
-            
+            System.out.println("Upating....");
+            //custom attributes
+            participantDAO.getCustomAttributes().forEach(a -> {
+                System.out.println("Upating " + a.getName());
+                Integer aID = a.getID();
+                switch (a.getAttributeType()) {
+                    case LIST:
+                        {
+                            editedParticipant.setCustomAttribute(aID, customAttributesChoiceBoxes.get(aID).getValue());
+                            break;
+                        }
+                    case DATE:
+                        {
+                            try {
+                            editedParticipant.setCustomAttribute(aID, customAttributesDatePickers.get(aID).getValue().format(DateTimeFormatter.ISO_DATE));
+                            } catch (Exception e){
+                                editedParticipant.setCustomAttribute(aID, "");
+                            }
+                            break;
+                        }
+                    case BOOLEAN:
+                        {
+                            editedParticipant.setCustomAttribute(aID, customAttributesCheckBox.get(aID).selectedProperty().getValue().toString());
+                            break;
+                        }
+                    default:
+                        {
+                            editedParticipant.setCustomAttribute(aID, customAttributesTextFields.get(aID).getText());                        
+                            break;
+                        }
+                }
+            });
             
             
             
@@ -773,6 +901,33 @@ public class FXMLParticipantController  {
         formUpdateButton.setVisible(false);
         formUpdateButton.setManaged(false);
         //formUpdateButton.setDefaultButton(false);
+        
+        //custom attributes
+        participantDAO.getCustomAttributes().forEach(a -> {
+            Integer aID = a.getID();
+            switch (a.getAttributeType()) {
+                case LIST:
+                    {
+                        customAttributesChoiceBoxes.get(aID).getSelectionModel().selectFirst();
+                        break;
+                    }
+                case DATE:
+                    {
+                        customAttributesDatePickers.get(aID).setValue(null);
+                        break;
+                    }
+                case BOOLEAN:
+                    {
+                        customAttributesCheckBox.get(aID).setSelected(false);
+                        break;
+                    }
+                default:
+                    {
+                        customAttributesTextFields.get(aID).setText("");
+                        break;
+                    }
+            }
+        });
                 
         // make the add button visible
         formAddButton.setVisible(true);
@@ -839,15 +994,16 @@ public class FXMLParticipantController  {
         // of selected fields to export
         
         ObservableList<AttributeMap> availableAttributes = FXCollections.observableArrayList();
-        
+        ObservableList<AttributeMap> sortAttributes = FXCollections.observableArrayList();
+
         Participant.getAvailableAttributes().entrySet().stream().forEach((entry) -> {
             availableAttributes.add(new AttributeMap(entry.getKey(),entry.getValue()));
-        });
-        
-        ObservableList<AttributeMap> sortAttributes = FXCollections.observableArrayList();
-        
-        Participant.getAvailableAttributes().entrySet().stream().forEach((entry) -> {
             sortAttributes.add(new AttributeMap(entry.getKey(),entry.getValue()));
+        });
+         
+        participantDAO.getCustomAttributes().forEach(ca -> {
+            availableAttributes.add(new AttributeMap(ca.getID().toString(),ca.getName()));
+            sortAttributes.add(new AttributeMap(ca.getID().toString(),ca.getName()));
         });
         
         //Add Race/Wave attributes IF there are multiple races/waves to deal with
@@ -1004,7 +1160,7 @@ public class FXMLParticipantController  {
                 int fieldCount=result.get().size();
                 for(int i = 0; i< fieldCount;i++) {
                     header+="\"";
-                    header+=result.get().get(i);
+                    header+=result.get().get(i).toString().replace("\"", "\"\"");
                     header+="\"";
                     if(i != fieldCount -1) header+=",";
                 }
@@ -1018,7 +1174,10 @@ public class FXMLParticipantController  {
                 AlphanumericComparator acComparator = new AlphanumericComparator();
                 String sortAttribute = sortComboBox.getSelectionModel().getSelectedItem().key.getValueSafe();
                 participantDAO.listParticipants().stream().sorted((Participant o1, Participant o2) -> {
-                    return acComparator.compare(o1.getNamedAttribute(sortAttribute), o2.getNamedAttribute(sortAttribute));
+                    if(sortAttribute.matches("^\\d+$")) 
+                        return acComparator.compare(o1.getCustomAttribute(Integer.parseInt(sortAttribute)).getValueSafe(), o2.getCustomAttribute(Integer.parseInt(sortAttribute)).getValueSafe());
+                    else
+                        return acComparator.compare(o1.getNamedAttribute(sortAttribute), o2.getNamedAttribute(sortAttribute));
                 }).forEach(p -> {
                     BooleanProperty filtered = new SimpleBooleanProperty(true);
                     if (waveFilterCheckBox.selectedProperty().get()){
@@ -1034,6 +1193,8 @@ public class FXMLParticipantController  {
                     System.out.println("Exporting Particpant " + p.fullNameProperty().getValueSafe());
                     String part = "";
                     String fieldName;
+                    
+                    
                     for(int i = 0; i< fieldCount;i++) {
                         fieldName=result.get().get(i).key.getValueSafe();
                         part+="\"";
@@ -1043,7 +1204,15 @@ public class FXMLParticipantController  {
                             part += p.wavesObservableList().stream().map (w -> w.getRace().getRaceName()).distinct().collect (Collectors.joining(","));
                         } else if (fieldName.equals("WAVE") ) {
                             part += p.wavesObservableList().stream().map (w -> w.getWaveName()).collect (Collectors.joining(","));
-                        } else part+=p.getNamedAttribute(fieldName).replace("\"", "\"\"");
+                        } else if (fieldName.matches("^\\d+$")) {
+                            //System.out.println(" " + fieldName + " -> " + p.getCustomAttribute(Integer.parseInt(fieldName)).getValueSafe());
+                            part+=p.getCustomAttribute(Integer.parseInt(fieldName)).getValueSafe().replace("\"", "\"\"");
+                        }
+                        else {
+                            //System.out.println(" -> " + p.getNamedAttribute(fieldName));
+                            part+=p.getNamedAttribute(fieldName).replace("\"", "\"\"");
+                        }
+                        
                         part+="\"";
                         
                         if(i != fieldCount -1) part+=",";
@@ -1083,6 +1252,695 @@ public class FXMLParticipantController  {
         } else {
             // ... user chose CANCEL or closed the dialog
         }
+        
+    }
+    
+    public void bulkBibAssignment(ActionEvent fxevent){
+        RaceDAO raceDAO = RaceDAO.getInstance();
+        
+        PrefixSelectionChoiceBox<Race> raceComboBox = new PrefixSelectionChoiceBox();
+        raceComboBox.setItems(raceDAO.listRaces());
+        raceComboBox.setPrefWidth(90);
+        
+        //TextField startTextArea = new TextField();
+        //startTextArea.setPrefWidth(90);
+        
+        TextField startTextField = new TextField("1");
+        startTextField.setPrefWidth(90);
+        startTextField.textProperty().addListener((obs, prevVal, newVal) -> {
+            if (newVal != null && !newVal.isEmpty() ){
+                try {
+                    Integer.parseUnsignedInt(newVal);
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        startTextField.textProperty().set(prevVal);
+                    });
+                }
+            }
+        });
+        
+        TextField endTextField = new TextField();
+        endTextField.setPrefWidth(90);
+        endTextField.textProperty().addListener((obs, prevVal, newVal) -> {
+            if (newVal != null && !newVal.isEmpty() ){
+                try {
+                    Integer.parseUnsignedInt(newVal);
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        endTextField.textProperty().set(prevVal);
+                    });
+                }
+            }
+        });
+        
+        ToggleSwitch clearExistingToggleSwitch = new ToggleSwitch();
+        clearExistingToggleSwitch.setPrefWidth(90);
+        
+        ObservableList<Attribute> attributeList = FXCollections.observableArrayList();
+        attributeList.add(new Attribute("<None>","SKIP"));
+        Participant.getAvailableAttributes().keySet().stream().sorted().forEach(k -> {
+            attributeList.add(new Attribute(Participant.getAvailableAttributes().get(k),k));
+        });
+        ParticipantDAO.getInstance().getCustomAttributes().forEach(ca -> {
+            attributeList.add(new Attribute(ca.getName(),ca.getID()));
+        });
+                
+        
+        PrefixSelectionChoiceBox<Attribute> sort1ComboBox = new PrefixSelectionChoiceBox();
+        sort1ComboBox.setPrefWidth(90);
+        PrefixSelectionChoiceBox<String> sort1TypeComboBox = new PrefixSelectionChoiceBox();
+        PrefixSelectionChoiceBox<Attribute> sort2ComboBox = new PrefixSelectionChoiceBox();
+        sort2ComboBox.setPrefWidth(90);
+        PrefixSelectionChoiceBox<String> sort2TypeComboBox = new PrefixSelectionChoiceBox();
+        
+        sort1ComboBox.setItems(attributeList);
+        sort1TypeComboBox.setItems(FXCollections.observableArrayList("Asc","Dec"));
+
+        sort2TypeComboBox.setItems(FXCollections.observableArrayList("Asc","Dec"));
+        sort2ComboBox.setItems(attributeList);
+        
+        TextArea skipBibs = new TextArea();
+        skipBibs.setPrefWidth(90);
+        skipBibs.setPrefHeight(75);
+        
+        
+        Dialog<Boolean> dialog = new Dialog();
+        dialog.resizableProperty().set(true);
+        dialog.getDialogPane().setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight()-150);
+        dialog.setTitle("Bib Assigment");
+        dialog.setHeaderText("Bulk Bib Assigment");
+        ButtonType okButtonType = new ButtonType("Assign", ButtonData.OK_DONE);
+        
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+       
+        VBox contentVBox = new VBox();
+        contentVBox.setSpacing(5);
+        contentVBox.setMaxHeight(MAX_VALUE);
+        contentVBox.setMaxWidth(MAX_VALUE);
+        
+        HBox raceSelection = new HBox();
+        raceSelection.setSpacing(5);
+        Label raceLabel = new Label("Race");
+        raceLabel.setPrefWidth(100);
+        raceSelection.getChildren().addAll(raceLabel, raceComboBox);
+        raceComboBox.getSelectionModel().selectFirst();
+        if (raceDAO.listRaces().size() > 1) contentVBox.getChildren().add(raceSelection);
+        
+        HBox start = new HBox();
+        start.setSpacing(5);
+        Label startLabel = new Label("Start Bib");
+        startLabel.setPrefWidth(100);
+        start.getChildren().addAll(startLabel,startTextField);
+        contentVBox.getChildren().add(start);
+                
+        HBox end = new HBox();
+        end.setSpacing(5);
+        Label endLabel = new Label("End Bib");
+        endLabel.setPrefWidth(100);
+        end.getChildren().addAll(endLabel,endTextField);
+        contentVBox.getChildren().add(end);
+        
+        HBox clear = new HBox();
+        clear.setSpacing(5);
+        Label clearLabel = new Label("Clear Existing Bibs");
+        clearLabel.setPrefWidth(100);
+        clearExistingToggleSwitch.selectedProperty().set(false);
+        clear.getChildren().addAll(clearLabel,clearExistingToggleSwitch);
+        contentVBox.getChildren().add(clear);
+        
+        HBox sort1 = new HBox();
+        sort1.setSpacing(5);
+        Label sort1Label = new Label("Sort By ");
+        sort1Label.setPrefWidth(100);
+        sort1TypeComboBox.getSelectionModel().selectFirst();
+        sort1ComboBox.getSelectionModel().selectFirst();
+        sort1.getChildren().addAll(sort1Label,sort1ComboBox,sort1TypeComboBox);
+        contentVBox.getChildren().add(sort1);
+        
+        HBox sort2 = new HBox();
+        sort2.setSpacing(5);
+        Label sort2Label = new Label("Sort By ");
+        sort2Label.setPrefWidth(100);
+        sort2TypeComboBox.getSelectionModel().selectFirst();
+        sort2ComboBox.getSelectionModel().selectFirst();
+        sort2.getChildren().addAll(sort2Label,sort2ComboBox,sort2TypeComboBox);
+        contentVBox.getChildren().add(sort2);
+        
+        HBox skip = new HBox();
+        skip.setSpacing(5);
+        Label skipLabel = new Label("Skip bibs ending:");
+        skipLabel.setPrefWidth(100);
+        skip.getChildren().addAll(skipLabel,skipBibs);
+        contentVBox.getChildren().add(skip);
+        
+        dialog.getDialogPane().lookupButton(okButtonType).disableProperty().bind(startTextField.textProperty().isEmpty());
+
+        dialog.getDialogPane().setContent(contentVBox);
+        
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+        
+        Platform.runLater(() -> { dialog.setY((Screen.getPrimary().getVisualBounds().getHeight()-dialog.getHeight())/2); });
+        Optional<Boolean> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            AlphanumericComparator ac = new AlphanumericComparator();
+            
+            Integer currentBib = Integer.parseInt(startTextField.getText());
+            Integer lastBib = Integer.MAX_VALUE;
+            if (!endTextField.getText().isEmpty()) Integer.parseInt(endTextField.getText());
+            
+            Set<String> skipList = new HashSet(Arrays.asList(skipBibs.getText().split("\\R")));
+            for(String t: skipList) System.out.println("Skipping bibs ending with \"" + t + "\"");
+            
+            Attribute s1 = sort1ComboBox.getSelectionModel().getSelectedItem();
+            Attribute s2 = sort2ComboBox.getSelectionModel().getSelectedItem();
+            String s1Type = sort1TypeComboBox.getSelectionModel().getSelectedItem();   
+            String s2Type = sort2TypeComboBox.getSelectionModel().getSelectedItem();   
+            List<Participant> assignees = participantDAO.listParticipants().stream()
+                    .filter(p -> {  // race filter
+                        System.out.println("F1: Evaling " + p.fullNameProperty().getValueSafe());
+                        if (raceDAO.listRaces().size()== 1) return true; // only one race
+                        if (p.wavesObservableList().isEmpty()) return true; // unassigned
+                        if (p.wavesObservableList().stream().anyMatch((w) -> (w.getRace().equals(raceComboBox.getSelectionModel().getSelectedItem())))) {
+                            return true;
+                        }
+                        System.out.println("F1: Rejected");
+                        return false;
+                    }) 
+                    .filter(p -> {          // existing assignment filter
+                        System.out.println("F2: Evaling " + p.fullNameProperty().getValueSafe());
+                        if (clearExistingToggleSwitch.selectedProperty().get()) return true;
+                        else if (p.getBib().isEmpty()) return true;
+                        System.out.println("F2: Rejected");
+
+                        return false;
+                    }) 
+                    .filter(p -> { // start bib filter
+                        System.out.println("F3: Evaling " + p.fullNameProperty().getValueSafe());
+                        if (p.getBib().isEmpty()) return true;
+                        if (startTextField.getText().isEmpty()) return true;
+                        System.out.println("F3: " + ac.compare(startTextField.getText(), p.getBib()));
+                        return ac.compare(startTextField.getText(), p.getBib()) <= 0;
+                    }) 
+                    .filter(p -> {// end bib filter
+                        System.out.println("F4: Evaling " + p.fullNameProperty().getValueSafe());
+                        if (p.getBib().isEmpty()) return true;
+                        if (endTextField.getText().isEmpty()) return true;
+                        System.out.println("F4: " + ac.compare(endTextField.getText(), p.getBib()));
+
+                        return ac.compare(endTextField.getText(), p.getBib()) >= 0;
+                    }) 
+                    .sorted((p1,p2) -> {
+                        
+                        if (s1.cKey >=0){
+                            Integer r1 = ac.compare(p1.getCustomAttribute(s1.cKey).getValueSafe(), p2.getCustomAttribute(s1.cKey).getValueSafe());
+                            System.out.println("Sort C1: " + p1.getCustomAttribute(s1.cKey).getValueSafe() + " vs " + p2.getCustomAttribute(s1.cKey).getValueSafe() + " -> " + r1);
+
+                            if (r1  != 0) {
+                                if (s1Type.equals("Asc"))return r1;
+                                else return -r1;
+                            }
+                        } else if (! s1.key.equals("SKIP")) {
+                            Integer r1 = ac.compare(p1.getNamedAttribute(s1.key), p2.getNamedAttribute(s1.key));
+                            System.out.println("Sort A1: " + p1.getNamedAttribute(s1.key) + " vs " + p2.getNamedAttribute(s1.key) + " -> " + r1);
+                            if (r1  != 0) {
+                                if (s1Type.equals("Asc"))return r1;
+                                else return -r1;
+                            }
+                        }
+                        if (s2.cKey >=0){
+                            Integer r2 = ac.compare(p1.getCustomAttribute(s2.cKey).getValueSafe(), p2.getCustomAttribute(s2.cKey).getValueSafe());
+                            System.out.println("Sort C2: " + r2);
+                            if (r2  != 0) {
+                                if (s2Type.equals("Asc"))return r2;
+                                else return -r2;
+                            }
+                        } else if (! s2.key.equals("SKIP")) {
+                            Integer r2 = ac.compare(p1.getNamedAttribute(s2.key), p2.getNamedAttribute(s2.key));
+                            System.out.println("Sort A2: " + p1.getNamedAttribute(s2.key) + " vs " + p2.getNamedAttribute(s2.key) + " -> " + r2);
+                            if (r2  != 0) {
+                                if (s2Type.equals("Asc"))return r2;
+                                else return -r2;
+                            }
+                        }
+                        System.out.println("Sort returning 0");
+                        return 0;
+                    
+                    })  // Sort them
+                    .collect(Collectors.toList());
+            
+            
+            Participant existing = null;
+            for(Participant p: assignees){
+                if (currentBib > lastBib) break;
+                System.out.println("Assigning bib for " + p.fullNameProperty().getValueSafe());
+                
+                if (!clearExistingToggleSwitch.selectedProperty().get()) {
+                    while(currentBib <= lastBib && participantDAO.getParticipantByBib(currentBib.toString()) != null){
+                        currentBib++;
+                    }
+                }
+                if (!skipList.isEmpty()) {
+                    Boolean good = true;
+                    do {
+                        good = true;
+                        for(String t: skipList){
+                            if (currentBib.toString().endsWith(t)) good=false;
+                        }
+                        if (good==false) currentBib++;
+                        if (currentBib > lastBib) break;
+                    } while (!good);
+                }
+                if (currentBib > lastBib) break;
+                // This should be null if we are not clearing existing
+                existing = participantDAO.getParticipantByBib(currentBib.toString());
+                
+                if (existing != null && !existing.equals(p)) {
+                    existing.setBib("OLD: " + currentBib.toString());
+                    participantDAO.updateParticipant(existing);
+                }
+                p.setBib(currentBib.toString());
+                p.setWaves(participantDAO.getWaveByBib(currentBib.toString()));
+                participantDAO.updateParticipant(p);
+                System.out.println("  " + p.fullNameProperty().getValueSafe() + " now has bib " + currentBib);
+                currentBib++;
+            }
+        }
+    }
+    
+    
+    public void setupCustomAttributes(ActionEvent fxevent){
+        // Do something.... 
+        List<CustomAttribute> customAttributes = new ArrayList(participantDAO.getCustomAttributes());
+        List<CustomAttribute> deletedCustomAttributes = new ArrayList();
+        
+        // Create the base dialog
+        Dialog<Boolean> dialog = new Dialog();
+        dialog.resizableProperty().set(true);
+        dialog.getDialogPane().setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight()-150);
+        dialog.setTitle("Custom Attributes");
+        dialog.setHeaderText("Custom Attributes");
+        ButtonType okButtonType = new ButtonType("Close", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType);
+        
+        VBox contentVBox = new VBox();
+        contentVBox.setSpacing(5);
+        contentVBox.setMaxHeight(MAX_VALUE);
+        contentVBox.setMaxWidth(MAX_VALUE);
+
+        
+        Button addCustomButton = new Button("Add New...");
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setMaxWidth(MAX_VALUE);
+        scrollPane.setMaxHeight(MAX_VALUE);
+        scrollPane.fitToWidthProperty().set(true);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        
+        VBox casVBox = new VBox();
+        casVBox.setPrefWidth(400);
+        casVBox.setPrefHeight(200);
+        casVBox.setSpacing(5);
+        casVBox.setMaxWidth(MAX_VALUE);
+        casVBox.setMaxHeight(MAX_VALUE);
+        
+        scrollPane.setContent(casVBox);
+        contentVBox.getChildren().addAll(addCustomButton,scrollPane);
+        addCustomButton.setOnAction(a -> {
+            CustomAttribute ca = new CustomAttribute();
+            customAttributes.add(ca);
+            VBox caVBox = new VBox();
+            caVBox.setPadding(new Insets(5,5,5,5));
+            caVBox.setSpacing(5);
+            HBox caHBox = new HBox();
+            caHBox.setMaxWidth(MAX_VALUE);
+            caHBox.setSpacing(5);
+            caHBox.setAlignment(Pos.CENTER_LEFT);
+            Label nameLabel = new Label("Name: ");
+            Label typeLabel = new Label("Type: ");
+            TextField name = new TextField();
+            name.setPrefWidth(150);
+            name.textProperty().addListener((observable, oldValue, newValue) -> {
+                System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                ca.nameProperty().set(newValue);
+            });
+            
+            VBox caListVBox = new VBox();
+            caListVBox.setSpacing(5);
+            ListView<String> list = new ListView<String>(ca.allowableValuesProperty());
+            list.setPrefHeight(100);
+            list.setMinHeight(100);
+            list.setCellFactory(TextFieldListCell.forListView());
+            list.setEditable(true);
+            caListVBox.getChildren().add(list);
+            HBox caListHBox = new HBox();
+            Button add = new Button("Add");
+            add.setOnAction(aa -> {
+                list.getItems().add("Item");
+                list.scrollTo(list.getItems().size() - 1);
+                list.layout();
+                list.edit(list.getItems().size() - 1);
+            });
+            
+            
+            Button remove = new Button("Remove");
+            remove.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+            remove.setOnAction(ra -> {
+                list.getItems().remove(list.getSelectionModel().getSelectedItem());
+            });
+            
+            list.setOnEditCommit((ListView.EditEvent<String> t) -> {
+                System.out.println("setOnEditCommit " + t.getIndex());
+                if (t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+                    if (t.getNewValue().isEmpty()) {
+                        list.getItems().remove(t.getIndex());
+                    } else {
+                        list.getItems().set(t.getIndex(), t.getNewValue());
+                    }
+                } else {
+                    System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+                }
+                add.requestFocus();
+                add.setDefaultButton(true);
+            });
+            list.setOnEditCancel((ListView.EditEvent<String> t) -> {
+                System.out.println("setOnEditCancel " + t.getIndex());
+                if (t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+                   
+                    if (t.getNewValue() == null || t.getNewValue().isEmpty()) {
+                        list.getItems().remove(t.getIndex());
+                    } 
+                } else {
+                    System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+                }
+                add.requestFocus();
+                add.setDefaultButton(true);
+            });
+            caListHBox.getChildren().addAll(add,remove);
+            caListVBox.getChildren().add(caListHBox);
+            
+            PrefixSelectionChoiceBox type = new PrefixSelectionChoiceBox();
+            ObservableList<CustomAttributeType> typeList = FXCollections.observableArrayList(Arrays.asList(CustomAttributeType.values()));
+            type.setItems(typeList);
+            type.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<CustomAttributeType>() {
+                @Override
+                public void changed(ObservableValue<? extends CustomAttributeType> observableValue, CustomAttributeType o, CustomAttributeType n) {
+                    if (n.equals(CustomAttributeType.LIST)) {
+                        caListVBox.setManaged(true);
+                        caListVBox.setVisible(true);
+                    } else {
+                        caListVBox.setManaged(false);
+                        caListVBox.setVisible(false);
+                    }
+                    ca.setAttributeType(n);
+                }
+            });
+            type.getSelectionModel().select(CustomAttributeType.STRING);
+            
+            Pane spring = new Pane();
+            spring.setMaxWidth(MAX_VALUE);
+            HBox.setHgrow(spring, Priority.ALWAYS);
+            
+            Button deleteButton = new Button("Delete");
+            Separator sep = new Separator();
+            
+            caHBox.getChildren().addAll(nameLabel,name,typeLabel,type,spring,deleteButton);
+            caVBox.getChildren().addAll(caHBox,caListVBox,sep);
+            
+            casVBox.getChildren().addAll(caVBox);
+            
+            deleteButton.setOnAction(da -> {
+                casVBox.getChildren().remove(caVBox);
+                customAttributes.remove(ca);
+            });
+        });
+        
+        // existing attributes
+        customAttributes.forEach(attrib -> {
+            
+            VBox caVBox = new VBox();
+            caVBox.setSpacing(5);
+            caVBox.setPadding(new Insets(5,5,5,5));
+            HBox caHBox = new HBox();
+            caHBox.setMaxWidth(MAX_VALUE);
+            caHBox.setSpacing(5);
+            caHBox.setAlignment(Pos.CENTER_LEFT);
+            Label nameLabel = new Label("Name: ");
+            Label typeLabel = new Label("Type: ");
+            TextField name = new TextField(attrib.getName());
+            name.setPrefWidth(150);
+            
+            name.textProperty().addListener((observable, oldValue, newValue) -> {
+                System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                attrib.nameProperty().set(newValue);
+            });
+            
+            VBox caListVBox = new VBox();
+            if (attrib.getAttributeType() == null) attrib.setAttributeType(CustomAttributeType.STRING);
+            if (attrib.getAttributeType().equals(CustomAttributeType.LIST)) {
+
+                caListVBox.setSpacing(5);
+                ListView<String> list = new ListView<String>(attrib.allowableValuesProperty());
+                list.setPrefHeight(100);
+                list.setMinHeight(100);
+                list.setCellFactory(TextFieldListCell.forListView());
+                list.setEditable(true);
+                caListVBox.getChildren().add(list);
+                HBox caListHBox = new HBox();
+                Button add = new Button("Add");
+                add.setOnAction(aa -> {
+                    list.getItems().add("Item");
+                    list.scrollTo(list.getItems().size() - 1);
+                    list.layout();
+                    list.edit(list.getItems().size() - 1);
+                });
+
+
+                Button remove = new Button("Remove");
+                remove.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+                remove.setOnAction(ra -> {
+                    list.getItems().remove(list.getSelectionModel().getSelectedItem());
+                });
+
+                list.setOnEditCommit((ListView.EditEvent<String> t) -> {
+                    System.out.println("setOnEditCommit " + t.getIndex());
+                    if (t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+                        if (t.getNewValue().isEmpty()) {
+                            list.getItems().remove(t.getIndex());
+                        } else {
+                            list.getItems().set(t.getIndex(), t.getNewValue());
+                        }
+                    } else {
+                        System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+                    }
+                    add.requestFocus();
+                    add.setDefaultButton(true);
+                });
+                list.setOnEditCancel((ListView.EditEvent<String> t) -> {
+                    System.out.println("setOnEditCancel " + t.getIndex());
+                    if (t.getIndex() >= 0 && t.getIndex() < t.getSource().getItems().size()) {
+
+                        if (t.getNewValue() == null || t.getNewValue().isEmpty()) {
+                            list.getItems().remove(t.getIndex());
+                        } 
+                    } else {
+                        System.out.println("Timing setOnEditCancel event out of index: " + t.getIndex());
+                    }
+                    add.requestFocus();
+                    add.setDefaultButton(true);
+                });
+                caListHBox.getChildren().addAll(add,remove);
+                caListVBox.getChildren().add(caListHBox);
+            }
+            
+            Label type = new Label(attrib.getAttributeType().toString());
+            
+            Pane spring = new Pane();
+            spring.setMaxWidth(MAX_VALUE);
+            HBox.setHgrow(spring, Priority.ALWAYS);
+            
+            Button deleteButton = new Button("Delete");
+            Separator sep = new Separator();
+            
+            caHBox.getChildren().addAll(nameLabel,name,typeLabel,type,spring,deleteButton);
+            if (attrib.getAttributeType().equals(CustomAttributeType.LIST)) caVBox.getChildren().addAll(caHBox,caListVBox,sep);
+            else caVBox.getChildren().addAll(caHBox,sep);
+                
+            casVBox.getChildren().addAll(caVBox);
+            
+            deleteButton.setOnAction(da -> {
+                casVBox.getChildren().remove(caVBox);
+                customAttributes.remove(attrib);
+                deletedCustomAttributes.add(attrib);
+            });
+        });
+        
+        
+        dialog.getDialogPane().setContent(contentVBox);
+        
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                return Boolean.TRUE;
+            }
+            return null;
+        });
+        
+        Platform.runLater(() -> { dialog.setY((Screen.getPrimary().getVisualBounds().getHeight()-dialog.getHeight())/2); });
+        Optional<Boolean> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            deletedCustomAttributes.forEach(ca -> {
+                System.out.println("Deleting Custom Attribute " + ca.getName());
+                participantDAO.deleteCustomAttribute(ca);
+            });
+            customAttributes.forEach(ca -> {
+                System.out.println("Saving Custom Attribute " + ca.getName());
+                // remove duplicates from the allowable values list
+                Set<String> s = new LinkedHashSet<>(ca.allowableValuesProperty());
+                ca.setAllowableValues(new ArrayList(s)); 
+                
+                // Save it
+                participantDAO.saveCustomAttribute(ca);
+            });
+        }
+        
+        // Rework the table columns and form input fields
+        displayCustomAttributes();
+        
+    }
+    
+    private void displayCustomAttributes() {
+        
+        // Clear the form
+        customAttributesVBox.getChildren().clear();
+        customAttributesTextFields.clear();
+        customAttributesChoiceBoxes.clear();
+        
+        // clear the table columns
+        customAttributesColumns.forEach(tc -> {
+            participantTableView.getColumns().remove(tc);
+        });
+        customAttributesColumns.clear();
+        
+        // recreate the form and columns
+        participantDAO.getCustomAttributes().forEach(a -> {
+            Integer aID = a.getID();
+            String name = a.getName();
+            
+            // table colums
+                TableColumn<Participant,String> aColumn = new TableColumn(name);
+                aColumn.setPrefWidth(75.0);
+                participantTableView.getColumns().add(aColumn);
+                aColumn.setCellValueFactory(cellData -> {
+                    Participant p = cellData.getValue();
+                    if (p == null) { return new SimpleStringProperty("");
+                    } else {
+                        return p.getCustomAttribute(aID);
+                    }
+                });
+            customAttributesColumns.add(aColumn);
+            
+            //create the form
+            HBox aHBox = new HBox();
+            aHBox.setSpacing(2);
+            HBox.setHgrow(aHBox, Priority.ALWAYS);
+            Label aLabel = new Label(name);
+            aLabel.setPrefWidth(50);
+            aHBox.getChildren().add(aLabel);
+            switch (a.getAttributeType()) {
+                case LIST:
+                    {
+                        PrefixSelectionChoiceBox<String> aInput = new PrefixSelectionChoiceBox();
+                        aInput.setItems(a.allowableValuesProperty());
+                        aInput.getSelectionModel().selectFirst();
+                        customAttributesChoiceBoxes.put(aID, aInput);
+                        HBox.setHgrow(aInput, Priority.ALWAYS);
+                        aHBox.getChildren().add(aInput);
+                        break;
+                    }
+                case DATE:
+                    {
+                        DatePicker aInput = new DatePicker();
+                        customAttributesDatePickers.put(aID, aInput);
+                        HBox.setHgrow(aInput, Priority.ALWAYS);
+                        aHBox.getChildren().add(aInput);
+                        break;
+                    }
+                case BOOLEAN:
+                    {
+                        CheckBox aInput = new CheckBox();
+                        customAttributesCheckBox.put(aID, aInput);
+                        HBox.setHgrow(aInput, Priority.ALWAYS);
+                        aHBox.getChildren().add(aInput);
+                        break;
+                    }
+                default:
+                    {
+                        TextField aInput = new TextField();
+                        HBox.setHgrow(aInput, Priority.ALWAYS);
+                        customAttributesTextFields.put(aID,aInput);
+                        
+                        // Based on the type (time or number), limit what the 
+                        // user can type into the field. 
+                        if (a.getAttributeType().equals(CustomAttributeType.NUMBER)) {
+                            aInput.textProperty().addListener((observable, oldValue, newValue) -> {
+                                System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                                if (!newValue.isEmpty()) {
+                                    if (newValue.matches("^-?\\.\\d+$")) {
+                                        Platform.runLater(() -> {
+                                            int caret = aInput.getCaretPosition();
+                                            aInput.setText(newValue.replaceFirst("\\.","0."));
+                                            aInput.positionCaret(caret+1);
+                                        });
+                                    } else if (newValue.matches("^-?0([0-9]+\\.?[0-9]*)$")) {
+                                        Platform.runLater(() -> { 
+                                            int c = aInput.getCaretPosition();
+                                            aInput.setText(newValue.replaceFirst("^(-?)0*([0-9]+\\.?[0-9]*)$", "$1$2"));
+                                            aInput.positionCaret(c-1);
+                                        });
+                                    } else if (!newValue.matches("^-?([0-9]+\\.?[0-9]*)?$")) {
+                                        Platform.runLater(() -> { 
+                                            int c = aInput.getCaretPosition();
+                                            aInput.setText(oldValue);
+                                            aInput.positionCaret(c-1);
+                                        }); 
+                                    } 
+                                }
+                            });
+                            
+                        } else if (a.getAttributeType().equals(CustomAttributeType.TIME)) {
+                            aInput.textProperty().addListener((observable, oldValue, newValue) -> {
+                                        //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+                                if (newValue.isEmpty()) return; 
+                                if (newValue.matches("^-?\\.\\d+$")) {
+                                    Platform.runLater(() -> {
+                                        int caret = aInput.getCaretPosition();
+                                        aInput.setText(newValue.replaceFirst("\\.","0."));
+                                        aInput.positionCaret(caret+1);
+                                    });
+                                } else if (newValue.matches("^-?(\\d*:)?(\\d*:)?\\d*\\.?\\d*$")){
+                                    System.out.println("Good time: " + newValue);
+                                } else {
+                                    Platform.runLater(() -> {
+                                        int caret = aInput.getCaretPosition();
+                                        aInput.setText(oldValue);
+                                        aInput.positionCaret(caret-1);
+                                    });
+                                }
+
+                            });
+                        }
+                        aHBox.getChildren().add(aInput);
+                        break;
+                    }
+            }
+            customAttributesVBox.getChildren().add(aHBox);
+        });
+        
         
     }
     
@@ -1139,6 +1997,28 @@ public class FXMLParticipantController  {
             }
             return false; // Does not match.
         });
+    }
+
+    private static class Attribute {
+        String name = "";
+        String key = "";
+        Integer cKey = -1;
+
+        public Attribute() {
+        }
+        public Attribute(String n, String k){
+            name = n;
+            key = k;
+        }
+        public Attribute(String n, Integer k){
+            name = n;
+            cKey = k;
+        }
+        
+        @Override
+        public String toString(){
+            return name;
+        }
     }
         
 

@@ -22,6 +22,7 @@ import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.FXMLRaceDetailsController;
 import com.pikatimer.race.Race;
+import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.timing.TimingDAO;
@@ -238,6 +239,8 @@ public class FXMLEventController  {
             raceDAO.addRace(selectedRace);
             AgeGroups ageGroups = new AgeGroups();
             selectedRace.setAgeGroups(ageGroups);
+            RaceAwards ra = new RaceAwards();
+            selectedRace.setAwards(ra);
             raceDAO.updateRace(selectedRace);
         } else {
             selectedRace = raceList.get(0); 
