@@ -44,7 +44,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.apache.commons.io.FileUtils;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationInfo;
 import org.h2.store.fs.FilePath;
 
 /**
@@ -130,6 +132,13 @@ public class FXMLopenEventController {
                         // Upgrade the schema (if out of date)
                         try {
                             flyway.setDataSource(jdbcURL, "sa", null);
+                            MigrationInfo[] pending = flyway.info().pending();
+                            if (pending.length > 0) {
+                                System.out.println("Pending Migrations, saving a copy");
+                                
+                                FileUtils.copyFile(dbFile, new File(dbFile.getAbsolutePath() + ".pre_v1.5_update"));
+
+                            }
                             flyway.migrate();
                         } catch (Exception ex) {
                             ex.printStackTrace();
