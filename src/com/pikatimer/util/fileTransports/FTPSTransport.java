@@ -119,8 +119,8 @@ public class FTPSTransport implements FileTransport{
                                     
                                 }
 
-                                //InputStream data = IOUtils.toInputStream(contents, "UTF-8");
-                                InputStream data = IOUtils.toInputStream(contents);
+                                InputStream data = IOUtils.toInputStream(contents, "UTF-8");
+                                //InputStream data = IOUtils.toInputStream(contents);
                                 String fn = filename;
                                 String tmpFn = fn + ".PikaTmp";
                                 Platform.runLater(() -> { 
@@ -221,7 +221,8 @@ public class FTPSTransport implements FileTransport{
                     }
                     // Enter local passive mode
                     ftpClient.enterLocalPassiveMode();
-                    ftpClient.setFileType(FTP.ASCII_FILE_TYPE);
+                    //ftpClient.setFileType(FTP.ASCII_FILE_TYPE);
+                    ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
                     //ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
                     
                     Platform.runLater(() -> {transferStatus.set("Changing Directories...");});

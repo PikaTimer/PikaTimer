@@ -20,6 +20,7 @@ import com.pikatimer.results.ReportDestination;
 import com.pikatimer.util.FileTransport;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,7 +67,7 @@ public class LocalTransport implements FileTransport {
 //                } catch (InterruptedException ex) {
 //                    Logger.getLogger(LocalTransport.class.getName()).log(Level.SEVERE, null, ex);
 //                }
-                FileUtils.writeStringToFile(new File(FilenameUtils.concat(basePath, filename)), contents);
+                FileUtils.writeStringToFile(new File(FilenameUtils.concat(basePath, filename)), '\ufeff' + contents, StandardCharsets.UTF_8);
                 Platform.runLater(() -> {transferStatus.set("Idle");});
             } catch (IOException ex) {
                 Platform.runLater(() -> {transferStatus.set("ERROR! " + filename);});
