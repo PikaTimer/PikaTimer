@@ -90,7 +90,7 @@ public class Pikatimer extends Application {
         });
         
         // Icons
-        String[] sizes = {"256","128","64","32"};
+        String[] sizes = {"256","128","64","48","32"};
         for(String s: sizes){
             primaryStage.getIcons().add(new Image("resources/icons/Pika_"+s+".ico"));
             primaryStage.getIcons().add(new Image("resources/icons/Pika_"+s+".png"));
