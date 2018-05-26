@@ -135,21 +135,24 @@ public class FXMLopenEventController {
                         // since flyway modifies the database upon issuing _any_ command and would prevent us from
                         // saving a copy that v1.0 can still read
                         try {
-                            Flyway flyway_check = new Flyway();
-                            flyway_check.setDataSource(jdbcURL + ";ACCESS_MODE_DATA=r", "sa", null);
-                            Boolean backup_needed = false;
-                            try {
-                                MigrationInfo[] pending = flyway_check.info().pending();
-                                if (pending.length > 0) backup_needed = true;
-                            } catch (FlywaySqlScriptException sql_ex){
-                                System.out.println("Pending metadata update, saving a copy");
-                                backup_needed = true;
+                            if (dbFile.exists()) {
+                                Flyway flyway_check = new Flyway();
+                                flyway_check.setDataSource(jdbcURL + ";ACCESS_MODE_DATA=r", "sa", null);
+                                Boolean backup_needed = false;
+                                try {
+
+                                        MigrationInfo[] pending = flyway_check.info().pending();
+                                        if (pending.length > 0) backup_needed = true;
+
+                                } catch (FlywaySqlScriptException sql_ex){
+                                    System.out.println("Pending metadata update, saving a copy");
+                                    backup_needed = true;
+                                }
+                                if (backup_needed) {
+                                    System.out.println("Pending Migrations, saving a copy");
+                                    FileUtils.copyFile(dbFile, new File(dbFile.getAbsolutePath() + ".pre_v1.5_update.pika"));
+                                }
                             }
-                            if (backup_needed) {
-                                System.out.println("Pending Migrations, saving a copy");
-                                FileUtils.copyFile(dbFile, new File(dbFile.getAbsolutePath() + ".pre_v1.5_update.pika"));
-                            }
-                            
                             flyway.setDataSource(jdbcURL, "sa", null);
                             flyway.migrate();
                         } catch (Exception ex) {
