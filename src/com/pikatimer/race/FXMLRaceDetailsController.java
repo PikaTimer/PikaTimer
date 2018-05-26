@@ -44,6 +44,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -52,6 +53,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -113,6 +115,13 @@ public class FXMLRaceDetailsController {
     @FXML private TableColumn<Segment,Split> segmentEndSplitTableColumn;
     @FXML private TableColumn<Segment,String> segmentDistanceTableColumn;
     @FXML private Button deleteSegmentButton;
+    @FXML private VBox startFinishLocationVBox;
+    //@FXML private ChoiceBox<TimingLocation> startLocationChoiceBox;
+    @FXML private ComboBox<TimingLocation> startLocationComboBox;
+    //@FXML private ChoiceBox<TimingLocation>  finishLocationChoiceBox;
+    @FXML private ComboBox<TimingLocation> finishLocationComboBox;
+
+    
     
     //@FXML private Button courseRecordsButton;
 
@@ -388,6 +397,25 @@ public class FXMLRaceDetailsController {
             } else {
                 
             }
+        });
+        
+        // Start/Finish Stuff
+        startLocationComboBox.setItems(TimingDAO.getInstance().listTimingLocations());
+        startLocationComboBox.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends TimingLocation> observableValue, TimingLocation o, TimingLocation n) -> {
+            System.out.println("startLocationChoiceBox event");
+            Split s = selectedRace.getSplits().get(0);
+            if (s.getTimingLocation().equals(n)) return;
+            s.setTimingLocation(n);
+            raceDAO.updateSplit(s);
+        });
+        
+        finishLocationComboBox.setItems(TimingDAO.getInstance().listTimingLocations());
+        finishLocationComboBox.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends TimingLocation> observableValue, TimingLocation o, TimingLocation n) -> {
+            System.out.println("startLocationChoiceBox event");
+            Split s = selectedRace.getSplits().get(selectedRace.getSplits().size()-1);
+            if (s.getTimingLocation().equals(n)) return;
+            s.setTimingLocation(n);
+            raceDAO.updateSplit(s);
         });
         
         // Split table stuff
@@ -795,7 +823,10 @@ public class FXMLRaceDetailsController {
             splitsVBox.visibleProperty().bind(splitsCheckBox.selectedProperty());
             
             raceSplits=selectedRace.splitsProperty(); 
-            raceSplitsTableView.setItems(raceSplits);
+            FilteredList<Split> filteredSplits = new FilteredList<>(raceSplits, s -> {
+                return !(s.getPosition() == 1 || s.getPosition() == raceSplits.size());
+            });
+            raceSplitsTableView.setItems(filteredSplits);
             if (raceSplits.isEmpty()) {
                 System.out.println("No Splits found, creating two...");
                 // no waves. Let's create one with some default values
@@ -824,8 +855,8 @@ public class FXMLRaceDetailsController {
             splitsCheckBox.disableProperty().bind(Bindings.size(raceSplitsTableView.getItems()).greaterThan(2));
             
             
-            
-            
+            startLocationComboBox.getSelectionModel().select(raceSplits.get(0).getTimingLocation());
+            finishLocationComboBox.getSelectionModel().select(raceSplits.get(raceSplits.size()-1).getTimingLocation());
             
             
             
@@ -879,18 +910,18 @@ public class FXMLRaceDetailsController {
            raceSplitsTableViewListener=(obs, oldSelection, newSelection) -> {
                 System.out.println("Selected splits changed... now " + newSelection);
                 if (newSelection != null ) {
-                    if (newSelection.splitPositionProperty().getValue().equals(1)) {
-                        deleteSplitButton.disableProperty().set(true);
-                        splitDistanceTableColumn.setEditable(false);
-                    }
-                    else if (newSelection.splitPositionProperty().getValue().equals(raceSplitsTableView.getItems().size())) {
-                        deleteSplitButton.disableProperty().set(true);
-                        splitDistanceTableColumn.setEditable(true);
-                    }
-                    else {
+//                    if (newSelection.splitPositionProperty().getValue().equals(1)) {
+//                        deleteSplitButton.disableProperty().set(true);
+//                        splitDistanceTableColumn.setEditable(false);
+//                    }
+//                    else if (newSelection.splitPositionProperty().getValue().equals(raceSplitsTableView.getItems().size())) {
+//                        deleteSplitButton.disableProperty().set(true);
+//                        splitDistanceTableColumn.setEditable(true);
+//                    }
+//                    else {
                         deleteSplitButton.disableProperty().set(false);
                         splitDistanceTableColumn.setEditable(true);
-                    }
+//                    }
                 } else {
                     deleteSplitButton.disableProperty().set(true);
                     splitDistanceTableColumn.setEditable(false);
@@ -1090,22 +1121,32 @@ public class FXMLRaceDetailsController {
     }
     
     public void addSplit(ActionEvent fxevent){
+        System.out.println("Adding a split...");
         Split newSplit = new Split(selectedRace);
         newSplit.setSplitName("New Split");
         newSplit.setSplitDistanceUnits(selectedRace.getRaceDistanceUnits());
         newSplit.setSplitDistance(BigDecimal.valueOf(0));
         newSplit.setTimingLocation(TimingDAO.getInstance().listTimingLocations().get(1));
+        System.out.println("   SelectedItems().size = " + raceSplitsTableView.getSelectionModel().getSelectedItems().size());
         if(raceSplitsTableView.getSelectionModel().getSelectedItems().size()> 0 ) {
             Integer pos = raceSplitsTableView.getSelectionModel().getSelectedItem().getPosition(); 
-            if (pos == 1) pos=2; // they selected the start split
+            //pos++; //adjust for the hidden start split
+            System.out.println("   pos is now " + pos);
             if (pos > 1) {
-                BigDecimal a = raceSplitsTableView.getItems().get(pos-2).getSplitDistance();
-                BigDecimal b = raceSplitsTableView.getItems().get(pos-1).getSplitDistance();
-//                BigDecimal c = a.add( (b.subtract(a)).divide(BigDecimal.valueOf(2)) );
-//                System.out.println("addSplit: " + a + " and " + b + " avg: " + c);
+                BigDecimal a = selectedRace.getSplits().get(pos-2).getSplitDistance();
+                BigDecimal b = selectedRace.getSplits().get(pos-1).getSplitDistance();
+                BigDecimal c = a.add( (b.subtract(a)).divide(BigDecimal.valueOf(2)) );
+                System.out.println("  new split: " + a + " and " + b + " avg: " + c);
                 newSplit.setSplitDistance(a.add( (b.subtract(a)).divide(BigDecimal.valueOf(2)) ) );
                 newSplit.setPosition(pos);
             }
+        } else { // nothing selected...
+            BigDecimal a = selectedRace.getSplits().get(0).getSplitDistance();
+                BigDecimal b = selectedRace.getSplits().get(1).getSplitDistance();
+                BigDecimal c = a.add( (b.subtract(a)).divide(BigDecimal.valueOf(2)) );
+                System.out.println("  1st split: " + a + " and " + b + " avg: " + c);
+                newSplit.setSplitDistance(a.add( (b.subtract(a)).divide(BigDecimal.valueOf(2)) ) );
+                newSplit.setPosition(2); // 1st split after start
         }
         raceDAO.addSplit(newSplit);
     }

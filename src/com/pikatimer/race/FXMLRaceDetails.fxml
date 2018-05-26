@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -33,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="769.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="769.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
   <columnConstraints>
     <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
     <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
@@ -274,7 +275,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
          <children>
             <HBox fx:id="raceNameHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
-                  <Label prefHeight="20.0" prefWidth="90.0" text="Race Name">
+                  <Label prefHeight="20.0" prefWidth="100.0" text="Race Name">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -287,7 +288,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </HBox>
             <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
-                  <Label prefHeight="20.0" prefWidth="90.0" text="Distance">
+                  <Label prefHeight="20.0" prefWidth="100.0" text="Distance">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -298,7 +299,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </HBox>
             <HBox fx:id="startTimeHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
-                  <Label prefWidth="90.0" text="Start Time">
+                  <Label prefHeight="20.0" prefWidth="100.0" text="Start Time">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -306,6 +307,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <TextField fx:id="raceStartTimeTextField" onAction="#updateRaceStartTime" prefHeight="25.0" prefWidth="96.0" promptText="HH:MM:SS.sss" />
                </children>
             </HBox>
+            <VBox fx:id="startFinishLocationVBox" spacing="5.0">
+               <children>
+                  <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
+                     <children>
+                        <Label prefHeight="20.0" prefWidth="100.0" text="Start Location">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                        <ComboBox fx:id="startLocationComboBox" prefWidth="150.0" />
+                     </children>
+                  </HBox>
+                  <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
+                     <children>
+                        <Label prefHeight="20.0" prefWidth="100.0" text="Finish Location">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                        <ComboBox fx:id="finishLocationComboBox" prefWidth="150.0" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
          </children>
          <GridPane.margin>
             <Insets />
