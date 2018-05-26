@@ -50,7 +50,7 @@ public class FXMLTimingLocationInputController{
     @FXML private GridPane baseGridPane; 
     //@FXML private Pane readerPane;
     @FXML private VBox readerVBox;
-    @FXML private ChoiceBox inputTypeChoiceBox;
+    @FXML private ChoiceBox<TimingInputTypes> inputTypeChoiceBox;
     @FXML private Label readCountLabel;
     @FXML private CheckBox timeSkewCheckBox;
     @FXML private TextField skewTextField;     
@@ -66,15 +66,12 @@ public class FXMLTimingLocationInputController{
 
         timingLocationDAO=TimingDAO.getInstance();
         
-        inputTypeChoiceBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TimingInputTypes>() {
-            @Override
-            public void changed(ObservableValue<? extends TimingInputTypes> observableValue, TimingInputTypes o, TimingInputTypes n) {
-                if (o == null || ! o.equals(n)) {
-                    System.out.println("inputTypeChoiceBox event");
-                    timingLocationInput.setTimingInputType(n);
-                    timingLocationInput.initializeReader(readerVBox);
-                    timingLocationDAO.updateTimingLocationInput(timingLocationInput);
-                }
+        inputTypeChoiceBox.getSelectionModel().selectedItemProperty().addListener((ov, o, n) -> {
+            if (o == null || ! o.equals(n)) {
+                System.out.println("inputTypeChoiceBox event");
+                timingLocationInput.setTimingInputType(n);
+                timingLocationInput.initializeReader(readerVBox);
+                timingLocationDAO.updateTimingLocationInput(timingLocationInput);
             }
         });
     }    
@@ -111,7 +108,7 @@ public class FXMLTimingLocationInputController{
             } else {
                 inputTypeChoiceBox.setValue(TimingInputTypes.RFIDFile);
             }
-
+            
             timingLocationInput.initializeReader(readerVBox);
             
             readCountLabel.textProperty().bind(Bindings.convert(timingLocationInput.readCountProperty())); 

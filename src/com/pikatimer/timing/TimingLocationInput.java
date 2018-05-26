@@ -168,8 +168,8 @@ public class TimingLocationInput implements TimingListener{
             if (timingReader != null) {
                 // , tell it to stop reading
                 timingReader.stopReading();
-                // clear out all existing readsf
-                clearReads();
+                // clear out all existing reads
+                //clearReads();
             }
                                
             timingReader = t.getNewReader();

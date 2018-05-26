@@ -20,11 +20,13 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+
 
 /**
  *
@@ -36,7 +38,7 @@ public class Pikatimer extends Application {
     private static Stage mainStage;
     private static String jdbcURL; // Holds the jdbcURL for the open db
     
-    public static final String VERSION = "1.5 Beta 1";
+    public static final String VERSION = "1.5";
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -86,6 +88,14 @@ public class Pikatimer extends Application {
         myScene.getAccelerators().put(new KeyCodeCombination(KeyCode.F11), () -> {
             mainStage.setFullScreen(mainStage.fullScreenProperty().not().get());
         });
+        
+        // Icons
+        String[] sizes = {"256","128","64","48","32"};
+        for(String s: sizes){
+            primaryStage.getIcons().add(new Image("resources/icons/Pika_"+s+".ico"));
+            primaryStage.getIcons().add(new Image("resources/icons/Pika_"+s+".png"));
+        }
+        
         
         primaryStage.setScene(myScene);
         primaryStage.show();

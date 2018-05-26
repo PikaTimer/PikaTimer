@@ -125,8 +125,8 @@ public class SFTPTransport implements FileTransport{
 
 
 
-                                //InputStream data = IOUtils.toInputStream(contents, "UTF-8");
-                                InputStream data = IOUtils.toInputStream(contents);
+                                InputStream data = IOUtils.toInputStream(contents, "UTF-8");
+                                //InputStream data = IOUtils.toInputStream(contents);
                                 String fn = filename;
                                 Platform.runLater(() -> { 
                                     transferStatus.set("Transfering " + fn);

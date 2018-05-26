@@ -1,68 +1,12 @@
 TODO for 1.5 Release
 
-Bugs:
-DONE: Ultra Direct: Discover only scans 1st network adapter
-DONE: Ultra Direct: Save to file holds old target locations
-DONE: FTPS Upload: Upload to a temp file and then do a rename to get around file locking issues
-DONE: Text header/footer does not honor line feeds in text output files (search/replace \R for System.linefeed() )
-DONE: Single quotes in split names causes issues in the JSON parsing. Need to wrap in double quotes and escape all double quotes in any user editable field (split, segment, name, city, state, country, etc)
-DONE: Having the "in-progress" or "show dnf's" not checked during a race with no finishers yet results in problems in the OverallJSON that blows through the OverallHMTL5 report.
-DONE: Awards are not populated on initial event creation
-DONE: Ultra Direct: Better connection timeout handling
-DONE: Start time lookup: Odd behavior at times. e.g. 2nd location shows all waves and adds extra waves to those races
-Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
+Bugs / tweaks:
+DONE: Reports: Use UTF-8 for text output formatting
+DONE: Custom Icons
+Done: Update Documentation
+Done: Update screen snapshots on README.md file
+DONE: Don't blow away existing data when the timing input type is changed
 
-
-
-Features:
-DONE: Participant: Custom Attributes (string, integer, number, date, time, list)
-DONE: Participant Import: Assign to race/wave based on an input field in the CSV file
-DONE: Participant Import: Import Custom Attributes
-DONE: Participant Export: Include Custom Attributes in list to export
-DONE: Participant: Bulk Assignments of bibs
-
-DONE: AgeGroup: 1 year option
-DONE: AgeGroup: Arbitrary group ranges (e.g. 5->7, 8->9, 10->13, etc)
-
-DONE: Awards: Advanced (3 tier, variable AG award depths based on number of registrants or runners)
-DONE: Awards: Custom Awards:
-        DONE: arbitrary order, 
-        DONE: filters, 
-        DONE: timing points, 
-        DONE: group by (sex, age, age group), 
-        DONE: skew by custom duration,
-        DONE: depths (fixed, variable)
-DONE: Awards: Hide on default awards report flag
-DONE: Awards: Hide in overall results report flag
-
-DONE: Split: Advanced toggle switch to enable additional options
-DONE: Split: Min time to next split (under advanced display for the split)
-DONE: Split: Cutoff time (times after this are OCO'ed)
-DONE: Split: Cutoff time: Relative vs TOD
-DONE: Split: "Pause" split time support (aka "dead zone" or "ignore"). Basically don't count this time against the final. 
-DONE: Split: Mandatory split (stop if they are missing a time from the split)
-
-DONE: Segment: Hidden flag (don't display on results)
-DONE: Segment: Pace display (vs the global default)
-
-
-DONE: Timing: Ultra Direct -- antenna on/off and power configuration
-DONE: Timing: Ultra Direct -- Remote Settings (including custom IP)
-
-DONE: Override: Penalty/Bonus support w/ Note
-
-DONE: Results: HTML5: Segments: Option to show splits on the segment section of the HTML5 report
-DONE: Results: Awards: Option to only show some awards 
-DONE: Results: Option to show selected custom attributes
-DONE: Results: Overall (Text): Show penalty/bonus time
-DONE: Results: Overall (HTML): Show penalty/bonus time
-DONE: Results: Hide country/State if all are empty
-DONE: Results: Overall (Text): Option to show award winners
-DONE: Results: HTML5: Flag award winners with an icon and display in detailed view
-DONE: Results: HTML5: DNF/Started should show the note and if in progress, display the last seen location
-DONE: Results: HTML5: Show split OCO with time
-DONE: Results: HTML5: Segments: Per segment pace display override (swim/bike/run/transition)
-DONE: Results: HTML5: Show penalty/bonus w/ note if set
 
 
 FUTURE: 
@@ -70,27 +14,24 @@ FUTURE:
 General: 
     --Cleanup UI and better input field validation
     --TableView Custom Cells:
-    --Switch to 'always active' cells to get around the commit on focus lost issue?
     --Create a DurationTextField / LocalTimeTextField that "does the right thing"
     --Create a DurationCell (or whatever) for inline edits of durations?
-    --Upgrade to Hibernate 5.2.x (wait for 5.2.11+)
+    --Upgrade to Hibernate 5.2.x (wait for 5.2.11+?)
     --Internationalization? (Spanish, English, French, German, British, US, etc)
-    --editCell that does not revert on focus change (WTF Oracle)?
+    --editCell that does a commit on focus change (WTF Oracle)?
 
 Logging 
-  --no more System.out.println
+  --no more System.out.println crap
   --switch to log4j or something else
   --enable debug output log viewing
   --enable saving debug output log to file
   --enable toggle to set debug level to Normal/Debug/Trace
 
-
-
-
 Timing: 
     --Ultra Direct: Half hour time zone detection and warning. 
     --Ultra Direct: filter after skew to permit "old" times to be adjusted forward  
     --Ultra Direct: option to auto-set skew if the clock is off and we can't fix it
+    --Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
     --Outreach client?
     --Bulk Skew based on custom field (for a predict race)
 
@@ -98,53 +39,43 @@ Races:
     --Ability to drag/drop splits to reorder
     --Cumulative vs differential distance for splits specification?
     --Ability to set split specific distance unit for a split
-    --Optional alternate date for the race, otherwise inherit the event date. (? Multi-Day relay races?)
     --Relay Race Support
     --Lap Race Support
 
 Participants:
-    -- Option on the event page to limit participants to only one race/wave
-    -- store the team id
-    -- textfield auto complete for city/state 
+    --textfield auto complete for city/state 
     --Clean up import from csv (field formatting, etc)
     --Custom city name map (e.g. "Colorado Springs" -> "Colo Spgs"
     --Zip -> City map
-    --Validate csv file before importing. 
     --Error check the fields (age, gender, city, state, bib, etc). 
     --sync from/to  active.com / runsignup / other
 
-Relay Teams? Figure this one out!
-? Relay team attribute set to the team name or team id?
-? Same as regular teams? 
-Auto-determine relay team category based on participants (male, female, coed, etc)?
-Allow team to cover multiple categories? (female + coed?)
-Allow team to cover multiple races?
-Min for score attribute?
-Team category setup (gender, mixed gender, custom data field setting, etc)
+Teams:
+    --Participant -> Teams
+    --Team Awards
+    --Team Categories (gender, mixed gender, custom data field setting, etc)
+    --Teams on more than one category?
+    --Allow team to cover multiple races?
+    --Min number of members for score
 
 Timing:
     -- Option to assign any time to the race/wave start time via right mouse click menu
     -- Lookup Button -> option of manual entry of wave start times?
-    -- custom cell with an editable combo box?
 
 Overrides 
     -- Make the bib an autocomplete text field based on the registered runners
-    -- mouse over shows runner name in override table view
     -- Right-Click to create an override from a cooked time
 
 Results:
     --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
     --Double-Click for review screen (show all times, option to change wave or dq participant)
 
-
-
-
 Reports:
-    --Awards: HTML output option
     --Auto-print of text with each new page or after X number of runners?
     --Text output with header/FormFeed after X number of lines. 
     --Course Record note in overall text/html reports
     --Publish to 3rd party results web site (e.g. RunSignUp.com)? 
+    --Receipt printer dialog box?
 
 
 Team Results: V2.0+
