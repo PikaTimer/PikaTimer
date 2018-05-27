@@ -4,6 +4,8 @@ PikaTimer is a JavaFX based race timing application named after the American Pik
 
 The entire system is released under the GPLv3 Open Source license. PikaTimer is free to use, free to modify, free to redistribute per the GPLv3 license. 
 
+## Downloads
+To download, go to https://github.com/PikaTimer/pikatimer/releases/tag/v1.5 
 
 ## Current Feature Highlights:
 * Multiple races per event
@@ -38,19 +40,19 @@ The entire system is released under the GPLv3 Open Source license. PikaTimer is 
 ## Screen Snapshots
 
 *Race Setup:*
-![Race Setup](https://user-images.githubusercontent.com/19352375/40580418-d065f7be-60fa-11e8-8a6e-5522de9bcd1d.png)
+![Race Setup](https://user-images.githubusercontent.com/19352375/40591291-c6b03366-61cb-11e8-891e-d256524aceca.png)
 
 *Award Setup:*
-![Award Setup](https://user-images.githubusercontent.com/19352375/40580421-e86bfb9c-60fa-11e8-9a6c-908f338233f1.png)
+![Award Setup](https://user-images.githubusercontent.com/19352375/40591296-e0ce0c50-61cb-11e8-9bb8-a26cfa212982.png)
 
 *Participants:*
-![Participant Setup](https://user-images.githubusercontent.com/19352375/40580423-f4aab934-60fa-11e8-8fe4-350a568bee95.png)
+![Participant Setup](https://user-images.githubusercontent.com/19352375/40591219-3fcaf1b6-61ca-11e8-8172-4851154fa937.png)
 
 *Timing Setup:*
-![Timing Setup](https://user-images.githubusercontent.com/19352375/40580427-16d72d30-60fb-11e8-9bec-e86c261f75f9.png)
+![Timing Setup](https://user-images.githubusercontent.com/19352375/40591236-707587a4-61ca-11e8-90c2-c3c763bf97f4.png)
 
 *Results and Reports:*
-![Results Setup](https://user-images.githubusercontent.com/19352375/40580432-279cb644-60fb-11e8-85f5-5215bbc92acb.png)
+![Results Setup](https://user-images.githubusercontent.com/19352375/40591229-5534bc9e-61ca-11e8-9b0c-101dd29c8d43.png)
 
 
 ## Built on top of:
