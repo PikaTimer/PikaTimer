@@ -1343,12 +1343,13 @@ public class PikaRFIDDirectReader implements TimingReader {
                                     Ultra u = new Ultra(receivePacket.getAddress().getHostAddress().toString());
                                     
                                     // Now the Type
-                                    if (message.contains("Joey")) u.TYPE.set("Joey");
-                                    if (message.contains("Ultra")) u.TYPE.set("Ultra");
+                                    
+                                    if (message.matches("(?i:.*JOEY.*)")) u.TYPE.set("Joey");
+                                    if (message.matches("(?i:.*Ultra.*)")) u.TYPE.set("Ultra");
                                     
                                     // Finally the Rabbit MAC
                                     // dump the first 3 octets and save the last 3
-                                    u.MAC.set(message.substring(message.indexOf(":")+7));
+                                    u.MAC.set(message.substring(message.indexOf(":")+7).toUpperCase( ));
                                     
                                     // If we have a new Ultra, save it. 
                                     if (!u.TYPE.getValueSafe().isEmpty() && !ultras.contains(u)) Platform.runLater(() -> {ultras.add(u);});
