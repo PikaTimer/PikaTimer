@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -133,7 +134,13 @@ public class FTPSTransport implements FileTransport{
                                 // we upload to a temp fie and then do a delete / rename
                                 
                                 ftpClient.storeFile(tmpFn, data);
-                                ftpClient.dele(filename); // This may fail if the file does not exist
+                                try { 
+                                    ftpClient.dele(filename);// This may fail if the file does not exist
+                                } catch (Exception ex){
+                                    // noop
+                                    System.out.println("ftpClient.dele exception thrown");
+                                }
+                                
                                 ftpClient.rename(tmpFn, fn);
                                 long endTime = System.nanoTime();
                                 lastTransferTimestamp = endTime;
@@ -155,7 +162,8 @@ public class FTPSTransport implements FileTransport{
                             //if (filename!= null) transferQueue.put(filename);
                             //Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
                         } catch (Exception ex) {
-                            System.out.println("FTPSTransport Thread: Exception tossed: " + ex.getMessage());
+                            System.out.println("FTPSTransport Thread: Exception tossed: " + ex.getMessage() + ex.toString());
+                            System.out.println(Arrays.toString(ex.getStackTrace()));
                         } finally {
                             if (ftpClient.isConnected()) {
                                 try {
