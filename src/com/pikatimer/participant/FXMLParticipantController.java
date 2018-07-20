@@ -1412,7 +1412,13 @@ public class FXMLParticipantController  {
             
             Integer currentBib = Integer.parseInt(startTextField.getText());
             Integer lastBib = Integer.MAX_VALUE;
-            if (!endTextField.getText().isEmpty()) Integer.parseInt(endTextField.getText());
+            if (!endTextField.getText().isEmpty()) {
+                try{
+                    lastBib = Integer.parseInt(endTextField.getText());
+                } catch (Exception ex){
+                    lastBib = Integer.MAX_VALUE;
+                }
+            }
             
             Set<String> skipList = new HashSet(Arrays.asList(skipBibs.getText().split("\\R")));
             for(String t: skipList) {
