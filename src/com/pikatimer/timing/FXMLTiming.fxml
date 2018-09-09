@@ -220,14 +220,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </GridPane.margin>
             </HBox>
-            <HBox alignment="CENTER_LEFT" fillHeight="false" maxWidth="1.7976931348623157E308" spacing="5.0" VBox.vgrow="NEVER">
+            <HBox fillHeight="false" spacing="5.0">
                <children>
-                  <Label text="Start" HBox.hgrow="NEVER">
+                  <Label prefHeight="17.0" prefWidth="110.0" text="Ignore times before:" HBox.hgrow="NEVER">
                      <HBox.margin>
                         <Insets />
                      </HBox.margin></Label>
                   <TextField fx:id="filterStartTextField" prefHeight="25.0" prefWidth="90.0" promptText="HH:MM:SS.sss" />
-                  <Label text="End" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" fillHeight="false" maxWidth="1.7976931348623157E308" spacing="5.0" VBox.vgrow="NEVER">
+               <children>
+                  <Label prefHeight="17.0" prefWidth="110.0" text="Ignore times After:" />
                   <TextField fx:id="filterEndTextField" prefHeight="25.0" prefWidth="90.0" promptText="HH:MM:SS.sss" />
                   <Label maxWidth="1.7976931348623157E308" prefWidth="30.0" HBox.hgrow="ALWAYS" />
                   <Button fx:id="addInputButton" alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#addTimingInput" text="Add Input" />
