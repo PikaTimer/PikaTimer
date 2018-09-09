@@ -1,15 +1,32 @@
-TODO for 1.5 Release
+TODO for 1.5.1 Release
 
 Bugs / tweaks:
-DONE: Reports: Use UTF-8 for text output formatting
-DONE: Custom Icons
-Done: Update Documentation
-Done: Update screen snapshots on README.md file
-DONE: Don't blow away existing data when the timing input type is changed
-
-
+DONE: Fix bulk bib assignment bug
+DONE: JOEY vs Joey discovery issue
+BUG: Birthday import issue
+BUG: Deal with utf-8 w/ BOM on participant import files (1st colum is being ignored)
+Filter non numeric items in bulk bib assignment text area
+Figure out report html vs text header editing issue
+Update to DataTables 1.10.19+
+DONE: Center display on screen
+Done Update "start" and "end" wording on timing tab to make it easier to understand
+BUG: Backup at finish line ignored? Verify other locations too (start, splits, etc)
+BUG: Required Splits during an in-progress race shows no finishers
 
 FUTURE: 
+
+2.0 Main Focus and new features:
+    1. RSU Integration
+        a. Participants download
+        b. Participants sync / upload
+        b. Finish times w/ and w/o splits
+    2. Team Results
+    3. Non-Binary Gender Support
+    4. Marmot Integration
+        a. Participant sync
+        b. Announcer split
+        c. Finish time
+        d. Leader Board Display
 
 General: 
     --Cleanup UI and better input field validation
@@ -33,7 +50,6 @@ Timing:
     --Ultra Direct: option to auto-set skew if the clock is off and we can't fix it
     --Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
     --Outreach client?
-    --Bulk Skew based on custom field (for a predict race)
 
 Races:
     --Ability to drag/drop splits to reorder
@@ -68,7 +84,7 @@ Overrides
 
 Results:
     --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
-    --Double-Click for review screen (show all times, option to change wave or dq participant)
+    --Double-Click for review screen (show all times, option to change wave or dq participant, etc)
 
 Reports:
     --Auto-print of text with each new page or after X number of runners?
@@ -76,7 +92,8 @@ Reports:
     --Course Record note in overall text/html reports
     --Publish to 3rd party results web site (e.g. RunSignUp.com)? 
     --Receipt printer dialog box?
-
+    --Better print option for enhanced HTML output (show a runner's splits, etc)
+    --AMP output and caching for mobile? 
 
 Team Results: V2.0+
 Male, Female, Coed, user selected variable (city, state, custom, etc)
@@ -85,7 +102,7 @@ for co-ed, number per team of each gender (1->(N-1))
 
 
 Options tab:
-Active.com/RunSignUp/FuseSport/Outreach Account info profiles
+Active.com/RunSignUp/Outreach Account info profiles
 Gender Display (Men/Women, Male/Female, custom)
 Non-Binary Gender option
 

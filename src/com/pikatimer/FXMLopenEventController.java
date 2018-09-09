@@ -31,6 +31,7 @@ import java.util.prefs.Preferences;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -43,6 +44,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.apache.commons.io.FileUtils;
 import org.flywaydb.core.Flyway;
@@ -205,8 +207,21 @@ public class FXMLopenEventController {
                                 //LoadingProgressBar.setProgress(0.75);
                                 
                                 primaryStage.setScene(myScene);
-                                //LoadingProgressBar.setProgress(0.95);
                                 primaryStage.show();
+                                
+                                Platform.runLater(() -> {
+                                    // Center the display
+                                    Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();  
+
+                                    //set Stage boundaries so that the main screen is centered.               
+                                    primaryStage.setWidth(1000);
+                                    primaryStage.setHeight(700);
+                                    primaryStage.setX((primaryScreenBounds.getWidth() - primaryStage.getWidth())/2);  
+                                    primaryStage.setY((primaryScreenBounds.getHeight() - primaryStage.getHeight())/2);
+                                });
+                                
+                                //LoadingProgressBar.setProgress(0.95);
+                                
 
                             });
                             

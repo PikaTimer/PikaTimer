@@ -73,6 +73,8 @@ public class Pikatimer extends Application {
         
         primaryStage.setTitle("PikaTimer " + VERSION);
         
+        mainStage.setWidth(600);
+        mainStage.setHeight(400);
         
         
         Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLopenEvent.fxml"));
