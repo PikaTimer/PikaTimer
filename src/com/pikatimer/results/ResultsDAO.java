@@ -593,11 +593,12 @@ public class ResultsDAO {
             
             // Now we are going to walk the times and look for backp times that may be able to fill the gaps.
             //System.out.println("ResultsDAO.processBib: Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
-
+            //System.out.println("Backup time processing for bib " + p.getBib() + ". There are " + backupTimesList.size() + " backup reads.");
+            
             if (backupTimesList.isEmpty()) return;
             int backupTimeIndex = 0;
             int maxBackupTimes = backupTimesList.size();
-            CookedTimeData c = backupTimesList.get(backupTimeIndex++);; 
+            CookedTimeData c = backupTimesList.get(backupTimeIndex);; 
             
             //fix the start time
             if(r.getStartDuration().equals(r.getWaveStartDuration())) {
@@ -611,6 +612,7 @@ public class ResultsDAO {
                 
                 while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxStart) < 0) {
                     if (r.getStartDuration().compareTo(c.getTimestamp())<0) {
+                        r.setSplitTime(0, c.getTimestamp());
                         r.setStartDuration(c.getTimestamp());
                         //System.out.println("Backup start time found for bib " + p.getBib());
                     }
@@ -630,7 +632,7 @@ public class ResultsDAO {
             });
             
             for (int si = 2; backupTimeIndex < maxBackupTimes  && si < splits.size() ; si++){
-               // System.out.println("Evaluating si " + si + " for bib "+ p.getBib());
+                //System.out.println("Evaluating si " + si + " for bib "+ p.getBib());
                 if (!r.getSplitTime(si).isZero() ) {
                     
                     // MIN_TIME_TO_SPLIT
@@ -666,7 +668,7 @@ public class ResultsDAO {
                             if (c.getTimestamp().compareTo(lastSeen) > 0  && (nextSeen.isZero() || c.getTimestamp().compareTo(nextSeen.minus(backWindowDuration)) < 0)) {
                                 r.setSplitTime(si,c.getTimestamp());
                                 lastSeen=c.getTimestamp();
-                               // System.out.println(" Split match found for bib " + p.getBib() + " at " + lastSeen);
+                               //System.out.println(" Split match found for bib " + p.getBib() + " at " + lastSeen);
                             }
                         }
                         if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
@@ -706,7 +708,7 @@ public class ResultsDAO {
                 }
             }
             
-            //System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+            System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
             //resultsList.add(r); 
             //resultsMap.put(bib + " " + r.getRaceID(), r);
             
