@@ -1268,12 +1268,14 @@ public class FXMLParticipantController  {
         TextField startTextField = new TextField("1");
         startTextField.setPrefWidth(90);
         startTextField.textProperty().addListener((obs, prevVal, newVal) -> {
+            int c = startTextField.getCaretPosition();
             if (newVal != null && !newVal.isEmpty() ){
                 try {
                     Integer.parseUnsignedInt(newVal);
                 } catch (Exception e) {
                     Platform.runLater(() -> {
                         startTextField.textProperty().set(prevVal);
+                        startTextField.positionCaret(c);
                     });
                 }
             }
@@ -1282,12 +1284,14 @@ public class FXMLParticipantController  {
         TextField endTextField = new TextField();
         endTextField.setPrefWidth(90);
         endTextField.textProperty().addListener((obs, prevVal, newVal) -> {
+            int c = endTextField.getCaretPosition();
             if (newVal != null && !newVal.isEmpty() ){
                 try {
                     Integer.parseUnsignedInt(newVal);
                 } catch (Exception e) {
                     Platform.runLater(() -> {
                         endTextField.textProperty().set(prevVal);
+                        endTextField.positionCaret(c);
                     });
                 }
             }
@@ -1322,7 +1326,25 @@ public class FXMLParticipantController  {
         TextArea skipBibs = new TextArea();
         skipBibs.setPrefWidth(90);
         skipBibs.setPrefHeight(75);
-        
+        skipBibs.textProperty().addListener((obs, prevVal, newVal) -> {
+            System.out.println("SkipBibs updated: " + newVal);
+            int c = skipBibs.getCaretPosition();
+            for (String line: newVal.split("\\R")) {
+                System.out.println("skipBibs: " + line);
+                if (line != null && !line.isEmpty() ){
+                    try {
+                        Integer.parseUnsignedInt(line);
+                    } catch (Exception e) {
+                        System.out.println("Abort! reset to " + prevVal);
+                        Platform.runLater(() -> {
+                            skipBibs.textProperty().set(prevVal);
+                            skipBibs.positionCaret(c);
+                        });
+                        break;
+                    }
+                }
+            }
+        });
         
         Dialog<Boolean> dialog = new Dialog();
         dialog.resizableProperty().set(true);
