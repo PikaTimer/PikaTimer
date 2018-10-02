@@ -313,8 +313,10 @@ public class ResultsDAO {
         timesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
         backupTimesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
         
-        //System.out.println("ResultsDAO.processBib: " + bib + " we have " + timesList.size() + " times");
-        
+        System.out.println("ResultsDAO.processBib: " + bib + " we have " + timesList.size() + " times");
+        for (CookedTimeData c: timesList){
+            System.out.println(" " + c.getTimestamp().toString());
+        }
         waves.forEach(i -> {
             //System.out.println("Processing waveID " + i); 
             
@@ -390,7 +392,7 @@ public class ResultsDAO {
             
             
             while(ctd != null) {
-                //System.out.println("ResultsDAO.processBib: Looking at: " + r.getBib() + " " + ctd.getTimestamp());
+                System.out.println("ResultsDAO.processBib: Looking at: " + r.getBib() + " " + ctd.getTimestamp());
                 
                 // is there an override time for a future split that is before 
                 // the time in the ctd? If so, advance to the split after that 
@@ -427,12 +429,12 @@ public class ResultsDAO {
                             // now consume the rest of the hits at this split until we 
                             // hit the max time for this split
                             do { 
-                                //System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
+                                System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
                                 if (times.hasNext()) ctd = times.next();
                                 else ctd = null;
                             } while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 );
                             splitIndex++;
-                            //System.out.println("splitIndex now set to " + splitIndex);
+                            System.out.println("splitIndex now set to " + splitIndex);
                         }
                     }
                 } 
@@ -479,6 +481,7 @@ public class ResultsDAO {
                         // now consume the rest of the hits at this split until we 
                         // either hit another location or hit the max
                         while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 ) { 
+                            System.out.println("  Tossing " + ctd.getTimestamp().toString());
                             if (times.hasNext()) ctd = times.next();
                             else ctd = null;
                         } ;
@@ -508,10 +511,11 @@ public class ResultsDAO {
                         System.out.println("Start forward splitMax is now " + DurationFormatter.durationToString(splitMax));
                         // now consume the rest of the hits at this split until we 
                         // either hit another location or hit the max
-                        do { 
+                        while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 ){ 
+                            System.out.println("  Tossing " + ctd.getTimestamp().toString() + ": less than the splitMax");
                             if (times.hasNext()) ctd = times.next();
                             else ctd = null;
-                        } while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 );
+                        } ;
                     
                     } else if (splitIndex == splits.size() -1 ) { // finish line
                         //System.out.println("We made it to the finish line!");
@@ -519,7 +523,7 @@ public class ResultsDAO {
                         break; // we are done!
                     } else {
                         // we matched a split. 
-                        //System.out.println("We are at split " + splitIndex + " in " + ctd.getTimestamp());
+                        System.out.println("We are at split " + splitIndex + " in " + ctd.getTimestamp());
                         r.setSplitTime(splitArray[splitIndex].getPosition(), ctd.getTimestamp());
                         
                         // MIN_TIME_TO_SPLIT
@@ -537,13 +541,13 @@ public class ResultsDAO {
                         splitIndex++;
                     }
                 } else { // walk the splitArray until we get a match
-                    //System.out.println("   Bumping the split index up from " + splitIndex);
+                     System.out.println("   Bumping the split index up from " + splitIndex);
                     Integer orgIndex  = splitIndex;
                     while (splitIndex < splits.size() && ctd.getTimingLocationId() != splitArray[splitIndex].getTimingLocationID()) splitIndex++;
-                    //System.out.println("      to " + splitIndex);
+                     System.out.println("      to " + splitIndex);
                     
                     if (splitIndex == splits.size()) {
-                        //System.out.println("oops, we hit the bottom, reset the splitIndex to " + orgIndex);
+                         System.out.println("oops, we hit the bottom, reset the splitIndex to " + orgIndex);
                         // Ok, so the current timing location is never used again. Odds are they just sat around
                         // there too long. Let's fix that
                         splitIndex = orgIndex;
