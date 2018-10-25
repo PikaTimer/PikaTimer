@@ -892,6 +892,7 @@ public class ResultsDAO {
 
                         // Set the splits
                         Duration paused = Duration.ZERO;
+                        Boolean missingSplit = false;
                         if(r.getSplits().size() > 2) {
                             for (int i = 2; i <  splitSize ; i++) {
                                 //System.out.println("Split: " + r.getSplits().get(i-1).getSplitName() + " Ignore? " + r.getSplits().get(i-1).getIgnoreTime() );
@@ -904,7 +905,8 @@ public class ResultsDAO {
                                 
                                 // Is this a mandatory split that we are missing?
                                 if (r.getSplits().get(i-1).getMandatorySplit() && (pr.getSplit(i) == null || pr.getSplit(i).isZero())){
-                                    // Mandatory split
+                                    // Mandatory split: Stop right here
+                                    results.add(pr);
                                     return;
                                 }
                                 // Check to see if we are over a cutoff for this split. 
@@ -1101,7 +1103,7 @@ public class ResultsDAO {
                     // for each report, feed it the results list
                     if (rr == null) {
                         r.raceReportsProperty().forEach(rr ->{
-                            rr.processResult(results);
+                            rr.processResultIfEnabled(results);
                         }); 
                     } else rr.processResultNow(results);
                 } catch (Exception ex){
