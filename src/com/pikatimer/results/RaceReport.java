@@ -248,7 +248,7 @@ public class RaceReport {
             });
         }
     }
-    public void processResult(List<ProcessedResult> r){
+    public void processResultIfEnabled(List<ProcessedResult> r){
         // If we are enabled... do something
         System.out.println("RaceReport.procesResult() Called... ");
         if (getBooleanAttribute("enabled")) {
