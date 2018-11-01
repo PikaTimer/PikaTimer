@@ -3,15 +3,20 @@ TODO for 1.5.1 Release
 Bugs / tweaks:
 DONE: Fix bulk bib assignment bug
 DONE: JOEY vs Joey discovery issue
-BUG: Birthday import issue
-BUG: Deal with utf-8 w/ BOM on participant import files (1st colum is being ignored)
-Filter non numeric items in bulk bib assignment text area
-Figure out report html vs text header editing issue
-Update to DataTables 1.10.19+
 DONE: Center display on screen
-Done Update "start" and "end" wording on timing tab to make it easier to understand
-BUG: Backup at finish line ignored? Verify other locations too (start, splits, etc)
-BUG: Required Splits during an in-progress race shows no finishers
+DONE: Update "start" and "end" wording on timing tab to make it easier to understand
+DONE: Update to DataTables 1.10.18+
+DONE: BUG: Backup at finish line ignored? Verify backup handling at other locations (start, splits, etc)
+DONE: BUG: Deal with utf-8 w/ BOM on participant import files (1st column is being ignored due to BOM char)
+DONE: Filter non numeric items in bulk bib assignment text area
+DONE: BUG: 1st read after the start is ignored. 
+DONE: FTPS support for servers that don't like Java's TLS
+DONE: Ability to specify a non-standard port on the SFTP (SCP) host via hostname.com:port syntax
+DONE: For FTPS, try a rename rather than a delete/rename. Fall back to a delete/rename if the server won't overwrite the target file
+DONE: BUG: Required Splits during an in-progress race shows no finishers
+
+Figure out report html vs text header editing oddity -- Unable to reproduce in a test env
+
 
 FUTURE: 
 
@@ -20,13 +25,16 @@ FUTURE:
         a. Participants download
         b. Participants sync / upload
         b. Finish times w/ and w/o splits
-    2. Team Results
-    3. Non-Binary Gender Support
-    4. Marmot Integration
-        a. Participant sync
+    2. Course Record support
+    3. Team Results
+    4. Non-Binary Gender Support
+    5. Marmot Integration
+        a. Auto-Participant sync
         b. Announcer split
-        c. Finish time
+        c. Finish time auto-update
         d. Leader Board Display
+        e. Results Lookup
+    6. BigHorn (Packet Pickup and Onsite Registration App)?
 
 General: 
     --Cleanup UI and better input field validation
