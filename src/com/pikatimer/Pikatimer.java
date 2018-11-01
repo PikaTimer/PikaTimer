@@ -38,7 +38,7 @@ public class Pikatimer extends Application {
     private static Stage mainStage;
     private static String jdbcURL; // Holds the jdbcURL for the open db
     
-    public static final String VERSION = "1.5";
+    public static final String VERSION = "1.5.1";
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -73,6 +73,8 @@ public class Pikatimer extends Application {
         
         primaryStage.setTitle("PikaTimer " + VERSION);
         
+        mainStage.setWidth(600);
+        mainStage.setHeight(400);
         
         
         Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLopenEvent.fxml"));

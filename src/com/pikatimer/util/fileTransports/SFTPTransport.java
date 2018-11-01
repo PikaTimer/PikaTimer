@@ -199,7 +199,15 @@ public class SFTPTransport implements FileTransport{
 
         // only for public key authentication
         try {
-            sshSession = sshClient.getSession(username, hostname);
+            if(hostname.contains(":")){
+                System.out.println("Explicit Port Specified...");
+                String[] h = hostname.split(":");
+                int port = Integer.parseInt(h[1]);
+                sshSession = sshClient.getSession(username, h[0],port);
+            } else {
+                sshSession = sshClient.getSession(username, hostname);
+            }
+            
             sshSession.setTimeout(10000); // 10 seconds
 
             // we only support password authentication for now
@@ -300,7 +308,14 @@ public class SFTPTransport implements FileTransport{
 
                     // only for public key authentication
                     try {
-                        sshSession = sshClient.getSession(username, hostname);
+                        if(hostname.contains(":")){
+                            System.out.println("Explicit Port Specified...");
+                            String[] h = hostname.split(":");
+                            int port = Integer.parseInt(h[1]);
+                            sshSession = sshClient.getSession(username, h[0],port);
+                        } else {
+                            sshSession = sshClient.getSession(username, hostname);
+                        }
                         sshSession.setTimeout(10000); // 10 seconds
 
                         // we only support password authentication for now

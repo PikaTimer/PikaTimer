@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane id="AnchorPane" prefHeight="451.0" prefWidth="711.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLAboutController">
+<AnchorPane id="AnchorPane" prefHeight="451.0" prefWidth="711.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.FXMLAboutController">
    <children>
       <VBox alignment="TOP_CENTER" layoutX="226.0" layoutY="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="50.0" AnchorPane.rightAnchor="50.0" AnchorPane.topAnchor="25.0">
          <children>
@@ -67,7 +67,7 @@
                   <Insets />
                </VBox.margin>
             </FlowPane>
-            <Label alignment="CENTER" contentDisplay="BOTTOM" text="Copyright (C) 2017 John Garner">
+            <Label alignment="CENTER" contentDisplay="BOTTOM" text="Copyright (C) 2018 John Garner">
                <font>
                   <Font size="18.0" />
                </font>

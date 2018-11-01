@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -56,6 +57,8 @@ public class FTPSTransport implements FileTransport{
     Thread transferThread;
     FTPSClient ftpsClient;
     FTPClient ftpClient;
+    
+    String protMode="P";
     
     private static final BlockingQueue<String> transferQueue = new ArrayBlockingQueue(100000);
 
@@ -124,17 +127,32 @@ public class FTPSTransport implements FileTransport{
                                 String fn = filename;
                                 String tmpFn = fn + ".PikaTmp";
                                 Platform.runLater(() -> { 
-                                    if (encrypted) transferStatus.set("Transfering (Secure) " + fn);
+                                    if (encrypted && protMode.equalsIgnoreCase("P")) transferStatus.set("Transfering (Secure) " + fn);
+                                    else if (encrypted ) transferStatus.set("Transfering (Clear) " + fn);
                                     else transferStatus.set("Transfering " + fn);
                                 });
                                 long startTime = System.nanoTime();
                                 
                                 // To get around file locking issues, 
-                                // we upload to a temp fie and then do a delete / rename
+                                // we upload to a temp fie and then do a rename
                                 
                                 ftpClient.storeFile(tmpFn, data);
-                                ftpClient.dele(filename); // This may fail if the file does not exist
-                                ftpClient.rename(tmpFn, fn);
+                                
+                                // Try a rename. If it fails, try a delete and then a rename
+                                try {  
+                                    ftpClient.rename(tmpFn, fn);
+                                } catch (Exception ex){
+                                    System.out.println("ftpClient.rename exception thrown");
+                                    
+                                    try { 
+                                        ftpClient.dele(fn);// This may fail if the file does not exist
+                                    } catch (Exception ex2){
+                                        // noop
+                                        System.out.println("ftpClient.dele exception thrown");
+                                    }
+                                    ftpClient.rename(tmpFn, fn);
+                                }
+                                
                                 long endTime = System.nanoTime();
                                 lastTransferTimestamp = endTime;
 
@@ -151,11 +169,19 @@ public class FTPSTransport implements FileTransport{
 
                             //Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
                         } catch (IOException ex) {
-                            System.out.println("FTPSTransport Thread: IOException thrown");
+                            System.out.println("FTPSTransport Thread: IOException thrown: "  + ex.getMessage() );
+                            
+                            if (encrypted) {
+                                System.out.println("Setting protection mode to \"C\" to see if that fixes the problem");
+                                protMode="C";
+                            }
+                            
+                            ex.printStackTrace();
                             //if (filename!= null) transferQueue.put(filename);
                             //Logger.getLogger(FTPSTransport.class.getName()).log(Level.SEVERE, null, ex);
                         } catch (Exception ex) {
-                            System.out.println("FTPSTransport Thread: Exception tossed: " + ex.getMessage());
+                            System.out.println("FTPSTransport Thread: Exception tossed: " + ex.getMessage() + ex.toString());
+                            System.out.println(Arrays.toString(ex.getStackTrace()));
                         } finally {
                             if (ftpClient.isConnected()) {
                                 try {
@@ -210,14 +236,17 @@ public class FTPSTransport implements FileTransport{
                     if (encrypted) transferStatus.set("Loging in...");
                     else transferStatus.set("Loging in (insecure)...");
                 });
+                
+                
 
                 if (ftpClient.login(username, password)) {
 
                     if (encrypted) {
                         // Set protection buffer size
                         ftpsClient.execPBSZ(0);
-                        // Set data channel protection to private
-                        ftpsClient.execPROT("P");
+                        // Set data channel protection mode ("P" or "C")
+                      
+                        ftpsClient.execPROT(protMode);
                     }
                     // Enter local passive mode
                     ftpClient.enterLocalPassiveMode();
@@ -370,6 +399,8 @@ public class FTPSTransport implements FileTransport{
                     if (FTPReply.isPositiveCompletion(reply)) {
                         try {
                             Platform.runLater(() -> output.set(output.getValueSafe() + "\nLogging in..." ));
+                            
+                            ftpClient.enterLocalPassiveMode(); 
 
                             if (ftpClient.login(username, password)) {
                                 // try and CD to the target directory

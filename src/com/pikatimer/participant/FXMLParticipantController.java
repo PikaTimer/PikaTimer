@@ -1268,12 +1268,14 @@ public class FXMLParticipantController  {
         TextField startTextField = new TextField("1");
         startTextField.setPrefWidth(90);
         startTextField.textProperty().addListener((obs, prevVal, newVal) -> {
+            int c = startTextField.getCaretPosition();
             if (newVal != null && !newVal.isEmpty() ){
                 try {
                     Integer.parseUnsignedInt(newVal);
                 } catch (Exception e) {
                     Platform.runLater(() -> {
                         startTextField.textProperty().set(prevVal);
+                        startTextField.positionCaret(c);
                     });
                 }
             }
@@ -1282,12 +1284,14 @@ public class FXMLParticipantController  {
         TextField endTextField = new TextField();
         endTextField.setPrefWidth(90);
         endTextField.textProperty().addListener((obs, prevVal, newVal) -> {
+            int c = endTextField.getCaretPosition();
             if (newVal != null && !newVal.isEmpty() ){
                 try {
                     Integer.parseUnsignedInt(newVal);
                 } catch (Exception e) {
                     Platform.runLater(() -> {
                         endTextField.textProperty().set(prevVal);
+                        endTextField.positionCaret(c);
                     });
                 }
             }
@@ -1322,7 +1326,25 @@ public class FXMLParticipantController  {
         TextArea skipBibs = new TextArea();
         skipBibs.setPrefWidth(90);
         skipBibs.setPrefHeight(75);
-        
+        skipBibs.textProperty().addListener((obs, prevVal, newVal) -> {
+            System.out.println("SkipBibs updated: " + newVal);
+            int c = skipBibs.getCaretPosition();
+            for (String line: newVal.split("\\R")) {
+                System.out.println("skipBibs: " + line);
+                if (line != null && !line.isEmpty() ){
+                    try {
+                        Integer.parseUnsignedInt(line);
+                    } catch (Exception e) {
+                        System.out.println("Abort! reset to " + prevVal);
+                        Platform.runLater(() -> {
+                            skipBibs.textProperty().set(prevVal);
+                            skipBibs.positionCaret(c);
+                        });
+                        break;
+                    }
+                }
+            }
+        });
         
         Dialog<Boolean> dialog = new Dialog();
         dialog.resizableProperty().set(true);
@@ -1412,10 +1434,19 @@ public class FXMLParticipantController  {
             
             Integer currentBib = Integer.parseInt(startTextField.getText());
             Integer lastBib = Integer.MAX_VALUE;
-            if (!endTextField.getText().isEmpty()) Integer.parseInt(endTextField.getText());
+            if (!endTextField.getText().isEmpty()) {
+                try{
+                    lastBib = Integer.parseInt(endTextField.getText());
+                } catch (Exception ex){
+                    lastBib = Integer.MAX_VALUE;
+                }
+            }
             
             Set<String> skipList = new HashSet(Arrays.asList(skipBibs.getText().split("\\R")));
-            for(String t: skipList) System.out.println("Skipping bibs ending with \"" + t + "\"");
+            for(String t: skipList) {
+                if (t.isEmpty()) skipList.remove(t);
+                System.out.println("Skipping bibs ending with \"" + t + "\"");
+            }
             
             Attribute s1 = sort1ComboBox.getSelectionModel().getSelectedItem();
             Attribute s2 = sort2ComboBox.getSelectionModel().getSelectedItem();
@@ -1499,13 +1530,15 @@ public class FXMLParticipantController  {
             for(Participant p: assignees){
                 if (currentBib > lastBib) break;
                 System.out.println("Assigning bib for " + p.fullNameProperty().getValueSafe());
-                
+                System.out.println("  currentBib is now " + currentBib.toString());
                 if (!clearExistingToggleSwitch.selectedProperty().get()) {
                     while(currentBib <= lastBib && participantDAO.getParticipantByBib(currentBib.toString()) != null){
+                        System.out.println("  currentBib is now " + currentBib.toString());
                         currentBib++;
                     }
                 }
                 if (!skipList.isEmpty()) {
+                    System.out.println("skiList is NOT empty");
                     Boolean good = true;
                     do {
                         good = true;
@@ -1515,8 +1548,11 @@ public class FXMLParticipantController  {
                         if (good==false) currentBib++;
                         if (currentBib > lastBib) break;
                     } while (!good);
+                } else {
+                    System.out.println("skiList was empty");
                 }
                 if (currentBib > lastBib) break;
+                
                 // This should be null if we are not clearing existing
                 existing = participantDAO.getParticipantByBib(currentBib.toString());
                 
@@ -1524,6 +1560,7 @@ public class FXMLParticipantController  {
                     existing.setBib("OLD: " + currentBib.toString());
                     participantDAO.updateParticipant(existing);
                 }
+                System.out.println("Assigning " + currentBib.toString() + "...");
                 p.setBib(currentBib.toString());
                 p.setWaves(participantDAO.getWaveByBib(currentBib.toString()));
                 participantDAO.updateParticipant(p);

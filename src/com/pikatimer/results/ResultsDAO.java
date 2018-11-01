@@ -313,8 +313,10 @@ public class ResultsDAO {
         timesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
         backupTimesList.sort((p1, p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()));
         
-        //System.out.println("ResultsDAO.processBib: " + bib + " we have " + timesList.size() + " times");
-        
+        System.out.println("ResultsDAO.processBib: " + bib + " we have " + timesList.size() + " times");
+        for (CookedTimeData c: timesList){
+            System.out.println(" " + c.getTimestamp().toString());
+        }
         waves.forEach(i -> {
             //System.out.println("Processing waveID " + i); 
             
@@ -390,7 +392,7 @@ public class ResultsDAO {
             
             
             while(ctd != null) {
-                //System.out.println("ResultsDAO.processBib: Looking at: " + r.getBib() + " " + ctd.getTimestamp());
+                System.out.println("ResultsDAO.processBib: Looking at: " + r.getBib() + " " + ctd.getTimestamp());
                 
                 // is there an override time for a future split that is before 
                 // the time in the ctd? If so, advance to the split after that 
@@ -427,12 +429,12 @@ public class ResultsDAO {
                             // now consume the rest of the hits at this split until we 
                             // hit the max time for this split
                             do { 
-                                //System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
+                                System.out.println("Tossing ctd from " + ctd.getTimingLocationId() + " at " + ctd.getTimestamp());
                                 if (times.hasNext()) ctd = times.next();
                                 else ctd = null;
                             } while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 );
                             splitIndex++;
-                            //System.out.println("splitIndex now set to " + splitIndex);
+                            System.out.println("splitIndex now set to " + splitIndex);
                         }
                     }
                 } 
@@ -479,6 +481,7 @@ public class ResultsDAO {
                         // now consume the rest of the hits at this split until we 
                         // either hit another location or hit the max
                         while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 ) { 
+                            System.out.println("  Tossing " + ctd.getTimestamp().toString());
                             if (times.hasNext()) ctd = times.next();
                             else ctd = null;
                         } ;
@@ -508,10 +511,11 @@ public class ResultsDAO {
                         System.out.println("Start forward splitMax is now " + DurationFormatter.durationToString(splitMax));
                         // now consume the rest of the hits at this split until we 
                         // either hit another location or hit the max
-                        do { 
+                        while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 ){ 
+                            System.out.println("  Tossing " + ctd.getTimestamp().toString() + ": less than the splitMax");
                             if (times.hasNext()) ctd = times.next();
                             else ctd = null;
-                        } while (ctd != null && ctd.getTimestamp().compareTo(splitMax) < 0 );
+                        } ;
                     
                     } else if (splitIndex == splits.size() -1 ) { // finish line
                         //System.out.println("We made it to the finish line!");
@@ -519,7 +523,7 @@ public class ResultsDAO {
                         break; // we are done!
                     } else {
                         // we matched a split. 
-                        //System.out.println("We are at split " + splitIndex + " in " + ctd.getTimestamp());
+                        System.out.println("We are at split " + splitIndex + " in " + ctd.getTimestamp());
                         r.setSplitTime(splitArray[splitIndex].getPosition(), ctd.getTimestamp());
                         
                         // MIN_TIME_TO_SPLIT
@@ -537,13 +541,13 @@ public class ResultsDAO {
                         splitIndex++;
                     }
                 } else { // walk the splitArray until we get a match
-                    //System.out.println("   Bumping the split index up from " + splitIndex);
+                     System.out.println("   Bumping the split index up from " + splitIndex);
                     Integer orgIndex  = splitIndex;
                     while (splitIndex < splits.size() && ctd.getTimingLocationId() != splitArray[splitIndex].getTimingLocationID()) splitIndex++;
-                    //System.out.println("      to " + splitIndex);
+                     System.out.println("      to " + splitIndex);
                     
                     if (splitIndex == splits.size()) {
-                        //System.out.println("oops, we hit the bottom, reset the splitIndex to " + orgIndex);
+                         System.out.println("oops, we hit the bottom, reset the splitIndex to " + orgIndex);
                         // Ok, so the current timing location is never used again. Odds are they just sat around
                         // there too long. Let's fix that
                         splitIndex = orgIndex;
@@ -593,11 +597,12 @@ public class ResultsDAO {
             
             // Now we are going to walk the times and look for backp times that may be able to fill the gaps.
             //System.out.println("ResultsDAO.processBib: Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
-
+            //System.out.println("Backup time processing for bib " + p.getBib() + ". There are " + backupTimesList.size() + " backup reads.");
+            
             if (backupTimesList.isEmpty()) return;
             int backupTimeIndex = 0;
             int maxBackupTimes = backupTimesList.size();
-            CookedTimeData c = backupTimesList.get(backupTimeIndex++);; 
+            CookedTimeData c = backupTimesList.get(backupTimeIndex);; 
             
             //fix the start time
             if(r.getStartDuration().equals(r.getWaveStartDuration())) {
@@ -611,6 +616,7 @@ public class ResultsDAO {
                 
                 while (Objects.equals(c.getTimingLocationId(), splitArray[0].getTimingLocationID()) && c.getTimestamp().compareTo(maxStart) < 0) {
                     if (r.getStartDuration().compareTo(c.getTimestamp())<0) {
+                        r.setSplitTime(0, c.getTimestamp());
                         r.setStartDuration(c.getTimestamp());
                         //System.out.println("Backup start time found for bib " + p.getBib());
                     }
@@ -630,7 +636,7 @@ public class ResultsDAO {
             });
             
             for (int si = 2; backupTimeIndex < maxBackupTimes  && si < splits.size() ; si++){
-               // System.out.println("Evaluating si " + si + " for bib "+ p.getBib());
+                //System.out.println("Evaluating si " + si + " for bib "+ p.getBib());
                 if (!r.getSplitTime(si).isZero() ) {
                     
                     // MIN_TIME_TO_SPLIT
@@ -666,7 +672,7 @@ public class ResultsDAO {
                             if (c.getTimestamp().compareTo(lastSeen) > 0  && (nextSeen.isZero() || c.getTimestamp().compareTo(nextSeen.minus(backWindowDuration)) < 0)) {
                                 r.setSplitTime(si,c.getTimestamp());
                                 lastSeen=c.getTimestamp();
-                               // System.out.println(" Split match found for bib " + p.getBib() + " at " + lastSeen);
+                               //System.out.println(" Split match found for bib " + p.getBib() + " at " + lastSeen);
                             }
                         }
                         if (backupTimeIndex < maxBackupTimes ) c = backupTimesList.get(backupTimeIndex++);
@@ -706,7 +712,7 @@ public class ResultsDAO {
                 }
             }
             
-            //System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
+            System.out.println("ResultsDAO.processBib: Final Result: " + r.getBib() + " " + r.getStartDuration() + " -> " + r.getFinishDuration());
             //resultsList.add(r); 
             //resultsMap.put(bib + " " + r.getRaceID(), r);
             
@@ -886,6 +892,7 @@ public class ResultsDAO {
 
                         // Set the splits
                         Duration paused = Duration.ZERO;
+                        Boolean missingSplit = false;
                         if(r.getSplits().size() > 2) {
                             for (int i = 2; i <  splitSize ; i++) {
                                 //System.out.println("Split: " + r.getSplits().get(i-1).getSplitName() + " Ignore? " + r.getSplits().get(i-1).getIgnoreTime() );
@@ -898,7 +905,8 @@ public class ResultsDAO {
                                 
                                 // Is this a mandatory split that we are missing?
                                 if (r.getSplits().get(i-1).getMandatorySplit() && (pr.getSplit(i) == null || pr.getSplit(i).isZero())){
-                                    // Mandatory split
+                                    // Mandatory split: Stop right here
+                                    results.add(pr);
                                     return;
                                 }
                                 // Check to see if we are over a cutoff for this split. 
@@ -1095,7 +1103,7 @@ public class ResultsDAO {
                     // for each report, feed it the results list
                     if (rr == null) {
                         r.raceReportsProperty().forEach(rr ->{
-                            rr.processResult(results);
+                            rr.processResultIfEnabled(results);
                         }); 
                     } else rr.processResultNow(results);
                 } catch (Exception ex){
