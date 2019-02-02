@@ -540,10 +540,10 @@ public class AwardCategory {
             Duration p1Time = Duration.ZERO;
             Duration p2Time = Duration.ZERO;
             if(skewedProperty.get()) {
-                if(DurationParser.parsable(p1.getParticipant().getCustomAttribute(skewAttributeProperty.get()).get()))
-                    p1Time = DurationParser.parse(p1.getParticipant().getCustomAttribute(skewAttributeProperty.get()).get());
-                if(DurationParser.parsable(p2.getParticipant().getCustomAttribute(skewAttributeProperty.get()).get()))
-                    p2Time = DurationParser.parse(p2.getParticipant().getCustomAttribute(skewAttributeProperty.get()).get());
+                if(DurationParser.parsable(p1.getParticipant().getCustomAttribute(skewAttributeProperty.get()).getValueSafe()))
+                    p1Time = DurationParser.parse(p1.getParticipant().getCustomAttribute(skewAttributeProperty.get()).getValueSafe());
+                if(DurationParser.parsable(p2.getParticipant().getCustomAttribute(skewAttributeProperty.get()).getValueSafe()))
+                    p2Time = DurationParser.parse(p2.getParticipant().getCustomAttribute(skewAttributeProperty.get()).getValueSafe());
                 if (skewOpProperty.get().equals("-")) {
                     p1Time = p1Time.negated();
                     p2Time = p2Time.negated();
@@ -582,7 +582,7 @@ public class AwardCategory {
                 } else if (attrib.equals("AG")) {
                     splitCat += r.getAGCode() + " ";
                 } else if (attrib.matches("^\\d+$")) { // custom attribute
-                    try {splitCat += r.getParticipant().getCustomAttribute(Integer.parseInt(attrib)) + " ";} catch (Exception e){}
+                    try {splitCat += r.getParticipant().getCustomAttribute(Integer.parseInt(attrib)).getValueSafe() + " ";} catch (Exception e){}
                 } else {
                     splitCat += r.getParticipant().getNamedAttribute(attrib) + " ";
                 }
@@ -625,7 +625,7 @@ public class AwardCategory {
                     } else if (attrib.equals("AG")) {
                         splitCat += race.getAgeGroups().ageToAGString(r.getAge()) + " ";
                     } else if (attrib.matches("^\\d+$")) { // custom attribute
-                        try {splitCat += r.getCustomAttribute(Integer.parseInt(attrib)) + " ";} catch (Exception e){}
+                        try {splitCat += r.getCustomAttribute(Integer.parseInt(attrib)).getValueSafe() + " ";} catch (Exception e){}
                     } else {
                         splitCat += r.getNamedAttribute(attrib) + " ";
                     }
