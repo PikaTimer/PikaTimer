@@ -58,6 +58,7 @@ public class OverallHTML5 implements RaceReportType{
     List<CustomAttribute> customAttributesList = new ArrayList();
 
     Map<String,Boolean> supportedOptions = new HashMap();
+    Map<String,CustomAttribute> flattenedCustomNames = new HashMap();
     
     public OverallHTML5(){
         supportedOptions.put("showDQ", true);
@@ -80,6 +81,14 @@ public class OverallHTML5 implements RaceReportType{
     private String escapeHTML(String s){
         return StringEscapeUtils.escapeHtml4(s);
     }
+    
+    private String escapeAndFlatten(CustomAttribute a){
+        String s = escape(a.getName()).replace(" ", "_").replaceAll("[^A-Za-z0-9_]{1}", "_");
+        if ((flattenedCustomNames.containsKey(s) && !flattenedCustomNames.get(s).equals(a)) || s.replace("_", "").isEmpty()) return a.getUUID().replaceAll("[^A-Za-z0-9_]", "_");
+        flattenedCustomNames.put(s,a);
+        return s;
+    }
+    
     @Override
     public void init(Race r) {
         race = r;
@@ -396,7 +405,7 @@ public class OverallHTML5 implements RaceReportType{
             if (showCountry) report +=            "				data += '<div class=\"part-stats\">' + rData.country + '</div>';\n";
             if (showCustomAttributes) {
                 for( CustomAttribute a: customAttributesList){
-                    report += "				data += '<div class=\"part-stats\">" + escape(a.getName()) +": ' + rData.custom_" + escape(a.getName()) +" + '</div>';\n";
+                    report += "				data += '<div class=\"part-stats\">" + escape(a.getName()) +": ' + rData.custom_" + escapeAndFlatten(a) +" + '</div>';\n";
                 }
             }
             
@@ -621,7 +630,7 @@ public class OverallHTML5 implements RaceReportType{
             if (showCountry) report += "           { \"data\": \"country\" },\n";
             if (showCustomAttributes) {
                 for( CustomAttribute a: customAttributesList){
-                    report += "           { \"data\": \"custom_" + escape(a.getName()) +"\" },\n";
+                    report += "           { \"data\": \"custom_" + escapeAndFlatten(a) +"\" },\n";
                 }
             }
             if (showSplits) {

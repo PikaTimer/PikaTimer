@@ -67,6 +67,7 @@ public class OverallJSON implements RaceReportType{
     List<CustomAttribute> customAttributesList = new ArrayList();
     
     Map<String,Boolean> supportedOptions = new HashMap();
+    Map<String,CustomAttribute> flattenedCustomNames = new HashMap();
     
     public OverallJSON(){
         supportedOptions.put("showDQ", true);
@@ -85,6 +86,13 @@ public class OverallJSON implements RaceReportType{
     private String escape(String s){
         return StringEscapeUtils.escapeHtml4(s).replace("'", "\\'").replace("\t", " ").replace("\\R", " ");
         //return s.replace("'", "\\'").replace("\t", " ").replace("\\R", " ");
+    }
+    
+    private String escapeAndFlatten(CustomAttribute a){
+        String s = escape(a.getName()).replace(" ", "_").replaceAll("[^A-Za-z0-9_]{1}", "_");
+        if ((flattenedCustomNames.containsKey(s) && !flattenedCustomNames.get(s).equals(a)) || s.replace("_", "").isEmpty()) return a.getUUID().replaceAll("[^A-Za-z0-9_]", "_");
+        flattenedCustomNames.put(s,a);
+        return s;
     }
     
     @Override
@@ -220,7 +228,7 @@ public class OverallJSON implements RaceReportType{
             
             if (showCustomAttributes) {
                 customAttributesList.forEach((a) -> {
-                    chars.append("\t\t\"custom_" + escape(a.getName()) + "\": ").append("\"").append(escape(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe())).append("\"").append(",\n");
+                    chars.append("\t\t\"custom_" + escapeAndFlatten(a) + "\": ").append("\"").append(escape(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe())).append("\"").append(",\n");
                 });
             }
             
