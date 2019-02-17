@@ -140,6 +140,7 @@ public class OverallJSON implements RaceReportType{
         
         
          Map<String,List<String>> awardWinnersByBibMap = new HashMap();
+         Map<String,Map<AwardCategory,AwardWinner>> awardWinnersDetailByBibMap = new HashMap();
         if (showAwards){
             Map<AwardCategory,Map<String,List<AwardWinner>>>  awardWinnersMap = race.getAwards().getAwardWinners(prList);
             StringBuilder awardPrintout = new StringBuilder();
@@ -152,6 +153,8 @@ public class OverallJSON implements RaceReportType{
                     resultsMap.get(cat).forEach(w -> {
                         if (!awardWinnersByBibMap.containsKey(w.participant.getBib())) awardWinnersByBibMap.put(w.participant.getBib(), new ArrayList());
                         awardWinnersByBibMap.get(w.participant.getBib()).add(w.awardPlace + getOrdinal(w.awardPlace) + " " + description + " (Time: " + DurationFormatter.durationToString(w.awardTime, dispFormat, roundMode) + ")");
+                        if (!awardWinnersDetailByBibMap.containsKey(w.participant.getBib())) awardWinnersDetailByBibMap.put(w.participant.getBib(), new HashMap());
+                        awardWinnersDetailByBibMap.get(w.participant.getBib()).put(ac, w);
                     });
                 });
             });
@@ -234,11 +237,27 @@ public class OverallJSON implements RaceReportType{
             if (showAwards){
                 if (awardWinnersByBibMap.containsKey(pr.getParticipant().getBib())) {
                     chars.append("\t\t\"award_winner\": ").append("\"").append("yes").append("\"").append(",\n");
+                    
+                    // Simple list of awards
                     chars.append("\t\t\"awards\": {\n");
                     List<String> awards = awardWinnersByBibMap.get(pr.getParticipant().getBib());
                     for(int i = 0; i< awards.size(); i++){
                         chars.append("\t\t\t\"award_" + i + "\": \"").append(awards.get(i)).append("\"").append(",\n");
                     }
+                    chars.deleteCharAt(chars.lastIndexOf(","));
+                    chars.append("\t\t},\n");
+                    
+                    // Award Detail
+                    chars.append("\t\t\"award_Detail\": {\n");
+                    awardWinnersDetailByBibMap.get(pr.getParticipant().getBib()).keySet().forEach(ac -> {
+                        AwardWinner a = awardWinnersDetailByBibMap.get(pr.getParticipant().getBib()).get(ac);
+                        chars.append("\t\t\t\"award_").append(escape(ac.getName())).append("\": {\n");
+                            chars.append("\t\t\t\t\"title\": \"").append(escape(ac.getName())).append("\"").append(",\n");
+                            chars.append("\t\t\t\t\"category\": \"").append(escape(a.awardTitle)).append("\"").append(",\n");
+                            chars.append("\t\t\t\t\"place\": \"").append(escape(a.awardPlace.toString())).append("\"").append(",\n");
+                            chars.append("\t\t\t\t\"time\": \"").append(escape(DurationFormatter.durationToString(a.awardTime, dispFormat, roundMode))).append("\"").append(",\n");
+                        chars.append("\t\t\t},\n");
+                    });
                     chars.deleteCharAt(chars.lastIndexOf(","));
                     chars.append("\t\t},\n");
                 } else chars.append("\t\t\"award_winner\": ").append("\"").append("no").append("\"").append(",\n");
