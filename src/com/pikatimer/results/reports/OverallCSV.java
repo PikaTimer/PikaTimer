@@ -19,11 +19,14 @@ package com.pikatimer.results.reports;
 import com.pikatimer.event.Event;
 import com.pikatimer.participant.CustomAttribute;
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.AwardCategory;
+import com.pikatimer.race.AwardWinner;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.results.RaceReportType;
+import static com.pikatimer.results.reports.OverallJSON.getOrdinal;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Pace;
 import java.time.Duration;
@@ -54,6 +57,7 @@ public class OverallCSV implements RaceReportType{
     Boolean showPace = true;
     Boolean showGun = true;
     Boolean showCustomAttributes = false;
+    Boolean showAwards = true;
     List<CustomAttribute> customAttributesList = new ArrayList();
     
     Map<String,Boolean> supportedOptions = new HashMap();
@@ -68,6 +72,7 @@ public class OverallCSV implements RaceReportType{
         supportedOptions.put("showDNF", false);
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
+        supportedOptions.put("showAwards",true);
     }
     
     @Override
@@ -105,6 +110,7 @@ public class OverallCSV implements RaceReportType{
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
         showCustomAttributes = supportedOptions.get("showCustomAttributes");
+        showAwards = supportedOptions.get("showAwards");
         
         
         String dispFormat = race.getStringAttribute("TimeDisplayFormat").replace("[","").replace("}","");
@@ -125,6 +131,7 @@ public class OverallCSV implements RaceReportType{
         
         final Boolean  penaltiesOrBonuses = prList.stream().anyMatch(s -> (s.getBonus() || s.getPenalty()));
 
+        
 
         // print the headder
         report += "Event,";
@@ -175,9 +182,35 @@ public class OverallCSV implements RaceReportType{
         if (showGun) report += ",Gun";
         // pace
         if (showPace) report += ",Pace"; 
+        
+        
+        StringBuilder awardPrintout = new StringBuilder();
+        
+        // Map of Bib# that returns a map with a key of AwardCateogry and value of the AwardWinner object. 
+        Map<String,Map<AwardCategory,AwardWinner>> awardWinnersByBibMap = new HashMap();
+        List<AwardCategory> awardCategoryList = new ArrayList();
+        if (showAwards){
+            
+            Map<AwardCategory,Map<String,List<AwardWinner>>>  awardWinnersMap = race.getAwards().getAwardWinners(prList);
+            race.getAwards().awardCategoriesProperty().forEach(ac -> {
+                if (!ac.getVisibleOverall()) return;
+                awardCategoryList.add(ac);
+                awardPrintout.append("," + ac.getName() + " category," + ac.getName() + " place,"+ ac.getName() + " time");
+                Map<String,List<AwardWinner>> resultsMap = awardWinnersMap.get(ac);
+                List<String> categories = resultsMap.keySet().stream().sorted((k1,k2) -> k1.compareTo(k2)).collect(Collectors.toList());
+                categories.forEach(cat -> {
+                    String description = (ac.getName() + " -- " +  cat).trim();
+                    resultsMap.get(cat).forEach(w -> {
+                        if (!awardWinnersByBibMap.containsKey(w.participant.getBib())) awardWinnersByBibMap.put(w.participant.getBib(), new HashMap());
+                        awardWinnersByBibMap.get(w.participant.getBib()).put(ac, w);
+                                //add(w.awardPlace + getOrdinal(w.awardPlace) + " " + description + " (Time: " + DurationFormatter.durationToString(w.awardTime, dispFormat, roundMode) + ")");
+                    });
+                });
+            });
+        }
+        if (awardPrintout.length() > 0 ) report += awardPrintout.toString();
+        
         report += System.lineSeparator();
-        
-        
         
         final StringBuilder chars = new StringBuilder();
         
@@ -291,6 +324,22 @@ public class OverallCSV implements RaceReportType{
             if (showPace){
                 if (!hideTime) chars.append(",").append(pace.getPace(race.getRaceDistance().floatValue(), race.getRaceDistanceUnits(), pr.getChipFinish()));
                 else chars.append(",");
+            }
+            
+            if (showAwards){
+                String bib = pr.getParticipant().getBib();
+                awardCategoryList.forEach(ac -> {
+                    if (awardWinnersByBibMap.containsKey(bib)) {
+                        if (awardWinnersByBibMap.get(bib).containsKey(ac)) {
+                            AwardWinner a = awardWinnersByBibMap.get(bib).get(ac);
+                            chars.append("," + a.awardTitle + "," + a.awardPlace + "," + DurationFormatter.durationToString(a.awardTime, dispFormat, roundMode));
+                        } else { // we didn't win any of these awards
+                            chars.append(",,,");
+                        }
+                    } else { // We didn't win any awards
+                        chars.append(",,,");
+                    }
+                });                
             }
             chars.append(System.lineSeparator());
         

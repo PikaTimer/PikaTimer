@@ -498,12 +498,13 @@ public class Participant {
                 //System.out.println("Parsed via ISO_LOCAL_DATE: " + d);
             } catch (Exception e){
                 try {
-                    birthday = LocalDate.parse(d,DateTimeFormatter.ofPattern("M/d/yyyy"));
-                   // System.out.println("Parsed via M/d/yyyy: " + d);
+                    birthday = LocalDate.parse(d,DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT));
+                    //System.out.println("FormatStyle.SHORT: " + d);
+                    
                 } catch (Exception e2){ 
                     try {
-                        birthday = LocalDate.parse(d,DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT));
-                        //System.out.println("FormatStyle.SHORT: " + d);
+                        birthday = LocalDate.parse(d,DateTimeFormatter.ofPattern("M/d/yyyy"));
+                        // System.out.println("Parsed via M/d/yyyy: " + d);
                     } catch (Exception e3) {
                         //System.out.println("Unble to parse date: " + d);
                     }

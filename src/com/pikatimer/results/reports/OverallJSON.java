@@ -67,6 +67,7 @@ public class OverallJSON implements RaceReportType{
     List<CustomAttribute> customAttributesList = new ArrayList();
     
     Map<String,Boolean> supportedOptions = new HashMap();
+    Map<String,CustomAttribute> flattenedCustomNames = new HashMap();
     
     public OverallJSON(){
         supportedOptions.put("showDQ", true);
@@ -85,6 +86,13 @@ public class OverallJSON implements RaceReportType{
     private String escape(String s){
         return StringEscapeUtils.escapeHtml4(s).replace("'", "\\'").replace("\t", " ").replace("\\R", " ");
         //return s.replace("'", "\\'").replace("\t", " ").replace("\\R", " ");
+    }
+    
+    private String escapeAndFlatten(CustomAttribute a){
+        String s = escape(a.getName()).replace(" ", "_").replaceAll("[^A-Za-z0-9_]{1}", "_");
+        if ((flattenedCustomNames.containsKey(s) && !flattenedCustomNames.get(s).equals(a)) || s.replace("_", "").isEmpty()) return a.getUUID().replaceAll("[^A-Za-z0-9_]", "_");
+        flattenedCustomNames.put(s,a);
+        return s;
     }
     
     @Override
@@ -140,6 +148,7 @@ public class OverallJSON implements RaceReportType{
         
         
          Map<String,List<String>> awardWinnersByBibMap = new HashMap();
+         Map<String,Map<AwardCategory,AwardWinner>> awardWinnersDetailByBibMap = new HashMap();
         if (showAwards){
             Map<AwardCategory,Map<String,List<AwardWinner>>>  awardWinnersMap = race.getAwards().getAwardWinners(prList);
             StringBuilder awardPrintout = new StringBuilder();
@@ -152,6 +161,8 @@ public class OverallJSON implements RaceReportType{
                     resultsMap.get(cat).forEach(w -> {
                         if (!awardWinnersByBibMap.containsKey(w.participant.getBib())) awardWinnersByBibMap.put(w.participant.getBib(), new ArrayList());
                         awardWinnersByBibMap.get(w.participant.getBib()).add(w.awardPlace + getOrdinal(w.awardPlace) + " " + description + " (Time: " + DurationFormatter.durationToString(w.awardTime, dispFormat, roundMode) + ")");
+                        if (!awardWinnersDetailByBibMap.containsKey(w.participant.getBib())) awardWinnersDetailByBibMap.put(w.participant.getBib(), new HashMap());
+                        awardWinnersDetailByBibMap.get(w.participant.getBib()).put(ac, w);
                     });
                 });
             });
@@ -217,7 +228,7 @@ public class OverallJSON implements RaceReportType{
             
             if (showCustomAttributes) {
                 customAttributesList.forEach((a) -> {
-                    chars.append("\t\t\"custom_" + escape(a.getName()) + "\": ").append("\"").append(escape(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe())).append("\"").append(",\n");
+                    chars.append("\t\t\"custom_" + escapeAndFlatten(a) + "\": ").append("\"").append(escape(pr.getParticipant().getCustomAttribute(a.getID()).getValueSafe())).append("\"").append(",\n");
                 });
             }
             
@@ -234,11 +245,27 @@ public class OverallJSON implements RaceReportType{
             if (showAwards){
                 if (awardWinnersByBibMap.containsKey(pr.getParticipant().getBib())) {
                     chars.append("\t\t\"award_winner\": ").append("\"").append("yes").append("\"").append(",\n");
+                    
+                    // Simple list of awards
                     chars.append("\t\t\"awards\": {\n");
                     List<String> awards = awardWinnersByBibMap.get(pr.getParticipant().getBib());
                     for(int i = 0; i< awards.size(); i++){
                         chars.append("\t\t\t\"award_" + i + "\": \"").append(awards.get(i)).append("\"").append(",\n");
                     }
+                    chars.deleteCharAt(chars.lastIndexOf(","));
+                    chars.append("\t\t},\n");
+                    
+                    // Award Detail
+                    chars.append("\t\t\"award_Detail\": {\n");
+                    awardWinnersDetailByBibMap.get(pr.getParticipant().getBib()).keySet().forEach(ac -> {
+                        AwardWinner a = awardWinnersDetailByBibMap.get(pr.getParticipant().getBib()).get(ac);
+                        chars.append("\t\t\t\"award_").append(escape(ac.getName())).append("\": {\n");
+                            chars.append("\t\t\t\t\"title\": \"").append(escape(ac.getName())).append("\"").append(",\n");
+                            chars.append("\t\t\t\t\"category\": \"").append(escape(a.awardTitle)).append("\"").append(",\n");
+                            chars.append("\t\t\t\t\"place\": \"").append(escape(a.awardPlace.toString())).append("\"").append(",\n");
+                            chars.append("\t\t\t\t\"time\": \"").append(escape(DurationFormatter.durationToString(a.awardTime, dispFormat, roundMode))).append("\"").append(",\n");
+                        chars.append("\t\t\t},\n");
+                    });
                     chars.deleteCharAt(chars.lastIndexOf(","));
                     chars.append("\t\t},\n");
                 } else chars.append("\t\t\"award_winner\": ").append("\"").append("no").append("\"").append(",\n");
