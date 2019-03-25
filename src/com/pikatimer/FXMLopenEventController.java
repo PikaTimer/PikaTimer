@@ -192,6 +192,7 @@ public class FXMLopenEventController {
                         ParticipantDAO.getInstance().listParticipants();
                         ParticipantDAO.getInstance().getParticipantByBib("1"); // arbitrary to block on the listParticipants() thread
                         System.out.println("Done Pre-Loading the data...");
+                        PikaPreferences.getInstance().setDBLoaded();
 
                         try {
                             final Pane myPane = (Pane)loader.load();

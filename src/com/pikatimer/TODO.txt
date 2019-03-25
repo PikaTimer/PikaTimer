@@ -1,23 +1,21 @@
-TODO for 1.5.1 Release
+TODO for 1.6 Release
 
-Bugs / tweaks:
-DONE: Fix bulk bib assignment bug
-DONE: JOEY vs Joey discovery issue
-DONE: Center display on screen
-DONE: Update "start" and "end" wording on timing tab to make it easier to understand
-DONE: Update to DataTables 1.10.18+
-DONE: BUG: Backup at finish line ignored? Verify backup handling at other locations (start, splits, etc)
-DONE: BUG: Deal with utf-8 w/ BOM on participant import files (1st column is being ignored due to BOM char)
-DONE: Filter non numeric items in bulk bib assignment text area
-DONE: BUG: 1st read after the start is ignored. 
-DONE: FTPS support for servers that don't like Java's TLS
-DONE: Ability to specify a non-standard port on the SFTP (SCP) host via hostname.com:port syntax
-DONE: For FTPS, try a rename rather than a delete/rename. Fall back to a delete/rename if the server won't overwrite the target file
-DONE: BUG: Required Splits during an in-progress race shows no finishers
+BUGS: 
+    Handle missing participant data (age, sex, etc) when producing reports.
+    Better date import logic (pre-scan the file to determine format?)
+    Figure out report html vs text header editing oddity -- Unable to reproduce in a test env
 
-Figure out report html vs text header editing oddity -- Unable to reproduce in a test env
-
-
+Features:
+    Timing Import Export Function: Output to a bib/chip csv
+    Marmot Integration:
+        Push participant info
+        Announcer timing location feed
+        Result Feed
+    Select Timer Web App: Simple keypad with enter button, directly feeds to Pika
+    Course Record display in results
+        By Overall or Segment
+        Overall / Masters / AG categories
+    
 FUTURE: 
 
 2.0 Main Focus and new features:

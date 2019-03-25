@@ -32,6 +32,8 @@ public class PikaPreferences {
     private File recentFile;
     Preferences prefs = Preferences.userRoot().node("PikaTimer");
     
+    Boolean dbLoaded = false;
+    
     private static class SingletonHolder { 
             private static final PikaPreferences INSTANCE = new PikaPreferences();
     }
@@ -62,6 +64,14 @@ public class PikaPreferences {
            
         }
         return cwd;
+    }
+    
+    public void setDBLoaded(){
+        dbLoaded = true;
+    }
+    
+    public Boolean getDBLoaded(){
+        return dbLoaded;
     }
     
 }
