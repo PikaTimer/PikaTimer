@@ -67,7 +67,7 @@ public class Pikatimer extends Application {
     public static Stage getPrimaryStage() {
         return mainStage;
     }    
-    
+       
     @Override
     public void start(Stage primaryStage) throws Exception {
         
@@ -80,8 +80,8 @@ public class Pikatimer extends Application {
         mainStage.setHeight(400);
         
         // Start the WebServices javalin process
-        webServer = new HTTPServices();
-        
+        webServer = HTTPServices.getInstance();
+              
         Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLopenEvent.fxml"));
         Scene myScene = new Scene(myPane);
         

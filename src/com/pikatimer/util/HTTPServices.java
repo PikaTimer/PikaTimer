@@ -17,7 +17,6 @@
 package com.pikatimer.util;
 
 import com.pikatimer.PikaPreferences;
-import com.pikatimer.Pikatimer;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import io.javalin.Javalin;
@@ -31,9 +30,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.concurrent.Task;
+import org.eclipse.jetty.websocket.api.Session;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -47,6 +49,20 @@ public class HTTPServices {
     private Integer port = 8080;
     private final Javalin server = Javalin.create();
     private String url = "Not Available";
+    private static final BlockingQueue<String> eventQueue = new ArrayBlockingQueue(100000);
+    
+    /**
+    * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
+    * or the first access to SingletonHolder.INSTANCE, not before.
+    */
+    private static class SingletonHolder { 
+            private static final HTTPServices INSTANCE = new HTTPServices();
+    }
+
+    public static HTTPServices getInstance() {
+        
+            return SingletonHolder.INSTANCE;
+    }
     
     public HTTPServices() {
         Boolean bound = false; 
@@ -61,6 +77,7 @@ public class HTTPServices {
             Logger.getLogger(HTTPServices.class.getName()).log(Level.SEVERE, null, ex);
         }
         
+        //server.enableCaseSensitiveUrls();
         
         // Lets start at 8080 and just walk up from there until we find a free port
         // but call it quits at 9,000 
@@ -76,41 +93,27 @@ public class HTTPServices {
         
         System.out.println("Web server listening on " + url); 
         
-        // Setup the routes
-        server.routes ( () -> {
-                
-                // Participant data
-                path("/participants", () -> {
-                    get( cx -> {
-                        JSONArray p = new JSONArray();
-                        JSONObject o = new JSONObject();
-
-                        ParticipantDAO.getInstance().listParticipants().forEach(part -> {p.put(part.getJSONObject());});
-                        o.put("Participants", p);
-                        cx.result( o.toString(4));
-                    });
-                    path(":id", () -> {
-                        get( cx -> {
-                            cx.pathParamMap().keySet().forEach(k -> {
-                                System.out.println("pathParam: " + k + " -> " + cx.pathParam(k));
-                            });
-                            System.out.println("Requesting participant with bib " + cx.pathParam("id"));
-                            Participant p = ParticipantDAO.getInstance().getParticipantByBib(cx.pathParam("id"));
-                            if (p==null) {
-                                System.out.println("No Participant found!");
-                                cx.status(404);
-                                cx.result("NOT_FOUND");
-                            }
-                            else {
-                                cx.result(p.getJSONObject().toString(4));
-                            }
-                            
-                        });  
-                    });
-                });    
-        }); 
-        
-        
+        setupHTTPDRoutes();
+        startDiscoveryListener();
+        startEventQueueProcessor();
+    
+    }
+    
+    public Integer port(){
+        return port;
+    }
+    
+    public String getUrl(){
+        return url;
+    }
+    
+    public void stopHTTPService(){
+        server.stop();
+    }
+    
+    
+    
+    private void startDiscoveryListener(){
         // Setup a network discovery listener so others can find us
         // Borrowed from https://michieldemey.be/blog/network-discovery-using-udp-broadcast/
         Task discoveryThread = new Task<Void>() {
@@ -150,24 +153,114 @@ public class HTTPServices {
         };
         Thread discovery = new Thread(discoveryThread);
         discovery.setDaemon(true);
-        discovery.setName("HTTPD Discovery Thread");
+        discovery.setName("Marmot Discovery Listener Thread");
         discovery.start();
-    
     }
     
-    public Integer port(){
-        return port;
+    public void publishEvent(String category, JSONObject event){
+        System.out.println("WebSocket Publish Event: " + category + ":" + event);
+        
+        eventQueue.add(new JSONObject().put(category, event).toString());
+        
+        
     }
     
-    public String getUrl(){
-        return url;
+     private void startEventQueueProcessor(){
+
+        Task eventThread = new Task<Void>() {
+            @Override public Void call() {
+                try {
+                    while(true) {
+                        System.out.println("HTTPServices: Waiting for events to publish");
+                        String message = eventQueue.take();
+                        System.out.println("HTTPServices: Publishing Event");
+                        wsSessionList.stream().filter(Session::isOpen).forEach(session -> {
+                                    session.send(message);
+                                    System.out.println("   to " + session.host());
+                                });
+                    }
+                } catch (Exception ex) {
+                    System.out.println(ex.getStackTrace());
+                }
+                return null;
+            }
+
+        
+        };
+        Thread eventProcessor = new Thread(eventThread);
+        eventProcessor.setDaemon(true);
+        eventProcessor.setName("Marmot Event Processor Thread");
+        eventProcessor.start();
     }
-    
-    public void stopHTTPService(){
-        server.stop();
+
+    private void setupHTTPDRoutes() {
+        
+        // Event Websocket
+        server.ws("/eventsocket/", ws -> {
+            ws.onConnect(session -> {
+                wsSessionList.add(session);
+                System.out.println("WebSocket Connected: " + session.host());
+            });
+            ws.onMessage((session, message) -> {
+                System.out.println("Received: " + message);
+                session.getRemote().sendString("Echo: " + message);
+            });
+            ws.onClose((session, statusCode, reason) -> {
+                if (wsSessionList.contains(session) ) {
+                    System.out.println("WebSocket: websocket session disconnected: " + session.host());
+                    wsSessionList.remove(session);
+                } else {
+                    System.out.println("WebSocket: Unknown websocket session disconnected: " + session.host());
+                }
+            });
+            ws.onError((session, throwable) -> {
+                System.out.println("WebSocket Error: " + session.host());
+            });
+        });
+        
+        // Setup the routes
+        server.routes ( () -> {
+                
+                // Participant data
+                path("/participants", () -> {
+                    get( cx -> {
+                        JSONArray p = new JSONArray();
+                        JSONObject o = new JSONObject();
+
+                        ParticipantDAO.getInstance().listParticipants().forEach(part -> {p.put(part.getJSONObject());});
+                        o.put("Participants", p);
+                        cx.result( o.toString(4));
+                    });
+                    path(":id", () -> {
+                        get( cx -> {
+                            cx.pathParamMap().keySet().forEach(k -> {
+                                System.out.println("pathParam: " + k + " -> " + cx.pathParam(k));
+                            });
+                            System.out.println("Requesting participant with bib " + cx.pathParam("id"));
+                            Participant p = ParticipantDAO.getInstance().getParticipantByBib(cx.pathParam("id"));
+                            if (p==null) {
+                                System.out.println("No Participant found!");
+                                cx.status(404);
+                                cx.result("NOT_FOUND");
+                            }
+                            else {
+                                cx.result(p.getJSONObject().toString(4));
+                            }
+                            
+                        });  
+                    });
+                });   
+                
+                //
+                // TBD Future Features
+                //
+                    // Select Timer
+                    // Results Lookup
+                    // Race Day Registration
+                    // Leaderboard               
+                                
+        }); 
     }
-    
-    
     
     
 }
