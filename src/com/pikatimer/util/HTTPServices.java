@@ -35,7 +35,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.concurrent.Task;
-import org.eclipse.jetty.websocket.api.Session;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -161,31 +160,45 @@ public class HTTPServices {
         System.out.println("WebSocket Publish Event: " + category + ":" + event);
         
         eventQueue.add(new JSONObject().put(category, event).toString());
+    }
+    public void publishEvent(String category, String event){
+        System.out.println("WebSocket Publish Event: " + category + ":" + event);
         
-        
+        eventQueue.add(new JSONObject().put(category, event).toString());
     }
     
      private void startEventQueueProcessor(){
 
         Task eventThread = new Task<Void>() {
             @Override public Void call() {
-                try {
-                    while(true) {
-                        System.out.println("HTTPServices: Waiting for events to publish");
-                        String message = eventQueue.take();
-                        System.out.println("HTTPServices: Publishing Event");
-                        wsSessionList.stream().filter(Session::isOpen).forEach(session -> {
+                 
+                while(true) {
+                    String save = "";
+                    try {
+                        while(true) {
+                            System.out.println("HTTPServices: Waiting for events to publish");
+                            String message = eventQueue.take();
+                            save = message;
+                            System.out.println("HTTPServices: Publishing Event");
+                            wsSessionList.stream().forEach(session -> {
+                                try {
+                                    System.out.println(" HTTPServices: Publishing Event  to " + session.getId() + " " + session.host());
                                     session.send(message);
-                                    System.out.println("   to " + session.host());
-                                });
+                                    System.out.println(" HTTPServices: Successfuly published to " + session.getId() + " " + session.host());
+                                } catch (Exception e){
+                                    eventQueue.add(message);
+                                    System.out.println("Event Processor Exception: " + e.getMessage());
+                                }        
+                            });
+                        }
+                    } catch (Exception ex) {
+                        System.out.println("Event Processor Outer Exception: " + ex.getMessage());
                     }
-                } catch (Exception ex) {
-                    System.out.println(ex.getStackTrace());
+                    
+                    System.out.println("Marmot Event Processor Thread Ended!!!");
+                    if (!save.isEmpty()) eventQueue.add(save);
                 }
-                return null;
             }
-
-        
         };
         Thread eventProcessor = new Thread(eventThread);
         eventProcessor.setDaemon(true);
@@ -198,22 +211,33 @@ public class HTTPServices {
         // Event Websocket
         server.ws("/eventsocket/", ws -> {
             ws.onConnect(session -> {
+
+                session.setIdleTimeout(61000); // 61 second timeout
+                
                 wsSessionList.add(session);
-                System.out.println("WebSocket Connected: " + session.host());
+                
+                System.out.println("WebSocket Connected: " + session.host() + " Size: " + wsSessionList.size());
+                
             });
             ws.onMessage((session, message) -> {
                 System.out.println("Received: " + message);
                 session.getRemote().sendString("Echo: " + message);
             });
             ws.onClose((session, statusCode, reason) -> {
+                System.out.println("WebSocket: websocket session disconnected: " + session.host());
                 if (wsSessionList.contains(session) ) {
-                    System.out.println("WebSocket: websocket session disconnected: " + session.host());
                     wsSessionList.remove(session);
                 } else {
                     System.out.println("WebSocket: Unknown websocket session disconnected: " + session.host());
                 }
             });
             ws.onError((session, throwable) -> {
+                if (wsSessionList.contains(session) ) {
+                    System.out.println("WebSocket: websocket session disconnected: " + session.host());
+                    wsSessionList.remove(session);
+                } else {
+                    System.out.println("WebSocket: Unknown websocket session disconnected: " + session.host());
+                }
                 System.out.println("WebSocket Error: " + session.host());
             });
         });
