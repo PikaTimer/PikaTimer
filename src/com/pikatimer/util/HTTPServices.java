@@ -29,7 +29,11 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
@@ -49,6 +53,9 @@ public class HTTPServices {
     private final Javalin server = Javalin.create();
     private String url = "Not Available";
     private static final BlockingQueue<String> eventQueue = new ArrayBlockingQueue(100000);
+    
+    private static Map<WsSession,Set<String>> announcerDupeCheckHash = new HashMap();
+    private static Set<String> announcerDupeCheckSet = new HashSet();
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -161,10 +168,13 @@ public class HTTPServices {
         
         eventQueue.add(new JSONObject().put(category, event).toString());
     }
+    
     public void publishEvent(String category, String event){
+        
         System.out.println("WebSocket Publish Event: " + category + ":" + event);
         
         eventQueue.add(new JSONObject().put(category, event).toString());
+        
     }
     
      private void startEventQueueProcessor(){
@@ -181,14 +191,17 @@ public class HTTPServices {
                             save = message;
                             System.out.println("HTTPServices: Publishing Event");
                             wsSessionList.stream().forEach(session -> {
-                                try {
-                                    System.out.println(" HTTPServices: Publishing Event  to " + session.getId() + " " + session.host());
-                                    session.send(message);
-                                    System.out.println(" HTTPServices: Successfuly published to " + session.getId() + " " + session.host());
-                                } catch (Exception e){
-                                    eventQueue.add(message);
-                                    System.out.println("Event Processor Exception: " + e.getMessage());
-                                }        
+                                if(message.contains("PARTICIPANT") || ! announcerDupeCheckHash.get(session).contains(message)) {
+                                    announcerDupeCheckHash.get(session).add(message);
+                                    try {
+                                        System.out.println(" HTTPServices: Publishing Event  to " + session.getId() + " " + session.host());
+                                        session.send(message);
+                                        System.out.println(" HTTPServices: Successfuly published to " + session.getId() + " " + session.host());
+                                    } catch (Exception e){
+                                        eventQueue.add(message);
+                                        System.out.println("Event Processor Exception: " + e.getMessage());
+                                    }     
+                                }
                             });
                         }
                     } catch (Exception ex) {
@@ -215,6 +228,7 @@ public class HTTPServices {
                 session.setIdleTimeout(61000); // 61 second timeout
                 
                 wsSessionList.add(session);
+                announcerDupeCheckHash.put(session, new HashSet());
                 
                 System.out.println("WebSocket Connected: " + session.host() + " Size: " + wsSessionList.size());
                 
