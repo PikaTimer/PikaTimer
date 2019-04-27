@@ -22,3 +22,7 @@
 alter table timing_location_input add (
     announcer boolean
 );
+
+alter table timing_location add (
+    announcer boolean
+);

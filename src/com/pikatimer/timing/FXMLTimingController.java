@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -151,6 +152,7 @@ public class FXMLTimingController {
     @FXML private Button overrideEditButton;
     @FXML private Button overrideRemoveButton;
     
+    @FXML private ToggleSwitch announcerToggleSwitch;
     @FXML private ToggleSwitch assignToRaceToggleSwitch;
     //@FXML private ChoiceBox<Race> assignToRaceChoiceBox;
     @FXML private ComboBox<Race> assignToRaceComboBox;
@@ -411,6 +413,9 @@ public class FXMLTimingController {
                     assignToRaceComboBox.getSelectionModel().select(selectedTimingLocation.autoAssignRaceProperty().getValue());
                 }
                 
+                if (selectedTimingLocation.getIsAnnouncer()) announcerToggleSwitch.setSelected(true);
+                else announcerToggleSwitch.setSelected(false);
+                
                 // Show the filter start/end values
                 filterEndTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterEndDuration(), 3, Boolean.TRUE).replace(".000", ""));
                 filterStartTextField.textProperty().setValue(DurationFormatter.durationToString(selectedTimingLocation.getFilterStartDuration(), 3, Boolean.TRUE).replace(".000", ""));
@@ -545,6 +550,13 @@ public class FXMLTimingController {
                 System.out.println("Bad End Filter Time (newValue: " + newValue + ")");
             }
                 
+        });
+        announcerToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItems().get(0);
+            if (tl != null && !Objects.equals(newPropertyValue, tl.getIsAnnouncer())) {
+                tl.setIsAnnouncer(newPropertyValue);
+                timingDAO.updateTimingLocation(tl);
+            }
         });
         
         assignToRaceToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
