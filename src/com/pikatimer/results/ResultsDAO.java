@@ -28,6 +28,7 @@ import com.pikatimer.timing.TimeOverride;
 import com.pikatimer.timing.TimeOverrideType;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.HTTPServices;
 import com.pikatimer.util.HibernateUtil;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -58,6 +59,7 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.Session;
+import org.json.JSONObject;
 
 /**
  *
@@ -216,7 +218,20 @@ public class ResultsDAO {
                                 });
 
                             });
-                            
+                            pendingResults.stream().forEach(r -> {
+                                if (!r.isEmpty() && r.getFinish()>0) {
+                                    String race = "";
+                                    if (RaceDAO.getInstance().listRaces().size() > 1) 
+                                        race = RaceDAO.getInstance().getRaceByID(r.getRaceID()).getRaceName();
+                                    String bib = r.getBib();
+                                    String time = DurationFormatter.durationToString(r.getFinishDuration().minus(r.getStartDuration()), "[HH:]MM:SS");
+                                    JSONObject json = new JSONObject();
+                                    json.put("Bib", bib);
+                                    json.put("Race", race);
+                                    json.put("Time", time);
+                                    HTTPServices.getInstance().publishEvent("RESULT", json);
+                                }
+                            });
                             
                             Thread.sleep(100); 
                         } catch (InterruptedException ex) {
