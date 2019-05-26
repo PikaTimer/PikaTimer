@@ -59,6 +59,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -120,7 +121,10 @@ public class FXMLRaceDetailsController {
     @FXML private ComboBox<TimingLocation> startLocationComboBox;
     //@FXML private ChoiceBox<TimingLocation>  finishLocationChoiceBox;
     @FXML private ComboBox<TimingLocation> finishLocationComboBox;
-
+    @FXML private HBox minFinishTimeHBox;
+    @FXML private ToggleButton finishToggleButton;
+    @FXML private TextField minFromLastSplitTextField;
+    @FXML private Button courseRecordSetupButton;
     
     
     //@FXML private Button courseRecordsButton;
@@ -732,6 +736,44 @@ public class FXMLRaceDetailsController {
         advancedSegmentOptionsTableRowExpanderColumn.setResizable(false);
         advancedSegmentOptionsTableRowExpanderColumn.setText("Adv");
         raceSegmentsTableView.getColumns().add(advancedSegmentOptionsTableRowExpanderColumn);
+        
+        minFinishTimeHBox.visibleProperty().bind(finishToggleButton.selectedProperty());
+        minFinishTimeHBox.managedProperty().bind(finishToggleButton.selectedProperty());
+        minFromLastSplitTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+            } else {
+                Platform.runLater(() -> {
+                    int c = minFromLastSplitTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    minFromLastSplitTextField.setText(oldValue);
+                    minFromLastSplitTextField.positionCaret(c);
+                });
+                System.out.println("Bad Cutoff Time (newValue: " + newValue + ")");
+            }
+        });
+        minFromLastSplitTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            
+            if (!newPropertyValue) {
+                Split s = raceSplits.get(raceSplits.size()-1);
+                System.out.println("minFromLastSplitTextField out focus");
+                
+                if (!minFromLastSplitTextField.getText().isEmpty() && DurationParser.parsable(minFromLastSplitTextField.getText(),Boolean.FALSE))
+                    s.setSplitMinTime(DurationParser.parse(minFromLastSplitTextField.getText(),Boolean.FALSE).toNanos());
+                else if (minFromLastSplitTextField.getText().isEmpty()){
+                    s.setSplitMinTime(Duration.ZERO.toNanos()); // empty is stored as zero which is treated as 5 minutes
+                }
+                else {
+                    minFromLastSplitTextField.setText(DurationFormatter.durationToString(s.splitMinTimeDuration()));
+                    System.out.println("Min Split time of " +minFromLastSplitTextField.getText() + " is not parsable!");
+                }
+                raceDAO.updateSplit(s);
+            } else {
+                // don't do anything
+            }
+        });
 
     }    
     
@@ -857,7 +899,7 @@ public class FXMLRaceDetailsController {
             
             startLocationComboBox.getSelectionModel().select(raceSplits.get(0).getTimingLocation());
             finishLocationComboBox.getSelectionModel().select(raceSplits.get(raceSplits.size()-1).getTimingLocation());
-            
+            minFromLastSplitTextField.setText(DurationFormatter.durationToString(raceSplits.get(raceSplits.size()-1).splitMinTimeDuration()));
             
             
             //Setup the start time

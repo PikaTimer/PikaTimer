@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -269,6 +270,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   </Label>
                </children>
             </HBox>
+            <Button fx:id="courseRecordSetupButton" mnemonicParsing="false" text="Setup Course Records" />
          </children>
       </VBox>
       <VBox maxHeight="-Infinity" minHeight="-Infinity" spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
@@ -327,10 +329,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                            </font>
                         </Label>
                         <ComboBox fx:id="finishLocationComboBox" prefWidth="150.0" />
+                        <ToggleButton fx:id="finishToggleButton" mnemonicParsing="false" text="+" />
                      </children>
                   </HBox>
                </children>
             </VBox>
+            <HBox fx:id="minFinishTimeHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
+               <children>
+                  <Label prefHeight="20.0" prefWidth="100.0">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" prefHeight="20.0" text="Min Time From Last Split" textAlignment="RIGHT">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                     <HBox.margin>
+                        <Insets />
+                     </HBox.margin>
+                  </Label>
+                  <TextField fx:id="minFromLastSplitTextField" onAction="#updateRaceStartTime" prefHeight="25.0" prefWidth="96.0" promptText="HH:MM:SS.sss" />
+               </children>
+            </HBox>
          </children>
          <GridPane.margin>
             <Insets />
