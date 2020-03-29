@@ -1000,11 +1000,12 @@ public class ResultsDAO {
                     placementCounter.put("overall", 1);
                     placementCounter.put("M",1);
                     placementCounter.put("F",1);
+                    placementCounter.put("X",1);
 
                     results.forEach(pr -> {
                         pr.setOverall(placementCounter.get("overall"));
                         placementCounter.put("overall", pr.getOverall()+1);
-
+                       
                         pr.setSexPlace(placementCounter.get(pr.getSex()));
                         placementCounter.put(pr.getSex(), pr.getSexPlace()+1);
 
@@ -1022,6 +1023,7 @@ public class ResultsDAO {
                         segPlCounter.put("overall", 1);
                         segPlCounter.put("M",1);
                         segPlCounter.put("F",1);
+                        segPlCounter.put("X",1);
                         
                         results.forEach(pr -> {
                             if (pr.getSegmentTime(seg.getID()) == null) return;
@@ -1030,7 +1032,7 @@ public class ResultsDAO {
                             
                             pr.setSegmentOverallPlace(seg.getID(),segPlCounter.get("overall"));
                             segPlCounter.put("overall", segPlCounter.get("overall")+1);
-
+                            
                             pr.setSegmentSexPlace(seg.getID(),segPlCounter.get(pr.getSex()));
                             segPlCounter.put(pr.getSex(), segPlCounter.get(pr.getSex())+1);
 

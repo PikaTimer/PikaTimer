@@ -37,8 +37,8 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     
     Participant participant;
     // attributes we need a lot of
-    Integer age;
-    String sex;
+    Integer age = 0; // Dummy default to avoid nulls
+    String sex="X";  // Dummy default to avoid nulls
     String agCode;
     
     String lastSeen;
