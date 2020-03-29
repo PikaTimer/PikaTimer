@@ -205,7 +205,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         }
         
         saveToFile = Boolean.valueOf(timingListener.getAttribute("RFIDDirect:saveToFile"));
-        if (ultraIP != null) {
+        if (saveToFile != null) {
             System.out.println("RFIDDirect: Found existing saveToFile setting: " + saveToFile);
         } else {
             System.out.println("RFIDDirect: Did not find existing saveToFile setting." );
@@ -515,6 +515,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                         if (newFile.canWrite() || newFile.createNewFile()) {
                             backupFile=newFile.getPath();
                             timingListener.setAttribute("RFIDDirect:backupFile", fileTextField.getText());
+                            saveToFileCheckBox.setSelected(true);
                             goodFile=true;
                         }
                     } catch (IOException ex) {
@@ -555,6 +556,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                 File file = fileChooser.showSaveDialog(fileButton.getScene().getWindow());
                 if (file != null) {
                     Platform.runLater(() -> fileTextField.setText(file.getAbsolutePath()));
+                    saveToFileCheckBox.setSelected(true);
                     outputFile=null;
                 }
             });
