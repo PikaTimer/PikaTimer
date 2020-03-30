@@ -19,6 +19,8 @@ package com.pikatimer.util;
 import com.pikatimer.PikaPreferences;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.race.RaceDAO;
+import com.pikatimer.results.ResultsDAO;
 import io.javalin.Javalin;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
@@ -288,14 +290,39 @@ public class HTTPServices {
                         });  
                     });
                 });   
+                // Result Data
+                path("/results", () -> {
+                    get( cx -> {
+                        JSONArray p = new JSONArray();
+                        JSONObject o = new JSONObject();
+                        RaceDAO.getInstance().listRaces().forEach(r -> {
+                            ResultsDAO.getInstance().getResults(r.getID()).forEach(res -> {
+                                
+                                if (!res.isEmpty() && res.getFinish()>0) {
+                                    String race = "";
+                                    if (RaceDAO.getInstance().listRaces().size() > 1) 
+                                        race = RaceDAO.getInstance().getRaceByID(res.getRaceID()).getRaceName();
+                                    String bib = res.getBib();
+                                    String time = DurationFormatter.durationToString(res.getFinishDuration().minus(res.getStartDuration()), "[HH:]MM:SS");
+                                    JSONObject json = new JSONObject();
+                                    json.put("Bib", bib);
+                                    json.put("Race", race);
+                                    json.put("Time", time);
+                                    //System.out.println("/ Results -> " + bib + " -> " + time);
+                                    p.put(json);
+                                }
+                            });
+                            o.put("Results", p);
+                        });
+                        cx.result( o.toString(4));
+                    });
+                });
                 
                 //
                 // TBD Future Features
                 //
                     // Select Timer
-                    // Results Lookup
-                    // Race Day Registration
-                    // Leaderboard               
+              
                                 
         }); 
     }
