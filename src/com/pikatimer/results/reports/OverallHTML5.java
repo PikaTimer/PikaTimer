@@ -187,9 +187,10 @@ public class OverallHTML5 implements RaceReportType{
         }
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" ;
-        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.10.18/fh-3.1.4/r-2.2.2/sc-1.5.0/datatables.min.css\"/>\n" ;
-        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-flash-1.5.2/b-html5-1.5.2/b-print-1.5.2/r-2.2.2/sc-1.5.0/datatables.min.css\"/>" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.10.20/fh-3.1.6/r-2.2.3/sc-2.0.1/datatables.min.css\"/>\n" ;
+        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-flash-1.6.1/b-html5-1.6.1/b-print-1.6.1/r-2.2.3/sc-2.0.1/datatables.min.css\"/>" ;
         report +=   "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css\">\n" +
+                "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.4.6/css/flag-icon.min.css\">\n" +
                     " \n" ;
         
         // our inline CSS
@@ -337,6 +338,7 @@ public class OverallHTML5 implements RaceReportType{
             report += "      <th data-priority=\"41\">City</th>" +  System.lineSeparator(); 
             if (showState) report += "      <th data-priority=\"40\">ST</th>" +  System.lineSeparator(); 
             if (showCountry) report += "      <th data-priority=\"45\">Country</th>" +  System.lineSeparator(); 
+
             if (showCustomAttributes) {
                 for( CustomAttribute a: customAttributesList){
                     report += "      <th data-priority=\"200\">"+escapeHTML(a.getName())+ "</th>" +  System.lineSeparator();
@@ -380,13 +382,13 @@ public class OverallHTML5 implements RaceReportType{
         report += "<!-- Start DataTables -->\n";
         
         
-        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.10.18/fh-3.1.4/r-2.2.2/sc-1.5.0/datatables.min.js\"></script>\n" ;
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.10.20/fh-3.1.6/r-2.2.3/sc-2.0.1/datatables.min.js\"></script>\n" ;
         else report +=   "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js\"></script>\n" +
                         "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js\"></script>\n" +
-                        "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-flash-1.5.2/b-html5-1.5.2/b-print-1.5.2/r-2.2.2/sc-1.5.0/datatables.min.js\"></script>\n";
+                        "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-flash-1.6.1/b-html5-1.6.1/b-print-1.6.1/r-2.2.3/sc-2.0.1/datatables.min.js\"></script>\n";
 
         report +=           " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.19/sorting/natural.js\"></script>\n";
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.20/sorting/natural.js\"></script>\n";
 
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
                     " // nth(n) function from http://stackoverflow.com/questions/13627308/add-st-nd-rd-and-th-ordinal-suffix-to-a-number \n" + 
@@ -402,7 +404,7 @@ public class OverallHTML5 implements RaceReportType{
                         "				data += '<div class=\"part-stats\">Bib: ' + rData.bib + '</div>';\n" +
                         "				data += '<div class=\"part-stats\">Age: ' + rData.age + '   Sex: ' + rData.sex + '   AG: ' + rData.ag + '</div>';\n";
             if (showState) report +=                        "				data += '<div class=\"part-stats\">' + rData.city + ', ' + rData.state + '</div>';\n" ;
-            if (showCountry) report +=            "				data += '<div class=\"part-stats\">' + rData.country + '</div>';\n";
+            if (showCountry) report +=            "				data += '<div class=\"part-stats\">' + rData.country + ' <span class=\"flag-icon flag-icon-' +  rData.country.toLowerCase() +'\" ></span></div>';\n";
             if (showCustomAttributes) {
                 for( CustomAttribute a: customAttributesList){
                     report += "				data += '<div class=\"part-stats\">" + escape(a.getName()) +": ' + rData.custom_" + escapeAndFlatten(a) +" + '</div>';\n";
@@ -627,7 +629,16 @@ public class OverallHTML5 implements RaceReportType{
 
                         "           { \"data\": \"city\" },\n" ;
             if (showState) report +=             "           { \"data\": \"state\" },\n";
-            if (showCountry) report += "           { \"data\": \"country\" },\n";
+            if (showCountry) {
+                        report +=  "			{ \"data\": \"country\", \"render\": \n" +
+                        "				function (data, type, row) {\n" +
+                        "					if (type == \"sort\" || type === 'type') return data;\n" +
+                        "					if (type == \"filter\" || type === 'type') return data;\n" +
+                        "					return  row.country + ' <span class=\"flag-icon flag-icon-' + row.country.toLowerCase() +'\" ></span>';\n" +
+                        "				}\n" +
+                        "				 \n" +
+                        "			},\n"  ;
+            }
             if (showCustomAttributes) {
                 for( CustomAttribute a: customAttributesList){
                     report += "           { \"data\": \"custom_" + escapeAndFlatten(a) +"\" },\n";
