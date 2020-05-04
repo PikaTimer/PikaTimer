@@ -318,14 +318,12 @@ public class HTTPServices {
                     });
                 });
                 
-                //
-                // TBD Future Features
-                //
-                    // Select Timer
               
                                 
         }); 
     }
     
-    
+    public Javalin getServer(){
+        return server;
+    }
 }

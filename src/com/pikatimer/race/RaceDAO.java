@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,7 +92,7 @@ public class RaceDAO {
         List<Race> list = new ArrayList<>();
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction();
-        //System.out.println("RacedAO.refreshRaceList() Starting the query");
+        System.out.println("RacedAO.refreshRaceList() Starting the query");
         
         try {  
             list=s.createQuery("from Race order by ID").list();
@@ -309,5 +308,28 @@ public class RaceDAO {
         s.delete(seg);
         s.getTransaction().commit();
         updateSplitOrder(r);
+    }
+    
+    public void upsertCourseRecord(CourseRecord cr){
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction(); 
+        s.saveOrUpdate(cr);
+        s.getTransaction().commit();
+    }
+    public void clearCourseRecords(Race race) {
+        Session s=HibernateUtil.getSessionFactory().getCurrentSession();
+        s.beginTransaction();
+        int count = 0;
+        Iterator<CourseRecord> deleteMeIterator = race.getCourseRecords().iterator();
+        while (deleteMeIterator.hasNext()) {
+            CourseRecord p = deleteMeIterator.next();
+            s.delete(p); 
+            if ( ++count % 20 == 0 ) {
+                //flush a batch of updates and release memory:
+                s.flush();
+                s.clear();
+            }
+        }
+        s.getTransaction().commit(); 
     }
 }

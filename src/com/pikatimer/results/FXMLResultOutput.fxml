@@ -113,6 +113,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                      <children>
                         <CheckBox fx:id="showAwardsCheckBox" mnemonicParsing="false" prefWidth="120.0" text="Show Awards" />
+                        <CheckBox fx:id="showCRsCheckBox" mnemonicParsing="false" prefHeight="17.0" prefWidth="138.0" text="Show Course Records" />
                      </children>
                   </HBox>
                   <CheckBox fx:id="hideCustomHeadersCheckBox" mnemonicParsing="false" text="Hide Custom Headers/Footers" />

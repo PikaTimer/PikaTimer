@@ -53,6 +53,7 @@ public class OverallHTML5 implements RaceReportType{
     Boolean showPace = true;
     Boolean showGun = true;
     Boolean showAwards = true;
+    Boolean showCourseRecords = true;
     
     Boolean showCustomAttributes = false;
     List<CustomAttribute> customAttributesList = new ArrayList();
@@ -73,6 +74,7 @@ public class OverallHTML5 implements RaceReportType{
         supportedOptions.put("showGun", true);
         supportedOptions.put("hideCustomHeaders", false);
         supportedOptions.put("showAwards", true);
+        supportedOptions.put("showCourseRecords", true);
     }
     
     private String escape(String s){
@@ -124,6 +126,7 @@ public class OverallHTML5 implements RaceReportType{
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
         showAwards = supportedOptions.get("showAwards");
+        showCourseRecords = supportedOptions.get("showCourseRecords");
         showCustomAttributes = supportedOptions.get("showCustomAttributes");
 
         Boolean showCountry = false;
@@ -198,6 +201,9 @@ public class OverallHTML5 implements RaceReportType{
                     "<style>\n" +
                     ".fa.fa-trophy {\n" +
                     "    color: gold;\n" +
+                    "}\n" +
+                    ".fa.fa-bolt {\n" +
+                    "    color: red;\n" +
                     "}\n" +
                     "table.dataTable.display tbody tr.child {\n" +
                     "    background: white;\n" +
@@ -457,22 +463,46 @@ public class OverallHTML5 implements RaceReportType{
                         "				\n" +
                         "                data += '</div>'; // row\n" +
                         "				\n";
-        if (showAwards) {
-            report += " if (rData.award_winner == \"yes\") {\n" +
-"					data += '<div class=\"row\">';\n" +
-"					data += '<div class=\"segment segment-title\">Award Winner:';\n" +
-"					data += '</div>';\n" +
-"					data += '</div>';\n" +
-"					data += '<div class=\"row\">';\n" +
-"					data += '<div class=\"segment\">'; \n" +
-"					for (i in rData.awards){\n" +
-"						data += '<div class=\"segment-time\">' + rData.awards[i];\n" +
-"						data += '</div>';\n" +
-"					}\n" +
-"					data += '</div>';\n" +
-"					data += '</div>';\n" +
-"				}";
-        }
+            if (showAwards) {
+                report += " if (rData.award_winner == \"yes\") {\n" +
+                    "					data += '<div class=\"row\">';\n" +
+                    "					data += '<div class=\"segment segment-title\">Award Winner:';\n" +
+                    "					data += '</div>';\n" +
+                    "					data += '</div>';\n" +
+                    "					data += '<div class=\"row\">';\n" +
+                    "					data += '<div class=\"segment\">'; \n" +
+                    "					for (i in rData.awards){\n" +
+                    "						data += '<div class=\"segment-time\">' + rData.awards[i];\n" +
+                    "						data += '</div>';\n" +
+                    "					}\n" +
+                    "					data += '</div>';\n" +
+                    "					data += '</div>';\n" +
+                    "				}";
+            }
+            
+            if (showCourseRecords) {
+                report += " if (rData.course_records == \"yes\") {\n" +
+                    "					data += '<div class=\"row\">';\n" +
+                    "					data += '<div class=\"segment segment-title\">Course Records:';\n" +
+                    "					data += '</div>';\n" +
+                    "					data += '</div>';\n" +
+                    "					data += '<div class=\"row\">';\n" +
+                    "					data += '<div class=\"segment\">'; \n" +
+                    "					for (i in rData.course_record_detail){\n" +
+                    "						data += '<div class=\"segment-time\"> ';\n" +    
+                    "                                           data += rData.course_record_detail[i].segment + ' '; \n" +
+                    "                                           if (rData.course_record_detail[i].category != \"OVERALL\") { data += rData.course_record_detail[i].category;} \n" + 
+                    "						data += ': New Record ' +rData.course_record_detail[i].new_time ;\n" +
+                    "						data += '</div>';\n" +
+                    "						data += '<div class=\"segment-time\"> ';\n" +     
+                    "						data += 'Previous: ' + rData.course_record_detail[i].old_time + ' in ' + rData.course_record_detail[i].old_year + ' by ' + rData.course_record_detail[i].old_name+'';\n" +
+                    "						data += '</div>';\n" +
+                    "                                           data += '<div class=\"segment-time\"><hr></div> ';\n" +
+                    "					}\n" +
+                    "					data += '</div>';\n" +
+                    "					data += '</div>';\n" +
+                    "				}";
+            }
         
             if (showSegments && race.raceSegmentsProperty().stream().anyMatch(s -> !s.getHidden())) {
                 final StringBuilder chars = new StringBuilder();
@@ -592,33 +622,22 @@ public class OverallHTML5 implements RaceReportType{
                         "        \"columns\": [\n" +
                         "           { \"data\": null, \"defaultContent\": \"\", className: 'control', orderable: false, targets:   0 },\n" +
                         "           { \"data\": \"oa_place\" },\n" +
-//                        "           { \"data\": \"oa_place\", \"render\":  \n" +
-//"					 function (data, type, row) {\n" +
-//"						if (type == \"sort\" || type === 'type') return data;\n" +
-//"						if (row.award_winner == \"yes\") \n" +
-//"						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i> ' + row.oa_place;\n" +
-//"						else return row.oa_place;\n" +
-//"					 }\n" +
-//"				 \n" +
-//"			}," +
                         "           { \"data\": \"sex_place\" },\n" +
                         "           { \"data\": \"ag_place\" },\n" +
                         "           { \"data\": \"bib\" },\n" +
                         "           { \"data\": \"age\" },\n" +
                         "           { \"data\": \"sex\" },\n" + // If this index changes, change the filter below
                         "           { \"data\": \"ag\" },\n" +  // ibid
-//                        "           { \"data\": null, " +
-//                        "                  \"render\": {\n" +
-//                        "                       \"_\": \"full_name\",\n" +
-//                        "                       \"filter\": \"full_name_filter\",\n" +
-//                        "               } "
-//                    +   "           },\n" +
                          "           { \"data\": \"full_name\", \"render\":  \n" +
 "					 function (data, type, row) {\n" +
 "						if (type == \"sort\" || type === 'type') return data;\n" +
 "						if (type == \"filter\" || type === 'type') return row.full_name_filter;\n"    +              
+"						if (row.award_winner == \"yes\" && row.course_records == \"yes\") \n" +
+"						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i><i class=\"fa fa-bolt\" aria-hidden=\"true\"></i> ' + row.full_name;\n" +
 "						if (row.award_winner == \"yes\") \n" +
 "						   return '<i class=\"fa fa-trophy\" aria-hidden=\"true\"></i> ' + row.full_name;\n" +
+"						if (row.course_records == \"yes\") \n" +
+"						   return '<i class=\"fa fa-bolt\" aria-hidden=\"true\"></i> ' + row.full_name;\n" +                    
 "						else return row.full_name;\n" +
 "					 }\n" +
 "				 \n" +

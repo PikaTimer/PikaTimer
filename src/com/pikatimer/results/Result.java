@@ -16,11 +16,13 @@
  */
 package com.pikatimer.results;
 
+import com.pikatimer.race.CourseRecord;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
@@ -68,7 +70,7 @@ public class Result {
     private Map<Integer,Long> splitMap = new HashMap();
     private final ObservableMap<Integer,ObjectProperty<Duration>> splitPropertyMap = FXCollections.observableHashMap();
     private final IntegerProperty revision = new SimpleIntegerProperty(1); 
-    
+    private List<CourseRecord> courseRecordList = new ArrayList();
     private Boolean pendingRecalc=false;
     
     // Bib String
@@ -224,6 +226,16 @@ public class Result {
         return finishTODProperty; 
     }
     
+    @Transient
+    public List<CourseRecord> getCourseRecords(){
+        return courseRecordList;
+    }
+    public void addCourseRecord(CourseRecord cr){
+        courseRecordList.add(cr);
+    }
+    public void delCourseRecord(CourseRecord cr){
+        courseRecordList.remove(cr);
+    }
     
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="split_id", insertable=false,updatable=false)

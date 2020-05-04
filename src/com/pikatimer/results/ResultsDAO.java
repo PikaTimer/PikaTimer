@@ -19,6 +19,7 @@ package com.pikatimer.results;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.participant.Status;
+import com.pikatimer.race.CourseRecord;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
@@ -46,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -68,6 +70,7 @@ import org.json.JSONObject;
 public class ResultsDAO {
     
     private static final BlockingQueue<String> resultsQueue = new ArrayBlockingQueue(100000);
+    private static final BlockingQueue<Result> checkForCRQueue = new ArrayBlockingQueue(100000);
     private Map<Integer,ObservableList<Result>> raceResultsMap;
     private static final Map<String,Map<Integer,Result>> resultsMap = new ConcurrentHashMap<>(); 
     private static final TimingDAO timingDAO = TimingDAO.getInstance();
@@ -121,6 +124,7 @@ public class ResultsDAO {
                     } 
                     s.getTransaction().commit();  
                     
+                    final CountDownLatch doneLatch = new CountDownLatch(results.size());
                     results.stream().forEach(r -> {
                         //resultsMap.put(r.getBib() + " " + r.getRaceID(), r);
                         
@@ -140,9 +144,18 @@ public class ResultsDAO {
                                 raceResultsMap.get(r.getRaceID()).add(r);
                                 //System.out.println("ResultsDAO read from DB added " + r.getBib() + " from race " + r.getRaceID() + " new total " + raceResultsMap.get(r.getRaceID()).size() );
                             }
+                            doneLatch.countDown();
                         });
 
                     });
+                    System.out.println("Waiting for raceResultsMap to get updated...");
+                    try {
+                        doneLatch.await();
+                        System.out.println("Done waiting for raceResultsMap!");
+                    } catch (InterruptedException e) {
+                        // ignore exception
+                    }
+                    reprocessAllCRs();
 
                     System.out.println("ResultsDAO: new result processing thread started");
                     while(true) {
@@ -232,6 +245,7 @@ public class ResultsDAO {
                                     HTTPServices.getInstance().publishEvent("RESULT", json);
                                 }
                             });
+                            pendingResults.forEach(r -> checkForCRQueue.add(r));
                             
                             Thread.sleep(100); 
                         } catch (InterruptedException ex) {
@@ -249,6 +263,52 @@ public class ResultsDAO {
             processNewResultThread.setPriority(1);
             processNewResultThread.start();
             
+            Task lookForCRs = new Task<Void>() {
+
+                @Override 
+                public Void call() {
+                    Integer sleepTime = 15000; // 15 seconds
+                    System.out.println("ResultsDAO: new CR checking thread started");
+                    while(true) {
+                        for(Race race: RaceDAO.getInstance().listRaces()){
+                            if (race.getCourseRecords().size()>0) sleepTime = 1000; // reset the sleep time
+                        }
+                        try {
+                            
+                            List<Result> newResults = new ArrayList();
+                            newResults.add(checkForCRQueue.take());
+                            System.out.println("ResultsDAO LookforCRs Thread: Waiting for more results to process...");
+                            
+                            System.out.println("ResultsDAO LookforCRs Thread: The wait is over...");
+                            Thread.sleep(100); // results rarely come in 1 at a time
+                            checkForCRQueue.drainTo(newResults);
+
+                            newResults.forEach(r -> {
+                                RaceDAO.getInstance().getRaceByID(r.getRaceID()).getCourseRecords().forEach(cr -> {
+                                    Result existing = cr.newRecord().get();
+                                        cr.checkRecord(r);
+                                    Result newRes = cr.newRecord().getValue();
+                                    if (existing != null && (newRes == null || !existing.getBib().equals(newRes.getBib()))) {
+                                        existing.getCourseRecords().remove(cr);
+                                    }
+                                });
+                            });
+                            
+                            Thread.sleep(sleepTime); 
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(ResultsDAO.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        
+                        
+                    }
+
+                }
+            };
+            Thread lookForCRsThread = new Thread(lookForCRs);
+            lookForCRsThread.setName("Thread-LookforCRsThread");
+            lookForCRsThread.setDaemon(true);
+            lookForCRsThread.setPriority(1);
+            lookForCRsThread.start();
      
         }
     
@@ -258,6 +318,39 @@ public class ResultsDAO {
         //System.out.println("ResultsDAO.getResults for race ID " + raceID + " returning " + raceResultsMap.get(raceID).size());
         return raceResultsMap.get(raceID);
         
+        
+    }
+    
+    
+    public void reprocessAllCRs(){
+        raceDAO.listRaces().forEach(r -> reprocessAllCRs(r));
+    }
+    public void reprocessAllCRs(Race race){
+        // Loop through all results for a race and match them up 
+        // with the CR's.
+        
+        // Main goal is to make sure a result that was revised or removed 
+        // is no longer listed as the new CR
+        
+        // This will do CRs x Results comparisions. 
+        // No easy way to short circut this since we can't easily sort by segment
+        // without looping throgh everything anyway or getting really complex
+        // with pre-computing things to save half a second of time. 
+        
+        List<Result> results = getResults(race.getID());
+        List<CourseRecord> crs = race.getCourseRecords();
+        
+        crs.forEach(cr -> {
+            System.out.println("ResultsDAO::reprocessAllCRs: SegmentID=" + cr.getSegmentID() + " " + cr.getSex() + " " + cr.getCategory());
+            Result existing = cr.newRecord().get();
+            results.forEach(r -> {
+                cr.checkRecord(r);
+            });
+            Result newRes = cr.newRecord().getValue();
+            if (existing != null && (newRes == null || !existing.getBib().equals(newRes.getBib()))) {
+                existing.getCourseRecords().remove(cr);
+            }
+        });
         
     }
     
@@ -857,6 +950,125 @@ public class ResultsDAO {
         processReports(rr.getRace(),rr);
     }
     
+    public ProcessedResult processResult(Result res, Race race){
+        ProcessedResult pr = new ProcessedResult();
+        Integer splitSize = race.getSplits().size();
+                        
+        // Link in the participant
+        pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
+        // Set the AG code (e.g. M30-34) (age and gender are set automagically)
+        pr.setAge(pr.getParticipant().getAge());
+        pr.setAGCode(race.getAgeGroups().ageToAGString(pr.getAge()));
+
+        // set the start and wave start times
+        Duration chipStartTime = res.getStartDuration();
+        Duration waveStartTime = res.getWaveStartDuration();
+
+        // Set the start duration
+        pr.setChipStartTime(chipStartTime);
+        pr.setWaveStartTime(waveStartTime);
+
+        // by definition, you cross the start line at zero seconds
+        pr.setSplit(1, Duration.ZERO);
+
+        //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
+
+        // if they are DQ'ed then we don't care what their time is
+        if (pr.getParticipant().getDQ()) {
+            //results.add(pr);
+            return pr;
+        }
+
+
+        // Set the splits
+        Duration paused = Duration.ZERO;
+        Boolean missingSplit = false;
+        if(race.getSplits().size() > 2) {
+            for (int i = 2; i <  splitSize ; i++) {
+                //System.out.println("Split: " + r.getSplits().get(i-1).getSplitName() + " Ignore? " + r.getSplits().get(i-1).getIgnoreTime() );
+                if (race.getSplits().get(i-1).getIgnoreTime() && !res.getSplitTime(i).isZero()) {
+                    if (i == 2) paused = res.getSplitTime(i).minus(chipStartTime);
+                    else if (!res.getSplitTime(i-1).isZero()) paused = paused.plus(res.getSplitTime(i).minus(res.getSplitTime(i-1)));
+                    System.out.println("Paused time for " + pr.getParticipant().getBib() + " " + paused + " from " + res.getSplitTime(i)+ " minus " + res.getSplitTime(i-1) );
+                }
+                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
+
+                // Is this a mandatory split that we are missing?
+                if (race.getSplits().get(i-1).getMandatorySplit() && (pr.getSplit(i) == null || pr.getSplit(i).isZero())){
+                    // Mandatory split: Stop right here
+                    //results.add(pr);
+                    return pr;
+                }
+                // Check to see if we are over a cutoff for this split. 
+                if (! res.getSplitTime(i).isZero() && !Duration.ZERO.equals(race.getSplits().get(i-1).splitCutoffDuration())){
+                    if (race.getSplits().get(i-1).getSplitCutoffIsRelative()) {
+                        if (pr.getSplit(i).compareTo(race.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
+                            pr.oco = TRUE;
+                            pr.ocoSplit = i;
+                            pr.ocoTime = pr.getSplit(i);
+                            pr.ocoCutoffTime = race.getSplits().get(i-1).splitCutoffDuration();
+                            //results.add(pr);
+                            return pr;
+                        }
+                    } else {
+                        if (res.getSplitTime(i).compareTo(race.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
+                            pr.oco = TRUE;
+                            pr.ocoSplit = i;
+                            pr.ocoTime = res.getSplitTime(i);
+                            pr.ocoCutoffTime = race.getSplits().get(i-1).splitCutoffDuration();
+                            //results.add(pr);
+                            return pr;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Set the finish times unless they are a DNF
+        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero() && ! pr.getParticipant().getDNF()){
+            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime).minus(paused));
+            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime).minus(paused));
+            pr.setSplit(splitSize, pr.getChipFinish());
+        }
+
+        // look for any bonus or penalty times
+        Optional<List<TimeOverride>> overrides = timingDAO.getOverridesByBib(pr.getParticipant().getBib());
+        if (overrides.isPresent() && pr.getChipFinish() != null) {
+            overrides.get().forEach(o -> {
+                if (TimeOverrideType.PENALTY.equals(o.getOverrideType())){
+                    pr.penalty = true;
+                    pr.penaltyTime = Duration.ofNanos(o.getTimestampLong());
+                    pr.bonusPenaltyNote = o.getNote();
+                    pr.rawChipFinishTime=pr.getChipFinish();
+                    pr.rawGunFinishTime=pr.getGunFinish();
+                    pr.setChipFinish(pr.getChipFinish().plus(pr.penaltyTime));
+                    pr.setGunFinish(pr.getGunFinish().plus(pr.penaltyTime));
+                } else if (TimeOverrideType.BONUS.equals(o.getOverrideType())){
+                    pr.bonus = true;
+                    pr.bonusTime = Duration.ofNanos(o.getTimestampLong());
+                    pr.bonusPenaltyNote = o.getNote();
+                    pr.rawChipFinishTime=pr.getChipFinish();
+                    pr.rawGunFinishTime=pr.getGunFinish();
+                    pr.setChipFinish(pr.getChipFinish().minus(pr.bonusTime));
+                    pr.setGunFinish(pr.getGunFinish().minus(pr.bonusTime));
+                } 
+
+            });
+        }
+
+        // set the segment times unless they are a DNF
+        if (!pr.getParticipant().getDNF()) race.getSegments().forEach(seg -> {
+            //System.out.println("Processing segment " + seg.getSegmentName());
+            if (pr.getSplit(seg.getEndSplitPosition()) != null && pr.getSplit(seg.getStartSplitPosition()) != null) {
+                pr.setSegmentTime(seg.getID(), pr.getSplit(seg.getEndSplitPosition()).minus(pr.getSplit(seg.getStartSplitPosition())));
+                //System.out.println("Segment: Bib " + pr.getParticipant().getBib() + " Segment " + seg.getSegmentName() + " Time " + DurationFormatter.durationToString(pr.getSegmentTime(seg.getID())));
+            }
+        });
+        
+        pr.setCourseRecords(res.getCourseRecords());
+
+        return pr;
+    }
     public void processReports(Race r, RaceReport rr){
         
         Task processRaceReports;
@@ -867,11 +1079,8 @@ public class ResultsDAO {
                 try{
                     List<ProcessedResult> results = new ArrayList();
 
-                    Integer splitSize = r.getSplits().size();
-
                     // get the current results list
                     getResults(r.getID()).forEach(res -> {
-                        ProcessedResult pr = new ProcessedResult();
                         
                         // If there is no participant, then bail. 
                         // TODO: Maybe add an option to create a participant on the fly, but
@@ -879,116 +1088,7 @@ public class ResultsDAO {
                         // Either way, this would be handled on the timing tab, not here.
                         if(participantDAO.getParticipantByBib(res.getBib()) == null) return;
                         
-                        // Link in the participant
-                        pr.setParticipant(participantDAO.getParticipantByBib(res.getBib()));
-                        // Set the AG code (e.g. M30-34) (age and gender are set automagically)
-                        pr.setAge(pr.getParticipant().getAge());
-                        pr.setAGCode(r.getAgeGroups().ageToAGString(pr.getAge()));
-                        
-                        // set the start and wave start times
-                        Duration chipStartTime = res.getStartDuration();
-                        Duration waveStartTime = res.getWaveStartDuration();
-
-                        // Set the start duration
-                        pr.setChipStartTime(chipStartTime);
-                        pr.setWaveStartTime(waveStartTime);
-                        
-                        // by definition, you cross the start line at zero seconds
-                        pr.setSplit(1, Duration.ZERO);
-                        
-                        //if(chipStartTime.equals(waveStartTime)) System.out.println("Chip == Wave Start for " + res.getBib());
-                        
-                        // if they are DQ'ed then we don't care what their time is
-                        if (pr.getParticipant().getDQ()) {
-                            results.add(pr);
-                            return;
-                        }
-                        
-
-                        // Set the splits
-                        Duration paused = Duration.ZERO;
-                        Boolean missingSplit = false;
-                        if(r.getSplits().size() > 2) {
-                            for (int i = 2; i <  splitSize ; i++) {
-                                //System.out.println("Split: " + r.getSplits().get(i-1).getSplitName() + " Ignore? " + r.getSplits().get(i-1).getIgnoreTime() );
-                                if (r.getSplits().get(i-1).getIgnoreTime() && !res.getSplitTime(i).isZero()) {
-                                    if (i == 2) paused = res.getSplitTime(i).minus(chipStartTime);
-                                    else if (!res.getSplitTime(i-1).isZero()) paused = paused.plus(res.getSplitTime(i).minus(res.getSplitTime(i-1)));
-                                    System.out.println("Paused time for " + pr.getParticipant().getBib() + " " + paused + " from " + res.getSplitTime(i)+ " minus " + res.getSplitTime(i-1) );
-                                }
-                                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
-                                
-                                // Is this a mandatory split that we are missing?
-                                if (r.getSplits().get(i-1).getMandatorySplit() && (pr.getSplit(i) == null || pr.getSplit(i).isZero())){
-                                    // Mandatory split: Stop right here
-                                    results.add(pr);
-                                    return;
-                                }
-                                // Check to see if we are over a cutoff for this split. 
-                                if (! res.getSplitTime(i).isZero() && !Duration.ZERO.equals(r.getSplits().get(i-1).splitCutoffDuration())){
-                                    if (r.getSplits().get(i-1).getSplitCutoffIsRelative()) {
-                                        if (pr.getSplit(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
-                                            pr.oco = TRUE;
-                                            pr.ocoSplit = i;
-                                            pr.ocoTime = pr.getSplit(i);
-                                            pr.ocoCutoffTime = r.getSplits().get(i-1).splitCutoffDuration();
-                                            results.add(pr);
-                                            return;
-                                        }
-                                    } else {
-                                        if (res.getSplitTime(i).compareTo(r.getSplits().get(i-1).splitCutoffDuration()) > 0 ) {
-                                            pr.oco = TRUE;
-                                            pr.ocoSplit = i;
-                                            pr.ocoTime = res.getSplitTime(i);
-                                            pr.ocoCutoffTime = r.getSplits().get(i-1).splitCutoffDuration();
-                                            results.add(pr);
-                                            return;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Set the finish times unless they are a DNF
-                        if(res.getFinishDuration() != null && ! res.getFinishDuration().isZero() && ! pr.getParticipant().getDNF()){
-                            pr.setChipFinish(res.getFinishDuration().minus(chipStartTime).minus(paused));
-                            pr.setGunFinish(res.getFinishDuration().minus(waveStartTime).minus(paused));
-                            pr.setSplit(splitSize, pr.getChipFinish());
-                        }
-                        
-                        // look for any bonus or penalty times
-                        Optional<List<TimeOverride>> overrides = timingDAO.getOverridesByBib(pr.getParticipant().getBib());
-                        if (overrides.isPresent() && pr.getChipFinish() != null) {
-                            overrides.get().forEach(o -> {
-                                if (TimeOverrideType.PENALTY.equals(o.getOverrideType())){
-                                    pr.penalty = true;
-                                    pr.penaltyTime = Duration.ofNanos(o.getTimestampLong());
-                                    pr.bonusPenaltyNote = o.getNote();
-                                    pr.rawChipFinishTime=pr.getChipFinish();
-                                    pr.rawGunFinishTime=pr.getGunFinish();
-                                    pr.setChipFinish(pr.getChipFinish().plus(pr.penaltyTime));
-                                    pr.setGunFinish(pr.getGunFinish().plus(pr.penaltyTime));
-                                } else if (TimeOverrideType.BONUS.equals(o.getOverrideType())){
-                                    pr.bonus = true;
-                                    pr.bonusTime = Duration.ofNanos(o.getTimestampLong());
-                                    pr.bonusPenaltyNote = o.getNote();
-                                    pr.rawChipFinishTime=pr.getChipFinish();
-                                    pr.rawGunFinishTime=pr.getGunFinish();
-                                    pr.setChipFinish(pr.getChipFinish().minus(pr.bonusTime));
-                                    pr.setGunFinish(pr.getGunFinish().minus(pr.bonusTime));
-                                } 
-                            
-                            });
-                        }
-                        
-                        // set the segment times unless they are a DNF
-                        if (!pr.getParticipant().getDNF()) r.getSegments().forEach(seg -> {
-                            //System.out.println("Processing segment " + seg.getSegmentName());
-                            if (pr.getSplit(seg.getEndSplitPosition()) != null && pr.getSplit(seg.getStartSplitPosition()) != null) {
-                                pr.setSegmentTime(seg.getID(), pr.getSplit(seg.getEndSplitPosition()).minus(pr.getSplit(seg.getStartSplitPosition())));
-                                //System.out.println("Segment: Bib " + pr.getParticipant().getBib() + " Segment " + seg.getSegmentName() + " Time " + DurationFormatter.durationToString(pr.getSegmentTime(seg.getID())));
-                            }
-                        });
+                        ProcessedResult pr = processResult(res,r);
                         results.add(pr);
                     });
 

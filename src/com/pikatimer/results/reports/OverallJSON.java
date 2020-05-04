@@ -62,6 +62,7 @@ public class OverallJSON implements RaceReportType{
     Boolean showPace = true;
     Boolean showGun = true;
     Boolean showAwards = true;
+    Boolean showCourseRecords = true;
     
     Boolean showCustomAttributes = false;
     List<CustomAttribute> customAttributesList = new ArrayList();
@@ -81,6 +82,7 @@ public class OverallJSON implements RaceReportType{
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
         supportedOptions.put("showAwards",true);
+        supportedOptions.put("showCourseRecords", true);
     }
     
     private String escape(String s){
@@ -125,6 +127,7 @@ public class OverallJSON implements RaceReportType{
         showPace = supportedOptions.get("showPace");
         showGun = supportedOptions.get("showGun");
         showAwards = supportedOptions.get("showAwards");
+        showCourseRecords = supportedOptions.get("showCourseRecords");
         showCustomAttributes = supportedOptions.get("showCustomAttributes");
         
         String dispFormat = race.getStringAttribute("TimeDisplayFormat");
@@ -270,6 +273,28 @@ public class OverallJSON implements RaceReportType{
                     chars.append("\t\t},\n");
                 } else chars.append("\t\t\"award_winner\": ").append("\"").append("no").append("\"").append(",\n");
                 
+            }
+            if (showCourseRecords){
+                if (pr.getCourseRecords().size()>0){
+                    chars.append("\t\t\"course_records\": ").append("\"").append("yes").append("\"").append(",\n");
+                    chars.append("\t\t\"course_record_detail\": {\n");
+                    pr.getCourseRecords().forEach(cr -> {
+                        String segment = (cr.getSegmentID()==null?"Overall":cr.segmentProperty().get().getSegmentName());
+                        chars.append("\t\t\t\"").append(escape(segment + "_" + cr.getSex()+"_"+cr.getCategory())).append("\": {\n");
+                        chars.append("\t\t\t\t\"segment\": \"").append(escape(segment)).append("\"").append(",\n");
+                        chars.append("\t\t\t\t\"category\": \"").append(escape(cr.getCategory())).append("\"").append(",\n");
+                        chars.append("\t\t\t\t\"old_time\": \"").append(escape(DurationFormatter.durationToString(cr.getRecordDuration(), dispFormat, roundMode))).append("\"").append(",\n");
+                        chars.append("\t\t\t\t\"old_name\": \"").append(escape(cr.getName())).append("\"").append(",\n");
+                        chars.append("\t\t\t\t\"old_year\": \"").append(escape(cr.getYear())).append("\"").append(",\n");
+                        chars.append("\t\t\t\t\"old_city\": \"").append(escape(cr.getCity())).append("\"").append(",\n");
+                        chars.append("\t\t\t\t\"old_state\": \"").append(escape(cr.getState())).append("\"").append(",\n");
+                        chars.append("\t\t\t\t\"old_country\": \"").append(escape(cr.getCountry())).append("\"").append(",\n");
+                        chars.append("\t\t\t\t\"new_time\": \"").append(escape(DurationFormatter.durationToString(cr.currentRecordTime(), dispFormat, roundMode))).append("\"").append("\n");
+                        chars.append("\t\t\t},\n");
+                    });
+                    chars.deleteCharAt(chars.lastIndexOf(","));
+                    chars.append("\t\t},\n");
+                } else chars.append("\t\t\"course_records\": ").append("\"").append("no").append("\"").append(",\n");
             }
             if (splitOCO) {
                     chars.append("\t\t\"oa_place\": ").append("\"").append("OCO").append("\",\n");

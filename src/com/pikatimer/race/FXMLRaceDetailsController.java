@@ -18,6 +18,7 @@ package com.pikatimer.race;
 
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.timing.FXMLTimingController;
 import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
@@ -27,12 +28,15 @@ import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.DurationParser;
 import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -47,7 +51,10 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -65,6 +72,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.controlsfx.control.ToggleSwitch;
 import org.controlsfx.control.table.TableRowExpanderColumn;
 
@@ -774,6 +783,26 @@ public class FXMLRaceDetailsController {
                 // don't do anything
             }
         });
+        
+        courseRecordSetupButton.setOnAction(r -> {
+        
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("FXMLCourseRecords.fxml"));
+            Parent crRoot;
+            try {
+                crRoot = (Parent) fxmlLoader.load();
+                Stage stage = new Stage();
+                stage.initModality(Modality.APPLICATION_MODAL);
+                stage.setTitle("Course Record Setup");
+                stage.setScene(new Scene(crRoot));  
+                ((FXMLCourseRecordsController)fxmlLoader.getController()).setRace(selectedRace);
+                stage.showAndWait();
+            } catch (IOException ex) {
+                Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+        
+        
+        });
 
     }    
     
@@ -1226,10 +1255,6 @@ public class FXMLRaceDetailsController {
 
     }
     
-    public void setupCourseRecords(ActionEvent fxevent){
-        Alert alert = new Alert(AlertType.WARNING, "Course record detection is not yet implemented.");
-        alert.showAndWait();
-    }
     
     public void addSegment(ActionEvent fxevent){
         Segment s = new Segment();
