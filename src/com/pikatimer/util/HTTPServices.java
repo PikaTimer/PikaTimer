@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.concurrent.Task;
@@ -183,17 +184,19 @@ public class HTTPServices {
 
         Task eventThread = new Task<Void>() {
             @Override public Void call() {
-                 
                 while(true) {
                     String save = "";
                     try {
                         while(true) {
                             System.out.println("HTTPServices: Waiting for events to publish");
-                            String message = eventQueue.take();
-                            save = message;
+                            String m = eventQueue.poll(20, TimeUnit.SECONDS);
+                            if (m == null) {
+                                m = "{\"KEEPALIVE\":\"" + System.currentTimeMillis() + "\"}";
+                            }
+                            String message = m;
                             System.out.println("HTTPServices: Publishing Event");
                             wsSessionList.stream().forEach(session -> {
-                                if(message.contains("PARTICIPANT") || ! announcerDupeCheckHash.get(session).contains(message)) {
+                                if(message.contains("PARTICIPANT") || message.contains("KEEPALIVE") || ! announcerDupeCheckHash.get(session).contains(message)) {
                                     announcerDupeCheckHash.get(session).add(message);
                                     try {
                                         System.out.println(" HTTPServices: Publishing Event  to " + session.getId() + " " + session.host());
@@ -269,6 +272,7 @@ public class HTTPServices {
 
                         ParticipantDAO.getInstance().listParticipants().forEach(part -> {p.put(part.getJSONObject());});
                         o.put("Participants", p);
+                        cx.contentType("application/json; charset=utf-8");
                         cx.result( o.toString(4));
                     });
                     path(":id", () -> {
