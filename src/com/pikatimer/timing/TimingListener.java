@@ -17,6 +17,7 @@
 package com.pikatimer.timing;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 /**
  *
@@ -33,6 +34,8 @@ public interface TimingListener {
     public LocalDate getEventDate();
     
     public void clearReads();
+    
+    public Set<RawTimeData> getReads();
     
     public String getLocationName();
     

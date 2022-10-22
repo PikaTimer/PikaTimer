@@ -411,12 +411,19 @@ public class TimingLocationInput implements TimingListener{
     @Override
     public void clearReads() {
         if(rawTimeSet != null && !rawTimeSet.isEmpty()) {
-            //clearLocalReads();
-            // Delete all from the DB
-            // This will trigger a removal of all cooked times associated with 
+            // This will orchistrate the clearing of the reads via the timingDAO
+            // The timingDAO will first delete all from the DB
+            // It will then call this.clearLocalReads() 
+            // Finally it will trigger a removal of all cooked times associated with 
             // this instance. 
             timingDAO.clearRawTimes(this); 
         }
+    }
+    
+    @Override
+    @Transient
+    public Set<RawTimeData> getReads(){
+        return rawTimeSet;
     }
     
     public void reprocessReads() {
