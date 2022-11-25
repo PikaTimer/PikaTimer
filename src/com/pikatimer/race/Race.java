@@ -88,6 +88,8 @@ public class Race {
     private final ObservableList<RaceReport> raceReports;
     private List<Segment> segmentsList;
     private final ObservableList<Segment> raceSegments = FXCollections.observableArrayList(Segment.extractor());
+    private List<CourseRecord> courseRecordList;
+    private final ObservableList<CourseRecord> courseRecords = FXCollections.observableArrayList(CourseRecord.extractor());
     //private final Race self; 
 
     private RaceAwards awards;
@@ -376,6 +378,38 @@ public class Race {
         raceSegments.remove(s); 
         segmentsList = raceSegments.sorted((s1, s2)-> s1.compareTo(s2));
     }
+    
+    
+    @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SELECT)
+    public List<CourseRecord> getCourseRecords() {
+        if (courseRecordList == null) courseRecordList = new ArrayList();
+        return courseRecordList;
+    }
+    public void setCourseRecords(List<CourseRecord> crs) {
+        courseRecordList = crs;
+        if (crs == null) System.out.println("Race.setCourseRecords(list) called with null list");
+        if (crs != null) {
+            crs.sort((s1, s2)-> s1.compareTo(s2));
+            courseRecords.setAll(crs);
+        }
+        //System.out.println("Race.setRaceReports(list) " + raceName.getValueSafe() + "( " + IDProperty.getValue().toString() + ")" + " now has " + raceReports.size() + " Reports");
+    }
+    public ObservableList<CourseRecord> raceCourseRecordsProperty() {
+        return courseRecords; 
+    }
+
+    public void addCourseRecord(CourseRecord cr) {
+        cr.setRace(this);
+        courseRecords.add(cr);
+        courseRecords.sort((s1, s2)-> s1.compareTo(s2));
+        courseRecordList = courseRecords;
+    }
+    public void removeCourseRecord(CourseRecord cr) {
+        courseRecords.remove(cr); 
+        courseRecordList = courseRecords.sorted((s1, s2)-> s1.compareTo(s2));
+    }
+    
 
     @Column(name="uuid")
     public String getUUID() {

@@ -18,6 +18,7 @@ package com.pikatimer.race;
 
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.timing.FXMLTimingController;
 import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
@@ -27,12 +28,15 @@ import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.DurationParser;
 import com.pikatimer.util.Pace;
 import com.pikatimer.util.Unit;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -47,7 +51,10 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -59,11 +66,14 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.controlsfx.control.ToggleSwitch;
 import org.controlsfx.control.table.TableRowExpanderColumn;
 
@@ -120,7 +130,10 @@ public class FXMLRaceDetailsController {
     @FXML private ComboBox<TimingLocation> startLocationComboBox;
     //@FXML private ChoiceBox<TimingLocation>  finishLocationChoiceBox;
     @FXML private ComboBox<TimingLocation> finishLocationComboBox;
-
+    @FXML private HBox minFinishTimeHBox;
+    @FXML private ToggleButton finishToggleButton;
+    @FXML private TextField minFromLastSplitTextField;
+    @FXML private Button courseRecordSetupButton;
     
     
     //@FXML private Button courseRecordsButton;
@@ -732,6 +745,64 @@ public class FXMLRaceDetailsController {
         advancedSegmentOptionsTableRowExpanderColumn.setResizable(false);
         advancedSegmentOptionsTableRowExpanderColumn.setText("Adv");
         raceSegmentsTableView.getColumns().add(advancedSegmentOptionsTableRowExpanderColumn);
+        
+        minFinishTimeHBox.visibleProperty().bind(finishToggleButton.selectedProperty());
+        minFinishTimeHBox.managedProperty().bind(finishToggleButton.selectedProperty());
+        minFromLastSplitTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            //System.out.println("TextField Text Changed (newValue: " + newValue + ")");
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?") ){
+                System.out.println("Possiblely good Time (newValue: " + newValue + ")");
+            } else {
+                Platform.runLater(() -> {
+                    int c = minFromLastSplitTextField.getCaretPosition();
+                    if (oldValue.length() > newValue.length()) c++;
+                    else c--;
+                    minFromLastSplitTextField.setText(oldValue);
+                    minFromLastSplitTextField.positionCaret(c);
+                });
+                System.out.println("Bad Cutoff Time (newValue: " + newValue + ")");
+            }
+        });
+        minFromLastSplitTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            
+            if (!newPropertyValue) {
+                Split s = raceSplits.get(raceSplits.size()-1);
+                System.out.println("minFromLastSplitTextField out focus");
+                
+                if (!minFromLastSplitTextField.getText().isEmpty() && DurationParser.parsable(minFromLastSplitTextField.getText(),Boolean.FALSE))
+                    s.setSplitMinTime(DurationParser.parse(minFromLastSplitTextField.getText(),Boolean.FALSE).toNanos());
+                else if (minFromLastSplitTextField.getText().isEmpty()){
+                    s.setSplitMinTime(Duration.ZERO.toNanos()); // empty is stored as zero which is treated as 5 minutes
+                }
+                else {
+                    minFromLastSplitTextField.setText(DurationFormatter.durationToString(s.splitMinTimeDuration()));
+                    System.out.println("Min Split time of " +minFromLastSplitTextField.getText() + " is not parsable!");
+                }
+                raceDAO.updateSplit(s);
+            } else {
+                // don't do anything
+            }
+        });
+        
+        courseRecordSetupButton.setOnAction(r -> {
+        
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("FXMLCourseRecords.fxml"));
+            Parent crRoot;
+            try {
+                crRoot = (Parent) fxmlLoader.load();
+                Stage stage = new Stage();
+                stage.initModality(Modality.APPLICATION_MODAL);
+                stage.setTitle("Course Record Setup");
+                stage.setScene(new Scene(crRoot));  
+                ((FXMLCourseRecordsController)fxmlLoader.getController()).setRace(selectedRace);
+                stage.showAndWait();
+            } catch (IOException ex) {
+                Logger.getLogger(FXMLTimingController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+        
+        
+        });
 
     }    
     
@@ -857,7 +928,7 @@ public class FXMLRaceDetailsController {
             
             startLocationComboBox.getSelectionModel().select(raceSplits.get(0).getTimingLocation());
             finishLocationComboBox.getSelectionModel().select(raceSplits.get(raceSplits.size()-1).getTimingLocation());
-            
+            minFromLastSplitTextField.setText(DurationFormatter.durationToString(raceSplits.get(raceSplits.size()-1).splitMinTimeDuration()));
             
             
             //Setup the start time
@@ -1184,10 +1255,6 @@ public class FXMLRaceDetailsController {
 
     }
     
-    public void setupCourseRecords(ActionEvent fxevent){
-        Alert alert = new Alert(AlertType.WARNING, "Course record detection is not yet implemented.");
-        alert.showAndWait();
-    }
     
     public void addSegment(ActionEvent fxevent){
         Segment s = new Segment();

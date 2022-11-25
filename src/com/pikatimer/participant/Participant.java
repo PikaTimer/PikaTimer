@@ -65,6 +65,8 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  *
@@ -660,6 +662,27 @@ public class Participant {
         }
 
         return true;
+    }
+
+    @Transient
+    public JSONObject getJSONObject() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("ID", this.IDProperty.getValue());
+            json.put("Bib",this.bibProperty.getValue());
+            json.put("FirstName", this.firstNameProperty.getValueSafe());
+            json.put("MiddleName", this.middleNameProperty.getValueSafe());
+            json.put("LastName", this.lastNameProperty.getValueSafe());
+            json.put("Sex", this.sexProperty.getValueSafe());
+            json.put("Age", this.ageProperty.getValue());
+            json.put("City", this.cityProperty.getValueSafe());
+            json.put("State", this.stateProperty.getValueSafe());
+            json.put("Country", this.countryProperty.getValueSafe());
+            
+        } catch (JSONException e){
+            
+        }
+        return json; 
     }
 
     

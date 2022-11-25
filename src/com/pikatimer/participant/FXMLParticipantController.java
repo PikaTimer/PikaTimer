@@ -641,6 +641,8 @@ public class FXMLParticipantController  {
             p.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
             p.setState(stateTextField.getText());
             p.setCity(cityTextField.getText());
+            p.setZip(zipTextField.getText());
+            p.setCountry(countryTextField.getText());
             
             // If there is only one wave, assign it
             if (RaceDAO.getInstance().listWaves().size()== 1){

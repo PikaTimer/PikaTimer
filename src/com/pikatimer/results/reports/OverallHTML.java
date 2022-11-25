@@ -170,18 +170,18 @@ public class OverallHTML implements RaceReportType{
         }
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" ;
-        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.10.18/fh-3.1.4/r-2.2.2/sc-1.5.0/datatables.min.css\"/>\n" ;
-        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-flash-1.5.2/b-html5-1.5.2/b-print-1.5.2/r-2.2.2/sc-1.5.0/datatables.min.css\"/>" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.10.20/fh-3.1.6/r-2.2.3/sc-2.0.1/datatables.min.css\"/>\n" ;
+        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-flash-1.6.1/b-html5-1.6.1/b-print-1.6.1/r-2.2.3/sc-2.0.1/datatables.min.css\"/>" ;
         report +=    " \n";
-        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.10.18/fh-3.1.4/r-2.2.2/sc-1.5.0/datatables.min.js\"></script>\n" ;
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.10.20/fh-3.1.6/r-2.2.3/sc-2.0.1/datatables.min.js\"></script>\n" ;
         else report +=   "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js\"></script>\n" +
                         "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js\"></script>\n" +
-                        "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-flash-1.5.2/b-html5-1.5.2/b-print-1.5.2/r-2.2.2/sc-1.5.0/datatables.min.js\"></script>\n";
+                        "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-flash-1.6.1/b-html5-1.6.1/b-print-1.6.1/r-2.2.3/sc-2.0.1/datatables.min.js\"></script>\n";
             
         
 
         report +=   " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.19/sorting/natural.js\"></script>\n";
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.20/sorting/natural.js\"></script>\n";
         
         // our inline CSS
         report +=   "<link href=\"https://fonts.googleapis.com/css?family=Source+Sans+Pro|Open+Sans\" rel=\"stylesheet\">\n" +

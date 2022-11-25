@@ -17,8 +17,11 @@
 package com.pikatimer.results;
 
 import com.pikatimer.participant.Participant;
+import com.pikatimer.race.CourseRecord;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,6 +33,8 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     Map<Integer,Duration> segmentTimes = new HashMap();
     Map<Integer,Map<String,Integer>> segmentPlacement = new HashMap();
     
+    List<CourseRecord> courseRecords = new ArrayList();
+    
     Integer overallPlace;
     Integer genderPlace;
     Integer agPlace;
@@ -37,8 +42,8 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     
     Participant participant;
     // attributes we need a lot of
-    Integer age;
-    String sex;
+    Integer age = 0; // Dummy default to avoid nulls
+    String sex="X";  // Dummy default to avoid nulls
     String agCode;
     
     String lastSeen;
@@ -67,6 +72,12 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     
     private Integer latestSplitID = 0;
     
+    public void setCourseRecords(List<CourseRecord> crs){
+        courseRecords.addAll(crs);
+    }
+    public List<CourseRecord> getCourseRecords(){
+        return courseRecords;
+    }
     
     public void setChipFinish(Duration t){
         chipFinishTime = t;

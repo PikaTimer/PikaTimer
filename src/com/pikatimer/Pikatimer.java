@@ -16,6 +16,7 @@
  */
 package com.pikatimer;
 
+import com.pikatimer.util.HTTPServices;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
@@ -26,6 +27,7 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 
 /**
@@ -37,8 +39,9 @@ public class Pikatimer extends Application {
     //private final Event event = Event.getInstance(); 
     private static Stage mainStage;
     private static String jdbcURL; // Holds the jdbcURL for the open db
+    private static HTTPServices webServer;
     
-    public static final String VERSION = "1.5.1";
+    public static final String VERSION = "1.6 Beta1";
     
     /**
     * SingletonHolder is loaded on the first execution of Singleton.getInstance() 
@@ -64,7 +67,7 @@ public class Pikatimer extends Application {
     public static Stage getPrimaryStage() {
         return mainStage;
     }    
-    
+       
     @Override
     public void start(Stage primaryStage) throws Exception {
         
@@ -76,7 +79,9 @@ public class Pikatimer extends Application {
         mainStage.setWidth(600);
         mainStage.setHeight(400);
         
-        
+        // Start the WebServices javalin process
+        webServer = HTTPServices.getInstance();
+              
         Pane myPane = (Pane)FXMLLoader.load(getClass().getResource("FXMLopenEvent.fxml"));
         Scene myScene = new Scene(myPane);
         
@@ -98,9 +103,12 @@ public class Pikatimer extends Application {
             primaryStage.getIcons().add(new Image("resources/icons/Pika_"+s+".png"));
         }
         
-        
         primaryStage.setScene(myScene);
         primaryStage.show();
+        
+        primaryStage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {webServer.stopHTTPService();});
+        
+       
         
         System.out.println("Exiting Pikatimer.start()");
     }

@@ -69,6 +69,7 @@ public class FXMLResultOutputController {
     @FXML CheckBox showSegmentPaceCheckBox;
     @FXML CheckBox showSegmentSplitsCheckBox;
     @FXML CheckBox showAwardsCheckBox;
+    @FXML CheckBox showCRsCheckBox;
     @FXML CheckBox hideCustomHeadersCheckBox;
     
     @FXML HBox customAttributesHBox;
@@ -296,6 +297,20 @@ public class FXMLResultOutputController {
                 showAwardsCheckBox.managedProperty().set(false);
             }
             
+            if (rrt.optionSupport("showCourseRecords")) {
+                if (r.getBooleanAttribute("showCourseRecords") == null){
+                    r.setBooleanAttribute("showCourseRecords", true);
+                    attributeAdded = true;
+                }
+                showCRsCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showCourseRecords"));
+                showCRsCheckBox.visibleProperty().set(true);
+                showCRsCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
+            } else {
+                showCRsCheckBox.visibleProperty().set(false);
+                showCRsCheckBox.managedProperty().set(false);
+            }
+            
             //@FXML HBox customAttributesHBox
             //@FXML CheckBox customAttributesCheckBox;
             //@FXML CheckComboBox customAttributesCheckComboBox;
@@ -442,6 +457,16 @@ public class FXMLResultOutputController {
         
         hideCustomHeadersCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
             r.setBooleanAttribute("hideCustomHeaders", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+        showAwardsCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showAwards", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+        showCRsCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showCourseRecords", new_val);
             resultsDAO.saveRaceReport(r);
         });
         

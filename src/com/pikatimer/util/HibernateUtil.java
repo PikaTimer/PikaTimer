@@ -25,6 +25,7 @@ import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.AwardCategory;
 import com.pikatimer.race.AwardDepth;
 import com.pikatimer.race.AwardFilter;
+import com.pikatimer.race.CourseRecord;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.Wave;
@@ -109,6 +110,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(RaceOutputTarget.class);
         cfg.addAnnotatedClass(EventOptions.class);
         cfg.addAnnotatedClass(CustomAttribute.class);
+        cfg.addAnnotatedClass(CourseRecord.class);
         
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());

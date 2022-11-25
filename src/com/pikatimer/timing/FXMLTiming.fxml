@@ -124,7 +124,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
                         <Button mnemonicParsing="false" onAction="#clearAllTimes" text="Clear Times" />
-                        <Pane HBox.hgrow="ALWAYS" />
+                        <Pane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                         <Button fx:id="timingLocAddButton" mnemonicParsing="false" onAction="#addTimingLocation" text="Add" />
                         <Button fx:id="timingLocRemoveButton" mnemonicParsing="false" onAction="#removeTimingLocation" text="Remove" />
                      </children>
@@ -211,7 +211,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </Label>
             <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS">
                <children>
-                  <TextField fx:id="timingLocationNameTextField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="200.0" GridPane.columnIndex="1" />
+                  <TextField fx:id="timingLocationNameTextField" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="207.0" GridPane.columnIndex="1" />
                   <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                   <ToggleSwitch fx:id="assignToRaceToggleSwitch" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxHeight="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="18.0" prefWidth="144.0" text="Auto-Assign to Race" textAlignment="RIGHT" />
                   <ComboBox fx:id="assignToRaceComboBox" prefHeight="25.0" prefWidth="102.0" />
@@ -227,6 +227,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <Insets />
                      </HBox.margin></Label>
                   <TextField fx:id="filterStartTextField" prefHeight="25.0" prefWidth="90.0" promptText="HH:MM:SS.sss" />
+                  <Pane maxWidth="1.7976931348623157E308" prefHeight="20.0" prefWidth="125.0" HBox.hgrow="ALWAYS" />
+                  <ToggleSwitch fx:id="announcerToggleSwitch" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxHeight="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="18.0" prefWidth="144.0" text="Send to Announcer" textAlignment="RIGHT" />
                </children>
             </HBox>
             <HBox alignment="CENTER_LEFT" fillHeight="false" maxWidth="1.7976931348623157E308" spacing="5.0" VBox.vgrow="NEVER">

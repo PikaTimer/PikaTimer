@@ -21,6 +21,7 @@ import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
+import com.pikatimer.util.HTTPServices;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,6 +74,7 @@ public class TimingLocation {
    private static final TimingDAO timingDAO = TimingDAO.getInstance();
    
    private Wave autoWave;
+   private final BooleanProperty isAnnouncer = new SimpleBooleanProperty(false);
    private final BooleanProperty cookedTimeReady = new SimpleBooleanProperty(false);
    List<TimingLocationInput> timingInputList;
    
@@ -231,6 +233,9 @@ public class TimingLocation {
         
         // Move to the timing location
         timingDAO.saveCookedTime(c); 
+        
+        // if we are an announcer location, announce the arrival of the bib
+        if (isAnnouncer.get()) HTTPServices.getInstance().publishEvent("ANNOUNCER", c.getBib());
     }
     
     @Column(name="filterStartDuration")
@@ -270,6 +275,20 @@ public class TimingLocation {
         });
     }
     
+    @Column(name="announcer")
+    public Boolean getIsAnnouncer() {
+        //System.out.println("returning isBackup()");
+        return isAnnouncer.getValue();
+    }
+    public void setIsAnnouncer(Boolean i) {
+        if (i != null) { 
+            isAnnouncer.setValue(i);
+        }
+    }
+     
+    public BooleanProperty announcerProperty(){
+        return isAnnouncer;
+    }
     
     @Override
     public String toString(){

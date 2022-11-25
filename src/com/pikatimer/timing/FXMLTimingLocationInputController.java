@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.Optional;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -36,7 +35,6 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -55,6 +53,9 @@ public class FXMLTimingLocationInputController{
     @FXML private CheckBox timeSkewCheckBox;
     @FXML private TextField skewTextField;     
     @FXML private CheckBox backupCheckBox;
+    
+    @FXML private CheckBox announcerCheckBox;
+    
     private TimingDAO timingLocationDAO;
     private TimingLocationInput timingLocationInput;
     
@@ -121,6 +122,16 @@ public class FXMLTimingLocationInputController{
                     timingLocationInput.setIsBackup(new_val);
                     timingLocationDAO.updateTimingLocationInput(timingLocationInput);
                     timingLocationInput.reprocessReads();
+                }
+            });
+            
+            // flag as an announcer feed
+            announcerCheckBox.setSelected(timingLocationInput.getIsAnnouncer()); 
+            
+            announcerCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+                if (!old_val.equals(new_val)) {
+                    timingLocationInput.setIsAnnouncer(new_val);
+                    timingLocationDAO.updateTimingLocationInput(timingLocationInput);
                 }
             });
             

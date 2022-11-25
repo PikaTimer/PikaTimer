@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<GridPane xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLCourseRecordsController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <VBox spacing="4.0">
+         <children>
+            <Label text="Course Records">
+               <font>
+                  <Font size="24.0" />
+               </font>
+            </Label>
+            <TableView fx:id="recordTableView" prefHeight="500.0" prefWidth="950.0" VBox.vgrow="ALWAYS">
+              <columns>
+                  <TableColumn fx:id="segmentTableColumn" prefWidth="75.0" text="Segment" />
+                <TableColumn fx:id="categoryTableColumn" prefWidth="75.0" text="Category" />
+                  <TableColumn fx:id="sexTableColumn" prefWidth="75.0" text="Sex" />
+                  <TableColumn fx:id="timeTableColumn" prefWidth="75.0" text="Time" />
+                  <TableColumn fx:id="nameTableColumn" prefWidth="75.0" text="Name" />
+                  <TableColumn fx:id="ageTableColumn" prefWidth="75.0" text="Age" />
+                  <TableColumn fx:id="yearTableColumn" prefWidth="75.0" text="Year" />
+                  <TableColumn fx:id="cityTableColumn" prefWidth="75.0" text="City" />
+                  <TableColumn fx:id="stateTableColumn" prefWidth="75.0" text="State" />
+                  <TableColumn fx:id="countryTableColumn" prefWidth="75.0" text="Country" />
+                  <TableColumn fx:id="newRecordHolderTableColumn" prefWidth="75.0" text="New Record" />
+                  <TableColumn fx:id="newRecordTimeTableColumn" prefWidth="75.0" text="New Time" />
+              </columns>
+            </TableView>
+            <HBox spacing="4.0" VBox.vgrow="SOMETIMES">
+               <children>
+                  <Button fx:id="importButton" mnemonicParsing="false" text="Import" />
+                  <Button fx:id="exportButton" mnemonicParsing="false" text="Export" />
+                  <Pane HBox.hgrow="ALWAYS" />
+                  <Button fx:id="mergeButton" mnemonicParsing="false" text="Merge" />
+               </children>
+               <padding>
+                  <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+               </padding>
+            </HBox>
+         </children>
+         <padding>
+            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+         </padding>
+      </VBox>
+   </children>
+</GridPane>

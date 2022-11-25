@@ -61,7 +61,6 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -138,6 +137,7 @@ public class PikaRFIDDirectReader implements TimingReader {
     private Pane displayPane; 
     private Button discoverButton;
     private Button rewindButton;
+    private Button exportButton;
     protected TextField ultraIPTextField; 
     protected TextField readsFileTextField;
     protected Label statusLabel; 
@@ -205,7 +205,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         }
         
         saveToFile = Boolean.valueOf(timingListener.getAttribute("RFIDDirect:saveToFile"));
-        if (ultraIP != null) {
+        if (saveToFile != null) {
             System.out.println("RFIDDirect: Found existing saveToFile setting: " + saveToFile);
         } else {
             System.out.println("RFIDDirect: Did not find existing saveToFile setting." );
@@ -258,9 +258,10 @@ public class PikaRFIDDirectReader implements TimingReader {
             statusLabel = new Label("Disconnected");
             statusLabel.setPrefWidth(200);
             lastReadLabel = new Label("");
-            lastReadLabel.setPrefWidth(300);
+            lastReadLabel.setPrefWidth(250);
             discoverButton = new Button("Discover...");
             rewindButton = new Button("Rewind...");
+            exportButton = new Button("Export...");
             ultraIPTextField = new TextField();
             ultraIPTextField.setPrefWidth(90);
             ultraIPTextField.setMinWidth(USE_PREF_SIZE);
@@ -414,21 +415,50 @@ public class PikaRFIDDirectReader implements TimingReader {
             
             settingsVBox.getChildren().addAll(fileHBox,advancedVBox);
             
+            Label strut = new Label();
+            strut.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(strut, Priority.ALWAYS);
+            
+            Label strut2 = new Label();
+            strut2.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(strut2, Priority.ALWAYS);
+            
             settingsTitlePane.setText("Advanced Settings");
             settingsTitlePane.setContent(settingsVBox);
             settingsTitlePane.setExpanded(false);
+            
+            
+            exportButton.setMinWidth(75);
+            exportButton.setMaxWidth(75);
             HBox statusHBox = new HBox();
             statusHBox.getChildren().addAll(statusLabel,lastReadLabel);
             statusHBox.setSpacing(5);
             
-            Label strut = new Label();
-            strut.setMaxWidth(Double.MAX_VALUE);
-            HBox.setHgrow(strut, Priority.ALWAYS);
+            HBox batteryHBox = new HBox();
+            Label batterySpacer = new Label();
+            batterySpacer.setMaxWidth(100);
+            batterySpacer.setPrefWidth(100);
+            batteryProgressBar.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(batteryProgressBar, Priority.ALWAYS);
+            batteryHBox.getChildren().addAll(new Label("Battery: "),batteryProgressBar);
+            batteryHBox.visibleProperty().bind(connectToggleSwitch.selectedProperty());
+            batteryProgressBar.setPrefHeight(20.0);
+            VBox statusVBox = new VBox();
+            statusVBox.getChildren().addAll(statusHBox,batteryHBox);
+            HBox.setHgrow(statusVBox, Priority.ALWAYS);
+            HBox statusHBox2 = new HBox();
+            statusHBox2.setSpacing(10);
+            statusHBox2.getChildren().addAll(statusVBox,exportButton);
+            
+            rewindButton.setMinWidth(75);
+            rewindButton.setMaxWidth(75);
+
             displayHBox.setSpacing(5);
             displayHBox.setAlignment(Pos.CENTER_LEFT);
-            displayHBox.getChildren().addAll(ipLabel,ultraIPTextField, discoverButton, switchHBox,strut, rewindButton); 
+            displayHBox.getChildren().addAll(ipLabel,ultraIPTextField, discoverButton, switchHBox,strut, rewindButton);
+            
             displayVBox.setAlignment(Pos.CENTER_LEFT);
-            displayVBox.getChildren().addAll(displayHBox,statusHBox ,settingsTitlePane); 
+            displayVBox.getChildren().addAll(displayHBox,statusHBox2,settingsTitlePane); 
             
             // Set the action for the discoverButton
             discoverButton.setOnAction((event) -> {
@@ -440,7 +470,9 @@ public class PikaRFIDDirectReader implements TimingReader {
                 rewind();
             });
             rewindButton.disableProperty().bind(connectedStatus.not());
-            
+            exportButton.setOnAction((event) -> {
+                //export();
+            });
             setClockButton.setOnAction((event) -> {
                 setClockDialog();
             });
@@ -450,8 +482,7 @@ public class PikaRFIDDirectReader implements TimingReader {
             antennaSettingsButton.setOnAction((event) -> {
                 antennaDialog();
             });
-            batteryProgressBar.visibleProperty().bind(connectToggleSwitch.selectedProperty());
-            batteryProgressBar.setMaxHeight(30.0);
+            
             
             connectToggleSwitch.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
                 if(newValue) {
@@ -515,6 +546,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                         if (newFile.canWrite() || newFile.createNewFile()) {
                             backupFile=newFile.getPath();
                             timingListener.setAttribute("RFIDDirect:backupFile", fileTextField.getText());
+                            saveToFileCheckBox.setSelected(true);
                             goodFile=true;
                         }
                     } catch (IOException ex) {
@@ -555,6 +587,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                 File file = fileChooser.showSaveDialog(fileButton.getScene().getWindow());
                 if (file != null) {
                     Platform.runLater(() -> fileTextField.setText(file.getAbsolutePath()));
+                    saveToFileCheckBox.setSelected(true);
                     outputFile=null;
                 }
             });
@@ -591,8 +624,11 @@ public class PikaRFIDDirectReader implements TimingReader {
 
                                 ultraOutput.writeBytes("R");
                                 ultraOutput.flush();
-                                Thread.sleep(5000); // give the readers 5 seconds to start before we check
-                                getReadStatus(); 
+                                
+                                // give the readers 5 seconds to start before we check
+                                // Joey's take about 10 seconds to startup
+                                if(isJoey.getValue()) Thread.sleep(12000); else Thread.sleep(5000); 
+                                //getReadStatus(); 
                             } else {
                                 // timeout
                                 System.out.println("Timeout with command 'R'");
@@ -627,8 +663,8 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 ultraOutput.flush();
                                 ultraOutput.writeBytes("N");
                                 ultraOutput.flush();
-                                Thread.sleep(5000); // give the readers 5 seconds to stop before we check
-                                getReadStatus();
+                                //Thread.sleep(5000); // give the readers 5 seconds to stop before we check
+                                //getReadStatus();
                             } else {
                                 // timeout
                                 System.out.println("Timeout with command 'S'");
@@ -648,66 +684,66 @@ public class PikaRFIDDirectReader implements TimingReader {
         new Thread(ultraCommand).start();
     }
 
-    private void getReadStatus(){
-        Task ultraCommand = new Task<Void>() {
-                @Override public Void call() {
-                    if (connectedStatus.get()) {
-                        Boolean aquired = false;
-                        try {
-                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
-                                aquired = true;
-                                System.out.println("getReadStatus(): Sending ? command");
-                                ultraOutput.writeBytes("?");
-                                //ultraOutput.writeUTF("?");
-                                ultraOutput.flush();
-                                String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
-                                if (result != null) {
-                                    System.out.println("Reading Status : " + result);
-                                    Boolean currentStatus = readingStatus.getValue();
-                                    Boolean newStatus = false;
-                                    if (result.substring(2, 3).startsWith("1")) newStatus = true;
-                                    else newStatus = false;
-                                    if (!Objects.equals(newStatus, currentStatus)){
-                                        externalInitiated = true;
-                                        Platform.runLater(() -> {
-                                            if (result.substring(2, 3).startsWith("1")) readingStatus.setValue(Boolean.TRUE);
-                                            else readingStatus.setValue(Boolean.FALSE);
-                                        });
-                                    }
-                                    if (statusLabel.getText().equals("Starting Readers...") && newStatus) {
-                                        Platform.runLater(() -> {
-                                            statusLabel.setText("Connected: Waiting for a chip read...");
-                                        });
-                                    } else if (statusLabel.getText().equals("Connected: Readers stopped") && newStatus){
-                                        Platform.runLater(() -> {
-                                            statusLabel.setText("Connected: Waiting for a chip read...");
-                                        });
-                                    } else if (!newStatus){
-                                        Platform.runLater(() -> {
-                                            statusLabel.setText("Connected: Readers stopped");
-                                        });
-                                    }
-                                } else {
-                                // timeout
-                                    System.out.println("Timeout with command '?'");
-                                }
-                            } else {
-                                // timeout
-                                System.out.println("Timeout waiting to send command '?'");
-                            }
-                        } catch (Exception ex) {
-                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
-
-                        } finally {
-                            if (aquired) System.out.println("Relasing transmit lock");
-                            if (aquired) okToSend.release();
-                        }
-                    }
-                    return null;
-                }
-        };
-        new Thread(ultraCommand).start();
-    }
+//    private void getReadStatus(){
+//        Task ultraCommand = new Task<Void>() {
+//                @Override public Void call() {
+//                    if (connectedStatus.get()) {
+//                        Boolean aquired = false;
+//                        try {
+//                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+//                                aquired = true;
+//                                System.out.println("getReadStatus(): Sending ? command");
+//                                ultraOutput.writeBytes("?");
+//                                //ultraOutput.writeUTF("?");
+//                                ultraOutput.flush();
+//                                String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+//                                if (result != null) {
+//                                    System.out.println("Reading Status : " + result);
+//                                    Boolean currentStatus = readingStatus.getValue();
+//                                    Boolean newStatus = false;
+//                                    if (result.substring(2, 3).startsWith("1")) newStatus = true;
+//                                    else newStatus = false;
+//                                    if (!Objects.equals(newStatus, currentStatus)){
+//                                        externalInitiated = true;
+//                                        Platform.runLater(() -> {
+//                                            if (result.substring(2, 3).startsWith("1")) readingStatus.setValue(Boolean.TRUE);
+//                                            else readingStatus.setValue(Boolean.FALSE);
+//                                        });
+//                                    }
+//                                    if (statusLabel.getText().equals("Starting Readers...") && newStatus) {
+//                                        Platform.runLater(() -> {
+//                                            statusLabel.setText("Connected: Waiting for a chip read...");
+//                                        });
+//                                    } else if (statusLabel.getText().equals("Connected: Readers stopped") && newStatus){
+//                                        Platform.runLater(() -> {
+//                                            statusLabel.setText("Connected: Waiting for a chip read...");
+//                                        });
+//                                    } else if (!newStatus){
+//                                        Platform.runLater(() -> {
+//                                            statusLabel.setText("Connected: Readers stopped");
+//                                        });
+//                                    }
+//                                } else {
+//                                // timeout
+//                                    System.out.println("Timeout with command '?'");
+//                                }
+//                            } else {
+//                                // timeout
+//                                System.out.println("Timeout waiting to send command '?'");
+//                            }
+//                        } catch (Exception ex) {
+//                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+//
+//                        } finally {
+//                            if (aquired) System.out.println("Relasing transmit lock");
+//                            if (aquired) okToSend.release();
+//                        }
+//                    }
+//                    return null;
+//                }
+//        };
+//        new Thread(ultraCommand).start();
+//    }
         
     @Override
     public BooleanProperty getReadingStatus() {
@@ -1006,7 +1042,11 @@ public class PikaRFIDDirectReader implements TimingReader {
                         ) {
                             connectToUltra = true; // we got here so we have a good connection
                             success = true;
-                            ultraSocket.setSoTimeout(15000); // 15 seconds. In theory we get a voltage every 10
+                            
+                            // Set the timeout to 20 seconds
+                            // In theory, we see a voltate every 2
+                            // However the system pauses for 10+ when reading is enabled
+                            ultraSocket.setSoTimeout(20000); 
                             ultraOutput = new DataOutputStream(new BufferedOutputStream(rawOutput));
                             Platform.runLater(() -> {
                                 connectedStatus.setValue(true);
@@ -1019,40 +1059,72 @@ public class PikaRFIDDirectReader implements TimingReader {
                                 System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
                             } 
                             System.out.println("Read connect string");
+                            
+                            
+                            
+                        
                             if (firstConnect) {
                                 onConnectSetup();
                                 firstConnect = false;
+                                // Enable the extended status messages
+                                // 03 00 00 03 0d 0a
+                                String command = Character.toString ((char) 3) ;
+                                command += Character.toString ((char) 0) ;
+                                command += Character.toString ((char) 0) ;
+                                command += Character.toString ((char) 3) ;
+                                command += Character.toString ((char) 13) ;
+                                command += Character.toString ((char) 10) ;
+                                ultraOutput.writeBytes(command); 
+                                ultraOutput.flush();
                             }
                             
-                                while(connectToUltra) {
-                                    read = -255; 
-                                    line = "";
-                                    try {
-                                        while (read != 10 && connectToUltra) {
-                                            read = input.read();
-                                            readRetry = false;
-                                            if (read == -1) {
-                                                connectToUltra = false;
-                                                System.out.println("End of stream!" + Integer.toHexString(read));
-                                            } if (read != 10) {
-                                                line = line +  Character.toString ((char) read);
-                                            //    System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
-                                            } else {
+                            while(connectToUltra) {
+                                read = -255; 
+                                line = "";
+                                try {
+                                    while (read != 10 && connectToUltra) {
+                                        read = input.read();
+                                        readRetry = false;
+                                        if (read == -1) {
+                                            connectToUltra = false;
+                                            System.out.println("End of stream!" + Integer.toHexString(read));
+                                        } if (read != 10) {
+                                            line = line +  Character.toString ((char) read);
+                                            //logger.trace("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
+
+                                            // Look for the extended status messages
+                                            // The 2nd char has the length. So we can use that to consume
+                                            // the entire output since they may contain the 0x10 end of line in them
+                                            // Warning, the data is in host order (little endian) 
+                                            // and not network byte order (big endian). 
+                                            if (line.equals(Character.toString ((char) 3))) {
+                                                // Lenght includes the 0x03 and lenght chars, so N-2 are left to read
+                                                int length = input.read() - 2; 
+                                                //logger.trace("EX Length: " + Integer.toHexString(0x100 | length).substring(1));
+                                                while (length-- > 0){
+                                                    read = input.read();
+                                                    //logger.trace("EX: " + Integer.toHexString(0x100 | read).substring(1));
+                                                    line = line + Character.toString ((char) read);
+                                                }
                                                 processLine(line);
                                             }
-                                        }
-                                    } catch(java.net.SocketTimeoutException e){
-                                        System.out.println("Socket Timeout Exception...");
-                                        if (readRetry) {
-                                            System.out.println("...2nd One in a row so we will bail");
-                                            throw e;
+                                        //    System.out.println("Read: " + Character.toString ((char) read) + "  " + Integer.toHexString(0x100 | read).substring(1));
                                         } else {
-                                            System.out.println("...First one so let's ask for status");
-                                            readRetry=true;
-                                            getReadStatus();
+                                            processLine(line);
                                         }
                                     }
+                                } catch(java.net.SocketTimeoutException e){
+                                    System.out.println("Socket Timeout Exception...");
+                                    if (readRetry) {
+                                        System.out.println("...2nd One in a row so we will bail");
+                                        throw e;
+                                    } else {
+                                        System.out.println("...First one so let's ask for status");
+                                        readRetry=true;
+                                        //getReadStatus();
+                                    }
                                 }
+                            }
                         } catch (Exception e) {
                             System.out.println(e);
                             if (connectToUltra){ 
@@ -1094,7 +1166,7 @@ public class PikaRFIDDirectReader implements TimingReader {
     }
     
     private void processLine(String line) {
-        System.out.println("Read Line: " + line);
+        //System.out.println("Read Line: " + line);
         
         String type = "unknown";
         if (line.startsWith("0,")) type="chip";
@@ -1103,6 +1175,7 @@ public class PikaRFIDDirectReader implements TimingReader {
         else if (line.startsWith("S")) type="status";
         else if (line.startsWith("U")) type="command";
         else if (line.startsWith("u")) type="command"; // general command
+        else if (line.startsWith(Character.toString ((char) 3))) type ="extStatus";
         else if (line.substring(0,8).matches("^\\d+:\\d+:\\d+.*")) type = "time"; //time ends with a special char
         else System.out.println("Unknown line: \"" + line + "\"");
 
@@ -1116,7 +1189,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                 break;
             case "voltage": // voltage
                 System.out.println("Voltage: " + line);
-                getReadStatus();
+                //getReadStatus();
                 break;
             case "time": // command response
                 System.out.println("Time: " + line.substring(0,19));
@@ -1125,6 +1198,10 @@ public class PikaRFIDDirectReader implements TimingReader {
             case "command": // command response
                 System.out.println("Command response recieved");
                 commandResultQueue.offer(line);
+                break;
+            case "extStatus":
+                System.out.println(" Extended status received: " + stringToHex(line));
+                processExtStatus(line.toCharArray());
                 break;
             default: // unknown command response
                 System.out.println("Unknown: \"" + line.substring(0, 1) + "\" " + line);
@@ -1255,13 +1332,8 @@ public class PikaRFIDDirectReader implements TimingReader {
 
     }
     private void onConnectSetup() {
-        // Get the reading status
-        getReadStatus();
-        
-        // set the clock
-        
-//        Integer offset = TimeZone.getDefault().getOffset(System.currentTimeMillis())/3600000;
-//        setClock(LocalDateTime.now(), offset, true);
+         // Get the settings and check for any clock issues
+         
         CountDownLatch latch = new CountDownLatch(1);
         getSettings(latch);
         clockIssuesCheck(latch);
@@ -1471,6 +1543,21 @@ public class PikaRFIDDirectReader implements TimingReader {
         
     }
 
+//    private void export(){
+//        // open a dialog
+//        // promt for an export file
+//        // output the raw data from the parent TimingLocation
+//        // Use the RFIDFile format for output
+//        
+//        File outputFile =   ;
+//        
+//        if (outputFile != null) {
+//            timingListener.getReads().;
+//        }
+//               
+//        
+//    }
+    
     private void rewind(){
         // open a dialog box 
         Dialog<RewindData> dialog = new Dialog();
@@ -2731,7 +2818,7 @@ public class PikaRFIDDirectReader implements TimingReader {
                             }
                             System.out.println("Date check: Local :" + LocalDate.now() + " ultra: " + ultraClock.date);
 
-                            if (Duration.between(ultraClock.time, ultraClock.takenAt).abs().getSeconds() > 60) {
+                            if (Duration.between(ultraClock.time, ultraClock.takenAt).abs().getSeconds() > 5) {
                                 timeOK=false;
                                 issues += "Clock Time Mismatch: Local: "+ ultraClock.takenAt + " ultra: " + ultraClock.time+"\n";
                             }
@@ -2796,161 +2883,206 @@ public class PikaRFIDDirectReader implements TimingReader {
             new Thread(ultraCommand).start();
     }
     
-        public void updateReaderSettings(){
-        Task ultraCommand = new Task<Void>() {
-                @Override public Void call() {
-                    if (connectedStatus.get()) {
-                        Boolean aquired = false;
-                        try {
-                            if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
-                                aquired = true;
-                                Boolean commit=false;
-                                Boolean restartInterface=false;
-                                
-                                // Beeper Volume
-                                String volume = beeperVolumeChoiceBox.getSelectionModel().getSelectedItem();
-                                if (volume != null) {
-                                    byte val = 3;
-                                    if (volume.equals("Off")) val = 0;
-                                    else if (volume.equals("Soft")) val = 1;
-                                    else if (volume.equals("Loud")) val = 2;
-                                    
-                                    System.out.println("updateReaderSettings(): Setting beeper volume (0x21) " + volume + "(" + Byte.toString(val) + ")");
+    private void processExtStatus(char[] status) {
+        
+        // We are after status[42] for the battery
+        // and status[45] for the state of the reader. 
+        if (status.length > 60) {            
+ 
+            Integer battery = (int) status[42]; // old tricks are still good
+            Boolean reading = (char) 00 != status[45];
+            System.out.println("Reading: " + status[45]);
+            
+            // update the reading status and status label 
+            Boolean currentStatus = readingStatus.getValue();
+            if (!Objects.equals(reading, currentStatus)){
+                externalInitiated = true;
+                Platform.runLater(() -> {
+                    if (reading) readingStatus.setValue(Boolean.TRUE);
+                    else readingStatus.setValue(Boolean.FALSE);
+                });
+            }
+            if (statusLabel.getText().equals("Starting Readers...") && reading) {
+                Platform.runLater(() -> {
+                    statusLabel.setText("Connected: Waiting for a chip read...");
+                });
+            } else if (statusLabel.getText().equals("Connected: Readers stopped") && reading){
+                Platform.runLater(() -> {
+                    statusLabel.setText("Connected: Waiting for a chip read...");
+                });
+            } else if (!reading){
+                Platform.runLater(() -> {
+                    statusLabel.setText("Connected: Readers stopped");
+                });
+            }
+            
+            // Now do the same for the battery indicator
+            // Color code it based on a 60/25 green/yellow/red split
+            Platform.runLater(() -> {
+                batteryProgressBar.progressProperty().setValue(battery / 100.0f);
+                if (battery > 60) batteryProgressBar.setStyle("-fx-accent: green");
+                else if (battery > 25) batteryProgressBar.setStyle("-fx-accent: yellow");
+                else batteryProgressBar.setStyle("-fx-accent: red");
+            });
 
-                                    if (val != 3) {
-                                        ultraOutput.flush();
+        }
+    }
+    
+    public void updateReaderSettings(){
+    Task ultraCommand = new Task<Void>() {
+            @Override public Void call() {
+                if (connectedStatus.get()) {
+                    Boolean aquired = false;
+                    try {
+                        if (okToSend.tryAcquire(10, TimeUnit.SECONDS)){
+                            aquired = true;
+                            Boolean commit=false;
+                            Boolean restartInterface=false;
 
-                                        ultraOutput.writeBytes("u");
-                                        ultraOutput.writeByte(33);  // 0x21, volume
-                                        ultraOutput.writeByte(val);
-                                        ultraOutput.writeByte(255);
+                            // Beeper Volume
+                            String volume = beeperVolumeChoiceBox.getSelectionModel().getSelectedItem();
+                            if (volume != null) {
+                                byte val = 3;
+                                if (volume.equals("Off")) val = 0;
+                                else if (volume.equals("Soft")) val = 1;
+                                else if (volume.equals("Loud")) val = 2;
 
-                                        ultraOutput.flush();
-                                        String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
-                                        if (result != null) {
-                                            ultraSettings.put("21",Byte.toString(val));
-                                            commit=true;
-                                        } else {
-                                        // timeout
-                                            System.out.println("Timeout with command 'u0x21'");
-                                        }
-                                    }
-                                } else {
-                                   System.out.println("updateReaderSettings(): Beeper volume is NULL!");
-                                }
-                                // Mode
-                                String mode = reader1ModeChoiceBox.getSelectionModel().getSelectedItem();
-                                if (! isJoey.get() && mode != null){
-                                    System.out.println("updateReaderSettings(): Sending reader mode (0x14/0x15) command");
-                                    byte val = 0;
-                                    if (mode.equals("Start")) val = 0;
-                                    if (mode.equals("Finish")) val = 3;
-                                           
+                                System.out.println("updateReaderSettings(): Setting beeper volume (0x21) " + volume + "(" + Byte.toString(val) + ")");
+
+                                if (val != 3) {
                                     ultraOutput.flush();
 
                                     ultraOutput.writeBytes("u");
-                                    ultraOutput.writeByte(20);  // 0x14, Reader 1 mode
+                                    ultraOutput.writeByte(33);  // 0x21, volume
                                     ultraOutput.writeByte(val);
                                     ultraOutput.writeByte(255);
+
                                     ultraOutput.flush();
                                     String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
                                     if (result != null) {
-                                        if (mode.equals("Start")) ultraSettings.put("14", "0");
-                                        else ultraSettings.put("14", "3");
+                                        ultraSettings.put("21",Byte.toString(val));
                                         commit=true;
-                                        restartInterface=true;
-                                    } else {
-                                    // timeout
-                                        System.out.println("Timeout with command 'u0x20'");
-                                    }
-                                    ultraOutput.writeBytes("u");
-                                    ultraOutput.writeByte(21);  // 0x15, Reader 2 mode
-                                    ultraOutput.writeByte(val);
-                                    ultraOutput.writeByte(255);
-                                    ultraOutput.flush();
-                                    result = commandResultQueue.poll(10, TimeUnit.SECONDS);
-                                    //result = commandResultQueue.poll(10, TimeUnit.SECONDS);
-                                    if (result != null) {
-                                        if (mode.equals("Start")) ultraSettings.put("15", "0");
-                                        else ultraSettings.put("15", "3");
-                                        commit=true;
-                                        restartInterface=true;
                                     } else {
                                     // timeout
                                         System.out.println("Timeout with command 'u0x21'");
                                     }
                                 }
-                                
-                                Integer gf = gatingIntervalSpinner.getValue();
-                                if (gf != null && "Finish".equals(mode)){
-                                    System.out.println("updateReaderSettings(): Sending gating interval (0x1E) command");
-                                    
-                                    ultraOutput.flush();
-
-                                    ultraOutput.writeBytes("u");
-                                    ultraOutput.writeByte(30);  // 0x1e, Gating Interval
-                                    ultraOutput.writeBytes(gf.toString());
-                                    ultraOutput.writeByte(255);
-
-                                    ultraOutput.flush();
-                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
-                                    if (result != null) {
-                                        ultraSettings.put("30",gf.toString());
-                                        commit=true;
-                                        restartInterface=true;
-                                    } else {
-                                    // timeout
-                                        System.out.println("Timeout with command 'u0x1E'");
-                                    }
-                                } else if ("Start".equals(mode)){
-                                    ultraSettings.put("30","1");
-                                    Platform.runLater(() -> {gatingIntervalSpinner.getValueFactory().setValue(1);});
-                                }
-                                
-                                if (commit){
-                                    System.out.println("updateReaderSettings(): Sending commit (u 0xFF 0xFF) command");
-                                    // t[0x20]HH:MM:SS DD-MM-YYYY  
-                                    ultraOutput.flush();
-
-                                    ultraOutput.writeBytes("u");
-                                    ultraOutput.writeByte(255);
-                                    ultraOutput.writeByte(255);
-                                    ultraOutput.flush();
-                                    String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
-                                    if (result != null) {
-
-                                    } else {
-                                    // timeout
-                                        System.out.println("Timeout with command 'u0xFF'");
-                                    }
-                                }
-                                if (restartInterface){ // This will result in a disconnect
-                                    System.out.println("updateReaderSettings(): Sending reset interface (0x2D) command");
-                                    
-                                    ultraOutput.flush();
-
-                                    ultraOutput.writeBytes("u");
-                                    ultraOutput.writeByte(45);
-                                    ultraOutput.writeByte(255);
-                                    ultraOutput.flush();
-                                    
-                                }
                             } else {
-                                // timeout
-                                System.out.println("Timeout waiting to update the reader settings");
+                               System.out.println("updateReaderSettings(): Beeper volume is NULL!");
                             }
-                        } catch (Exception ex) {
-                            Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+                            // Mode
+                            String mode = reader1ModeChoiceBox.getSelectionModel().getSelectedItem();
+                            if (! isJoey.get() && mode != null){
+                                System.out.println("updateReaderSettings(): Sending reader mode (0x14/0x15) command");
+                                byte val = 0;
+                                if (mode.equals("Start")) val = 0;
+                                if (mode.equals("Finish")) val = 3;
 
-                        } finally {
-                            if (aquired) System.out.println("Relasing transmit lock");
-                            if (aquired) okToSend.release();
+                                ultraOutput.flush();
+
+                                ultraOutput.writeBytes("u");
+                                ultraOutput.writeByte(20);  // 0x14, Reader 1 mode
+                                ultraOutput.writeByte(val);
+                                ultraOutput.writeByte(255);
+                                ultraOutput.flush();
+                                String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                if (result != null) {
+                                    if (mode.equals("Start")) ultraSettings.put("14", "0");
+                                    else ultraSettings.put("14", "3");
+                                    commit=true;
+                                    restartInterface=true;
+                                } else {
+                                // timeout
+                                    System.out.println("Timeout with command 'u0x20'");
+                                }
+                                ultraOutput.writeBytes("u");
+                                ultraOutput.writeByte(21);  // 0x15, Reader 2 mode
+                                ultraOutput.writeByte(val);
+                                ultraOutput.writeByte(255);
+                                ultraOutput.flush();
+                                result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                //result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                if (result != null) {
+                                    if (mode.equals("Start")) ultraSettings.put("15", "0");
+                                    else ultraSettings.put("15", "3");
+                                    commit=true;
+                                    restartInterface=true;
+                                } else {
+                                // timeout
+                                    System.out.println("Timeout with command 'u0x21'");
+                                }
+                            }
+
+                            Integer gf = gatingIntervalSpinner.getValue();
+                            if (gf != null && "Finish".equals(mode)){
+                                System.out.println("updateReaderSettings(): Sending gating interval (0x1E) command");
+
+                                ultraOutput.flush();
+
+                                ultraOutput.writeBytes("u");
+                                ultraOutput.writeByte(30);  // 0x1e, Gating Interval
+                                ultraOutput.writeBytes(gf.toString());
+                                ultraOutput.writeByte(255);
+
+                                ultraOutput.flush();
+                                String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                if (result != null) {
+                                    ultraSettings.put("30",gf.toString());
+                                    commit=true;
+                                    restartInterface=true;
+                                } else {
+                                // timeout
+                                    System.out.println("Timeout with command 'u0x1E'");
+                                }
+                            } else if ("Start".equals(mode)){
+                                ultraSettings.put("30","1");
+                                Platform.runLater(() -> {gatingIntervalSpinner.getValueFactory().setValue(1);});
+                            }
+
+                            if (commit){
+                                System.out.println("updateReaderSettings(): Sending commit (u 0xFF 0xFF) command");
+                                // t[0x20]HH:MM:SS DD-MM-YYYY  
+                                ultraOutput.flush();
+
+                                ultraOutput.writeBytes("u");
+                                ultraOutput.writeByte(255);
+                                ultraOutput.writeByte(255);
+                                ultraOutput.flush();
+                                String result = commandResultQueue.poll(10, TimeUnit.SECONDS);
+                                if (result != null) {
+
+                                } else {
+                                // timeout
+                                    System.out.println("Timeout with command 'u0xFF'");
+                                }
+                            }
+                            if (restartInterface){ // This will result in a disconnect
+                                System.out.println("updateReaderSettings(): Sending reset interface (0x2D) command");
+
+                                ultraOutput.flush();
+
+                                ultraOutput.writeBytes("u");
+                                ultraOutput.writeByte(45);
+                                ultraOutput.writeByte(255);
+                                ultraOutput.flush();
+
+                            }
+                        } else {
+                            // timeout
+                            System.out.println("Timeout waiting to update the reader settings");
                         }
+                    } catch (Exception ex) {
+                        Logger.getLogger(PikaRFIDDirectReader.class.getName()).log(Level.SEVERE, null, ex);
+
+                    } finally {
+                        if (aquired) System.out.println("Relasing transmit lock");
+                        if (aquired) okToSend.release();
                     }
-                    
-                    
-                    return null;
                 }
+
+
+                return null;
+            }
         };
         new Thread(ultraCommand).start();
         updateSettingsButton.visibleProperty().set(false);
@@ -3007,6 +3139,16 @@ public class PikaRFIDDirectReader implements TimingReader {
         }
     }
 
+    static String stringToHex(String string) {
+        StringBuilder buf = new StringBuilder(200);
+        for (char ch: string.toCharArray()) {
+          if (buf.length() > 0)
+            buf.append(' ');
+          buf.append(String.format("%02x", (int) ch));
+        }
+        return buf.toString();
+    }
+        
     private static class RewindData {
         public LocalDate startDate;
         public LocalDate endDate;

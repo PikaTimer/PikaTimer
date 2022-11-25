@@ -16,11 +16,13 @@
  */
 package com.pikatimer.participant;
 
+import com.pikatimer.Pikatimer;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
 import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.util.AlphanumericComparator;
+import com.pikatimer.util.HTTPServices;
 import java.util.List; 
 import com.pikatimer.util.HibernateUtil;
 import java.util.HashMap;
@@ -90,7 +92,9 @@ public class ParticipantDAO {
         Bib2ParticipantMap.put(p.getBib(),p); 
         ID2ParticipantMap.put(p.getID(),p);
         resultsDAO.getResultsQueue().add(p.getBib()); 
-
+        
+        if (p.bibProperty().isEmpty().not().get()) HTTPServices.getInstance().publishEvent("PARTICIPANT", p.getJSONObject());
+        
     }
     
     public void addParticipant(ObservableList newParticipantList) {
@@ -113,6 +117,8 @@ public class ParticipantDAO {
             Bib2ParticipantMap.put(p.getBib(),p); 
             ID2ParticipantMap.put(p.getID(),p);
             resultsDAO.getResultsQueue().add(p.getBib()); 
+            
+            if (p.bibProperty().isEmpty().not().get()) HTTPServices.getInstance().publishEvent("PARTICIPANT", p.getJSONObject());
 
         }
         s.getTransaction().commit(); 
@@ -121,6 +127,9 @@ public class ParticipantDAO {
             //refreshParticipantsList();
             participantsList.addAll(newParticipantList); 
         });
+        
+        
+        
     }
     private static void refreshParticipantsList() { 
 
@@ -285,6 +294,9 @@ public class ParticipantDAO {
             resultsDAO.getResultsQueue().add(oldBib);
         }
         resultsDAO.getResultsQueue().add(p.getBib()); 
+        
+        if (p.bibProperty().isEmpty().not().get()) HTTPServices.getInstance().publishEvent("PARTICIPANT", p.getJSONObject());
+        
      } 
     
     public Participant getParticipantByBib(String b) {

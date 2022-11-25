@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<GridPane fx:id="baseGridPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingLocationInputController">
+<GridPane fx:id="baseGridPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.timing.FXMLTimingLocationInputController">
    <children>
       <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="2">
          <children>
@@ -47,12 +47,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </Label>
          </children>
       </HBox>
-      <Button fx:id="removeInput" mnemonicParsing="false" onAction="#removeTimingInput" prefWidth="90.0" text="Remove Input" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="3" GridPane.valignment="CENTER">
+      <Button fx:id="removeInput" mnemonicParsing="false" onAction="#removeTimingInput" text="Remove Input" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="3" GridPane.valignment="BOTTOM">
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
          <GridPane.margin>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            <Insets left="5.0" right="5.0" top="5.0" />
          </GridPane.margin>
       </Button>
       <VBox alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.vgrow="ALWAYS">
@@ -78,25 +78,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </HBox>
          </children>
       </VBox>
-      <HBox alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
-         <children>
-            <CheckBox fx:id="backupCheckBox" mnemonicParsing="false" text="Backup Input">
-               <padding>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </padding>
-            </CheckBox>
-            <CheckBox fx:id="timeSkewCheckBox" mnemonicParsing="false" prefHeight="27.0" prefWidth="90.0" text="Skew Time" GridPane.columnIndex="1" GridPane.rowIndex="3">
-               <padding>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </padding>
-            </CheckBox>
-            <TextField fx:id="skewTextField" disable="true" prefHeight="25.0" prefWidth="87.0" promptText="[-]SS[.sss]" />
-            <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
-         </children>
+      <VBox GridPane.columnIndex="1" GridPane.rowIndex="3">
          <GridPane.margin>
             <Insets />
          </GridPane.margin>
-      </HBox>
+         <children>
+            <HBox alignment="CENTER_LEFT">
+               <children>
+                  <CheckBox fx:id="backupCheckBox" mnemonicParsing="false" text="Backup Input">
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </CheckBox>
+                  <CheckBox fx:id="announcerCheckBox" mnemonicParsing="false" prefHeight="27.0" prefWidth="100.0" text="Announcer">
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </CheckBox>
+               </children>
+            </HBox>
+            <HBox alignment="BOTTOM_LEFT">
+               <children>
+                  <CheckBox fx:id="timeSkewCheckBox" mnemonicParsing="false" prefHeight="27.0" prefWidth="95.0" text="Skew Time">
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </CheckBox>
+                  <TextField fx:id="skewTextField" disable="true" prefHeight="25.0" prefWidth="87.0" promptText="[-]SS[.sss]" />
+                  <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                  <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
       <Separator prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.vgrow="NEVER" />
       <Label text="Input Name" textAlignment="RIGHT">
          <font>
@@ -139,7 +153,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
    </children>
    <columnConstraints>
       <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="104.5" minWidth="33.0" prefWidth="97.5" />
-      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="342.5" prefWidth="349.5" />
+      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
       <ColumnConstraints hgrow="NEVER" maxWidth="145.0" />
    </columnConstraints>
    <rowConstraints>

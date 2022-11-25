@@ -18,6 +18,7 @@ package com.pikatimer.timing;
 
 import com.pikatimer.event.Event;
 import com.pikatimer.util.DurationFormatter;
+import com.pikatimer.util.HTTPServices;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -85,6 +86,7 @@ public class TimingLocationInput implements TimingListener{
     private final BooleanProperty isBackup = new SimpleBooleanProperty(false);
     private final BooleanProperty skewInput;
     private Duration skewDuration; 
+    private final BooleanProperty isAnnouncer = new SimpleBooleanProperty(false);
     private final Semaphore processRead = new Semaphore(1);
 
     private final IntegerProperty readCountProperty = new SimpleIntegerProperty();
@@ -380,16 +382,15 @@ public class TimingLocationInput implements TimingListener{
         }
        
         
-        // Tag it as a backup if needed
-        
-        
-        
         // Swap the chip for a bib
         if (!timingReader.chipIsBib()){
             c.setBib(timingDAO.getBibFromChip(r.getChip()));
         } else {
             c.setBib(r.getChip()); 
         }
+        
+        // if we are an announcer location, announce the arrival of the bib
+        if (isAnnouncer.get()) HTTPServices.getInstance().publishEvent("ANNOUNCER", c.getBib());
         
         // Send it up to the TimingLocation for further processing...
         //System.out.println("Cooking time " + c.getBib() + " " + c.getTimestamp()); 
@@ -410,12 +411,19 @@ public class TimingLocationInput implements TimingListener{
     @Override
     public void clearReads() {
         if(rawTimeSet != null && !rawTimeSet.isEmpty()) {
-            //clearLocalReads();
-            // Delete all from the DB
-            // This will trigger a removal of all cooked times associated with 
+            // This will orchistrate the clearing of the reads via the timingDAO
+            // The timingDAO will first delete all from the DB
+            // It will then call this.clearLocalReads() 
+            // Finally it will trigger a removal of all cooked times associated with 
             // this instance. 
             timingDAO.clearRawTimes(this); 
         }
+    }
+    
+    @Override
+    @Transient
+    public Set<RawTimeData> getReads(){
+        return rawTimeSet;
     }
     
     public void reprocessReads() {
@@ -472,6 +480,21 @@ public class TimingLocationInput implements TimingListener{
         timingReader.stopReading();
     }
 
+    @Column(name="announcer")
+    public Boolean getIsAnnouncer() {
+        //System.out.println("returning isBackup()");
+        return isAnnouncer.getValue();
+    }
+    public void setIsAnnouncer(Boolean i) {
+        if (i != null) { 
+            isAnnouncer.setValue(i);
+        }
+    }
+     
+    public BooleanProperty announcerProperty(){
+        return isAnnouncer;
+    }
+    
     @Column(name="backup")
     public Boolean getIsBackup() {
         //System.out.println("returning isBackup()");
