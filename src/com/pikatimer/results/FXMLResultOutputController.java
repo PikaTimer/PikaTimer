@@ -71,6 +71,8 @@ public class FXMLResultOutputController {
     @FXML CheckBox showAwardsCheckBox;
     @FXML CheckBox showCRsCheckBox;
     @FXML CheckBox hideCustomHeadersCheckBox;
+    @FXML CheckBox showFinishTODCheckBox;
+    @FXML CheckBox showSplitTODCheckBox;
     
     @FXML HBox customAttributesHBox;
     @FXML CheckBox customAttributesCheckBox;
@@ -205,7 +207,7 @@ public class FXMLResultOutputController {
                 showPaceCheckBox.managedProperty().set(false);
             }
             
-            //        @FXML CheckBox showGunTimeCheckBox;
+            // @FXML CheckBox showGunTimeCheckBox;
             if (rrt.optionSupport("showGun")) {
                 if (r.getBooleanAttribute("showGun") == null) {
                     r.setBooleanAttribute("showGun", false);
@@ -220,6 +222,25 @@ public class FXMLResultOutputController {
                 showGunTimeCheckBox.managedProperty().set(false);
             }
             
+            // @FXML CheckBox showFinishTODCheckBox; showFinishTOD
+            if (rrt.optionSupport("showFinishTOD")) {
+                if (r.getBooleanAttribute("showFinishTOD") == null) {
+                    r.setBooleanAttribute("showFinishTOD", false);
+                    attributeAdded = true;
+                }
+                showFinishTODCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showFinishTOD"));
+                showFinishTODCheckBox.visibleProperty().set(true);
+                showFinishTODCheckBox.managedProperty().set(true);
+                optionsLabel.visibleProperty().set(true);
+            } else {
+                showFinishTODCheckBox.visibleProperty().unbind();
+                showFinishTODCheckBox.visibleProperty().set(false);
+                showFinishTODCheckBox.managedProperty().unbind();
+                showFinishTODCheckBox.managedProperty().set(false);
+            }
+ 
+            
+            // @FXML CheckBox showSplitsCheckBox;
             if (rrt.optionSupport("showSplits")) {
                 if (r.getBooleanAttribute("showSplits") == null) {
                     r.setBooleanAttribute("showSplits", false);
@@ -235,6 +256,24 @@ public class FXMLResultOutputController {
                 showSplitsCheckBox.managedProperty().unbind();
                 showSplitsCheckBox.managedProperty().set(false);
             }
+            
+            // @FXML CheckBox showSplitTODCheckBox; showSplitTOD
+            if (rrt.optionSupport("showSplitTOD")) {
+                if (r.getBooleanAttribute("showSplitTOD") == null) {
+                    r.setBooleanAttribute("showSplitTOD", false);
+                    attributeAdded = true;
+                }
+                showSplitTODCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showSplitTOD"));
+                showSplitTODCheckBox.visibleProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
+                showSplitTODCheckBox.managedProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
+                optionsLabel.visibleProperty().set(true);
+            } else {
+                showSplitTODCheckBox.visibleProperty().unbind();
+                showSplitTODCheckBox.visibleProperty().set(false);
+                showSplitTODCheckBox.managedProperty().unbind();
+                showSplitTODCheckBox.managedProperty().set(false);
+            }
+            
             
             if (rrt.optionSupport("showSegments")) {
                 if (r.getBooleanAttribute("showSegments") == null) {
@@ -452,6 +491,17 @@ public class FXMLResultOutputController {
 //        @FXML CheckBox showGunTimeCheckBox;
         showGunTimeCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
             r.setBooleanAttribute("showGun", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+        // @FXML CheckBox showFinishTODCheckBox;
+        showFinishTODCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showFinishTOD", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        // @FXML CheckBox showSplitTODCheckBox;
+        showSplitTODCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showSplitTOD", new_val);
             resultsDAO.saveRaceReport(r);
         });
         

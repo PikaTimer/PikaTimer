@@ -991,7 +991,10 @@ public class ResultsDAO {
                     else if (!res.getSplitTime(i-1).isZero()) paused = paused.plus(res.getSplitTime(i).minus(res.getSplitTime(i-1)));
                     System.out.println("Paused time for " + pr.getParticipant().getBib() + " " + paused + " from " + res.getSplitTime(i)+ " minus " + res.getSplitTime(i-1) );
                 }
-                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
+                if (! res.getSplitTime(i).isZero()) { 
+                    pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
+                    pr.setSplitTOD(i, res.getSplitTime(i));
+                }
 
                 // Is this a mandatory split that we are missing?
                 if (race.getSplits().get(i-1).getMandatorySplit() && (pr.getSplit(i) == null || pr.getSplit(i).isZero())){
@@ -1029,6 +1032,7 @@ public class ResultsDAO {
             pr.setChipFinish(res.getFinishDuration().minus(chipStartTime).minus(paused));
             pr.setGunFinish(res.getFinishDuration().minus(waveStartTime).minus(paused));
             pr.setSplit(splitSize, pr.getChipFinish());
+            pr.setFinishTOD(res.finishTODProperty().getValue());
         }
 
         // look for any bonus or penalty times

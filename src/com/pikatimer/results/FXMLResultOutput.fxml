@@ -88,6 +88,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   </HBox>
                   <HBox fillHeight="false" spacing="5.0">
                      <children>
+                        <CheckBox fx:id="showFinishTODCheckBox" mnemonicParsing="false" prefWidth="120.0" text="Show Finish TOD" />
+                        <CheckBox fx:id="showSplitTODCheckBox" mnemonicParsing="false" text="Show Split TOD" />
+                     </children>
+                  </HBox>
+                  <HBox fillHeight="false" spacing="5.0">
+                     <children>
                         <CheckBox fx:id="showSegmentsCheckBox" mnemonicParsing="false" prefWidth="120.0" text="Show Segments" />
                         <CheckBox fx:id="showSegmentPaceCheckBox" mnemonicParsing="false" text="Show Segment Pace" />
                      </children>
