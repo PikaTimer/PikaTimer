@@ -28,6 +28,8 @@ import com.pikatimer.race.AwardFilter;
 import com.pikatimer.race.CourseRecord;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
+import com.pikatimer.race.SexCode;
+import com.pikatimer.race.SexGroups;
 import com.pikatimer.race.Wave;
 import com.pikatimer.results.ReportDestination;
 import com.pikatimer.results.RaceOutputTarget;
@@ -111,6 +113,8 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(EventOptions.class);
         cfg.addAnnotatedClass(CustomAttribute.class);
         cfg.addAnnotatedClass(CourseRecord.class);
+        cfg.addAnnotatedClass(SexGroups.class);
+        cfg.addAnnotatedClass(SexCode.class);
         
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());
