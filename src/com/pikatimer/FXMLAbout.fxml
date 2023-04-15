@@ -25,7 +25,7 @@
                   <Insets top="-10.0" />
                </padding>
             </Label>
-            <Hyperlink onAction="#openLink" text="http://pikatimer.com/">
+            <Hyperlink onAction="#openLink" text="https://pikatimer.com/">
                <font>
                   <Font size="18.0" />
                </font>
@@ -56,18 +56,18 @@
             </Label>
             <FlowPane alignment="TOP_CENTER" columnHalignment="CENTER" hgap="5.0">
                <children>
-                  <Hyperlink onAction="#openLink" text="Java / JavaFX: (http://www.java.com/)" />
-                  <Hyperlink onAction="#openLink" text="H2 Database: (http://h2database.com/)" />
-                  <Hyperlink onAction="#openLink" text="Apache Commons (http://commons.apache.org)" />
-                  <Hyperlink onAction="#openLink" text="DataTables (http://datatables.net)" />
-                  <Hyperlink onAction="#openLink" text="Hibernate ORM: (http://hibernate.org/orm/)" />
-                  <Hyperlink onAction="#openLink" text="ControlsFX:  (http://fxexperience.com/controlsfx/)" />
+                  <Hyperlink onAction="#openLink" text="Java / JavaFX: (https://www.java.com/)" />
+                  <Hyperlink onAction="#openLink" text="H2 Database: (https://h2database.com/)" />
+                  <Hyperlink onAction="#openLink" text="Apache Commons (https://commons.apache.org)" />
+                  <Hyperlink onAction="#openLink" text="DataTables (https://datatables.net)" />
+                  <Hyperlink onAction="#openLink" text="Hibernate ORM: (https://hibernate.org/orm/)" />
+                  <Hyperlink onAction="#openLink" text="ControlsFX:  (https://fxexperience.com/controlsfx/)" />
                </children>
                <VBox.margin>
                   <Insets />
                </VBox.margin>
             </FlowPane>
-            <Label alignment="CENTER" contentDisplay="BOTTOM" text="Copyright (C) 2022 John Garner">
+            <Label alignment="CENTER" contentDisplay="BOTTOM" text="Copyright (C) 2014 -&gt; 2023 John Garner">
                <font>
                   <Font size="18.0" />
                </font>
