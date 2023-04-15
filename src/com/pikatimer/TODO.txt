@@ -2,50 +2,57 @@ TODO for 1.6 Release
 
 BUGS: 
     Handle missing participant data (age, sex, etc) when producing reports.
-    Better date import logic (pre-scan the file to determine format?)
-    Figure out report html vs text header editing oddity -- Unable to reproduce in a test env
+    DONE: Better date import logic 
+    Figure out report html vs text header editing oddity (Unable to reproduce in a test env)
 
 Features:
-    Timing Import Export Function: Output to a bib/chip csv
-    Marmot Integration:
+    Timing Export Function: Output to a bib/chip csv
+    Non-Binary Gender Support in Awards 
+
+    DONE: Option to show TOD for finish and splits in CSV report
+    DONE: Marmot Integration:
         Push participant info
         Announcer timing location feed
         Result Feed
-    Select Timer Web App: Simple keypad with enter button, directly feeds to Pika
-    Course Record display in results
+        Auto-Participant sync
+        Announcer timing location
+        Finish time auto-update
+    DONE: Course Record display in results:
         By Overall or Segment
         Overall / Masters / AG categories
-    
-FUTURE: 
 
-2.0 Main Focus and new features:
-    1. RSU Integration
-        a. Participants download
+v1.7: 
+    Features:
+        Select Timer Web App: Simple keypad with enter button, directly feeds to Pika
+        RSU Participant Import
+        Name Cleanup on Import
+
+v2.0 Main Focus and new features:
+    Additional RSU Integration
         b. Participants sync / upload
         b. Finish times w/ and w/o splits
-    2. Course Record support
-    3. Team Results
-    4. Non-Binary Gender Support
-    5. Marmot Integration
-        a. Auto-Participant sync
-        b. Announcer split
-        c. Finish time auto-update
-        d. Leader Board Display
-        e. Results Lookup
-    6. BigHorn (Packet Pickup and Onsite Registration App)?
+    
+    Teams (See below)
+    Web Based Leader Board Display Kiosk
+    Web Based Results Lookup Kiosk
+    Web Based Packet Pickup and Onsite Registration App
+
+    Upgrade to JDK 18+ / JavaFX 18+ 
+
+TBD: 
 
 General: 
     --Cleanup UI and better input field validation
     --TableView Custom Cells:
     --Create a DurationTextField / LocalTimeTextField that "does the right thing"
-    --Create a DurationCell (or whatever) for inline edits of durations?
-    --Upgrade to Hibernate 5.2.x (wait for 5.2.11+?)
+    --Create a DurationCell (or whatever) for inline edits of durations
+    --Upgrade to Hibernate 5.6.x  
     --Internationalization? (Spanish, English, French, German, British, US, etc)
     --editCell that does a commit on focus change (WTF Oracle)?
+    --Switch to json.org via com.guicedee.services rather than the current roll your own mess
 
 Logging 
-  --no more System.out.println crap
-  --switch to log4j or something else
+  --switch to slf4j or something better than System.out.println()
   --enable debug output log viewing
   --enable saving debug output log to file
   --enable toggle to set debug level to Normal/Debug/Trace
@@ -54,8 +61,8 @@ Timing:
     --Ultra Direct: Half hour time zone detection and warning. 
     --Ultra Direct: filter after skew to permit "old" times to be adjusted forward  
     --Ultra Direct: option to auto-set skew if the clock is off and we can't fix it
-    --Ultra Direct: Better exception catching when we ask for a setting that we don't have an value for yet
-    --Outreach client?
+    --Ultra Direct: Better exception catching when we ask for a setting that we don't have a value for yet
+    --Echo Client
 
 Races:
     --Ability to drag/drop splits to reorder
@@ -66,12 +73,9 @@ Races:
 
 Participants:
     --textfield auto complete for city/state 
-    --Clean up import from csv (field formatting, etc)
-    --Custom city name map (e.g. "Colorado Springs" -> "Colo Spgs"
-    --Zip -> City map
-    --Error check the fields (age, gender, city, state, bib, etc). 
-    --sync from/to  active.com / runsignup / other
-
+    --Clean up import (Title Case or Upper Case names, etc)
+    --Custom city name map (e.g. "Colorado Springs" -> "Colo Spgs")
+    
 Teams:
     --Participant -> Teams
     --Team Awards
@@ -79,36 +83,28 @@ Teams:
     --Teams on more than one category?
     --Allow team to cover multiple races?
     --Min number of members for score
+    --for co-ed, number per team of each gender 
 
 Timing:
     -- Option to assign any time to the race/wave start time via right mouse click menu
     -- Lookup Button -> option of manual entry of wave start times?
 
 Overrides 
-    -- Make the bib an autocomplete text field based on the registered runners
     -- Right-Click to create an override from a cooked time
 
 Results:
-    --Auto-assign time to split based on time vs other splits (and % time for that wave vs the finish time). 
-    --Double-Click for review screen (show all times, option to change wave or dq participant, etc)
+    --Double-Click participat for review screen (show all times, option to change wave or dq participant, etc)
 
 Reports:
-    --Auto-print of text with each new page or after X number of runners?
     --Text output with header/FormFeed after X number of lines. 
-    --Course Record note in overall text/html reports
     --Publish to 3rd party results web site (e.g. RunSignUp.com)? 
     --Receipt printer dialog box?
     --Better print option for enhanced HTML output (show a runner's splits, etc)
-    --AMP output and caching for mobile? 
-
-Team Results: V2.0+
-Male, Female, Coed, user selected variable (city, state, custom, etc)
-scoring numbers per team (1->N)
-for co-ed, number per team of each gender (1->(N-1))
+    --Link to video / photos
 
 
 Options tab:
-Active.com/RunSignUp/Outreach Account info profiles
+Account info profiles (Registration, FTP, etc) w/ option to persist to the local user's preferences
 Gender Display (Men/Women, Male/Female, custom)
 Non-Binary Gender option
 
