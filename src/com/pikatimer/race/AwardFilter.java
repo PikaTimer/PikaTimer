@@ -36,14 +36,16 @@ public class AwardFilter {
     private final StringProperty attributeProperty = new SimpleStringProperty(); 
     private final StringProperty comparisonTypeProperty = new SimpleStringProperty(); 
     private final StringProperty referenceValueProperty = new SimpleStringProperty(); 
+    
+    private Boolean sexGroupFilter = false;
 
 
     static private AlphanumericComparator ac = new AlphanumericComparator();
     
     
     public AwardFilter(){
-        
     }
+    
     public AwardFilter(String a, String c, String v){
         attributeProperty.setValue(a);
         comparisonTypeProperty.setValue(c);
@@ -94,6 +96,11 @@ public class AwardFilter {
         return filter(pr.getParticipant(), race);
     }
     public Boolean filter (Participant p, Race race) {
+        
+        if (sexGroupFilter) {
+            return race.getSexGroups().eligibilityFilter(p);
+        }
+        
         String attribute = attributeProperty.getValue();
         String value = referenceValueProperty.getValue();
         String comparisonType = comparisonTypeProperty.getValue();
@@ -170,6 +177,13 @@ public class AwardFilter {
             return false;
         }
         return true;
+    }
+
+    // Special instance for filtering based on the race sexGroup setting
+    public static AwardFilter sexGroup() {
+        AwardFilter af = new AwardFilter();
+        af.sexGroupFilter = true;
+        return af;
     }
     
 }

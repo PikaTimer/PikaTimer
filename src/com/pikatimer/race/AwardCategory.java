@@ -454,6 +454,8 @@ public class AwardCategory {
         return skewAttributeProperty; 
     }
     
+        // We send back a Pair consisting for a map of the subCategory to the winners
+        // and a list of results elliglble for downstream awards.
     public Pair<Map<String,List<AwardWinner>>,List<ProcessedResult>> process(List<ProcessedResult> pr){
         List<AwardFilter> processFilters;
         List<String> processSplitBy;
@@ -468,25 +470,27 @@ public class AwardCategory {
         // Let's make a copy for downstream contenders
         List<ProcessedResult> downstreamContenders =new ArrayList(pr);
         
-        // We send back a Pair consisting for a map of the subCategory to the winners
-        // and a list of results elliglble for downstream awards.
+
         // if we are not a Custom award type, setup some default
         // filters and splitBy arrays.
         switch (typeProperty.get()) {
             case OVERALL:
                 // no Filter
                 processFilters = new ArrayList();
+                processFilters.add(new AwardFilter().sexGroup());
                 processSplitBy = Arrays.asList("sex");
                 timingPointTypeProperty.setValue("FINISH");
                 break;
             case MASTERS:
                 processFilters= new ArrayList();
+                processFilters.add(new AwardFilter().sexGroup());
                 processFilters.add(new AwardFilter("age",">=",mastersAgeProperty.getValue().toString()));
                 processSplitBy = Arrays.asList("sex");
                 timingPointTypeProperty.setValue("FINISH");
                 break;
             case AGEGROUP:
                 processFilters= new ArrayList();
+                processFilters.add(new AwardFilter().sexGroup());
                 processSplitBy = Arrays.asList("sex","AG");
                 timingPointTypeProperty.setValue("FINISH");
                 break;
@@ -496,6 +500,7 @@ public class AwardCategory {
                 else processFilters = filters;
                 if (splitBy == null || customSubdivideProperty.equals(FALSE)) processSplitBy = new ArrayList();
                 else {processSplitBy = new ArrayList(); processSplitBy.addAll(splitBy);}
+                if (processSplitBy.contains("sex")) processFilters.add(new AwardFilter().sexGroup());
                 if (timingPointTypeProperty.getValueSafe().equals("SPLIT")) {
                     race.getSplits().forEach(s -> {
                         if (s.getID().equals(timingPointIDProperty.get())) timeID.setValue(s.getPosition());
@@ -503,8 +508,6 @@ public class AwardCategory {
                 } else if (timingPointTypeProperty.getValueSafe().equals("SEGMENT")) {
                     timeID.setValue(timingPointIDProperty.get());
                 } 
-                
-                
                 break;
         }
             
@@ -569,28 +572,48 @@ public class AwardCategory {
         });
         
         // Step 3: Split
+        
+        // Notes: This gets fun with the "Open/Female Inclusive" SexHandling option since F can be in _both_ Open and Female. 
         Map<String,List<ProcessedResult>> contendersMap = new HashMap();
         contendersList.forEach(r -> {
-            String splitCat = "";
+            List<StringBuilder> categories = new ArrayList();
+            categories.add(new StringBuilder()); // default empty string
             
             // What is their split category string?
             for(int i=0; i<processSplitBy.size();i++){
                 String attrib = processSplitBy.get(i);
                 if (attrib.startsWith("sex")) {
-                    if (r.getSex().startsWith("M")) splitCat += "Male ";
-                    else splitCat += "Female ";
+                    List<String> sg = race.getSexGroups().listSexGroups(r.getParticipant());
+                    // we are going to cheat since we know that this is either a 1 or a 2
+                    // and that this is the only case where we can add another category 
+                    switch (sg.size()) {
+                        case 1:
+                            categories.forEach(sb -> sb.append(sg.get(0) + " "));
+                            break;
+                        case 2:
+                            categories.add(new StringBuilder(categories.get(0).toString())); // copy the string
+                            for(int c = 0; c < sg.size(); c++){
+                                categories.get(c).append(sg.get(c) + " ");
+                            }
+                            break;
+                        default:
+                            // We should never get here because they should have been filtered out in step 1
+                            break;
+                    }
                 } else if (attrib.equals("AG")) {
-                    splitCat += r.getAGCode() + " ";
+                    categories.forEach(sb -> sb.append(r.getAGCode() + " ")); //r.getAGCode() + " ";
                 } else if (attrib.matches("^\\d+$")) { // custom attribute
-                    try {splitCat += r.getParticipant().getCustomAttribute(Integer.parseInt(attrib)).getValueSafe() + " ";} catch (Exception e){}
+                    try {categories.forEach(sb -> sb.append(r.getParticipant().getCustomAttribute(Integer.parseInt(attrib)).getValueSafe() + " "));} catch (Exception e){}
                 } else {
-                    splitCat += r.getParticipant().getNamedAttribute(attrib) + " ";
+                    categories.forEach(sb -> sb.append(r.getParticipant().getNamedAttribute(attrib) + " "));
                 }
             }
-            splitCat = splitCat.trim();
-            if (!contendersMap.containsKey(splitCat)) contendersMap.put(splitCat,new ArrayList());
-            contendersMap.get(splitCat).add(r);
-        
+            
+            categories.forEach(sb -> {
+                String splitCat = sb.toString().trim();
+                if (!contendersMap.containsKey(splitCat)) contendersMap.put(splitCat,new ArrayList());
+                contendersMap.get(splitCat).add(r);
+            });
         });
         
         // Step 4: calculate award depths
@@ -601,8 +624,23 @@ public class AwardCategory {
             
             // first, figure oout how many folks are in play
             List<Participant> part;
-            if (AwardDepthType.BYREG.equals(depthTypeProperty.get())) part = ParticipantDAO.getInstance().listParticipants();
-            else part = ResultsDAO.getInstance().getResults(race.getID()).stream()
+            if (AwardDepthType.BYREG.equals(depthTypeProperty.get())) {
+                part = ParticipantDAO.getInstance().listParticipants().stream().filter( 
+                    p -> { 
+                        // Are they in _this_ race?
+                        p.wavesObservableList().forEach(w -> { race.equals(w.getRace()); }); 
+                        Boolean inRace = false; 
+                        for (int w = 0; w < p.wavesObservableList().size(); w++) {
+                            if (race.equals(p.wavesObservableList().get(w).getRace())) inRace = true;
+                        }
+                        if (inRace == false) return false;
+                        // Are they filtered out?
+                        for(int i=0; i< processFilters.size(); i++){
+                            if (processFilters.get(i).filter(ParticipantDAO.getInstance().getParticipantByBib(p.getBib()),race) == false) return false;
+                        }
+                        return true;
+                    }).collect(Collectors.toList());
+            } else part = ResultsDAO.getInstance().getResults(race.getID()).stream()
                 .filter(p -> {
                     for(int i=0; i< processFilters.size(); i++){
                         if (processFilters.get(i).filter(ParticipantDAO.getInstance().getParticipantByBib(p.getBib()),race) == false) return false;
@@ -615,24 +653,68 @@ public class AwardCategory {
             // now sort them into subdivisions.... 
             Map<String,Integer> subMap = new HashMap();
             part.forEach(r -> {
-                String splitCat = "";
+                
+                
+                
+                
+                
+                List<StringBuilder> categories = new ArrayList();
+                categories.add(new StringBuilder()); // default empty string
+
                 // What is their split category string?
                 for(int i=0; i<processSplitBy.size();i++){
                     String attrib = processSplitBy.get(i);
                     if (attrib.startsWith("sex")) {
-                        if (r.getSex().startsWith("M")) splitCat += "Male ";
-                        else splitCat += "Female ";
+                        List<String> sg = race.getSexGroups().listSexGroups(r);
+                        // we are going to cheat since we know that this is either a 1 or a 2
+                        // and that this is the only case where we can add another category 
+                        switch (sg.size()) {
+                            case 1:
+                                categories.forEach(sb -> sb.append(sg.get(0) + " "));
+                                break;
+                            case 2:
+                                categories.add(new StringBuilder(categories.get(0).toString())); // copy the string
+                                for(int c = 0; c < sg.size(); c++){
+                                    categories.get(c).append(sg.get(c) + " ");
+                                }
+                                break;
+                            default:
+                                // We should never get here because they should have been filtered out in step 1
+                                break;
+                        }
                     } else if (attrib.equals("AG")) {
-                        splitCat += race.getAgeGroups().ageToAGString(r.getAge()) + " ";
+                        categories.forEach(sb -> sb.append(race.getAgeGroups().ageToAGString(r.getAge()) + " ")); //r.getAGCode() + " ";
                     } else if (attrib.matches("^\\d+$")) { // custom attribute
-                        try {splitCat += r.getCustomAttribute(Integer.parseInt(attrib)).getValueSafe() + " ";} catch (Exception e){}
+                        try {categories.forEach(sb -> sb.append(r.getCustomAttribute(Integer.parseInt(attrib)).getValueSafe() + " "));} catch (Exception e){}
                     } else {
-                        splitCat += r.getNamedAttribute(attrib) + " ";
+                        categories.forEach(sb -> sb.append(r.getNamedAttribute(attrib) + " "));
                     }
                 }
-                splitCat = splitCat.trim();
-                if (!subMap.containsKey(splitCat)) subMap.put(splitCat,1);
-                else subMap.put(splitCat, subMap.get(splitCat) + 1);
+
+                categories.forEach(sb -> {
+                    String splitCat = sb.toString().trim();
+                    if (!subMap.containsKey(splitCat)) subMap.put(splitCat,1);
+                    else subMap.put(splitCat, subMap.get(splitCat) + 1);
+                });
+//                
+//                String splitCat = "";
+//                // What is their split category string?
+//                for(int i=0; i<processSplitBy.size();i++){
+//                    String attrib = processSplitBy.get(i);
+//                    if (attrib.startsWith("sex")) {
+//                        if (r.getSex().startsWith("M")) splitCat += "Male ";
+//                        else splitCat += "Female ";
+//                    } else if (attrib.equals("AG")) {
+//                        splitCat += race.getAgeGroups().ageToAGString(r.getAge()) + " ";
+//                    } else if (attrib.matches("^\\d+$")) { // custom attribute
+//                        try {splitCat += r.getCustomAttribute(Integer.parseInt(attrib)).getValueSafe() + " ";} catch (Exception e){}
+//                    } else {
+//                        splitCat += r.getNamedAttribute(attrib) + " ";
+//                    }
+//                }
+//                splitCat = splitCat.trim();
+//                if (!subMap.containsKey(splitCat)) subMap.put(splitCat,1);
+//                else subMap.put(splitCat, subMap.get(splitCat) + 1);
             });
             
             // now create the depthMap based on the registration numbers

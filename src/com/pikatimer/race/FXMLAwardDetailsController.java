@@ -362,7 +362,10 @@ public class FXMLAwardDetailsController {
     
     private void populateSexHandlingSettings(Race r){
         if (r == null) return;
-        
+        if (r.getSexGroups() == null){
+            r.setSexGroups(new SexGroups());
+            r.getSexGroups().setHandling(SexHandling.OFI);
+        }
         if (r.getSexGroups().sexCodeListProperty().isEmpty() ) {
             System.out.println("Empty SexCodeList. Adding defaults");
             r.getSexGroups().addSexCode(new SexCode("F","Female"));

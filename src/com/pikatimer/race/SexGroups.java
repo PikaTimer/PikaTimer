@@ -16,6 +16,8 @@
  */
 package com.pikatimer.race;
 
+import com.pikatimer.participant.Participant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,6 +150,41 @@ public class SexGroups {
         System.out.println("SexGroups:removeSexCode() called");
         sexCodeObservableList.remove(sc);
         sexCodeList = sexCodeObservableList;
+    }
+    
+    List<String> listSexGroups(Participant p){
+        List<String> s = new ArrayList();
+        switch(sexHandling) {
+            case OFI: //"Open/Female (Inclusive)")
+                s.add("Open");
+                if (p.getSex().startsWith("F")) s.add(getLabelFromCode(p.getSex()));
+                break;
+            case OFE: // "Open/Female (Exclusive)"),
+                if (p.getSex().startsWith("F")) s.add(getLabelFromCode(p.getSex()));
+                else s.add("Open");
+                break; 
+            case ALL: // "Awards for each value"),
+                if (! p.getSex().isEmpty()) s.add(getLabelFromCode(p.getSex()));
+                break; 
+            case MF: // "M/F Only");              
+                if (p.getSex().startsWith("M") || p.getSex().startsWith("F")) s.add(getLabelFromCode(p.getSex()));
+                break; 
+        }
+        return s;
+    }
+
+    Boolean eligibilityFilter(Participant p) {
+        switch(sexHandling) {
+            case OFI: //"Open/Female (Inclusive)")
+            case OFE: // "Open/Female (Exclusive)"),
+                return true;
+            case ALL: // "Awards for each value"),
+                if (p.getSex().isEmpty()) return false;
+            case MF: // "M/F Only");              
+                if (p.getSex().startsWith("M") || p.getSex().startsWith("F")) return true;
+                return false; 
+        }
+        return true;
     }
     
 }
