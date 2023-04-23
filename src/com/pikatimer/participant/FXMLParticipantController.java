@@ -20,6 +20,8 @@ import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
 import com.pikatimer.race.WaveAssignment;
+import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.AlphanumericComparator;
 import com.pikatimer.util.WaveStringConverter;
 import io.datafx.controller.flow.Flow;
@@ -862,6 +864,8 @@ public class FXMLParticipantController  {
             
             // perform the actual update
             participantDAO.updateParticipant(editedParticipant);
+            TimingDAO.getInstance().reprocessBib(editedParticipant.getBib());
+            ResultsDAO.getInstance().reprocessAllCRs();
             
             // reset the fields
             resetForm();   

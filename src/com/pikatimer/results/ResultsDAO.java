@@ -342,14 +342,17 @@ public class ResultsDAO {
         
         crs.forEach(cr -> {
             System.out.println("ResultsDAO::reprocessAllCRs: SegmentID=" + cr.getSegmentID() + " " + cr.getSex() + " " + cr.getCategory());
-            Result existing = cr.newRecord().get();
+            //Result existing = cr.newRecord().get();
+            
+            cr.clearNewRecord();
+            
             results.forEach(r -> {
                 cr.checkRecord(r);
             });
             Result newRes = cr.newRecord().getValue();
-            if (existing != null && (newRes == null || !existing.getBib().equals(newRes.getBib()))) {
-                existing.getCourseRecords().remove(cr);
-            }
+//            if (existing != null && (newRes == null || !existing.getBib().equals(newRes.getBib()))) {
+//                existing.getCourseRecords().remove(cr);
+//            }
         });
         
     }

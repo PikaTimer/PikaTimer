@@ -725,6 +725,10 @@ public class TimingDAO {
         resultsQueue.add(o.getBib());
     }
     
+    public void reprocessBib(String bib){
+        resultsQueue.add(bib);
+    }
+    
     public void deleteOverride(TimeOverride o) {
         // Just in case.... This will make sure we initialized the overrideList
         getOverrides();

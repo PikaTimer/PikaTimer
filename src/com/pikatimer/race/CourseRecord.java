@@ -114,6 +114,13 @@ public class CourseRecord implements Comparable<CourseRecord>{
         return true;
     }
     
+    public void clearNewRecord(){
+        if (newRecord.get() != null) newRecord.get().delCourseRecord(this);
+        newRecord.set(null);
+        newDuration = null;
+        newRecordDurationProperty.set(Duration.ZERO);
+    }
+    
     public void checkRecord(Result r){
         if (!checkRecordEligible(r)) return; 
         
