@@ -180,6 +180,7 @@ public class SexGroups {
                 return true;
             case ALL: // "Awards for each value"),
                 if (p.getSex().isEmpty()) return false;
+                return true;
             case MF: // "M/F Only");              
                 if (p.getSex().startsWith("M") || p.getSex().startsWith("F")) return true;
                 return false; 

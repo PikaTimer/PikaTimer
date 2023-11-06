@@ -122,6 +122,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <CheckBox fx:id="showCRsCheckBox" mnemonicParsing="false" prefHeight="17.0" prefWidth="138.0" text="Show Course Records" />
                      </children>
                   </HBox>
+                  <CheckBox fx:id="showEmailCheckBox" mnemonicParsing="false" text="Show Email Addresses" />
                   <CheckBox fx:id="hideCustomHeadersCheckBox" mnemonicParsing="false" text="Hide Custom Headers/Footers" />
                </children>
             </VBox>

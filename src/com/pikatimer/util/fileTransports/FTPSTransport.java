@@ -326,7 +326,7 @@ public class FTPSTransport implements FileTransport{
 
     @Override
     public void refreshConfig() {
-        
+        try {
         // Get the hostname, username, password, basePath
         password=parent.getPassword();
         username=parent.getUsername();
@@ -347,7 +347,12 @@ public class FTPSTransport implements FileTransport{
                     
         fatalError=false;
         needConfigRefresh = false;
-    
+        } catch (Exception e){
+            System.out.println("FTPSTransport::refreshConfig Exception!");
+            e.printStackTrace();
+            fatalError=true;
+            needConfigRefresh = true;
+        }
     }    
 
     @Override

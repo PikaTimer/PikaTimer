@@ -73,6 +73,7 @@ public class FXMLResultOutputController {
     @FXML CheckBox hideCustomHeadersCheckBox;
     @FXML CheckBox showFinishTODCheckBox;
     @FXML CheckBox showSplitTODCheckBox;
+    @FXML CheckBox showEmailCheckBox;
     
     @FXML HBox customAttributesHBox;
     @FXML CheckBox customAttributesCheckBox;
@@ -274,6 +275,22 @@ public class FXMLResultOutputController {
                 showSplitTODCheckBox.managedProperty().set(false);
             }
             
+            // @FXML CheckBox showEmailCheckBox; showEmailCheckBox
+            if (rrt.optionSupport("showEmail")) {
+                if (r.getBooleanAttribute("showEmail") == null) {
+                    r.setBooleanAttribute("showEmail", false);
+                    attributeAdded = true;
+                }
+                showEmailCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showEmail"));
+                showEmailCheckBox.visibleProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
+                showEmailCheckBox.managedProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
+                optionsLabel.visibleProperty().set(true);
+            } else {
+                showEmailCheckBox.visibleProperty().unbind();
+                showEmailCheckBox.visibleProperty().set(false);
+                showEmailCheckBox.managedProperty().unbind();
+                showEmailCheckBox.managedProperty().set(false);
+            }
             
             if (rrt.optionSupport("showSegments")) {
                 if (r.getBooleanAttribute("showSegments") == null) {
@@ -502,6 +519,12 @@ public class FXMLResultOutputController {
         // @FXML CheckBox showSplitTODCheckBox;
         showSplitTODCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
             r.setBooleanAttribute("showSplitTOD", new_val);
+            resultsDAO.saveRaceReport(r);
+        });
+        
+        // @FXML CheckBox showEmailCheckBox;
+        showEmailCheckBox.selectedProperty().addListener((ObservableValue<? extends Boolean> ov, Boolean old_val, Boolean new_val) -> {
+            r.setBooleanAttribute("showEmail", new_val);
             resultsDAO.saveRaceReport(r);
         });
         

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 John Garner <segfaultcoredump@gmail.com>
+ * Copyright (C) 2023 John Garner <segfaultcoredump@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -190,8 +190,8 @@ public class OverallHTML5 implements RaceReportType{
         }
         
         report +=   "<!-- Stylesheets / JS Includes-->\n" ;
-        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.11.0/fh-3.1.9/r-2.2.9/sc-2.0.5/datatables.min.css\"/>\n" ;
-        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.11.0/b-2.0.0/b-html5-2.0.0/b-print-2.0.0/r-2.2.9/sc-2.0.5/datatables.min.css\"/>" ;
+        if (inProgress) report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.7.0/dt-1.13.7/fh-3.4.0/r-2.5.0/sc-2.3.0/datatables.min.css\"/>\n" ;
+        else report +=   "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.datatables.net/v/dt/jq-3.7.0/jszip-3.10.1/dt-1.13.7/b-2.4.2/b-html5-2.4.2/b-print-2.4.2/r-2.5.0/sc-2.3.0/datatables.min.css\"/>" ;
         report +=   "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css\">\n" +
                 "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.4.6/css/flag-icon.min.css\">\n" +
                     " \n" ;
@@ -388,13 +388,13 @@ public class OverallHTML5 implements RaceReportType{
         report += "<!-- Start DataTables -->\n";
         
         
-        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/dt-1.11.0/fh-3.1.9/r-2.2.9/sc-2.0.5/datatables.min.js\"></script>\n" ;
+        if (inProgress) report += "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.7.0/dt-1.13.7/fh-3.4.0/r-2.5.0/sc-2.3.0/datatables.min.js\"></script>\n" ;
         else report +=   "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js\"></script>\n" +
                         "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js\"></script>\n" +
-                        "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.3.1/jszip-2.5.0/dt-1.11.0/b-2.0.0/b-html5-2.0.0/b-print-2.0.0/fh-3.1.9/r-2.2.9/sc-2.0.5/datatables.min.js\"></script>\n";
+                        "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/v/dt/jq-3.7.0/jszip-3.10.1/dt-1.13.7/b-2.4.2/b-html5-2.4.2/b-print-2.4.2/r-2.5.0/sc-2.3.0/datatables.min.js\"></script>\n";
 
         report +=           " \n" +
-                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.10.20/sorting/natural.js\"></script>\n";
+                    "<script type=\"text/javascript\" src=\"https://cdn.datatables.net/plug-ins/1.13.6/sorting/natural.js\"></script>\n";
 
         report += "<script type=\"text/javascript\" class=\"init\">\n" +
                     " // nth(n) function from http://stackoverflow.com/questions/13627308/add-st-nd-rd-and-th-ordinal-suffix-to-a-number \n" + 

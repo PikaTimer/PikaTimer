@@ -60,6 +60,7 @@ public class OverallCSV implements RaceReportType{
     Boolean showAwards = true;
     Boolean showFinishTOD = false;
     Boolean showSplitTOD = false;
+    Boolean showEmail = false;
     
     List<CustomAttribute> customAttributesList = new ArrayList();
     
@@ -78,6 +79,7 @@ public class OverallCSV implements RaceReportType{
         supportedOptions.put("showAwards",true);
         supportedOptions.put("showFinishTOD",false);
         supportedOptions.put("showSplitTOD",false);
+        supportedOptions.put("showEmail",false);
 
     }
     
@@ -119,6 +121,7 @@ public class OverallCSV implements RaceReportType{
         showAwards = supportedOptions.get("showAwards");
         showFinishTOD = supportedOptions.get("showFinishTOD");
         showSplitTOD = supportedOptions.get("showSplitTOD");
+        showEmail = supportedOptions.get("showEmail");
                 
         
         String dispFormat = race.getStringAttribute("TimeDisplayFormat").replace("[","").replace("}","");
@@ -159,6 +162,8 @@ public class OverallCSV implements RaceReportType{
         report += "City,"; // 18L for the city
         report += "ST,"; // 4C for the state code
         report += "CO,"; // country
+        
+        if (showEmail) report += "EMail,";
          
         if (showCustomAttributes) {
             for( CustomAttribute a: customAttributesList){
@@ -285,6 +290,8 @@ public class OverallCSV implements RaceReportType{
             chars.append("\"").append(pr.getParticipant().getCity()).append("\"").append(",");
             chars.append("\"").append(pr.getParticipant().getState()).append("\"").append(",");
             chars.append("\"").append(pr.getParticipant().getCountry()).append("\"").append(",");
+            
+            if (showEmail) chars.append("\"").append(pr.getParticipant().getEmail()).append("\"").append(",");
 
 
             if (showCustomAttributes) {

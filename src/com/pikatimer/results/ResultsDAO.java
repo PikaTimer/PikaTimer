@@ -233,14 +233,19 @@ public class ResultsDAO {
                             });
                             pendingResults.stream().forEach(r -> {
                                 if (!r.isEmpty() && r.getFinish()>0) {
-                                    String race = "";
-                                    if (RaceDAO.getInstance().listRaces().size() > 1) 
-                                        race = RaceDAO.getInstance().getRaceByID(r.getRaceID()).getRaceName();
+                                    String raceName = "";
+                                    Race race = RaceDAO.getInstance().getRaceByID(r.getRaceID());
+                                    
+                                    if (RaceDAO.getInstance().listRaces().size() > 1) raceName = race.getRaceName();
+                                        
                                     String bib = r.getBib();
-                                    String time = DurationFormatter.durationToString(r.getFinishDuration().minus(r.getStartDuration()), "[HH:]MM:SS");
+                                    //String time = DurationFormatter.durationToString(r.getFinishDuration().minus(r.getStartDuration()), "[HH:]MM:SS");
+                                    ProcessedResult pr = processResult(r,race);
+                                    String time = DurationFormatter.durationToString(pr.getChipFinish(), "[HH:]MM:SS");
+                                    
                                     JSONObject json = new JSONObject();
                                     json.put("Bib", bib);
-                                    json.put("Race", race);
+                                    json.put("Race", raceName);
                                     json.put("Time", time);
                                     HTTPServices.getInstance().publishEvent("RESULT", json);
                                 }
@@ -1105,14 +1110,13 @@ public class ResultsDAO {
                     // calculate placement in Overall, Gender, AG
                     Map<String,Integer> placementCounter = new HashMap();
                     placementCounter.put("overall", 1);
-                    placementCounter.put("M",1);
-                    placementCounter.put("F",1);
-                    placementCounter.put("X",1);
+
 
                     results.forEach(pr -> {
                         pr.setOverall(placementCounter.get("overall"));
                         placementCounter.put("overall", pr.getOverall()+1);
                        
+                        placementCounter.putIfAbsent(pr.getSex(), 1);
                         pr.setSexPlace(placementCounter.get(pr.getSex()));
                         placementCounter.put(pr.getSex(), pr.getSexPlace()+1);
 
@@ -1128,9 +1132,7 @@ public class ResultsDAO {
                         });
                         Map<String,Integer> segPlCounter = new HashMap();
                         segPlCounter.put("overall", 1);
-                        segPlCounter.put("M",1);
-                        segPlCounter.put("F",1);
-                        segPlCounter.put("X",1);
+
                         
                         results.forEach(pr -> {
                             if (pr.getSegmentTime(seg.getID()) == null) return;
@@ -1140,6 +1142,7 @@ public class ResultsDAO {
                             pr.setSegmentOverallPlace(seg.getID(),segPlCounter.get("overall"));
                             segPlCounter.put("overall", segPlCounter.get("overall")+1);
                             
+                            segPlCounter.putIfAbsent(pr.getSex(), 1);
                             pr.setSegmentSexPlace(seg.getID(),segPlCounter.get(pr.getSex()));
                             segPlCounter.put(pr.getSex(), segPlCounter.get(pr.getSex())+1);
 

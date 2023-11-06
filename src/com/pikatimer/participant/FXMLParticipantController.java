@@ -92,6 +92,7 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -131,7 +132,8 @@ public class FXMLParticipantController  {
     @FXML private TextField middleNameTextField;
     @FXML private TextField lastNameField;
     @FXML private TextField ageTextField;
-    @FXML private PrefixSelectionChoiceBox<String> sexPrefixSelectionChoiceBox;
+    //@FXML private PrefixSelectionChoiceBox<String> sexPrefixSelectionChoiceBox;
+    @FXML private TextField sexTextField;
     @FXML private TextField cityTextField; 
     @FXML private TextField stateTextField;
     @FXML private TextField zipTextField;
@@ -530,7 +532,11 @@ public class FXMLParticipantController  {
             }
         });
         
-        sexPrefixSelectionChoiceBox.setItems(FXCollections.observableArrayList("M","F") );
+        //sexPrefixSelectionChoiceBox.setItems(FXCollections.observableArrayList("M","F") );
+        sexTextField.setTextFormatter(new TextFormatter<>((change) -> {
+            change.setText(change.getText().toUpperCase());
+            return change;
+        }));
         
         // TODO: Get the CellFactory to work
         raceColumn.setCellValueFactory(person -> person.getValue().wavesChangedCounterProperty());
@@ -592,7 +598,8 @@ public class FXMLParticipantController  {
             }
             if (newValue.equals(oldValue)) return;
             
-            sexPrefixSelectionChoiceBox.requestFocus();
+            //sexPrefixSelectionChoiceBox.requestFocus();
+            sexTextField.requestFocus();
             ageTextField.setText(Integer.toString(Period.between(newValue, Event.getInstance().getLocalEventDate()).getYears()));
         
         });
@@ -604,7 +611,8 @@ public class FXMLParticipantController  {
                 //If it is now null, just bail
                 if (birthdayDatePicker.getValue() == null) return; 
                 
-                else sexPrefixSelectionChoiceBox.requestFocus();
+                //else sexPrefixSelectionChoiceBox.requestFocus();
+                else sexTextField.requestFocus();
             }
         });
         
@@ -640,7 +648,8 @@ public class FXMLParticipantController  {
                 p.setAge(0);
             }
             //p.setSex(sexTextField.getText());
-            p.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
+            //p.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
+            p.setSex(sexTextField.getText());
             p.setState(stateTextField.getText());
             p.setCity(cityTextField.getText());
             p.setZip(zipTextField.getText());
@@ -720,7 +729,8 @@ public class FXMLParticipantController  {
         editedParticipant=p;
         waveComboBox.getItems().setAll(RaceDAO.getInstance().listWaves());
         //sexTextField.setText(p.getSex());
-        sexPrefixSelectionChoiceBox.getSelectionModel().select(p.getSex());
+        //sexPrefixSelectionChoiceBox.getSelectionModel().select(p.getSex());
+        sexTextField.setText(p.getSex());
         ageTextField.setText(p.getAge().toString());
         bibTextField.setText(p.getBib());
         firstNameField.setText(p.getFirstName());
@@ -811,7 +821,8 @@ public class FXMLParticipantController  {
                 editedParticipant.setAge(0);
             }
             
-            editedParticipant.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
+            //editedParticipant.setSex(sexPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
+            editedParticipant.setSex(sexTextField.getText());
             editedParticipant.setCity(cityTextField.getText());
             editedParticipant.setState(stateTextField.getText());
             editedParticipant.setZip(zipTextField.getText());
@@ -884,7 +895,8 @@ public class FXMLParticipantController  {
         waveComboBox.getCheckModel().check(0);
 
 
-        sexPrefixSelectionChoiceBox.getSelectionModel().clearSelection();
+        //sexPrefixSelectionChoiceBox.getSelectionModel().clearSelection();
+        sexTextField.setText("");
         ageTextField.setText("");
         bibTextField.setText("");
         firstNameField.setText("");

@@ -4,27 +4,30 @@ BUGS:
     Handle missing participant data (age, sex, etc) when producing reports.
     DONE: Better date import logic 
     Figure out report html vs text header editing oddity (Unable to reproduce in a test env)
+    FTPS exception handling loop
 
 Features:
     Timing Export Function: Output to a bib/chip csv
-    Non-Binary Gender Support in Awards 
+    Generic bib/chip -> time importer
 
-    DONE: Option to show TOD for finish and splits in CSV report
+    Done: Non-Binary Gender Support in Awards 
+
+    DONE: Option to show Time of Day for finish and splits in CSV report
     DONE: Marmot Integration:
-        Push participant info
-        Announcer timing location feed
-        Result Feed
-        Auto-Participant sync
-        Announcer timing location
-        Finish time auto-update
+        -Push participant info
+        -Announcer timing location feed
+        -Result Feed
+        -Auto-Participant sync
+        -Announcer timing location
+        -Finish time auto-update
     DONE: Course Record display in results:
-        By Overall or Segment
-        Overall / Masters / AG categories
+        -By Overall or Segment
+        -Overall / Masters / AG categories
 
 v1.7: 
     Features:
         Select Timer Web App: Simple keypad with enter button, directly feeds to Pika
-        RSU Participant Import
+        RSU Participant Import/Sync
         Name Cleanup on Import
 
 v2.0 Main Focus and new features:
@@ -37,7 +40,7 @@ v2.0 Main Focus and new features:
     Web Based Results Lookup Kiosk
     Web Based Packet Pickup and Onsite Registration App
 
-    Upgrade to JDK 18+ / JavaFX 18+ 
+    Upgrade to JDK 21 LTS and JavaFX LTS 
 
 TBD: 
 
@@ -67,7 +70,7 @@ Timing:
 Races:
     --Ability to drag/drop splits to reorder
     --Cumulative vs differential distance for splits specification?
-    --Ability to set split specific distance unit for a split
+    --Ability to set split specific distance unit
     --Relay Race Support
     --Lap Race Support
 
