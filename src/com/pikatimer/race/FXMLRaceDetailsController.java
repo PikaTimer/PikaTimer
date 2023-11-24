@@ -1200,7 +1200,7 @@ public class FXMLRaceDetailsController {
         newSplit.setTimingLocation(TimingDAO.getInstance().listTimingLocations().get(1));
         System.out.println("   SelectedItems().size = " + raceSplitsTableView.getSelectionModel().getSelectedItems().size());
         if(raceSplitsTableView.getSelectionModel().getSelectedItems().size()> 0 ) {
-            Integer pos = raceSplitsTableView.getSelectionModel().getSelectedItem().getPosition(); 
+            Integer pos = raceSplitsTableView.getSelectionModel().getSelectedItem().getPosition() +1; 
             //pos++; //adjust for the hidden start split
             System.out.println("   pos is now " + pos);
             if (pos > 1) {
@@ -1211,7 +1211,7 @@ public class FXMLRaceDetailsController {
                 newSplit.setSplitDistance(a.add( (b.subtract(a)).divide(BigDecimal.valueOf(2)) ) );
                 newSplit.setPosition(pos);
             }
-        } else { // nothing selected...
+        } else { // nothing selected... Add to the end
             BigDecimal a = selectedRace.getSplits().get(0).getSplitDistance();
                 BigDecimal b = selectedRace.getSplits().get(1).getSplitDistance();
                 BigDecimal c = a.add( (b.subtract(a)).divide(BigDecimal.valueOf(2)) );
