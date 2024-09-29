@@ -94,6 +94,7 @@ public class Race {
 
     private RaceAwards awards;
     private AgeGroups ageGroups;
+    private SexGroups sexGroups = new SexGroups(); 
 
     private Map<String,String> attributes = new HashMap();
     private Map<String,Integer> intAttributes = new HashMap();
@@ -322,6 +323,17 @@ public class Race {
         ageGroups = a;
         // make sure awards is linked back to us
         if (ageGroups != null && ageGroups.getRace() != this) ageGroups.setRace(this);
+    }
+    
+    @OneToOne(cascade=CascadeType.ALL,fetch = FetchType.EAGER)  
+    @PrimaryKeyJoinColumn
+    public SexGroups getSexGroups() {
+        return sexGroups;
+    }
+    public void setSexGroups(SexGroups a) {
+        sexGroups = a;
+        // make sure awards is linked back to us
+        if (sexGroups != null && sexGroups.getRace() != this) sexGroups.setRace(this);
     }
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)

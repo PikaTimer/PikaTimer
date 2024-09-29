@@ -16,10 +16,12 @@
  */
 package com.pikatimer.timing;
 
+import com.pikatimer.timing.reader.PikaGenericChipTimeFileReader;
 import com.pikatimer.timing.reader.PikaPCTimerFileReader;
 import com.pikatimer.timing.reader.PikaRFIDDirectReader;
 import com.pikatimer.timing.reader.PikaRaceTimerFileReader;
 import com.pikatimer.timing.reader.PikaRFIDFileReader;
+import com.pikatimer.timing.reader.PikaReaderDirectReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,10 +33,13 @@ import java.util.Map;
 public enum TimingInputTypes {
 
 
+    PikaReader,
     RFIDFile,
     RFIDDirect,
     PCTimer, 
-    RaceTimer; 
+    RaceTimer,
+    GeneriChipTimeFile,
+    GeneriBibTimeFile;
 
     
     private static final Map<TimingInputTypes, String> InputMap = createMap();
@@ -42,10 +47,13 @@ public enum TimingInputTypes {
     private static Map<TimingInputTypes, String> createMap() {
         Map<TimingInputTypes, String> result = new HashMap<>();
 
+        //result.put(PikaReader, "PikaReader");
         result.put(RFIDFile, "RFIDServer / Outreach File");
         result.put(RFIDDirect, "RFID Ultra/Joey (TCP)");
         result.put(PCTimer, "PC Timer (Race Director)");
         result.put(RaceTimer, "Race Timer");
+        //result.put(GeneriChipTimeFile, "Generic Chip -> Time File");
+        //result.put(GeneriBibTimeFile, "Generic Bib -> Time File");
 
         return Collections.unmodifiableMap(result);
     }
@@ -59,6 +67,8 @@ public enum TimingInputTypes {
     public final  TimingReader getNewReader() {
                 
         switch(this){
+            case PikaReader:
+                return new PikaReaderDirectReader();
             case PCTimer:
                 return new PikaPCTimerFileReader();
             case RaceTimer:
@@ -67,13 +77,13 @@ public enum TimingInputTypes {
                 return new PikaRFIDFileReader();
             case RFIDDirect:
                 return new PikaRFIDDirectReader();
+            case GeneriChipTimeFile:
+                return new PikaGenericChipTimeFileReader();
+            case GeneriBibTimeFile:
+                return new PikaGenericChipTimeFileReader();
         }
-        
         return null;
-
     }
-    
-
 }
     
 

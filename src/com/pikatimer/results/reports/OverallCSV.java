@@ -58,6 +58,10 @@ public class OverallCSV implements RaceReportType{
     Boolean showGun = true;
     Boolean showCustomAttributes = false;
     Boolean showAwards = true;
+    Boolean showFinishTOD = false;
+    Boolean showSplitTOD = false;
+    Boolean showEmail = false;
+    
     List<CustomAttribute> customAttributesList = new ArrayList();
     
     Map<String,Boolean> supportedOptions = new HashMap();
@@ -73,6 +77,10 @@ public class OverallCSV implements RaceReportType{
         supportedOptions.put("showPace", true);
         supportedOptions.put("showGun", true);
         supportedOptions.put("showAwards",true);
+        supportedOptions.put("showFinishTOD",false);
+        supportedOptions.put("showSplitTOD",false);
+        supportedOptions.put("showEmail",false);
+
     }
     
     @Override
@@ -111,7 +119,10 @@ public class OverallCSV implements RaceReportType{
         showGun = supportedOptions.get("showGun");
         showCustomAttributes = supportedOptions.get("showCustomAttributes");
         showAwards = supportedOptions.get("showAwards");
-        
+        showFinishTOD = supportedOptions.get("showFinishTOD");
+        showSplitTOD = supportedOptions.get("showSplitTOD");
+        showEmail = supportedOptions.get("showEmail");
+                
         
         String dispFormat = race.getStringAttribute("TimeDisplayFormat").replace("[","").replace("}","");
         String roundMode = race.getStringAttribute("TimeRoundingMode");
@@ -151,6 +162,8 @@ public class OverallCSV implements RaceReportType{
         report += "City,"; // 18L for the city
         report += "ST,"; // 4C for the state code
         report += "CO,"; // country
+        
+        if (showEmail) report += "EMail,";
          
         if (showCustomAttributes) {
             for( CustomAttribute a: customAttributesList){
@@ -161,6 +174,12 @@ public class OverallCSV implements RaceReportType{
         if (showSplits) {
             for (int i = 2; i < race.splitsProperty().size(); i++) {
                 if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += escape(race.splitsProperty().get(i-1).getSplitName()) + ",";
+            }
+        }
+        // Split TOD display 
+        if (showSplitTOD) {
+            for (int i = 2; i < race.splitsProperty().size(); i++) {
+                if (!race.splitsProperty().get(i-1).getIgnoreTime()) report += escape(race.splitsProperty().get(i-1).getSplitName()) + " TOD,";
             }
         }
         
@@ -180,6 +199,8 @@ public class OverallCSV implements RaceReportType{
        
         // gun time
         if (showGun) report += ",Gun";
+        
+        if (showFinishTOD) report += ",FinishTOD";
         // pace
         if (showPace) report += ",Pace"; 
         
@@ -269,6 +290,8 @@ public class OverallCSV implements RaceReportType{
             chars.append("\"").append(pr.getParticipant().getCity()).append("\"").append(",");
             chars.append("\"").append(pr.getParticipant().getState()).append("\"").append(",");
             chars.append("\"").append(pr.getParticipant().getCountry()).append("\"").append(",");
+            
+            if (showEmail) chars.append("\"").append(pr.getParticipant().getEmail()).append("\"").append(",");
 
 
             if (showCustomAttributes) {
@@ -286,6 +309,17 @@ public class OverallCSV implements RaceReportType{
                     }
                 }
             }
+            // split TOD stuff goes here
+            if (showSplitTOD) {
+            // do stuff
+                for (int i = 2; i < race.splitsProperty().size(); i++) {
+                    if (!race.splitsProperty().get(i-1).getIgnoreTime()) {
+                        if (hideTime) chars.append(",");
+                        else chars.append(DurationFormatter.durationToString(pr.getSplitTOD(i), dispFormat, roundMode)).append(",");
+                    }
+                }
+            }
+            
             if (showSegments) {
                 Boolean ht = hideTime;
                 race.raceSegmentsProperty().forEach(seg -> {
@@ -318,6 +352,10 @@ public class OverallCSV implements RaceReportType{
             
             if (showGun) {
                 if (! hideTime) chars.append(",").append(DurationFormatter.durationToString(pr.getGunFinish(), dispFormat, roundMode));
+                else chars.append(",");
+            }
+            if (showFinishTOD){
+                if (! hideTime) chars.append(",").append(DurationFormatter.durationToString(pr.getFinishTOD(), dispFormat, roundMode));
                 else chars.append(",");
             }
             

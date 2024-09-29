@@ -19,11 +19,10 @@
 <?import javafx.scene.text.Font?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="700.0" prefWidth="630.0" vgap="2.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardDetailsController">
    <columnConstraints>
-      <ColumnConstraints fillWidth="false" hgrow="NEVER" />
-      <ColumnConstraints hgrow="NEVER" maxWidth="1.7976931348623157E308" />
-      <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
+      <ColumnConstraints fillWidth="false" hgrow="NEVER" maxWidth="194.0" minWidth="189.0" prefWidth="194.0" />
+      <ColumnConstraints hgrow="NEVER" maxWidth="1.7976931348623157E308" minWidth="411.0" prefWidth="411.0" />
    </columnConstraints>
    <rowConstraints>
       <RowConstraints fillHeight="false" valignment="CENTER" vgrow="SOMETIMES" />
@@ -47,16 +46,16 @@
             <Insets />
          </GridPane.margin>
       </HBox>
-      <Label text="Age Group Setup" GridPane.rowIndex="1">
+      <Label text="Options" GridPane.rowIndex="1">
          <font>
-            <Font size="16.0" />
+            <Font size="18.0" />
          </font>
       </Label>
       <HBox maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1">
          <children>
             <Label text="Award Setup">
                <font>
-                  <Font size="16.0" />
+                  <Font size="18.0" />
                </font>
             </Label>
             <Pane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
@@ -65,6 +64,64 @@
       </HBox>
       <VBox maxHeight="1.7976931348623157E308" spacing="2.0" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
          <children>
+            <HBox alignment="CENTER_LEFT" spacing="2.0">
+               <children>
+                  <Label text="Tie Handling:">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <CheckBox fx:id="permitTiesCheckBox" mnemonicParsing="false" text="Permit Ties">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </CheckBox>
+               </children>
+            </HBox>
+            <Label text="Sex / Gender Processing">
+               <font>
+                  <Font size="16.0" />
+               </font>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </Label>
+            <ChoiceBox fx:id="sexHandlingChoiceBox" prefHeight="25.0" prefWidth="170.0" />
+            <VBox fx:id="agCustomVBox1" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" VBox.vgrow="NEVER">
+               <children>
+                  <Label maxWidth="1.7976931348623157E308" text="Sex / Gender Labels" wrapText="true">
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                     <padding>
+                        <Insets top="5.0" />
+                     </padding>
+                  </Label>
+                  <TableView fx:id="sexCodeMapTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="110.0" prefWidth="194.0">
+                     <columns>
+                        <TableColumn fx:id="sexCodeTableColumn" maxWidth="40.0" minWidth="40.0" prefWidth="40.0" text="Code" />
+                        <TableColumn fx:id="sexLabelTableColumn" prefWidth="75.0" text="Name" />
+                     </columns>
+                     <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                     </columnResizePolicy>
+                  </TableView>
+                  <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
+                     <children>
+                        <Button fx:id="sexCodeDelete" mnemonicParsing="false" text="Delete" />
+                        <Button fx:id="sexCodeAdd" mnemonicParsing="false" text="Add" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            <Label text="Age Group Setup">
+               <font>
+                  <Font size="16.0" />
+               </font>
+               <VBox.margin>
+                  <Insets top="5.0" />
+               </VBox.margin>
+            </Label>
             <ToggleSwitch fx:id="agCustomToggleSwitch" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="18.0" prefWidth="140.0" text="Custom Increments " />
             <GridPane fx:id="agGridPane" hgap="2.0" maxWidth="1.7976931348623157E308" minWidth="-Infinity" prefWidth="140.0" vgap="2.0">
                <columnConstraints>
@@ -96,7 +153,7 @@
                         <Insets top="5.0" />
                      </padding>
                   </Label>
-                  <TableView fx:id="customAGTableView" editable="true" maxHeight="1.7976931348623157E308" prefHeight="150.0" prefWidth="150.0" VBox.vgrow="ALWAYS">
+                  <TableView fx:id="customAGTableView" editable="true" maxHeight="1.7976931348623157E308" prefHeight="150.0" VBox.vgrow="ALWAYS">
                     <columns>
                       <TableColumn fx:id="startAGTableColumn" maxWidth="40.0" minWidth="40.0" prefWidth="40.0" text="Start" />
                         <TableColumn fx:id="endAGTableColumn" maxWidth="40.0" minWidth="40.0" prefWidth="40.0" text="End" />
@@ -122,21 +179,11 @@
             <Insets top="2.0" />
          </GridPane.margin>
       </VBox>
-      <ScrollPane fitToWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2">
+      <ScrollPane fitToWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="649.0" prefWidth="690.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
          <content>
             <VBox fx:id="awardsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
          </content>
       </ScrollPane>
-      <Label text="Tie Handling" GridPane.columnIndex="2" GridPane.rowIndex="1">
-         <font>
-            <Font size="16.0" />
-         </font>
-      </Label>
-      <CheckBox fx:id="permitTiesCheckBox" mnemonicParsing="false" text="Permit Ties" GridPane.columnIndex="2" GridPane.rowIndex="2">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </CheckBox>
    </children>
    <padding>
       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

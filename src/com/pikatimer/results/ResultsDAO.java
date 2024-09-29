@@ -233,14 +233,19 @@ public class ResultsDAO {
                             });
                             pendingResults.stream().forEach(r -> {
                                 if (!r.isEmpty() && r.getFinish()>0) {
-                                    String race = "";
-                                    if (RaceDAO.getInstance().listRaces().size() > 1) 
-                                        race = RaceDAO.getInstance().getRaceByID(r.getRaceID()).getRaceName();
+                                    String raceName = "";
+                                    Race race = RaceDAO.getInstance().getRaceByID(r.getRaceID());
+                                    
+                                    if (RaceDAO.getInstance().listRaces().size() > 1) raceName = race.getRaceName();
+                                        
                                     String bib = r.getBib();
-                                    String time = DurationFormatter.durationToString(r.getFinishDuration().minus(r.getStartDuration()), "[HH:]MM:SS");
+                                    //String time = DurationFormatter.durationToString(r.getFinishDuration().minus(r.getStartDuration()), "[HH:]MM:SS");
+                                    ProcessedResult pr = processResult(r,race);
+                                    String time = DurationFormatter.durationToString(pr.getChipFinish(), "[HH:]MM:SS");
+                                    
                                     JSONObject json = new JSONObject();
                                     json.put("Bib", bib);
-                                    json.put("Race", race);
+                                    json.put("Race", raceName);
                                     json.put("Time", time);
                                     HTTPServices.getInstance().publishEvent("RESULT", json);
                                 }
@@ -342,14 +347,17 @@ public class ResultsDAO {
         
         crs.forEach(cr -> {
             System.out.println("ResultsDAO::reprocessAllCRs: SegmentID=" + cr.getSegmentID() + " " + cr.getSex() + " " + cr.getCategory());
-            Result existing = cr.newRecord().get();
+            //Result existing = cr.newRecord().get();
+            
+            cr.clearNewRecord();
+            
             results.forEach(r -> {
                 cr.checkRecord(r);
             });
             Result newRes = cr.newRecord().getValue();
-            if (existing != null && (newRes == null || !existing.getBib().equals(newRes.getBib()))) {
-                existing.getCourseRecords().remove(cr);
-            }
+//            if (existing != null && (newRes == null || !existing.getBib().equals(newRes.getBib()))) {
+//                existing.getCourseRecords().remove(cr);
+//            }
         });
         
     }
@@ -991,7 +999,10 @@ public class ResultsDAO {
                     else if (!res.getSplitTime(i-1).isZero()) paused = paused.plus(res.getSplitTime(i).minus(res.getSplitTime(i-1)));
                     System.out.println("Paused time for " + pr.getParticipant().getBib() + " " + paused + " from " + res.getSplitTime(i)+ " minus " + res.getSplitTime(i-1) );
                 }
-                if (! res.getSplitTime(i).isZero()) pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
+                if (! res.getSplitTime(i).isZero()) { 
+                    pr.setSplit(i,res.getSplitTime(i).minus(chipStartTime).minus(paused));
+                    pr.setSplitTOD(i, res.getSplitTime(i));
+                }
 
                 // Is this a mandatory split that we are missing?
                 if (race.getSplits().get(i-1).getMandatorySplit() && (pr.getSplit(i) == null || pr.getSplit(i).isZero())){
@@ -1029,6 +1040,7 @@ public class ResultsDAO {
             pr.setChipFinish(res.getFinishDuration().minus(chipStartTime).minus(paused));
             pr.setGunFinish(res.getFinishDuration().minus(waveStartTime).minus(paused));
             pr.setSplit(splitSize, pr.getChipFinish());
+            pr.setFinishTOD(res.finishTODProperty().getValue());
         }
 
         // look for any bonus or penalty times
@@ -1098,14 +1110,13 @@ public class ResultsDAO {
                     // calculate placement in Overall, Gender, AG
                     Map<String,Integer> placementCounter = new HashMap();
                     placementCounter.put("overall", 1);
-                    placementCounter.put("M",1);
-                    placementCounter.put("F",1);
-                    placementCounter.put("X",1);
+
 
                     results.forEach(pr -> {
                         pr.setOverall(placementCounter.get("overall"));
                         placementCounter.put("overall", pr.getOverall()+1);
                        
+                        placementCounter.putIfAbsent(pr.getSex(), 1);
                         pr.setSexPlace(placementCounter.get(pr.getSex()));
                         placementCounter.put(pr.getSex(), pr.getSexPlace()+1);
 
@@ -1121,9 +1132,7 @@ public class ResultsDAO {
                         });
                         Map<String,Integer> segPlCounter = new HashMap();
                         segPlCounter.put("overall", 1);
-                        segPlCounter.put("M",1);
-                        segPlCounter.put("F",1);
-                        segPlCounter.put("X",1);
+
                         
                         results.forEach(pr -> {
                             if (pr.getSegmentTime(seg.getID()) == null) return;
@@ -1133,6 +1142,7 @@ public class ResultsDAO {
                             pr.setSegmentOverallPlace(seg.getID(),segPlCounter.get("overall"));
                             segPlCounter.put("overall", segPlCounter.get("overall")+1);
                             
+                            segPlCounter.putIfAbsent(pr.getSex(), 1);
                             pr.setSegmentSexPlace(seg.getID(),segPlCounter.get(pr.getSex()));
                             segPlCounter.put(pr.getSex(), segPlCounter.get(pr.getSex())+1);
 

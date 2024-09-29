@@ -30,6 +30,7 @@ import java.util.Map;
  */
 public class ProcessedResult implements Comparable<ProcessedResult>{
     Map<Integer,Duration> splitTimes = new HashMap();
+    Map<Integer,Duration> splitTOD = new HashMap();
     Map<Integer,Duration> segmentTimes = new HashMap();
     Map<Integer,Map<String,Integer>> segmentPlacement = new HashMap();
     
@@ -52,6 +53,7 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     Duration gunFinishTime;
     Duration chipStartTime;
     Duration waveStartTime;
+    Duration finishTOD;
     
     Boolean bonus = false;
     Duration bonusTime = Duration.ZERO;
@@ -107,8 +109,12 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
         return waveStartTime;
     }
     
-    
-    
+    public void setFinishTOD(Duration t){
+        finishTOD = t;
+    }
+    public Duration getFinishTOD(){
+        return finishTOD;
+    }
            
     public void setAge(Integer p){
         age = p;
@@ -168,6 +174,13 @@ public class ProcessedResult implements Comparable<ProcessedResult>{
     public void setSplit(Integer id, Duration time){
         splitTimes.put(id, time);
         if (id > latestSplitID) latestSplitID = id; 
+    }
+    
+    public Duration getSplitTOD(Integer id){
+        return splitTOD.get(id);
+    }
+    public void setSplitTOD(Integer id, Duration time){
+        splitTOD.put(id, time);
     }
     
     public String getLastSeen(){

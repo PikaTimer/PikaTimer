@@ -17,11 +17,13 @@
 package com.pikatimer.race;
 
 import com.pikatimer.participant.ParticipantDAO;
+import com.pikatimer.participant.Status;
 import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.util.IntegerEditingCell;
 import java.io.IOException;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -33,6 +35,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -57,6 +60,13 @@ public class FXMLAwardDetailsController {
     
     @FXML ComboBox<Race> raceComboBox; 
     @FXML Label selectedRaceLabel;
+    
+    @FXML ChoiceBox<SexHandling> sexHandlingChoiceBox;
+    @FXML TableView<SexCode> sexCodeMapTableView;
+    @FXML TableColumn<SexCode,String> sexCodeTableColumn;
+    @FXML TableColumn<SexCode,String> sexLabelTableColumn;
+    @FXML Button sexCodeAdd;
+    @FXML Button sexCodeDelete;
     
     @FXML ChoiceBox<Integer> agIncrementChoiceBox;
     @FXML TextField agStartTextField;
@@ -115,6 +125,7 @@ public class FXMLAwardDetailsController {
         
         initializeAgeGroupSettings();
         initializeRaceSettings();
+        initializeSexHandlingSettings();
         
        raceComboBox.getSelectionModel().selectedIndexProperty().addListener((ObservableValue<? extends Number> observableValue, Number number, Number number2) -> {
             if (number2.intValue() == -1 )  {
@@ -130,6 +141,8 @@ public class FXMLAwardDetailsController {
             populateAwardsSettings(activeRace);
             // Populate the race-wide settings
             populateRaceSettings(activeRace);
+            
+            populateSexHandlingSettings(activeRace);
         });
         
         Platform.runLater(() -> {raceComboBox.getSelectionModel().clearAndSelect(0); });
@@ -152,11 +165,53 @@ public class FXMLAwardDetailsController {
         
         agCustomToggleSwitch.setSelected(ag.getUseCustomIncrements());
         customAGNamesToggleSwitch.setSelected(ag.getUseCustomNames());
+        nameAGTableColumn.visibleProperty().setValue(ag.getUseCustomNames());
         
         customAGTableView.setItems(ag.ageGroupIncrementProperty());
         
     }
 
+    private void initializeSexHandlingSettings(){
+        ObservableList<SexHandling> sexHandlingList = FXCollections.observableArrayList(Arrays.asList(SexHandling.values()));
+        sexHandlingChoiceBox.setItems(sexHandlingList);
+        sexHandlingChoiceBox.getSelectionModel().select(SexHandling.OFI);
+        
+        sexHandlingChoiceBox.setOnAction((event) -> {
+            Race r = activeRace;
+            
+            SexHandling sh = sexHandlingChoiceBox.getSelectionModel().getSelectedItem();
+
+            // If no change, bail
+            if (sh.equals(r.getSexGroups().getHandling())) return; 
+
+            r.getSexGroups().setHandling(sh);
+            raceDAO.updateRace(r);
+        });
+        
+        
+        sexCodeTableColumn.setCellValueFactory(value -> value.getValue().codeProperty());
+        sexCodeTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        sexCodeTableColumn.setOnEditCommit(e -> {
+            e.getRowValue().codeProperty().setValue(e.getNewValue().toUpperCase());
+            Race r = activeRace; 
+            raceDAO.updateRace(r);
+        });
+//        TextFormatter<String> sexCodeformatter = new TextFormatter<>( code -> {
+//            code.setText(code.getText().toUpperCase());
+//            return code; 
+//        });
+        
+        
+        sexLabelTableColumn.setCellValueFactory(value -> value.getValue().labelProperty());
+        sexLabelTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        sexLabelTableColumn.setOnEditCommit(e -> {
+            e.getRowValue().labelProperty().setValue(e.getNewValue());
+            Race r = activeRace; 
+            raceDAO.updateRace(r);
+        });
+        
+    }
+    
     private void initializeRaceSettings(){
         permitTiesCheckBox.selectedProperty().addListener((ob, oldVal, newVal) -> {
             Race r = activeRace;
@@ -253,6 +308,7 @@ public class FXMLAwardDetailsController {
         });
         
         
+        
         endAGTableColumn.editableProperty().set(false);
         endAGTableColumn.setCellValueFactory(value -> value.getValue().endAgeProperty());
         
@@ -304,7 +360,25 @@ public class FXMLAwardDetailsController {
         });
     }
     
-    
+    private void populateSexHandlingSettings(Race r){
+        if (r == null) return;
+        if (r.getSexGroups() == null){
+            r.setSexGroups(new SexGroups());
+            r.getSexGroups().setHandling(SexHandling.OFI);
+        }
+        if (r.getSexGroups().sexCodeListProperty().isEmpty() ) {
+            System.out.println("Empty SexCodeList. Adding defaults");
+            r.getSexGroups().addSexCode(new SexCode("F","Female"));
+            r.getSexGroups().addSexCode(new SexCode("M","Male"));
+            r.getSexGroups().addSexCode(new SexCode("X","Non-Binary"));
+            raceDAO.updateRace(r);
+        }
+        
+        sexHandlingChoiceBox.getSelectionModel().select(r.getSexGroups().getHandling());
+        
+        sexCodeMapTableView.setItems(r.getSexGroups().sexCodeListProperty());
+        
+    }
     
     private void populateRaceSettings(Race r){
         if (r == null) return; 

@@ -196,7 +196,7 @@ public class AgeGroups {
     public void recalcCustomAGs(){
         customIncrementObservableList.sort((i1, i2) -> i1.getStartAge().compareTo(i2.getStartAge()));
         for (int i=0; i < customIncrementObservableList.size(); i++) {
-            if (i == customIncrementObservableList.size() -1) customIncrementObservableList.get(i).endAgeProperty().setValue("+");
+            if (i == customIncrementObservableList.size() -1) customIncrementObservableList.get(i).endAgeProperty().setValue("∞");
             else customIncrementObservableList.get(i).endAgeProperty().setValue(Integer.toString(customIncrementObservableList.get(i+1).getStartAge() - 1));
         }
     }

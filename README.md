@@ -35,6 +35,8 @@ To download, go to https://github.com/PikaTimer/pikatimer/releases/
 * Ability to add a time bonus or penalty to any participant
 * On-course cutoff enforcement
 * In-Progress report options that show runners who started but have not yet finished
+* Course Records for overall course or segments. Support for both the overall and AG records 
+* Support for the Marmot race announcer app for real time announcer feed: https://github.com/PikaTimer/Marmot
 * Windows x64 based native application or jar files for other supported platforms
 
 ## Screen Snapshots
