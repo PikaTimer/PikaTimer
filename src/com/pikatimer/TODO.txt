@@ -11,6 +11,8 @@ Features:
     Generic bib/chip -> time importer
 
     Done: Non-Binary Gender Support in Awards 
+    Sex -> Name mapping add/delete button does not do anything
+    
 
     DONE: Option to show Time of Day for finish and splits in CSV report
     DONE: Marmot Integration:
@@ -41,6 +43,8 @@ v2.0 Main Focus and new features:
     Web Based Packet Pickup and Onsite Registration App
 
     Upgrade to JDK 21 LTS and JavaFX LTS 
+    jdeploy for binaries
+
 
 TBD: 
 
@@ -49,7 +53,7 @@ General:
     --TableView Custom Cells:
     --Create a DurationTextField / LocalTimeTextField that "does the right thing"
     --Create a DurationCell (or whatever) for inline edits of durations
-    --Upgrade to Hibernate 5.6.x  
+    --Upgrade to Hibernate 6.x  
     --Internationalization? (Spanish, English, French, German, British, US, etc)
     --editCell that does a commit on focus change (WTF Oracle)?
     --Switch to json.org via com.guicedee.services rather than the current roll your own mess
@@ -61,7 +65,6 @@ Logging
   --enable toggle to set debug level to Normal/Debug/Trace
 
 Timing: 
-    --Ultra Direct: Half hour time zone detection and warning. 
     --Ultra Direct: filter after skew to permit "old" times to be adjusted forward  
     --Ultra Direct: option to auto-set skew if the clock is off and we can't fix it
     --Ultra Direct: Better exception catching when we ask for a setting that we don't have a value for yet
@@ -96,7 +99,7 @@ Overrides
     -- Right-Click to create an override from a cooked time
 
 Results:
-    --Double-Click participat for review screen (show all times, option to change wave or dq participant, etc)
+    --Double-Click participant for review screen (show all times, option to change wave or dq participant, etc)
 
 Reports:
     --Text output with header/FormFeed after X number of lines. 

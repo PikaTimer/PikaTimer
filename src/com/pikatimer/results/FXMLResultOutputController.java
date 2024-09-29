@@ -282,8 +282,6 @@ public class FXMLResultOutputController {
                     attributeAdded = true;
                 }
                 showEmailCheckBox.selectedProperty().setValue(r.getBooleanAttribute("showEmail"));
-                showEmailCheckBox.visibleProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
-                showEmailCheckBox.managedProperty().bind(Bindings.size(r.getRace().splitsProperty()).greaterThan(2));
                 optionsLabel.visibleProperty().set(true);
             } else {
                 showEmailCheckBox.visibleProperty().unbind();
