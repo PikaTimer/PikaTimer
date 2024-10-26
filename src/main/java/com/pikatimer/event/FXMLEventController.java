@@ -22,6 +22,7 @@ import com.pikatimer.race.FXMLRaceDetailsController;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.RaceDAO;
+import com.pikatimer.race.SexCode;
 import com.pikatimer.race.SexGroups;
 import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.timing.TimingDAO;
@@ -53,6 +54,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
+import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,19 +74,20 @@ public class FXMLEventController {
     @FXML
     private DatePicker eventDate;
     @FXML
-    private CheckBox multipleRacesCheckBox;
+    private ToggleSwitch multipleRacesToggleSwitch;
     @FXML
     private VBox racesVBox;    
     @FXML
     private TableView<Race> raceTableView;
     //@FXML private Button raceRemoveAllButton;
     @FXML
-    private Button raceAddButton;
+    private Button addRaceButton;
+    @FXML private Button copyRaceButton;
     @FXML
-    private Button raceRemoveButton;    
+    private Button removeRaceButton;    
     private ObservableList<Race> raceList;    
     @FXML
-    private CheckBox multipleTimingCheckBox;
+    private ToggleSwitch showTimingLocationsToggleSwitch;
     @FXML
     private VBox timingVBox;
     @FXML
@@ -145,10 +148,9 @@ public class FXMLEventController {
         //Setup the races VBox 
         // Bind the multiple Races CheckBox to the races table to automatically 
         // enable / disable it
-        timingVBox.managedProperty().bind(multipleTimingCheckBox.selectedProperty());
-        timingVBox.visibleProperty().bind(multipleTimingCheckBox.selectedProperty());
-        // if we have more than one race then let's set the multipleRacesCheckBox to true.
-        multipleTimingCheckBox.setSelected(false);
+        timingVBox.managedProperty().bind(showTimingLocationsToggleSwitch.selectedProperty());
+        timingVBox.visibleProperty().bind(showTimingLocationsToggleSwitch.selectedProperty());
+        showTimingLocationsToggleSwitch.setSelected(false);
         
         timingLocationDAO = TimingDAO.getInstance();
         timingLocationList = timingLocationDAO.listTimingLocations();        
@@ -159,9 +161,9 @@ public class FXMLEventController {
         timingLocListView.setItems(timingLocationList);
         
         if (timingLocationList.size() > 2) {
-            multipleTimingCheckBox.setSelected(true);
+            showTimingLocationsToggleSwitch.setSelected(true);
         }
-        multipleTimingCheckBox.disableProperty().bind(Bindings.size(timingLocListView.getItems()).greaterThan(2));
+        showTimingLocationsToggleSwitch.disableProperty().bind(Bindings.size(timingLocListView.getItems()).greaterThan(2));
         
         timingLocListView.setEditable(true);
 
@@ -224,13 +226,13 @@ public class FXMLEventController {
         //Setup the races VBox 
         // Bind the multiple Races CheckBox to the races table to automatically 
         // enable / disable it
-        racesVBox.managedProperty().bind(multipleRacesCheckBox.selectedProperty());
-        racesVBox.visibleProperty().bind(multipleRacesCheckBox.selectedProperty());
+        racesVBox.managedProperty().bind(multipleRacesToggleSwitch.selectedProperty());
+        racesVBox.visibleProperty().bind(multipleRacesToggleSwitch.selectedProperty());
 
         // Populate the underlying table with any races.
         // raceDAO.getRaces(); 
         // if we have more than one race then let's set the multipleRacesCheckBox to true.
-        multipleRacesCheckBox.setSelected(false);
+        multipleRacesToggleSwitch.setSelected(false);
         
         raceDAO = RaceDAO.getInstance();
         raceList = raceDAO.listRaces();        
@@ -248,6 +250,12 @@ public class FXMLEventController {
             selectedRace.setAwards(ra);
             //raceDAO.updateRace(selectedRace);
             SexGroups sg = new SexGroups();
+                    
+            logger.debug("Empty SexCodeList. Adding defaults");
+            sg.addSexCode(new SexCode("F","Female"));
+            sg.addSexCode(new SexCode("M","Male"));
+            sg.addSexCode(new SexCode("X","Non-Binary"));
+        
             selectedRace.setSexGroups(sg);
             
             raceDAO.addRace(selectedRace);
@@ -257,12 +265,12 @@ public class FXMLEventController {
         
         raceTableView.setItems(raceList);
         
-        raceRemoveButton.setDisable(true);
+        removeRaceButton.setDisable(true);
         
         if (raceList.size() > 1) {
-            multipleRacesCheckBox.setSelected(true);
-            multipleRacesCheckBox.setDisable(true);
-            raceRemoveButton.setDisable(false);
+            multipleRacesToggleSwitch.setSelected(true);
+            multipleRacesToggleSwitch.setDisable(true);
+            removeRaceButton.setDisable(false);
             
         }
 
@@ -455,8 +463,8 @@ public class FXMLEventController {
             // ... user chose CANCEL or closed the dialog
         }
         
-        raceAddButton.requestFocus();
-        raceAddButton.setDefaultButton(true);
+        addRaceButton.requestFocus();
+        addRaceButton.setDefaultButton(true);
     }
     
     public void addRace(ActionEvent fxevent) {
@@ -466,8 +474,20 @@ public class FXMLEventController {
         r.setRaceDistance(new BigDecimal("5.0"));        
         r.setRaceDistanceUnits(Unit.KILOMETERS);
         r.setAgeGroups(new AgeGroups());
-        r.setSexGroups(new SexGroups());
-        
+
+        RaceAwards ra = new RaceAwards();
+        r.setAwards(ra);
+        SexGroups sg = new SexGroups();
+
+        logger.debug("Empty SexCodeList. Adding defaults");
+        sg.addSexCode(new SexCode("F","Female"));
+        sg.addSexCode(new SexCode("M","Male"));
+        sg.addSexCode(new SexCode("X","Non-Binary"));
+
+        r.setSexGroups(sg);
+            
+ 
+            
         raceDAO.addRace(r);
         logger.debug("Adding a new race. New Size =" + raceList.size() + " New Race Index=" + raceList.indexOf(r));
         Platform.runLater(() -> {
@@ -475,13 +495,13 @@ public class FXMLEventController {
         });
         //timingLocListView.edit(timingLocationList.indexOf(t));
         if (raceList.size() > 1) {            
-            multipleRacesCheckBox.setDisable(true);
-            raceRemoveButton.setDisable(false);            
+            multipleRacesToggleSwitch.setDisable(true);
+            removeRaceButton.setDisable(false);            
         } else {
-            multipleRacesCheckBox.setDisable(false);
-            raceRemoveButton.setDisable(true);
+            multipleRacesToggleSwitch.setDisable(false);
+            removeRaceButton.setDisable(true);
         }
-        raceAddButton.setDefaultButton(false);
+        addRaceButton.setDefaultButton(false);
         
         raceDAO.updateRace(r);
         
@@ -535,15 +555,15 @@ public class FXMLEventController {
         } else {
             raceDAO.removeRace(raceTableView.getSelectionModel().getSelectedItem());
             raceTableView.getSelectionModel().select(raceList.indexOf(0));
-            raceAddButton.requestFocus();
-            raceAddButton.setDefaultButton(false);
+            addRaceButton.requestFocus();
+            addRaceButton.setDefaultButton(false);
             
             if (raceList.size() > 1) {                
-                multipleRacesCheckBox.setDisable(true);
-                raceRemoveButton.setDisable(false);                
+                multipleRacesToggleSwitch.setDisable(true);
+                removeRaceButton.setDisable(false);                
             } else {
-                multipleRacesCheckBox.setDisable(false);
-                raceRemoveButton.setDisable(true);
+                multipleRacesToggleSwitch.setDisable(false);
+                removeRaceButton.setDisable(true);
             }
         }
         

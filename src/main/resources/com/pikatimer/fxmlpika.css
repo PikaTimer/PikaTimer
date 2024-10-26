@@ -5,3 +5,11 @@
 .mainFxmlClass {
 
 }
+
+.tab-label {
+     /*-fx-skin: "com.sun.javafx.scene.control.skin.LabelSkin";*/
+    -fx-background-color: transparent;    
+    -fx-alignment: CENTER;
+    -fx-text-fill: -fx-text-base-color;
+    -fx-font-size: 16px; /* all the same except this newly added one */
+}

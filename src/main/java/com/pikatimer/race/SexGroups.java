@@ -124,21 +124,21 @@ public class SexGroups {
         return sexCodeMap.containsKey(c)?sexCodeMap.get(c):c;
     }
     
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
           name="race_sex_group_code_map",
           joinColumns=@JoinColumn(name="race_id")
     )
-    protected List<SexCode> getCustomIncrementsList(){
+    protected List<SexCode> getSexCodeList(){
         return sexCodeList;
     }
-    protected void setCustomIncrementsList(List<SexCode> l){
+    protected void setSexCodeList(List<SexCode> l){
         sexCodeList = l;
     }
     
     public ObservableList<SexCode> sexCodeListProperty(){
-        if (sexCodeObservableList.isEmpty() && sexCodeList != null && ! sexCodeList.isEmpty() ) {
-            sexCodeObservableList.addAll(sexCodeList);
+        if (sexCodeObservableList.isEmpty() && getSexCodeList() != null && ! getSexCodeList().isEmpty() ) {
+            sexCodeObservableList.addAll(getSexCodeList());
             rebuildSexCodeMap();
         }
         return sexCodeObservableList;
@@ -147,12 +147,14 @@ public class SexGroups {
     public void addSexCode(SexCode sc){
         logger.debug("SexGroups:addSexCode() called");
         sexCodeObservableList.add(sc);
+        sexCodeMap.put(sc.getCode(), sc.getLabel());
         sexCodeList = sexCodeObservableList;
     }
     
     public void removeSexCode(SexCode sc){
         logger.debug("SexGroups:removeSexCode() called");
         sexCodeObservableList.remove(sc);
+        sexCodeMap.remove(sc.getCode());
         sexCodeList = sexCodeObservableList;
     }
     

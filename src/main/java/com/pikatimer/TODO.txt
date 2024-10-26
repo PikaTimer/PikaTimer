@@ -1,76 +1,83 @@
-TODO for 1.6 Release
+TODO for 2.0 Release
+
+General:
+    jdeploy for installer binaries
+
+Race Setup:
+    Copy Race Button
+        Dialog w/ prompts for new race name, distance
+        -- Copy starting waves sans bib assignments
+        -- copy splits / segments
+        -- copy awards / sexgroups, agegroups
+        -- copy reports but update output names
+
+    Chip start time cutoff to support single timing location for start/finish
+
+    Race Setup Wizard
+
+    Lap Race toggle
+      -- Adds an "Exit Timing Split" option
+
+    Better new split placement based on selected split
+    split reorder based on total distance
+    Split distance -> cumulative
+    Split options ->> dialog instead of inline
+    segment options -> dialog instead of inline
+ 
+    auto-save on text field updates (always edit table cell factory?)
+
+    DurationTextField for time entry
+
+    Recalc race results if start/finish timing splits changed
+
+
+
+Awards:
+    Sex -> Name mapping add/delete button does not do anything
+    Award Eligible participant attribute
 
 BUGS: 
-    Handle missing participant data (age, sex, etc) when producing reports.
-    DONE: Better date import logic 
-    Figure out report html vs text header editing oddity (Unable to reproduce in a test env)
-    FTPS exception handling loop
+    Better FTPS exception handling loop
+    
 
 Features:
     Timing Export Function: Output to a bib/chip csv
     Generic bib/chip -> time importer
-
-    Done: Non-Binary Gender Support in Awards 
-    Sex -> Name mapping add/delete button does not do anything
+    Select Timer Web App: Simple keypad with enter button, directly feeds to Pika
     
 
-    DONE: Option to show Time of Day for finish and splits in CSV report
-    DONE: Marmot Integration:
-        -Push participant info
-        -Announcer timing location feed
-        -Result Feed
-        -Auto-Participant sync
-        -Announcer timing location
-        -Finish time auto-update
-    DONE: Course Record display in results:
-        -By Overall or Segment
-        -Overall / Masters / AG categories
-
-v1.7: 
-    Features:
-        Select Timer Web App: Simple keypad with enter button, directly feeds to Pika
-        RSU Participant Import/Sync
-        Name Cleanup on Import
-
-v2.0 Main Focus and new features:
     Additional RSU Integration
-        b. Participants sync / upload
-        b. Finish times w/ and w/o splits
+        -- Finish times w/ and w/o splits
     
-    Teams (See below)
     Web Based Leader Board Display Kiosk
     Web Based Results Lookup Kiosk
     Web Based Packet Pickup and Onsite Registration App
 
-    Upgrade to JDK 21 LTS and JavaFX LTS 
-    jdeploy for binaries
 
-
-TBD: 
-
-General: 
-    --Cleanup UI and better input field validation
     --TableView Custom Cells:
-    --Create a DurationTextField / LocalTimeTextField that "does the right thing"
-    --Create a DurationCell (or whatever) for inline edits of durations
-    --Upgrade to Hibernate 6.x  
-    --Internationalization? (Spanish, English, French, German, British, US, etc)
-    --editCell that does a commit on focus change (WTF Oracle)?
-    --Switch to json.org via com.guicedee.services rather than the current roll your own mess
+        --Create a DurationTextField / LocalTimeTextField that "does the right thing"
+        --Create a DurationCell (or whatever) for inline edits of durations
+    --Upgrade to Hibernate 7.x
+    --TableCell editCell that does a commit on focus change (WTF Oracle)?
 
 Logging 
-  DONE --switch to slf4j or something better than System.out.println()
   --enable debug output log viewing
   --enable saving debug output log to file
   --enable toggle to set debug level to Normal/Debug/Trace
 
 Timing: 
+    --Single timing location for start/finish support
     --Ultra Direct: filter after skew to permit "old" times to be adjusted forward  
     --Ultra Direct: option to auto-set skew if the clock is off and we can't fix it
     --Ultra Direct: Better exception catching when we ask for a setting that we don't have a value for yet
-    --Echo Client
+    --PikaTimer client
+    --PikaRelay client
+    -- Option to assign any time to the race/wave start time via right mouse click menu
+    -- Lookup Button -> option of manual entry of wave start times?
 
 Races:
+    --Race Setup Wizard
+    --Copy Race 
     --Ability to drag/drop splits to reorder
     --Cumulative vs differential distance for splits specification?
     --Ability to set split specific distance unit
@@ -78,7 +85,11 @@ Races:
     --Lap Race Support
 
 Participants:
-    --textfield auto complete for city/state 
+    --Rework Participant import wizard
+    --Bidirectional sync w/ RSU
+        -- Participant attributes
+        -- Switch / add RSU events if moved or added to a different race
+    --textfield auto complete for city 
     --Clean up import (Title Case or Upper Case names, etc)
     --Custom city name map (e.g. "Colorado Springs" -> "Colo Spgs")
     
@@ -90,23 +101,24 @@ Teams:
     --Allow team to cover multiple races?
     --Min number of members for score
     --for co-ed, number per team of each gender 
-
-Timing:
-    -- Option to assign any time to the race/wave start time via right mouse click menu
-    -- Lookup Button -> option of manual entry of wave start times?
+ 
 
 Overrides 
     -- Right-Click to create an override from a cooked time
 
 Results:
     --Double-Click participant for review screen (show all times, option to change wave or dq participant, etc)
+    --Lap race view
 
 Reports:
+    --Switch to json.org rather than the current roll your own mess on the json report
     --Text output with header/FormFeed after X number of lines. 
     --Publish to 3rd party results web site (e.g. RunSignUp.com)? 
     --Receipt printer dialog box?
     --Better print option for enhanced HTML output (show a runner's splits, etc)
     --Link to video / photos
+    --DataTables update to latest
+    --GA4 support
 
 
 Options tab:

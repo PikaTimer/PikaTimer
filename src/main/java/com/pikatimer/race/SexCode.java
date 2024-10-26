@@ -42,6 +42,7 @@ public class SexCode {
     } 
     
     public SexCode(String code, String display){
+        logger.trace("Creating new SexCode: {} -> {}",code,display);
         codeProperty.set(code);
         labelProperty.set(display);
     }

@@ -138,11 +138,10 @@ public class Pikatimer extends Application {
             final Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
             final URL imageResource = getClass().getClassLoader().getResource("icons/Pika_256.png");
             final java.awt.Image image = defaultToolkit.getImage(imageResource);
-            //this is new since JDK 9
+ 
             final Taskbar taskbar = Taskbar.getTaskbar();
 
             try {
-                //set icon for mac os (and other systems which do support this method)
                 taskbar.setIconImage(image);
             } catch (final UnsupportedOperationException e) {
                 logger.debug("The os does not support: 'taskbar.setIconImage'");
@@ -154,9 +153,10 @@ public class Pikatimer extends Application {
         primaryStage.setScene(myScene);
         primaryStage.show();
         
+        // Make sure we kill the httpd daemon on exit
         primaryStage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {webServer.stopHTTPService();});
         
-       primaryStage.setOnCloseRequest((WindowEvent t) -> {
+        primaryStage.setOnCloseRequest((WindowEvent t) -> {
             Platform.exit();
             System.exit(0);
         });

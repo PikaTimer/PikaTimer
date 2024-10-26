@@ -18,7 +18,6 @@ package com.pikatimer.race;
 
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.results.ResultsDAO;
-import com.pikatimer.timing.FXMLTimingController;
 import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
@@ -98,7 +97,6 @@ public class FXMLRaceDetailsController {
     @FXML private TextField raceCutoffTimeTextField;
     @FXML private Label raceCutoffTimePaceLabel; 
     @FXML private TableView<Wave> waveStartsTableView;
-    @FXML private TableColumn<Wave, String> waveIDTableColumn;
     @FXML private TableColumn<Wave, String> waveNameTableColumn;
     @FXML private TableColumn<Wave, String> waveStartTimeTableColumn;                
     @FXML private TableColumn<Wave, String> waveMaxStartTimeTableColumn; 
@@ -110,17 +108,19 @@ public class FXMLRaceDetailsController {
     @FXML private TableColumn<Split,TimingLocation> splitLocationTableColumn; 
     @FXML private TableColumn<Split, String> splitDistanceTableColumn;
     @FXML private Button deleteSplitButton;
-    @FXML private CheckBox waveStartsCheckBox; 
+    @FXML private ToggleSwitch waveStartsToggleSwitch; 
     @FXML private HBox startTimeHBox; 
     @FXML private VBox waveStartsVBox; 
     @FXML private Button deleteWaveButton;
     @FXML private TextField raceStartTimeTextField; 
     @FXML private VBox splitsVBox;
-    @FXML private CheckBox splitsCheckBox; 
+    @FXML private ToggleSwitch splitsToggleSwitch; 
+    @FXML private ToggleSwitch lapRaceToggleSwitch;
     @FXML private HBox bibRangeHBox;
     @FXML private TextField startBibTextField;
     @FXML private TextField endBibTextField;
     @FXML private VBox segmentsVBox;
+    @FXML private Button updateResultsButton;
     @FXML private Button splitUpdateResultsButton;
     @FXML private TableView<Segment> raceSegmentsTableView;
     @FXML private TableColumn<Segment,String> segmentNameTableColumn;
@@ -283,8 +283,8 @@ public class FXMLRaceDetailsController {
             }
         });
         
-        startTimeHBox.visibleProperty().bind(waveStartsCheckBox.selectedProperty().not());
-        startTimeHBox.managedProperty().bind(waveStartsCheckBox.selectedProperty().not());
+        startTimeHBox.visibleProperty().bind(waveStartsToggleSwitch.selectedProperty().not());
+        startTimeHBox.managedProperty().bind(waveStartsToggleSwitch.selectedProperty().not());
         
         // Race (wave) Time stuff
         waveNameTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
@@ -526,6 +526,12 @@ public class FXMLRaceDetailsController {
             splitUpdateResultsButton.visibleProperty().set(false);
         });
         
+        updateResultsButton.visibleProperty().set(false);
+        
+        updateResultsButton.setOnAction((event) -> {
+            ResultsDAO.getInstance().reprocessRaceResults(selectedRace);
+            updateResultsButton.visibleProperty().set(false);
+        });
         
         // Segment table stuff
         raceSegmentsTableView.setPlaceholder(new Label("No race segments have been defined yet"));
@@ -815,7 +821,7 @@ public class FXMLRaceDetailsController {
             
             //Unbind any existing listeners to the table views or check boxes
             raceSplitsTableView.getSelectionModel().selectedItemProperty().removeListener(raceSplitsTableViewListener);
-            waveStartsCheckBox.selectedProperty().removeListener(waveStartsCheckBoxListener);
+            waveStartsToggleSwitch.selectedProperty().removeListener(waveStartsCheckBoxListener);
             raceSplits.removeListener(raceSplitsListener);
             raceWaves.removeListener(raceWaveListener);
             
@@ -862,24 +868,24 @@ public class FXMLRaceDetailsController {
                 waveStartsTableView.getSelectionModel().selectedItemProperty().isNull(),
                 Bindings.size(waveStartsTableView.getItems()).lessThan(2))
             );
-            waveStartsVBox.managedProperty().bind(waveStartsCheckBox.selectedProperty());
-            waveStartsVBox.visibleProperty().bind(waveStartsCheckBox.selectedProperty());
+            waveStartsVBox.managedProperty().bind(waveStartsToggleSwitch.selectedProperty());
+            waveStartsVBox.visibleProperty().bind(waveStartsToggleSwitch.selectedProperty());
             bibRangeHBox.managedProperty().bind(Bindings.and(
                     Bindings.size(raceDAO.listRaces()).greaterThanOrEqualTo(2), 
-                    waveStartsCheckBox.selectedProperty().not()
+                    waveStartsToggleSwitch.selectedProperty().not()
             ));
             bibRangeHBox.visibleProperty().bind(Bindings.and(
                     Bindings.size(raceDAO.listRaces()).greaterThanOrEqualTo(2), 
-                    waveStartsCheckBox.selectedProperty().not()
+                    waveStartsToggleSwitch.selectedProperty().not()
             ));
                     
             // if we have more than one wave then let's set the waveStartsCheckBox to true.
             if (raceWaves.size() > 1) {
-                waveStartsCheckBox.setSelected(true); 
+                waveStartsToggleSwitch.setSelected(true); 
             } else {
-                waveStartsCheckBox.setSelected(false);
+                waveStartsToggleSwitch.setSelected(false);
             }
-            waveStartsCheckBox.disableProperty().bind(Bindings.size(waveStartsTableView.getItems()).greaterThan(1));
+            waveStartsToggleSwitch.disableProperty().bind(Bindings.size(waveStartsTableView.getItems()).greaterThan(1));
             //Setup the start time
             raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
             
@@ -893,8 +899,8 @@ public class FXMLRaceDetailsController {
         
             
             
-            splitsVBox.managedProperty().bind(splitsCheckBox.selectedProperty());
-            splitsVBox.visibleProperty().bind(splitsCheckBox.selectedProperty());
+            splitsVBox.managedProperty().bind(splitsToggleSwitch.selectedProperty());
+            splitsVBox.visibleProperty().bind(splitsToggleSwitch.selectedProperty());
             
             raceSplits=selectedRace.splitsProperty(); 
             FilteredList<Split> filteredSplits = new FilteredList<>(raceSplits, s -> {
@@ -922,11 +928,11 @@ public class FXMLRaceDetailsController {
                raceDAO.addSplit(finishSplit);
             } 
             if (raceSplits.size() > 2) {
-                splitsCheckBox.setSelected(true); 
+                splitsToggleSwitch.setSelected(true); 
             } else {
-                splitsCheckBox.setSelected(false);
+                splitsToggleSwitch.setSelected(false);
             }
-            splitsCheckBox.disableProperty().bind(Bindings.size(raceSplitsTableView.getItems()).greaterThan(2));
+            splitsToggleSwitch.disableProperty().bind(Bindings.size(raceSplitsTableView.getItems()).greaterThan(2));
             
             
             startLocationComboBox.getSelectionModel().select(raceSplits.get(0).getTimingLocation());
@@ -1017,7 +1023,7 @@ public class FXMLRaceDetailsController {
                     raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
                 }
             };
-            waveStartsCheckBox.selectedProperty().addListener(waveStartsCheckBoxListener);
+            waveStartsToggleSwitch.selectedProperty().addListener(waveStartsCheckBoxListener);
             
             raceWaveListener=(ListChangeListener.Change<? extends Wave> w) -> {
                 raceStartTimeTextField.setText(raceWaves.get(0).getWaveStart());
@@ -1027,7 +1033,7 @@ public class FXMLRaceDetailsController {
         
             raceSplitsListener=(ListChangeListener.Change<? extends Split> c) -> {
                 logger.debug("Splits have changed");
-                if (ResultsDAO.getInstance().getResults(selectedRace.getID()).size() > 0)splitUpdateResultsButton.visibleProperty().set(true);
+                if (!ResultsDAO.getInstance().getResults(selectedRace.getID()).isEmpty())splitUpdateResultsButton.visibleProperty().set(true);
             };
             raceSplits.addListener(raceSplitsListener);
             
@@ -1202,7 +1208,7 @@ public class FXMLRaceDetailsController {
         newSplit.setSplitDistance(BigDecimal.valueOf(0));
         newSplit.setTimingLocation(TimingDAO.getInstance().listTimingLocations().get(1));
         logger.debug("   SelectedItems().size = " + raceSplitsTableView.getSelectionModel().getSelectedItems().size());
-        if(raceSplitsTableView.getSelectionModel().getSelectedItems().size()> 0 ) {
+        if(!raceSplitsTableView.getSelectionModel().getSelectedItems().isEmpty() ) {
             Integer pos = raceSplitsTableView.getSelectionModel().getSelectedItem().getPosition() +1; 
             //pos++; //adjust for the hidden start split
             logger.debug("   pos is now " + pos);

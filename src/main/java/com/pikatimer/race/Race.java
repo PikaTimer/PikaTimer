@@ -96,7 +96,7 @@ public class Race {
 
     private RaceAwards awards;
     private AgeGroups ageGroups;
-    private SexGroups sexGroups = new SexGroups(); 
+    private SexGroups sexGroups; 
 
     private Map<String,String> attributes = new HashMap();
     private Map<String,Integer> intAttributes = new HashMap();

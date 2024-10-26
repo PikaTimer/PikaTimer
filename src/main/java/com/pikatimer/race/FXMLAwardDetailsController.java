@@ -363,18 +363,7 @@ public class FXMLAwardDetailsController {
     
     private void populateSexHandlingSettings(Race r){
         if (r == null) return;
-        if (r.getSexGroups() == null){
-            r.setSexGroups(new SexGroups());
-            r.getSexGroups().setHandling(SexHandling.OFI);
-        }
-        if (r.getSexGroups().sexCodeListProperty().isEmpty() ) {
-            logger.debug("Empty SexCodeList. Adding defaults");
-            r.getSexGroups().addSexCode(new SexCode("F","Female"));
-            r.getSexGroups().addSexCode(new SexCode("M","Male"));
-            r.getSexGroups().addSexCode(new SexCode("X","Non-Binary"));
-            raceDAO.updateRace(r);
-        }
-        
+ 
         sexHandlingChoiceBox.getSelectionModel().select(r.getSexGroups().getHandling());
         
         sexCodeMapTableView.setItems(r.getSexGroups().sexCodeListProperty());

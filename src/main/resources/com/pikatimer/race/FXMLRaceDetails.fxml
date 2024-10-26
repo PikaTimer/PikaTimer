@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
@@ -31,11 +30,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="769.0" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="769.0" vgap="5.0" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLRaceDetailsController">
   <columnConstraints>
     <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
     <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
@@ -44,13 +45,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       <RowConstraints fillHeight="false" vgrow="NEVER" />
       <RowConstraints fillHeight="false" vgrow="NEVER" />
     <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" percentHeight="33.0" vgrow="ALWAYS" />
   </rowConstraints>
    <children>
       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
          <children>
             <VBox fx:id="splitsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" VBox.vgrow="ALWAYS">
                <children>
-                  <Label maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" text="Splits" VBox.vgrow="NEVER">
+                  <Label maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" text="On-Course Splits" VBox.vgrow="NEVER">
                      <font>
                         <Font size="18.0" />
                      </font>
@@ -88,7 +90,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   </TableView>
                   <HBox alignment="CENTER_RIGHT" fillHeight="false" spacing="5.0">
                      <children>
-                        <Button fx:id="splitUpdateResultsButton" mnemonicParsing="false" text="Update Results" />
+                        <Button fx:id="splitUpdateResultsButton" mnemonicParsing="false" text="Recalculate Results" />
                         <Label maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                         <Button fx:id="addSplitButton" mnemonicParsing="false" onAction="#addSplit" text="Add" />
                         <Button fx:id="deleteSplitButton" mnemonicParsing="false" onAction="#deleteSplit" text="Remove" />
@@ -99,54 +101,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <Insets top="10.0" />
                </padding>
             </VBox>
-            <VBox fx:id="segmentsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" VBox.vgrow="ALWAYS">
-               <children>
-                  <Label maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" text="Segments">
-                     <font>
-                        <Font size="18.0" />
-                     </font>
-                  </Label>
-                  <TableView fx:id="raceSegmentsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="SOMETIMES">
-                    <columns>
-                      <TableColumn fx:id="segmentNameTableColumn" prefWidth="150.0" text="Name">
-                            <cellValueFactory>
-                                <PropertyValueFactory property="segmentName" />
-                            </cellValueFactory>
-                        </TableColumn>
-                      <TableColumn fx:id="segmentStartSplitTableColumn" minWidth="0.0" prefWidth="46.0" text="Start">
-                            <cellValueFactory>
-                                <PropertyValueFactory property="startSplitString" />
-                            </cellValueFactory>
-                        </TableColumn>
-                        <TableColumn fx:id="segmentEndSplitTableColumn" minWidth="0.0" prefWidth="119.5" text="End">
-                            <cellValueFactory>
-                                <PropertyValueFactory property="endSplitString" />
-                            </cellValueFactory>
-                        </TableColumn>
-                        <TableColumn fx:id="segmentDistanceTableColumn" editable="false" minWidth="0.0" prefWidth="119.5" text="Distance">
-                           <cellValueFactory>
-                              <PropertyValueFactory property="endSplitString" />
-                           </cellValueFactory>
-                        </TableColumn>
-                    </columns>
-                     <columnResizePolicy>
-                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                     </columnResizePolicy>
-                  </TableView>
-                  <HBox alignment="CENTER_RIGHT" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
-                     <children>
-                        <Button fx:id="addSegmentutton" mnemonicParsing="false" onAction="#addSegment" text="Add" />
-                        <Button fx:id="deleteSegmentButton" mnemonicParsing="false" onAction="#deleteSegment" text="Remove" />
-                     </children>
-                  </HBox>
-               </children>
-               <padding>
-                  <Insets top="10.0" />
-               </padding>
-            </VBox>
          </children>
       </VBox>
-      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.valignment="TOP" GridPane.vgrow="ALWAYS">
+      <VBox fx:id="waveStartsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.rowSpan="2147483647" GridPane.valignment="TOP" GridPane.vgrow="ALWAYS">
          <children>
             <Label maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" text="Start Waves" VBox.vgrow="NEVER">
                <font>
@@ -178,7 +135,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                          <PropertyValueFactory property="waveMaxStartString" />
                         </cellValueFactory>
                     </TableColumn>
-                  <TableColumn minWidth="150.0" prefWidth="150.0" text="Assignments">
+                  <TableColumn minWidth="150.0" prefWidth="150.0" text="Bib Assignments">
                      <columns>
                               <TableColumn fx:id="waveAssignmentMethodTableColumn" prefWidth="60.0" text="Method" visible="false">
                                   <cellValueFactory>
@@ -218,32 +175,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <Insets top="10.0" />
          </padding>
       </VBox>
-      <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
+      <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowSpan="2" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
          <children>
             <Label text="Race Options">
                <font>
-                  <Font size="18.0" />
+                  <Font size="22.0" />
                </font>
             </Label>
-            <CheckBox fx:id="waveStartsCheckBox" mnemonicParsing="false" text="Wave Starts">
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </CheckBox>
+            <HBox>
+               <children>
+                  <ToggleSwitch fx:id="waveStartsToggleSwitch" prefHeight="24.0" prefWidth="165.0" text="Wave Starts">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </ToggleSwitch>
+                  <Pane maxWidth="1.7976931348623157E308" prefWidth="0.0" HBox.hgrow="ALWAYS" />
+                  <ToggleSwitch fx:id="lapRaceToggleSwitch" prefHeight="24.0" prefWidth="111.0" text="Lap Race">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </ToggleSwitch>
+               </children>
+            </HBox>
             <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
-                  <CheckBox fx:id="splitsCheckBox" mnemonicParsing="false" text="On-Course Splits">
+                  <ToggleSwitch fx:id="splitsToggleSwitch" prefHeight="24.0" prefWidth="165.0" text="On-Course Splits">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </ToggleSwitch>
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="2.0" VBox.vgrow="NEVER">
+               <children>
+                  <Label prefHeight="20.0" prefWidth="90.0" text="Cutoff Time:">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="raceCutoffTimeTextField" prefWidth="75.0" promptText="HH:MM" />
+                  <Label fx:id="raceCutoffTimePaceLabel" prefHeight="20.0" prefWidth="90.0">
                      <font>
                         <Font size="14.0" />
                      </font>
-                  </CheckBox>
+                  </Label>
                </children>
             </HBox>
             <HBox fx:id="bibRangeHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="2.0" VBox.vgrow="NEVER">
                <children>
-                  <Label prefHeight="20.0" prefWidth="85.0" text="Bib Range: ">
+                  <Label prefHeight="20.0" prefWidth="90.0" text="Bib Range: ">
                      <font>
-                        <Font size="14.0" />
+                        <Font size="16.0" />
                      </font>
                   </Label>
                   <TextField fx:id="startBibTextField" prefWidth="75.0" />
@@ -255,22 +237,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <TextField fx:id="endBibTextField" prefWidth="75.0" />
                </children>
             </HBox>
-            <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="2.0" VBox.vgrow="NEVER">
+            <HBox alignment="TOP_CENTER">
                <children>
-                  <Label prefHeight="20.0" prefWidth="85.0" text="Cutoff Time">
+                  <Button fx:id="courseRecordSetupButton" mnemonicParsing="false" text="Setup Course Records">
                      <font>
-                        <Font size="14.0" />
+                        <Font size="16.0" />
                      </font>
-                  </Label>
-                  <TextField fx:id="raceCutoffTimeTextField" prefWidth="75.0" promptText="HH:MM" />
-                  <Label fx:id="raceCutoffTimePaceLabel" prefHeight="20.0" prefWidth="90.0">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
+                  </Button>
                </children>
             </HBox>
-            <Button fx:id="courseRecordSetupButton" mnemonicParsing="false" text="Setup Course Records" />
          </children>
       </VBox>
       <VBox maxHeight="-Infinity" minHeight="-Infinity" spacing="5.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="TOP" GridPane.vgrow="NEVER">
@@ -279,10 +254,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                <children>
                   <Label prefHeight="20.0" prefWidth="100.0" text="Race Name">
                      <font>
-                        <Font size="14.0" />
+                        <Font size="18.0" />
                      </font>
                   </Label>
-                  <TextField fx:id="raceNameTextField" onAction="#updateRaceName" HBox.hgrow="ALWAYS" />
+                  <TextField fx:id="raceNameTextField" onAction="#updateRaceName" prefHeight="26.0" prefWidth="192.0" HBox.hgrow="ALWAYS" />
+                  <Pane maxWidth="1.7976931348623157E308" prefWidth="0.0" HBox.hgrow="ALWAYS" />
                </children>
                <padding>
                   <Insets right="5.0" />
@@ -332,15 +308,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <ToggleButton fx:id="finishToggleButton" mnemonicParsing="false" text="+" />
                      </children>
                   </HBox>
+                  <HBox prefWidth="200.0" spacing="5.0" VBox.vgrow="NEVER">
+                     <children>
+                        <Pane prefWidth="100.0" HBox.hgrow="NEVER" />
+                        <Button fx:id="updateResultsButton" mnemonicParsing="false" text="Recalculate Results" />
+                     </children>
+                  </HBox>
                </children>
             </VBox>
             <HBox fx:id="minFinishTimeHBox" alignment="CENTER_LEFT" fillHeight="false" spacing="5.0">
                <children>
-                  <Label prefHeight="20.0" prefWidth="100.0">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
                   <Label alignment="CENTER_RIGHT" prefHeight="20.0" text="Min Time From Last Split" textAlignment="RIGHT">
                      <font>
                         <Font size="14.0" />
@@ -349,7 +326,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <Insets />
                      </HBox.margin>
                   </Label>
-                  <TextField fx:id="minFromLastSplitTextField" onAction="#updateRaceStartTime" prefHeight="25.0" prefWidth="96.0" promptText="HH:MM:SS.sss" />
+                  <TextField fx:id="minFromLastSplitTextField" onAction="#updateRaceStartTime" prefHeight="26.0" prefWidth="105.0" promptText="HH:MM:SS.sss" />
                </children>
             </HBox>
          </children>
@@ -359,8 +336,56 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       </VBox>
       <Label text="Race Details">
          <font>
-            <Font size="20.0" />
+            <Font size="22.0" />
          </font>
       </Label>
+      <VBox fx:id="segmentsVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" GridPane.rowIndex="3">
+         <children>
+            <Label maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" text="Segments">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Label>
+            <TableView fx:id="raceSegmentsTableView" editable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="SOMETIMES">
+              <columns>
+                <TableColumn fx:id="segmentNameTableColumn" prefWidth="150.0" text="Name">
+                      <cellValueFactory>
+                          <PropertyValueFactory property="segmentName" />
+                      </cellValueFactory>
+                  </TableColumn>
+                <TableColumn fx:id="segmentStartSplitTableColumn" minWidth="0.0" prefWidth="46.0" text="Start">
+                      <cellValueFactory>
+                          <PropertyValueFactory property="startSplitString" />
+                      </cellValueFactory>
+                  </TableColumn>
+                  <TableColumn fx:id="segmentEndSplitTableColumn" minWidth="0.0" prefWidth="119.5" text="End">
+                      <cellValueFactory>
+                          <PropertyValueFactory property="endSplitString" />
+                      </cellValueFactory>
+                  </TableColumn>
+                  <TableColumn fx:id="segmentDistanceTableColumn" editable="false" minWidth="0.0" prefWidth="119.5" text="Distance">
+                     <cellValueFactory>
+                        <PropertyValueFactory property="endSplitString" />
+                     </cellValueFactory>
+                  </TableColumn>
+              </columns>
+               <columnResizePolicy>
+                  <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+               </columnResizePolicy>
+            </TableView>
+            <HBox alignment="CENTER_RIGHT" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
+               <children>
+                  <Button fx:id="addSegmentutton" mnemonicParsing="false" onAction="#addSegment" text="Add" />
+                  <Button fx:id="deleteSegmentButton" mnemonicParsing="false" onAction="#deleteSegment" text="Remove" />
+               </children>
+            </HBox>
+         </children>
+         <padding>
+            <Insets top="10.0" />
+         </padding>
+      </VBox>
    </children>
+   <padding>
+      <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+   </padding>
 </GridPane>
