@@ -45,11 +45,12 @@ create table event_options_attributes (
 create table race (
     race_id int primary key, 
     race_name varchar, 
-    race_distance numeric,
+    race_distance numeric(20,5),
     race_dist_unit varchar,
     race_bib_start varchar,
     race_bib_end varchar,
     race_cutoff bigint,
+    race_max_start bigint,
     race_relay boolean,
     uuid varchar
 ); 
@@ -102,7 +103,7 @@ create table race_split (
     race_id int, 
     timing_loc_id int, 
     split_seq_number int, 
-    split_distance numeric,
+    split_distance numeric(20,5),
     split_dist_unit varchar, 
     split_pace_unit varchar, 
     split_name varchar, 

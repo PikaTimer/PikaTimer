@@ -222,7 +222,7 @@ public class Split {
         return splitDistance;
     }
     public void setSplitDistance(BigDecimal d) {
-        splitDistance = d; 
+        if (d != null) splitDistance = d.stripTrailingZeros(); 
         if(splitDistance != null && splitDistanceUnit != null)
             splitDistanceString.setValue(splitDistance.toPlainString()+ " " + splitDistanceUnit.toShortString()); 
     }

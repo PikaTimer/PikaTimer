@@ -3,7 +3,11 @@ TODO for 2.0 Release
 General:
     jdeploy for installer binaries
 
-Race Setup:
+Race:
+
+    DONE: Swap Event vs Race to match RSU
+        -- Refactor code and swap event and race terms?
+
     Copy Race Button
         Dialog w/ prompts for new race name, distance
         -- Copy starting waves sans bib assignments
@@ -11,22 +15,22 @@ Race Setup:
         -- copy awards / sexgroups, agegroups
         -- copy reports but update output names
 
-    Chip start time cutoff to support single timing location for start/finish
+    DONE: Chip start time cutoff to support single timing location for start/finish
 
     Race Setup Wizard
 
     Lap Race toggle
-      -- Adds an "Exit Timing Split" option
-
-    Better new split placement based on selected split
-    split reorder based on total distance
-    Split distance -> cumulative
-    Split options ->> dialog instead of inline
-    segment options -> dialog instead of inline
+      -- Adds an "Exit Timing Location" option
+      -- Min time for each lap
+   
+    Done: Split options ->> dialog instead of inline
+    Segment options -> dialog instead of inline
  
     auto-save on text field updates (always edit table cell factory?)
 
-    DurationTextField for time entry
+    Done: Duration TextFormatter
+    Done: Decimal TextFormatter
+    Done: LocalTime TextFormatter
 
     Recalc race results if start/finish timing splits changed
 
@@ -42,10 +46,7 @@ BUGS:
 
 Features:
     Timing Export Function: Output to a bib/chip csv
-    Generic bib/chip -> time importer
-    Select Timer Web App: Simple keypad with enter button, directly feeds to Pika
     
-
     Additional RSU Integration
         -- Finish times w/ and w/o splits
     
@@ -60,40 +61,36 @@ Features:
     --Upgrade to Hibernate 7.x
     --TableCell editCell that does a commit on focus change (WTF Oracle)?
 
-Logging 
-  --enable debug output log viewing
-  --enable saving debug output log to file
-  --enable toggle to set debug level to Normal/Debug/Trace
+Logging:
+    Done: Switch to slfj
+    Enable debug output log viewing
+    Enable saving debug output log to file
+    Enable toggle to set debug level to Normal/Debug/Trace?
 
 Timing: 
-    --Single timing location for start/finish support
-    --Ultra Direct: filter after skew to permit "old" times to be adjusted forward  
-    --Ultra Direct: option to auto-set skew if the clock is off and we can't fix it
-    --Ultra Direct: Better exception catching when we ask for a setting that we don't have a value for yet
-    --PikaTimer client
-    --PikaRelay client
-    -- Option to assign any time to the race/wave start time via right mouse click menu
-    -- Lookup Button -> option of manual entry of wave start times?
+    Single timing location for start/finish support
+    Lap Race Support
+    Option to assign any time to the race/wave start time via right mouse click menu
+    
+    Time Sources:
+        --Ultra Direct: filter after skew to permit "old" times to be adjusted forward  
+        --Ultra Direct: option to auto-set skew if the clock is off and we can't fix it
+        --Ultra Direct: Better exception catching when we ask for a setting that we don't have a value for yet
+        --PikaTimer client
+        --PikaRelay client
+        --Generic bib/chip -> time importer
+        --Select Timer Web App: Simple keypad with enter button, directly feeds to Pika
 
-Races:
-    --Race Setup Wizard
-    --Copy Race 
-    --Ability to drag/drop splits to reorder
-    --Cumulative vs differential distance for splits specification?
-    --Ability to set split specific distance unit
-    --Relay Race Support
-    --Lap Race Support
 
 Participants:
-    --Rework Participant import wizard
-    --Bidirectional sync w/ RSU
+    Rework Participant import wizard
+    Bidirectional sync w/ RSU
         -- Participant attributes
         -- Switch / add RSU events if moved or added to a different race
-    --textfield auto complete for city 
-    --Clean up import (Title Case or Upper Case names, etc)
-    --Custom city name map (e.g. "Colorado Springs" -> "Colo Spgs")
+    Clean up import (Title Case or Upper Case names, etc)
+    Custom city name map (e.g. "Colorado Springs" -> "Colo Spgs")
     
-Teams:
+Teams (v2.1?):
     --Participant -> Teams
     --Team Awards
     --Team Categories (gender, mixed gender, custom data field setting, etc)
@@ -123,8 +120,7 @@ Reports:
 
 Options tab:
 Account info profiles (Registration, FTP, etc) w/ option to persist to the local user's preferences
-Gender Display (Men/Women, Male/Female, custom)
-Non-Binary Gender option
+
 
 -------------------------------------
 Series Manager (separate App like PikaSeries?)

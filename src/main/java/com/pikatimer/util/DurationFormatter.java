@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2017 John Garner
+ * Copyright (C) 2024 John Garner
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,9 @@ public class DurationFormatter {
         // rm is the rounding mode. see java.math.RoundingMode for options
         Boolean isNegative = false;
         
-        logger.trace("durationToString start with " + d.toNanos() + " and " + p.toString() + " or " + d.toString());
+        if (d == null){
+            logger.trace("DurationFormatter.durationToString() called with NULL duration");
+        } else logger.trace("durationToString start with " + d.toNanos() + " and " + p.toString() + " or " + d.toString());
         //String result = d.toString(); 
         //result = d.toString().replace("PT", "").replace("H",":").replace("M",":"); 
         if (d == null || d.isZero() || d.equals(Duration.ofNanos(Long.MAX_VALUE))) return "";

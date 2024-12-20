@@ -283,11 +283,13 @@ public class RaceDAO {
         s.beginTransaction(); 
         s.update(sp);
         s.getTransaction().commit();
+        updateSplitOrder(sp.getRace());
      }
     
     public void updateSplitOrder(Race r) {
         Session s=HibernateUtil.getSessionFactory().getCurrentSession();
         s.beginTransaction(); 
+        r.splitsProperty().sort((a,b) -> a.getSplitDistance().compareTo(b.getSplitDistance()));
         r.splitsProperty().stream().forEach((item) -> {
             logger.trace(r.getRaceName() + " has " + item.getSplitName() + " at " + r.getSplits().indexOf(item));
             item.splitPositionProperty().set(r.splitsProperty().indexOf(item)+1);

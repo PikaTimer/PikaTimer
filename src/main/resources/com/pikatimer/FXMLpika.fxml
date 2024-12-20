@@ -61,10 +61,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
          <padding>
             <Insets left="5.0" top="5.0" />
          </padding>
+         <GridPane.margin>
+            <Insets left="5.0" right="5.0" />
+         </GridPane.margin>
       </HBox>
       <TabPane fx:id="mainTabPane" layoutX="-276.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="300.0" minWidth="400.0" prefHeight="500.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="-276.0" AnchorPane.rightAnchor="-279.0" AnchorPane.topAnchor="0.0" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
         <tabs>
-            <Tab closable="false" text="Event Details">
+            <Tab closable="false" text="Race Details">
               <content>
                 <fx:include fx:id="eventTabPage" source="event/FXMLEvent.fxml" />
               </content>

@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Optional;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -46,7 +45,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableView;
@@ -54,7 +52,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
-import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,8 +70,8 @@ public class FXMLEventController {
     private TextField eventTitle;
     @FXML
     private DatePicker eventDate;
-    @FXML
-    private ToggleSwitch multipleRacesToggleSwitch;
+    //@FXML 
+    //private ToggleSwitch multipleRacesToggleSwitch;
     @FXML
     private VBox racesVBox;    
     @FXML
@@ -86,8 +83,8 @@ public class FXMLEventController {
     @FXML
     private Button removeRaceButton;    
     private ObservableList<Race> raceList;    
-    @FXML
-    private ToggleSwitch showTimingLocationsToggleSwitch;
+    //@FXML
+    //private ToggleSwitch showTimingLocationsToggleSwitch;
     @FXML
     private VBox timingVBox;
     @FXML
@@ -148,9 +145,9 @@ public class FXMLEventController {
         //Setup the races VBox 
         // Bind the multiple Races CheckBox to the races table to automatically 
         // enable / disable it
-        timingVBox.managedProperty().bind(showTimingLocationsToggleSwitch.selectedProperty());
-        timingVBox.visibleProperty().bind(showTimingLocationsToggleSwitch.selectedProperty());
-        showTimingLocationsToggleSwitch.setSelected(false);
+//        timingVBox.managedProperty().bind(showTimingLocationsToggleSwitch.selectedProperty());
+//        timingVBox.visibleProperty().bind(showTimingLocationsToggleSwitch.selectedProperty());
+//        showTimingLocationsToggleSwitch.setSelected(false);
         
         timingLocationDAO = TimingDAO.getInstance();
         timingLocationList = timingLocationDAO.listTimingLocations();        
@@ -160,10 +157,10 @@ public class FXMLEventController {
         
         timingLocListView.setItems(timingLocationList);
         
-        if (timingLocationList.size() > 2) {
-            showTimingLocationsToggleSwitch.setSelected(true);
-        }
-        showTimingLocationsToggleSwitch.disableProperty().bind(Bindings.size(timingLocListView.getItems()).greaterThan(2));
+//        if (timingLocationList.size() > 2) {
+//            showTimingLocationsToggleSwitch.setSelected(true);
+//        }
+//        showTimingLocationsToggleSwitch.disableProperty().bind(Bindings.size(timingLocListView.getItems()).greaterThan(2));
         
         timingLocListView.setEditable(true);
 
@@ -226,13 +223,13 @@ public class FXMLEventController {
         //Setup the races VBox 
         // Bind the multiple Races CheckBox to the races table to automatically 
         // enable / disable it
-        racesVBox.managedProperty().bind(multipleRacesToggleSwitch.selectedProperty());
-        racesVBox.visibleProperty().bind(multipleRacesToggleSwitch.selectedProperty());
+//        racesVBox.managedProperty().bind(multipleRacesToggleSwitch.selectedProperty());
+//        racesVBox.visibleProperty().bind(multipleRacesToggleSwitch.selectedProperty());
 
         // Populate the underlying table with any races.
         // raceDAO.getRaces(); 
         // if we have more than one race then let's set the multipleRacesCheckBox to true.
-        multipleRacesToggleSwitch.setSelected(false);
+//        multipleRacesToggleSwitch.setSelected(false);
         
         raceDAO = RaceDAO.getInstance();
         raceList = raceDAO.listRaces();        
@@ -268,8 +265,8 @@ public class FXMLEventController {
         removeRaceButton.setDisable(true);
         
         if (raceList.size() > 1) {
-            multipleRacesToggleSwitch.setSelected(true);
-            multipleRacesToggleSwitch.setDisable(true);
+//            multipleRacesToggleSwitch.setSelected(true);
+//            multipleRacesToggleSwitch.setDisable(true);
             removeRaceButton.setDisable(false);
             
         }
@@ -327,11 +324,11 @@ public class FXMLEventController {
         updateEvent();
 
         // If there is only one race, also update the race name
-        if (raceList.size() == 1) {
-            Race selectedRace = raceList.get(0);            
-            selectedRace.setRaceName(eventTitle.getText());
-            raceDAO.updateRace(selectedRace);
-        }
+//        if (raceList.size() == 1) {
+//            Race selectedRace = raceList.get(0);            
+//            selectedRace.setRaceName(eventTitle.getText());
+//            raceDAO.updateRace(selectedRace);
+//        }
     }
     
     @FXML
@@ -382,26 +379,26 @@ public class FXMLEventController {
         eDAO.updateEvent();
     }
     
-    public void resetTimingLocations(ActionEvent fxevent) {
-        // prompt 
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirm Resetting all Timing Locations");
-        alert.setHeaderText("This action cannot be undone.");
-        alert.setContentText("This will reset the timing locations to default values.\nAll splits will be reassigned to one of the default locations.");
-        //Label alertContent = new Label("This will reset the timing locations to default values.\nAll splits will be reassigned to one of the default locations.");
-        //alertContent.setWrapText(true); 
-        //alert.getDialogPane().setContent(alertContent);
-        
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.get() == ButtonType.OK) {
-            timingLocationDAO.createDefaultTimingLocations();
-        } else {
-            // ... user chose CANCEL or closed the dialog
-        }
-        
-        timingLocAddButton.requestFocus();
-        timingLocAddButton.setDefaultButton(true);
-    }
+//    public void resetTimingLocations(ActionEvent fxevent) {
+//        // prompt 
+//        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+//        alert.setTitle("Confirm Resetting all Timing Locations");
+//        alert.setHeaderText("This action cannot be undone.");
+//        alert.setContentText("This will reset the timing locations to default values.\nAll splits will be reassigned to one of the default locations.");
+//        //Label alertContent = new Label("This will reset the timing locations to default values.\nAll splits will be reassigned to one of the default locations.");
+//        //alertContent.setWrapText(true); 
+//        //alert.getDialogPane().setContent(alertContent);
+//        
+//        Optional<ButtonType> result = alert.showAndWait();
+//        if (result.get() == ButtonType.OK) {
+//            timingLocationDAO.createDefaultTimingLocations();
+//        } else {
+//            // ... user chose CANCEL or closed the dialog
+//        }
+//        
+//        timingLocAddButton.requestFocus();
+//        timingLocAddButton.setDefaultButton(true);
+//    }
     
     public void addTimingLocation(ActionEvent fxevent) {
         // prompt 
@@ -470,7 +467,7 @@ public class FXMLEventController {
     public void addRace(ActionEvent fxevent) {
         // prompt 
         Race r = new Race();
-        r.setRaceName("New Race");
+        r.setRaceName("New Event");
         r.setRaceDistance(new BigDecimal("5.0"));        
         r.setRaceDistanceUnits(Unit.KILOMETERS);
         r.setAgeGroups(new AgeGroups());
@@ -495,10 +492,10 @@ public class FXMLEventController {
         });
         //timingLocListView.edit(timingLocationList.indexOf(t));
         if (raceList.size() > 1) {            
-            multipleRacesToggleSwitch.setDisable(true);
+//            multipleRacesToggleSwitch.setDisable(true);
             removeRaceButton.setDisable(false);            
         } else {
-            multipleRacesToggleSwitch.setDisable(false);
+//            multipleRacesToggleSwitch.setDisable(false);
             removeRaceButton.setDisable(true);
         }
         addRaceButton.setDefaultButton(false);
@@ -559,10 +556,10 @@ public class FXMLEventController {
             addRaceButton.setDefaultButton(false);
             
             if (raceList.size() > 1) {                
-                multipleRacesToggleSwitch.setDisable(true);
+//                multipleRacesToggleSwitch.setDisable(true);
                 removeRaceButton.setDisable(false);                
             } else {
-                multipleRacesToggleSwitch.setDisable(false);
+//                multipleRacesToggleSwitch.setDisable(false);
                 removeRaceButton.setDisable(true);
             }
         }

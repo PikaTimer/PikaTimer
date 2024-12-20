@@ -78,6 +78,8 @@ public class Race {
     private final StringProperty raceName;
     private  Duration raceCutoff; 
     private final StringProperty raceCutoffProperty; 
+    private Duration raceMaxStart;
+    private final StringProperty raceMaxStartProperty;
     private final StringProperty raceBibStart;
     private final StringProperty raceBibEnd;
     private final BooleanProperty relayRace; 
@@ -109,6 +111,7 @@ public class Race {
         this.raceBibStart = new SimpleStringProperty();
         this.raceBibEnd = new SimpleStringProperty();
         this.raceCutoffProperty = new SimpleStringProperty();
+        this.raceMaxStartProperty = new SimpleStringProperty();
         this.relayRace = new SimpleBooleanProperty();
         this.raceDistanceProperty = new SimpleStringProperty();
         this.raceWaves = FXCollections.observableArrayList(Wave.extractor());
@@ -151,10 +154,13 @@ public class Race {
         return raceDistance;
     }
     public void setRaceDistance(BigDecimal d) {
-        raceDistance = d; 
-        if(raceDistance != null && raceUnits != null)
-            raceDistanceProperty.setValue(raceDistance.toPlainString()+raceUnits.toShortString()); 
-        //raceDistance = new BigDecimal(d).setScale(3, BigDecimal.ROUND_HALF_UP);
+        logger.debug("Race::setRaceDistance called with {}",d);
+        if (d != null) raceDistance = d.stripTrailingZeros(); 
+        if(raceDistance != null && raceUnits != null) {
+            raceDistanceProperty.setValue(raceDistance.toPlainString()+" "+raceUnits.toShortString()); 
+            logger.debug("Race::setRaceDistance set to {}",raceDistance.toPlainString());
+            //raceDistance = new BigDecimal(d).setScale(3, BigDecimal.ROUND_HALF_UP);
+        }
     }
     public StringProperty raceDistanceProperty() {
         return raceDistanceProperty; 
@@ -231,6 +237,31 @@ public class Race {
     public StringProperty raceCutoffProperty(){
         return raceCutoffProperty;  
     }
+    
+    @Column(name="RACE_MAX_START", nullable=true)
+    public Long getRaceMaxStart() {
+        if (raceMaxStart != null) {
+            return raceMaxStart.toNanos();
+        } else {
+            return 0L; 
+        }
+    }
+    public void setRaceMaxStart(Long c) {
+        if(c != null) {
+            logger.trace("setMaxStartutoff " + c.toString());
+            raceMaxStart = Duration.ofNanos(c);
+            if (raceMaxStart.isZero()) raceMaxStartProperty.set(""); 
+            else raceMaxStartProperty.set(DurationFormatter.durationToString(raceMaxStart, 0, Boolean.TRUE));
+            //raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff,0)); 
+        }
+    }
+    public Duration raceMaxStartDuration(){
+        return raceMaxStart;
+    }
+    public StringProperty raceMaxStartProperty(){
+        return raceMaxStartProperty;  
+    }
+    
     
     @OneToMany(mappedBy="race",cascade={CascadeType.PERSIST, CascadeType.REMOVE},fetch = FetchType.EAGER)
     @Fetch(FetchMode.SELECT)

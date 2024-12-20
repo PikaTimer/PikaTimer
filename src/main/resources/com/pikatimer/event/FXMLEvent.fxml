@@ -33,7 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import org.controlsfx.control.ToggleSwitch?>
 
 <GridPane fx:id="eventGridPane" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="10.0" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.event.FXMLEventController">
    <columnConstraints>
@@ -50,7 +49,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                <children>
                   <HBox alignment="CENTER_LEFT" prefWidth="579.0">
                      <children>
-                        <Label minWidth="-Infinity" prefHeight="23.0" prefWidth="110.0" text="Event Name">
+                        <Label minWidth="-Infinity" prefHeight="23.0" prefWidth="110.0" text="Race Name">
                            <padding>
                               <Insets right="10.0" />
                            </padding>
@@ -77,32 +76,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                </children>
             </VBox>
             <VBox alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" spacing="2.0" VBox.vgrow="NEVER">
-               <children>
-                  <ToggleSwitch fx:id="multipleRacesToggleSwitch" alignment="CENTER_RIGHT" nodeOrientation="LEFT_TO_RIGHT" prefHeight="24.0" prefWidth="153.0" text="Multiple Races">
-                     <font>
-                        <Font size="16.0" />
-                     </font>
-                  </ToggleSwitch>
-                  <ToggleSwitch fx:id="showTimingLocationsToggleSwitch" alignment="CENTER_RIGHT" nodeOrientation="LEFT_TO_RIGHT" prefHeight="24.0" prefWidth="210.0" text="Show Timing Locations" textAlignment="CENTER">
-                     <font>
-                        <Font size="16.0" />
-                     </font>
-                  </ToggleSwitch>
-               </children>
                <padding>
                   <Insets bottom="10.0" top="10.0" />
                </padding>
             </VBox>
             <VBox fx:id="racesVBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="2.0" VBox.vgrow="SOMETIMES">
                <children>
-                  <Label maxWidth="1.7976931348623157E308" text="Races" VBox.vgrow="NEVER">
+                  <Label maxWidth="1.7976931348623157E308" text="Events" VBox.vgrow="NEVER">
                      <font>
                         <Font size="20.0" />
                      </font>
                   </Label>
                   <TableView fx:id="raceTableView" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="100.0" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="raceNameColumn" minWidth="75.0" prefWidth="150.0" resizable="true" text="Race Name">
+                        <TableColumn fx:id="raceNameColumn" minWidth="75.0" prefWidth="150.0" resizable="true" text="Name">
                             <cellValueFactory>
                                 <PropertyValueFactory property="raceName" />
                             </cellValueFactory>
@@ -121,17 +108,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                      <children>
                         <Button fx:id="addRaceButton" mnemonicParsing="false" onAction="#addRace" text="Add">
                            <font>
-                              <Font size="16.0" />
+                              <Font size="14.0" />
                            </font></Button>
                         <Button fx:id="copyRaceButton" mnemonicParsing="false" onAction="#addRace" text="Copy">
                            <font>
-                              <Font size="16.0" />
+                              <Font size="14.0" />
                            </font>
                         </Button>
                         <Pane HBox.hgrow="ALWAYS" />
                         <Button fx:id="removeRaceButton" mnemonicParsing="false" onAction="#removeRace" text="Remove">
                            <font>
-                              <Font size="16.0" />
+                              <Font size="14.0" />
                            </font></Button>
                      </children>
                      <padding>
@@ -153,11 +140,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <Pane HBox.hgrow="ALWAYS" />
                         <Button fx:id="timingLocAddButton" mnemonicParsing="false" onAction="#addTimingLocation" text="Add">
                            <font>
-                              <Font size="16.0" />
+                              <Font size="14.0" />
                            </font></Button>
                         <Button fx:id="timingLocRemoveButton" mnemonicParsing="false" onAction="#removeTimingLocation" text="Remove">
                            <font>
-                              <Font size="16.0" />
+                              <Font size="14.0" />
                            </font></Button>
                      </children>
                      <padding>
