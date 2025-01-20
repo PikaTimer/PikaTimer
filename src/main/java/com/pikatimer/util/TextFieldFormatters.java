@@ -166,7 +166,7 @@ public class TextFieldFormatters {
             String newValue = change.getControlNewText();
             logger.trace("DurationFormatter TextFormatter fired: Changed? {} Value: {}",change.isContentChange(),newValue);
 
-            if ( newValue.isEmpty() || newValue.matches("^-?[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?$") ){
+            if ( newValue.isEmpty() || newValue.matches("^-?[0-9]+(:(([0-5]([0-9](:([0-5]([0-9](\\.\\d*)?)?)?)?)?)?)?)?$") ){
                 logger.debug("Possiblely good Time (newValue: " + newValue + ")");
                 return change;
             }
@@ -187,7 +187,7 @@ public class TextFieldFormatters {
             
             logger.trace("PositiveDurationFormatter TextFormatter fired: Changed? {} Value: {}",change.isContentChange(),newValue);
             
-            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:?([0-5]?([0-5][0-9]?(:([0-5]?([0-5][0-9]?(\\.\\d*)?)?)?)?)?)?)?$") ){
+            if ( newValue.isEmpty() || newValue.matches("^[0-9]+(:(([0-5]([0-9](:([0-5]([0-9](\\.\\d*)?)?)?)?)?)?)?)?$") ){
                 logger.debug("getDurationFormatter()  Possiblely good duration: {}",newValue);
                 return change;
             }
