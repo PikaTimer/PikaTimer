@@ -693,7 +693,10 @@ public class FXMLRaceDetailsController {
         
             raceSplitsListener=(ListChangeListener.Change<? extends Split> c) -> {
                 logger.debug("Splits have changed");
-                if (!ResultsDAO.getInstance().getResults(selectedRace.getID()).isEmpty())splitUpdateResultsButton.visibleProperty().set(true);
+                if (!ResultsDAO.getInstance().getResults(selectedRace.getID()).isEmpty())updateResultsButton.visibleProperty().set(true);
+                
+                if (raceSplits.getFirst().getTimingLocation().equals(raceSplits.getLast().getTimingLocation())) maxStartHBox.setVisible(true);
+                else maxStartHBox.setVisible(false);
             };
             raceSplits.addListener(raceSplitsListener);
             

@@ -18,19 +18,29 @@ package com.pikatimer.event;
 
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.race.AgeGroups;
+import com.pikatimer.race.AwardCategory;
+import com.pikatimer.race.CourseRecord;
 import com.pikatimer.race.FXMLRaceDetailsController;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceAwards;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.SexCode;
 import com.pikatimer.race.SexGroups;
+import com.pikatimer.race.Wave;
+import com.pikatimer.timing.Segment;
+import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.timing.TimingDAO;
 import com.pikatimer.util.Unit;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -38,7 +48,6 @@ import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
@@ -66,42 +75,28 @@ public class FXMLEventController {
     private final Event event = Event.getInstance();
     private EventDAO eDAO;    
     private FXMLLoader raceDetailsLoader;
-    @FXML
-    private TextField eventTitle;
-    @FXML
-    private DatePicker eventDate;
-    //@FXML 
-    //private ToggleSwitch multipleRacesToggleSwitch;
-    @FXML
-    private VBox racesVBox;    
-    @FXML
-    private TableView<Race> raceTableView;
-    //@FXML private Button raceRemoveAllButton;
-    @FXML
-    private Button addRaceButton;
-    @FXML private Button copyRaceButton;
-    @FXML
-    private Button removeRaceButton;    
+    
+    @FXML    private TextField eventTitle;
+    @FXML    private DatePicker eventDate;
+    @FXML    private VBox racesVBox;    
+    @FXML    private TableView<Race> raceTableView;
+    @FXML    private Button addRaceButton;
+    @FXML    private Button copyRaceButton;
+    @FXML    private Button removeRaceButton;    
     private ObservableList<Race> raceList;    
-    //@FXML
-    //private ToggleSwitch showTimingLocationsToggleSwitch;
-    @FXML
-    private VBox timingVBox;
-    @FXML
-    private ListView<TimingLocation> timingLocListView;
-    //@FXML private Button timingLocRemoveAllButton;
-    @FXML
-    private Button timingLocAddButton;
-    @FXML
-    private Button timingLocRemoveButton;    
+
+    @FXML    private VBox timingVBox;
+    @FXML    private ListView<TimingLocation> timingLocListView;
+    @FXML    private Button timingLocAddButton;
+    @FXML    private Button timingLocRemoveButton;    
+
     private ObservableList<TimingLocation> timingLocationList;
     private TimingDAO timingLocationDAO;    
     private FXMLRaceDetailsController raceDetailsController;
     private RaceDAO raceDAO;
 
     //@FXML private Pane raceDetailsPane;
-    @FXML
-    private VBox raceDetailsVBox;
+    @FXML    private VBox raceDetailsVBox;
 
     /**
      * Initializes the controller class.
@@ -123,31 +118,13 @@ public class FXMLEventController {
             }
         });
 
-        // Use this if you whant keystroke by keystroke monitoring.... 
-        //        eventTitle.textProperty().addListener((observable, oldValue, newValue) -> {
-        //            //logger.debug("TextField Text Changed (newValue: " + newValue + ")");
-        //            event.setEventName(newValue);
-        //            updateEvent();
-        //        });
-        eventDate.setValue(event.getLocalEventDate());
 
-        /**
-         * Set the actions after we seed the value, otherwise the eventDate
-         * action will fire and call an update... ugh...
-         *
-         */
-        eventDate.setOnAction(this::setEventDate);
-        //eventDate.onInputMethodTextChangedProperty()
-        //eventDate.onInputMethodTextChanged(this::setEventDate);
+        eventDate.setValue(event.getLocalEventDate());
+        eventDate.setOnAction((e) -> setEventDate());
+
         logger.trace("FXMLpikaController initialize set date");
 
-        //event.multipleRacesProperty().bind(singleRaceCheckBox.selectedProperty());
-        //Setup the races VBox 
-        // Bind the multiple Races CheckBox to the races table to automatically 
-        // enable / disable it
-//        timingVBox.managedProperty().bind(showTimingLocationsToggleSwitch.selectedProperty());
-//        timingVBox.visibleProperty().bind(showTimingLocationsToggleSwitch.selectedProperty());
-//        showTimingLocationsToggleSwitch.setSelected(false);
+
         
         timingLocationDAO = TimingDAO.getInstance();
         timingLocationList = timingLocationDAO.listTimingLocations();        
@@ -157,15 +134,14 @@ public class FXMLEventController {
         
         timingLocListView.setItems(timingLocationList);
         
-//        if (timingLocationList.size() > 2) {
-//            showTimingLocationsToggleSwitch.setSelected(true);
-//        }
-//        showTimingLocationsToggleSwitch.disableProperty().bind(Bindings.size(timingLocListView.getItems()).greaterThan(2));
+        timingLocAddButton.setOnAction((e) -> addTimingLocation());
+        timingLocRemoveButton.setOnAction((e) -> removeTimingLocation());
+
         
         timingLocListView.setEditable(true);
 
         //timingLocListView.setCellFactory(TextFieldListCell.forListView(null));
-        timingLocListView.setCellFactory(TextFieldListCell.forListView(new StringConverter() {
+        timingLocListView.setCellFactory(TextFieldListCell.forListView(new StringConverter<TimingLocation>() {
             @Override
             public TimingLocation fromString(String s) {
                 TimingLocation t = new TimingLocation();
@@ -174,9 +150,9 @@ public class FXMLEventController {
             }
 
             @Override
-            public String toString(Object t) {
+            public String toString(TimingLocation t) {
                 if (t != null) {
-                    return ((TimingLocation) t).toString();                    
+                    return t.getLocationName();                    
                 } else {
                     logger.warn("Timing StringConverter toString null object detected.");
                     return "";
@@ -220,16 +196,13 @@ public class FXMLEventController {
         });
         
         timingLocRemoveButton.disableProperty().bind(timingLocListView.getSelectionModel().selectedItemProperty().isNull());
-        //Setup the races VBox 
-        // Bind the multiple Races CheckBox to the races table to automatically 
-        // enable / disable it
-//        racesVBox.managedProperty().bind(multipleRacesToggleSwitch.selectedProperty());
-//        racesVBox.visibleProperty().bind(multipleRacesToggleSwitch.selectedProperty());
 
-        // Populate the underlying table with any races.
-        // raceDAO.getRaces(); 
-        // if we have more than one race then let's set the multipleRacesCheckBox to true.
-//        multipleRacesToggleSwitch.setSelected(false);
+        addRaceButton.setOnAction((e) -> addRace());
+        removeRaceButton.setOnAction((e) -> removeRace());
+        copyRaceButton.setOnAction((e) -> copyRace());
+        
+        removeRaceButton.disableProperty().bind(raceTableView.getSelectionModel().selectedItemProperty().isNull());
+        copyRaceButton.disableProperty().bind(raceTableView.getSelectionModel().selectedItemProperty().isNull());
         
         raceDAO = RaceDAO.getInstance();
         raceList = raceDAO.listRaces();        
@@ -262,14 +235,7 @@ public class FXMLEventController {
         
         raceTableView.setItems(raceList);
         
-        removeRaceButton.setDisable(true);
-        
-        if (raceList.size() > 1) {
-//            multipleRacesToggleSwitch.setSelected(true);
-//            multipleRacesToggleSwitch.setDisable(true);
-            removeRaceButton.setDisable(false);
-            
-        }
+        removeRaceButton.visibleProperty().bind(Bindings.size(raceList).greaterThan(1));
 
         // load up the raceDetailsPane
         // Save the FXMLLoader so that we can send it notes when things change in the races box
@@ -307,32 +273,15 @@ public class FXMLEventController {
         
     }
 
-    /**
-     * Initializes the controller class.
-     *
-     * @param fxevent
-     */
-    @FXML
-    protected void setEventTitle(ActionEvent fxevent) {
-//        event.setEventName(eventTitle.getText());
-//        updateEvent();
-        setEventTitle();
-    }
+
     
     protected void setEventTitle() {
         event.setEventName(eventTitle.getText());
         updateEvent();
 
-        // If there is only one race, also update the race name
-//        if (raceList.size() == 1) {
-//            Race selectedRace = raceList.get(0);            
-//            selectedRace.setRaceName(eventTitle.getText());
-//            raceDAO.updateRace(selectedRace);
-//        }
     }
     
-    @FXML
-    protected void setEventDate(ActionEvent fxevent) {
+    protected void setEventDate() {
         
         event.setEventDate(eventDate.getValue());
         updateEvent();
@@ -340,67 +289,16 @@ public class FXMLEventController {
         // TODO: Recalc all participant ages if they have a birthdate set
     }
 
-//    @FXML
-//    protected void toggleSingleRaceCheckBox(ActionEvent fxevent) {
-//        // are we enabled or disabled?
-//        if ( singleRaceCheckBox.isSelected() ) {
-//            logger.debug("Only one race...");
-//            
-//            // load the single race fxml into the singleRacePane; 
-//            
-//            event.getMainTabPane().getTabs().removeIf(p -> p.getText().equals("Races"));
-//            singleRacePane.getChildren().clear();
-//            try {
-//                singleRacePane.getChildren().add(FXMLLoader.load(getClass().getResource("/com/pikatimer/race/FXMLSingleRace.fxml")));
-//            } catch (IOException ex) {
-//                Logger.getLogger(FXMLEventController.class.getName()).log(Level.SEVERE, null, ex);
-//                ex.printStackTrace();
-//            }
-//        } else {
-//            // More than one race. Show a placeholder text and open the Races Tab
-//            logger.debug("More than one race...");
-//            singleRacePane.getChildren().clear();
-//            singleRacePane.getChildren().add(new Label("Multiple Races"));
-//            Tab raceTab = new Tab("Races");
-//            try {
-//                raceTab.setContent(FXMLLoader.load(getClass().getResource("/com/pikatimer/race/FXMLMultipleRaces.fxml")));
-//            } catch (IOException ex) {
-//                Logger.getLogger(FXMLEventController.class.getName()).log(Level.SEVERE, null, ex);
-//                ex.printStackTrace();
-//            }
-//            event.getMainTabPane().getTabs().add(1, raceTab);
-//        }
-//        
-//    }
+
     private void updateEvent() {
         if (eDAO == null) {
             eDAO = new EventDAO();            
         }
         eDAO.updateEvent();
     }
+
     
-//    public void resetTimingLocations(ActionEvent fxevent) {
-//        // prompt 
-//        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-//        alert.setTitle("Confirm Resetting all Timing Locations");
-//        alert.setHeaderText("This action cannot be undone.");
-//        alert.setContentText("This will reset the timing locations to default values.\nAll splits will be reassigned to one of the default locations.");
-//        //Label alertContent = new Label("This will reset the timing locations to default values.\nAll splits will be reassigned to one of the default locations.");
-//        //alertContent.setWrapText(true); 
-//        //alert.getDialogPane().setContent(alertContent);
-//        
-//        Optional<ButtonType> result = alert.showAndWait();
-//        if (result.get() == ButtonType.OK) {
-//            timingLocationDAO.createDefaultTimingLocations();
-//        } else {
-//            // ... user chose CANCEL or closed the dialog
-//        }
-//        
-//        timingLocAddButton.requestFocus();
-//        timingLocAddButton.setDefaultButton(true);
-//    }
-    
-    public void addTimingLocation(ActionEvent fxevent) {
+    public void addTimingLocation() {
         // prompt 
         TimingLocation t = new TimingLocation();
         t.setLocationName("New Timing Location");
@@ -414,7 +312,7 @@ public class FXMLEventController {
         //timingLocAddButton.requestFocus();
     }
 
-    public void removeTimingLocation(ActionEvent fxevent) {
+    public void removeTimingLocation() {
         
         final TimingLocation tl = timingLocListView.getSelectionModel().getSelectedItem();
 
@@ -443,7 +341,7 @@ public class FXMLEventController {
         }
     }
     
-    public void resetRaces(ActionEvent fxevent) {
+    public void resetRaces() {
         // prompt 
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirm Resetting All Races");
@@ -464,7 +362,7 @@ public class FXMLEventController {
         addRaceButton.setDefaultButton(true);
     }
     
-    public void addRace(ActionEvent fxevent) {
+    public void addRace() {
         // prompt 
         Race r = new Race();
         r.setRaceName("New Event");
@@ -490,21 +388,129 @@ public class FXMLEventController {
         Platform.runLater(() -> {
             raceTableView.getSelectionModel().select(raceList.indexOf(r));
         });
-        //timingLocListView.edit(timingLocationList.indexOf(t));
-        if (raceList.size() > 1) {            
-//            multipleRacesToggleSwitch.setDisable(true);
-            removeRaceButton.setDisable(false);            
-        } else {
-//            multipleRacesToggleSwitch.setDisable(false);
-            removeRaceButton.setDisable(true);
-        }
+
         addRaceButton.setDefaultButton(false);
         
         raceDAO.updateRace(r);
         
     }
 
-    public void removeRace(ActionEvent fxevent) {
+    public void copyRace(){
+        // WARNING:  This is a huge anti-pattern. 
+        //
+        // In order to copy a race and the waves/splits/awards/results/etc, 
+        // we need to know a lot about the inner functioning and 
+        // structure of a race and every class that the race has in order to 
+        // be able to do the deep copy/clone. 
+        //
+        // I'm sure there is a "proper" way to do this, but at this point 
+        // I really don't think it is worth the brain damage. 
+        
+        final Race sourceRace = raceTableView.getSelectionModel().getSelectedItem();
+        
+        if (sourceRace == null) {
+            return;
+        }
+        
+        Race newRace = new Race();
+        logger.debug("copyRace called for {} ",sourceRace.getRaceName());
+        // copy basic details
+        newRace.setRaceName(sourceRace.getRaceName() + " (copy)");
+        newRace.setRaceDistance(sourceRace.getRaceDistance());
+        newRace.setRaceDistanceUnits(sourceRace.getRaceDistanceUnits());
+        newRace.setBibStart(sourceRace.getBibStart());
+        newRace.setBibEnd(sourceRace.getBibEnd());
+        newRace.setRaceCutoff(sourceRace.getRaceCutoff());
+        newRace.setRaceMaxStart(sourceRace.getRaceMaxStart());
+        
+        // copy race attributes
+        Map<String,String> a = new HashMap();
+        a.putAll(sourceRace.getAttributes());
+        newRace.setAttributes(a);
+
+        // Save the race so we can add the waves, splits, and segments
+        raceDAO.addRace(newRace);
+        
+        // copy waves
+        sourceRace.getWaves().forEach(w -> {
+            Wave newWave = new Wave(newRace);
+            newWave.copy(w);
+            raceDAO.addWave(newWave);
+        });
+        
+        // copy sex groups
+        SexGroups newSG = new SexGroups();
+        newSG.clone(sourceRace.getSexGroups());
+        newRace.setSexGroups(newSG);
+        raceDAO.updateRace(newRace);
+        
+        
+        // copy AG settings 
+        AgeGroups newAG = new AgeGroups();
+        newAG.clone(sourceRace.getAgeGroups());
+        newRace.setAgeGroups(newAG);
+        raceDAO.updateRace(newRace);
+        
+        
+        // copy splits
+        Map<Split,Split> splitMap = new HashMap(); // used by segments below
+        sourceRace.getSplits().forEach(s -> {
+            Split newSplit = new Split(newRace);
+            newSplit.setSplitName(s.getSplitName());
+            newSplit.setSplitDistanceUnits(newRace.getRaceDistanceUnits());
+            newSplit.setSplitDistance(s.getSplitDistance());
+            newSplit.setTimingLocation(s.getTimingLocation());
+            newSplit.setPosition(s.getPosition()); 
+
+            raceDAO.addSplit(newSplit);
+            splitMap.put(s, newSplit);
+        });
+        
+        
+        // copy segments
+        Map<Segment,Segment> segmentMap = new HashMap();
+        sourceRace.getSegments().forEach(s -> {
+            Segment newSegment = new Segment();
+            newSegment.setRace(newRace);
+            newSegment.setSegmentName(s.getSegmentName());
+            newSegment.setStartSplit(splitMap.get(s.getStartSplit()));
+            newSegment.setEndSplit(splitMap.get(s.getEndSplit()));
+            raceDAO.updateSegment(s);
+            newRace.addRaceSegment(newSegment);
+        });
+        
+        // copy race awards
+        logger.debug("Copying Race Awards...");
+        RaceAwards newRA = new RaceAwards();
+        newRA.getAttributes().putAll(sourceRace.getAwards().getAttributes());
+        newRace.setAwards(newRA);
+        raceDAO.updateRace(newRace);
+        newRA.awardCategoriesProperty().clear();
+        
+        sourceRace.getAwards().getAwardCategories().forEach(oldAC -> {
+            logger.debug("Copying AwardCategory {}",oldAC.getName());
+            AwardCategory newAC = new AwardCategory();
+            newAC.clone(oldAC);
+            newAC.setRaceAward(newRA);
+            newRA.addAwardCategory(newAC);
+            raceDAO.updateAwardCategory(newAC);
+        });
+        logger.debug("New Race now has {} award categories.",newRace.getAwards().awardCategoriesProperty().size());
+        
+        // copy race reports
+        sourceRace.getRaceReports().forEach(rr -> {
+            //newRace.raceReportsProperty().add(rr.clone());
+        });
+             
+        
+        logger.debug("Adding a new race. New Size =" + raceList.size() + " New Race Index=" + raceList.indexOf(newRace));
+        Platform.runLater(() -> {
+            raceTableView.getSelectionModel().select(raceList.indexOf(newRace));
+        });
+        
+    }
+    
+    public void removeRace() {
         
         final Race r = raceTableView.getSelectionModel().getSelectedItem();
         
@@ -550,17 +556,21 @@ public class FXMLEventController {
             
             alert.showAndWait();
         } else {
-            raceDAO.removeRace(raceTableView.getSelectionModel().getSelectedItem());
-            raceTableView.getSelectionModel().select(raceList.indexOf(0));
-            addRaceButton.requestFocus();
-            addRaceButton.setDefaultButton(false);
-            
-            if (raceList.size() > 1) {                
-//                multipleRacesToggleSwitch.setDisable(true);
-                removeRaceButton.setDisable(false);                
-            } else {
-//                multipleRacesToggleSwitch.setDisable(false);
-                removeRaceButton.setDisable(true);
+            // prompt 
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirm Race Removal");
+            alert.setContentText("This action cannot be undone!");
+            alert.setHeaderText("This will remove the " + raceTableView.getSelectionModel().getSelectedItem().getRaceName() + " event");
+            //Label alertContent = new Label("This will reset the timing locations to default values.\nAll splits will be reassigned to one of the default locations.");
+            //alertContent.setWrapText(true); 
+            //alert.getDialogPane().setContent(alertContent);
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() == ButtonType.OK) {
+                raceDAO.removeRace(raceTableView.getSelectionModel().getSelectedItem());
+                raceTableView.getSelectionModel().select(raceList.indexOf(0));
+                addRaceButton.requestFocus();
+                addRaceButton.setDefaultButton(false);
             }
         }
         

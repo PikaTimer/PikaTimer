@@ -82,6 +82,24 @@ public class AgeGroups {
         
     }
     
+    public void clone(AgeGroups src){
+        agStartProperty.set(src.getAGStart());
+        agIncrementProperty.set(src.getAGIncrement());
+        mastersProperty.set(src.getMasters());
+        customIncrementsProperty.set(src.getUseCustomIncrements());
+        customNamesProperty.set(src.getUseCustomNames());
+        if (!src.customIncrementObservableList.isEmpty()){
+            src.customIncrementObservableList.forEach((i -> {
+                AgeGroupIncrement agi = new AgeGroupIncrement();
+                agi.setName(i.getName());
+                agi.setStartAge(i.getStartAge());
+                addCustomIncrement(agi);
+            }));
+            recalcCustomAGs();
+        }
+        invalidateMaps();
+    }
+    
     @Id
     @GenericGenerator(name = "ag_generator", strategy = "foreign", 
 	parameters = @Parameter(name = "property", value = "race"))

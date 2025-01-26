@@ -20,6 +20,8 @@ import com.pikatimer.results.ProcessedResult;
 import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.timing.Segment;
+import com.pikatimer.timing.Split;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.DurationParser;
 import static java.lang.Boolean.FALSE;
@@ -118,6 +120,79 @@ public class AwardCategory {
 
     public AwardCategory() {
         
+    }
+    
+    public void clone(AwardCategory source){
+        nameProperty.set(source.getName());
+        priorityProperty.set(source.getPriority());
+        typeProperty.set(source.getType());
+        depthTypeProperty.set(source.getDepthType());
+        pullProperty.set(source.getPull());
+        chipProperty.set(source.getChip());
+        visibleAwardsProperty.set(source.getVisible());
+        visibleOverallProperty.set(source.getVisibleOverall());
+        depthProperty.set(source.getDepth());
+        mastersAgeProperty.set(source.getMastersAge());
+        
+        source.customDepthObservableList.forEach(d -> {
+            AwardDepth a = new AwardDepth();
+            a.setDepth(d.getDepth());
+            a.setStartCount(d.getStartCount());
+            a.endCountProperty().set(d.endCountProperty().get());
+            customDepthObservableList.add(a);
+            customDepthList = customDepthObservableList;
+        });
+        
+        
+        source.filtersObservableList.forEach(d -> {
+           AwardFilter f = new AwardFilter();
+           f.clone(d);
+           filtersObservableList.add(f);
+        });
+        filters = filtersObservableList; 
+        
+        
+        subdivideListProperty.addAll(source.subdivideListProperty);
+        updateSubdivideList();
+        
+        customFilteredProperty.set(source.getFiltered());
+        
+            
+        
+        customSubdivideProperty.set(source.getSubdivided());
+        
+        
+        
+        skewedProperty.set(source.getSkewed());
+        skewOpProperty.set(source.getSkewType());
+        skewAttributeProperty.set(source.getSkewAttribute());
+        
+
+        
+        if (source.getTimingPointType().equalsIgnoreCase("FINISH")){
+            timingPointIDProperty.set(0);
+            timingPointTypeProperty.set("FINISH");
+        } else if (source.getTimingPointType().equalsIgnoreCase("SPLIT")) {
+            List<Split> src = source.raceAward.getRace().getSplits();
+            List<Split> dest = raceAward.getRace().getSplits();
+            for(int i = 1; i < src.size(); i++){
+                if(src.get(i).getID() == source.timingPointIDProperty.get()) {
+                    timingPointIDProperty.set(dest.get(i).getID());
+                    timingPointTypeProperty.set("SPLIT");
+                }
+            }
+        } else if (source.getTimingPointType().equalsIgnoreCase("SEGMENT")) {
+            List<Segment> src = source.raceAward.getRace().getSegments();
+            List<Segment> dest = raceAward.getRace().getSegments();
+            for(int i = 1; i < src.size(); i++){
+                if(src.get(i).getID() == source.timingPointIDProperty.get()) {
+                    timingPointIDProperty.set(dest.get(i).getID());
+                    timingPointTypeProperty.set("SEGMENT");
+                }
+            }
+        } 
+        
+                
     }
     
     @Id

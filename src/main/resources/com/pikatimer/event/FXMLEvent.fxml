@@ -57,7 +57,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Font size="18.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="eventTitle" maxWidth="1.7976931348623157E308" onAction="#setEventTitle" promptText="Event Name" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="eventTitle" maxWidth="1.7976931348623157E308" promptText="Event Name" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_LEFT">
@@ -106,17 +106,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   </TableView>
                   <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
-                        <Button fx:id="addRaceButton" mnemonicParsing="false" onAction="#addRace" text="Add">
+                        <Button fx:id="addRaceButton" mnemonicParsing="false" text="Add">
                            <font>
                               <Font size="14.0" />
                            </font></Button>
-                        <Button fx:id="copyRaceButton" mnemonicParsing="false" onAction="#addRace" text="Copy">
+                        <Button fx:id="copyRaceButton" mnemonicParsing="false" text="Copy">
                            <font>
                               <Font size="14.0" />
                            </font>
                         </Button>
                         <Pane HBox.hgrow="ALWAYS" />
-                        <Button fx:id="removeRaceButton" mnemonicParsing="false" onAction="#removeRace" text="Remove">
+                        <Button fx:id="removeRaceButton" mnemonicParsing="false" text="Remove">
                            <font>
                               <Font size="14.0" />
                            </font></Button>
@@ -138,11 +138,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <HBox alignment="CENTER_RIGHT" spacing="5.0" VBox.vgrow="NEVER">
                      <children>
                         <Pane HBox.hgrow="ALWAYS" />
-                        <Button fx:id="timingLocAddButton" mnemonicParsing="false" onAction="#addTimingLocation" text="Add">
+                        <Button fx:id="timingLocAddButton" mnemonicParsing="false" text="Add">
                            <font>
                               <Font size="14.0" />
                            </font></Button>
-                        <Button fx:id="timingLocRemoveButton" mnemonicParsing="false" onAction="#removeTimingLocation" text="Remove">
+                        <Button fx:id="timingLocRemoveButton" mnemonicParsing="false" text="Remove">
                            <font>
                               <Font size="14.0" />
                            </font></Button>

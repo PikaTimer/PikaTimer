@@ -56,6 +56,13 @@ public class AwardFilter {
         referenceValueProperty.setValue(v);
     }
     
+    public void clone(AwardFilter src){
+        attributeProperty.setValue(src.getAttribute());
+        comparisonTypeProperty.setValue(src.getComparisonType());
+        referenceValueProperty.setValue(src.getReferenceValue());
+        sexGroupFilter = src.sexGroupFilter;
+    }
+    
     @Column(name="attribute")
     public String getAttribute() {
         logger.trace("getAttribute() returning " + attributeProperty.getValue());

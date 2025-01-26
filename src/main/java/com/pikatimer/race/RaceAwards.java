@@ -226,10 +226,10 @@ public class RaceAwards {
     @Column(name="attribute_value")
     @CollectionTable(name="race_awards_attributes", joinColumns=@JoinColumn(name="race_id"))
     @OrderColumn(name = "index_id")
-    private Map<String, String> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
-    private void setAttributes(Map<String,String> m) {
+    public void setAttributes(Map<String,String> m) {
         attributes = m;
     } 
     

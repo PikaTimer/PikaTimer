@@ -78,17 +78,17 @@ public class CourseRecord implements Comparable<CourseRecord>{
 
     // Details on the current record Holder
     //year
-    private final StringProperty crYearProperty = new SimpleStringProperty(); // Year; 
+    private final StringProperty crYearProperty = new SimpleStringProperty(); 
     //name
-    private final StringProperty crNameProperty = new SimpleStringProperty(); // Name;
+    private final StringProperty crNameProperty = new SimpleStringProperty(); 
     //city
-    private final StringProperty crCityProperty = new SimpleStringProperty(); // Name;
+    private final StringProperty crCityProperty = new SimpleStringProperty(); 
     //state
-    private final StringProperty crStateProperty = new SimpleStringProperty(); // Name;
+    private final StringProperty crStateProperty = new SimpleStringProperty(); 
     //country
-    private final StringProperty crCountryProperty = new SimpleStringProperty(); // Name;
+    private final StringProperty crCountryProperty = new SimpleStringProperty(); 
     //note
-    private final StringProperty crNoteProperty = new SimpleStringProperty(); // Note; 
+    private final StringProperty crNoteProperty = new SimpleStringProperty(); 
 
     // New CR's
     private Duration newDuration ;
@@ -103,6 +103,24 @@ public class CourseRecord implements Comparable<CourseRecord>{
     }
     public CourseRecord() {
         
+    }
+    
+    public CourseRecord clone(){
+        CourseRecord newCR = new CourseRecord();
+        newCR.race = race;
+        newCR.segmentID = segmentID;
+        newCR.categoryProperty.set(categoryProperty.get());
+        newCR.sexProperty.set(sexProperty.get());
+        newCR.ageProperty.set(ageProperty.get());
+        newCR.recordDurationProperty.set(recordDurationProperty.get());
+        newCR.crYearProperty.set(crYearProperty.get());
+        newCR.crNameProperty.set(crNameProperty.get());
+        newCR.crCityProperty.set(crCityProperty.get());
+        newCR.crStateProperty.set(crStateProperty.get());
+        newCR.crCountryProperty.set(crCountryProperty.get());
+        newCR.crNoteProperty.set(crNoteProperty.get());
+        
+        return newCR;
     }
     
     public Boolean checkRecordEligible(Result r){

@@ -73,6 +73,20 @@ public class SexGroups {
         
     }
     
+    public void clone(SexGroups src){
+        setHandling(src.sexHandling);
+        sexCodeList = new ArrayList();
+        sexCodeObservableList.clear();
+        src.sexCodeList.forEach(sc -> {
+            SexCode newSC = new SexCode();
+            newSC.setCode(sc.getCode());
+            newSC.setLabel((sc.getLabel()));
+            sexCodeList.add(sc);
+        });
+        sexCodeObservableList.addAll(getSexCodeList());
+        rebuildSexCodeMap();
+    }
+    
     @Id
     @GenericGenerator(name = "sex_generator", strategy = "foreign", 
 	parameters = @Parameter(name = "property", value = "race"))

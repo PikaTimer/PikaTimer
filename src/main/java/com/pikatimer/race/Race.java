@@ -340,7 +340,7 @@ public class Race {
         logger.debug("Race::setAwards called.... ");
         if (awards == null) awards = a;
         
-        if (awards != null && awards.equals(a)) logger.debug("Race::setAwards called to set the awards to an equal awards object... ");
+
         // make sure awards is linked back to us
         if (awards != null && awards.getRace() != this) awards.setRace(this);
         
@@ -462,7 +462,7 @@ public class Race {
     }
     public void setUUID(String  uuid) {
         uuidProperty.setValue(uuid);
-        logger.trace("Participant UUID is now " + uuidProperty.get());
+        logger.trace("Race UUID is now " + uuidProperty.get());
     }
     public StringProperty uuidProperty() {
         return uuidProperty; 
@@ -480,10 +480,10 @@ public class Race {
     @MapKeyColumn(name="attribute")
     @Column(name="attribute_value")
     @CollectionTable(name="race_attributes", joinColumns=@JoinColumn(name="race_id") )
-    private Map<String, String> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
-    private void setAttributes(Map<String,String> m) {
+    public void setAttributes(Map<String,String> m) {
         attributes = m;
     } 
     

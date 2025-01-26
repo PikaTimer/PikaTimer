@@ -97,6 +97,14 @@ public class Wave {
         
     }
    
+   public void copy(Wave w) {
+       this.waveName.set(w.getWaveName());
+       this.setWaveStart(w.getWaveStart());
+       this.setWaveMaxStart(w.getWaveMaxStart());
+       this.waveAssignmentEnd.set(w.getWaveAssignmentEnd());
+       this.waveAssignmentStart.set(w.getWaveAssignmentStart());
+   }
+   
    public static Callback<Wave, Observable[]> extractor() {
         return (Wave w) -> new Observable[]{w.waveName,w.waveStartString,w.raceName,w.waveDisplayName};
     }
@@ -119,6 +127,7 @@ public class Wave {
         return IDProperty; 
     }
     
+    //TODO: Remove this?
     public IntegerProperty wavePositionProperty() {
         return wavePosition; 
     }
