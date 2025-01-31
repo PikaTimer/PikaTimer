@@ -86,6 +86,20 @@ public class RaceReport {
     public RaceReport(){
         
     }
+    
+    public void clone(RaceReport src){
+        // we assume that the new race will take care of 
+        // setting the race attribute when it is saved. 
+        
+        // copy the attributes
+        attributes.putAll(src.attributes);
+        
+        // copy the type
+        setReportType(src.getReportType());
+        
+    }
+    
+    
 //    id int primary key
     @Id
     @GenericGenerator(name="race_outputs_id" , strategy="increment")

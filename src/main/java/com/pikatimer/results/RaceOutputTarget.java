@@ -58,7 +58,7 @@ public class RaceOutputTarget {
 //    remote_target_id int,
 //    output_filename varchar
     
-    RaceOutputTarget(){
+    public RaceOutputTarget(){
         
     }
 //    id int primary key

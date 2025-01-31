@@ -27,6 +27,9 @@ import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.SexCode;
 import com.pikatimer.race.SexGroups;
 import com.pikatimer.race.Wave;
+import com.pikatimer.results.RaceOutputTarget;
+import com.pikatimer.results.RaceReport;
+import com.pikatimer.results.ResultsDAO;
 import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
 import com.pikatimer.timing.TimingLocation;
@@ -58,6 +61,7 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
@@ -412,10 +416,27 @@ public class FXMLEventController {
             return;
         }
         
+        TextInputDialog dialog = new TextInputDialog("");
+        dialog.setTitle("Copy Event");
+        dialog.setHeaderText("Copy " + sourceRace.getRaceName() + " Event");
+        dialog.setContentText("Please enter the new event name:");
+        
+        // No blank names please
+        Button okButton = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+        TextField inputField = dialog.getEditor();
+        okButton.disableProperty().bind(inputField.textProperty().isEmpty());
+
+        Optional<String> result = dialog.showAndWait();
+        
+        
+        if (! result.isPresent() || result.get().isBlank()) return;
+        
+        
+        
         Race newRace = new Race();
-        logger.debug("copyRace called for {} ",sourceRace.getRaceName());
+        logger.debug("copyRace called for {} -> {}",sourceRace.getRaceName(),result.get());
         // copy basic details
-        newRace.setRaceName(sourceRace.getRaceName() + " (copy)");
+        newRace.setRaceName(result.get());
         newRace.setRaceDistance(sourceRace.getRaceDistance());
         newRace.setRaceDistanceUnits(sourceRace.getRaceDistanceUnits());
         newRace.setBibStart(sourceRace.getBibStart());
@@ -498,8 +519,36 @@ public class FXMLEventController {
         logger.debug("New Race now has {} award categories.",newRace.getAwards().awardCategoriesProperty().size());
         
         // copy race reports
+        ResultsDAO resultsDAO = ResultsDAO.getInstance();
         sourceRace.getRaceReports().forEach(rr -> {
-            //newRace.raceReportsProperty().add(rr.clone());
+            RaceReport newRR = new RaceReport();
+            newRR.clone(rr);
+            newRace.addRaceReport(newRR);
+
+            resultsDAO.saveRaceReport(newRR);
+            
+            // now copy the targets
+            rr.getRaceOutputTargets().forEach(ot -> {
+                RaceOutputTarget newTarget = new RaceOutputTarget();
+                newTarget.setOutputDestination(ot.getOutputDestination());
+                String targetFilename = ot.getOutputFilename();
+                if (targetFilename.toLowerCase().contains(sourceRace.getRaceName().toLowerCase())) {
+                    newTarget.setOutputFilename(targetFilename.replaceAll("(?i)"+sourceRace.getRaceName(), newRace.getRaceName()));
+                } else {
+                    int i = targetFilename.lastIndexOf(".");
+                    String[] newFilename =  {targetFilename.substring(0, i), targetFilename.substring(i)};
+                    if (newFilename.length > 1){
+                        newTarget.setOutputFilename(newFilename[0] + "_" + newRace.getRaceName() + newFilename[1]);
+                    } else {
+                        newTarget.setOutputFilename(targetFilename + "_" + newRace.getRaceName());
+                    }
+                }
+
+                newRR.addRaceOutputTarget(newTarget);
+                resultsDAO.saveRaceReportOutputTarget(newTarget);
+            });
+            
+            
         });
              
         
