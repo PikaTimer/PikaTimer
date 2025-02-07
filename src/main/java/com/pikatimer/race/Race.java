@@ -19,6 +19,8 @@ package com.pikatimer.race;
 import com.pikatimer.results.RaceReport;
 import com.pikatimer.timing.Segment;
 import com.pikatimer.timing.Split;
+import com.pikatimer.timing.TimingDAO;
+import com.pikatimer.timing.TimingLocation;
 import com.pikatimer.util.DurationFormatter;
 import com.pikatimer.util.Unit;
 import java.math.BigDecimal;
@@ -31,8 +33,10 @@ import java.util.Objects;
 import java.util.Set;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -95,6 +99,12 @@ public class Race {
     private List<CourseRecord> courseRecordList;
     private final ObservableList<CourseRecord> courseRecords = FXCollections.observableArrayList(CourseRecord.extractor());
     //private final Race self; 
+    
+    private TimingLocation exitTimingLocation; 
+    private final BooleanProperty lapRaceProperty = new SimpleBooleanProperty(false);
+    private Duration minLapTime;
+    private StringProperty minLapTimeStringProperty = new SimpleStringProperty();
+
 
     private RaceAwards awards;
     private AgeGroups ageGroups;
@@ -538,7 +548,58 @@ public class Race {
     }
     
     
+    @Column(name = "EXIT_TIMING_LOC_ID")
+    public Integer getLapExitLocationID() {
+        if (exitTimingLocation == null) return null;
+        return exitTimingLocation.getID();
+    }
+    public void setLapExitLocationID(Integer id) {
+        setLapExitLocation(TimingDAO.getInstance().getTimingLocationByID(id));
+    }
+    @Transient
+    public TimingLocation getLapExitLocation() {
+        return exitTimingLocation;
+    }
+    public void setLapExitLocation(TimingLocation l) {
+        if (l != null) {
+            logger.debug("Race::setTimingLocation: " + l.getID());
+            exitTimingLocation=l;
+        } else {
+            logger.debug("Race::setTimingLocation: null"); 
+        }
+    }
+
+    @Column(name="LAPRACE")
+    public Boolean getLapRace(){
+        return lapRaceProperty.getValue();
+    }
+    public void setLapRace(Boolean m){
+        lapRaceProperty.setValue(m);
+    }
     
+    @Column(name="minLapTime", nullable=true)
+    public Long getLapMinTime() {
+        if (minLapTime != null) {
+            return minLapTime.toNanos();
+        } else {
+            return 0L; 
+        }
+    }
+    public void setLapMinTime(Long c) {
+        if(c != null) {
+            logger.debug("setLapMinTime " + c.toString());
+            minLapTime = Duration.ofNanos(c);
+            if (minLapTime.isZero()) minLapTimeStringProperty.set(""); 
+            else minLapTimeStringProperty.set(DurationFormatter.durationToString(minLapTime, 0, Boolean.TRUE));
+            //raceCutoffProperty.set(DurationFormatter.durationToString(raceCutoff,0)); 
+        }
+    }
+    public Duration minLapTimeDuration(){
+        return minLapTime;
+    }
+    public StringProperty minLapTimeDurationStringProperty(){
+        return minLapTimeStringProperty;  
+    }
     
     
     @Override

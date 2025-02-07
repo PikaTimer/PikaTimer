@@ -69,8 +69,8 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TableRow;
-import javafx.scene.control.cell.ComboBoxTableCell;
-import javafx.scene.control.cell.TextFieldTableCell;
+//import javafx.scene.control.cell.ComboBoxTableCell;
+//import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -126,8 +126,8 @@ public class FXMLRaceDetailsController {
     @FXML private VBox segmentsVBox;
     @FXML private TableView<Segment> raceSegmentsTableView;
     @FXML private TableColumn<Segment,String> segmentNameTableColumn;
-    @FXML private TableColumn<Segment,Split> segmentStartSplitTableColumn;
-    @FXML private TableColumn<Segment,Split> segmentEndSplitTableColumn;
+    @FXML private TableColumn<Segment,String> segmentStartSplitTableColumn;
+    @FXML private TableColumn<Segment,String> segmentEndSplitTableColumn;
     @FXML private TableColumn<Segment,String> segmentDistanceTableColumn;
     @FXML private Button deleteSegmentButton; 
     @FXML private Button addSegmentButton;  
@@ -252,16 +252,20 @@ public class FXMLRaceDetailsController {
         startTimeHBox.managedProperty().bind(waveStartsToggleSwitch.selectedProperty().not());
         
         // Race (wave) Time stuff
-        waveNameTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        //waveNameTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        waveNameTableColumn.setCellValueFactory(w -> w.getValue().waveNameProperty());
         waveNameTableColumn.setComparator(new AlphanumericComparator());
         
-        waveStartTimeTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());     
+        //waveStartTimeTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        waveStartTimeTableColumn.setCellValueFactory((w -> w.getValue().waveStartStringProperty()));
 
-        waveAssignmentStartTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        //waveAssignmentStartTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        waveAssignmentStartTableColumn.setCellValueFactory(w -> w.getValue().waveAssignmentStartProperty());
         waveAssignmentStartTableColumn.setComparator(new AlphanumericComparator());
 
         
-        waveAssignmentEndTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        //waveAssignmentEndTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        waveAssignmentEndTableColumn.setCellValueFactory(w -> w.getValue().waveAssignmentEndProperty());
         waveAssignmentEndTableColumn.setComparator(new AlphanumericComparator());
         
         waveStartsTableView.setRowFactory(t -> {
@@ -351,6 +355,57 @@ public class FXMLRaceDetailsController {
             }
         });
         
+        // Lap Race Stuff
+        lapOptionsVBox.visibleProperty().bind(lapRaceToggleSwitch.selectedProperty());
+        lapOptionsVBox.managedProperty().bind(lapRaceToggleSwitch.selectedProperty());
+        lapRaceToggleSwitch.selectedProperty().addListener((arg0,  oldVal,  newVal) -> {
+            logger.debug("Changing the lap race from {} to {}",oldVal,newVal);
+            if (selectedRace != null && ! selectedRace.getLapRace().equals(newVal)){
+                selectedRace.setLapRace(newVal);
+                raceDAO.updateRace(selectedRace);
+            }
+        });
+        
+        lapExitLocationComboBox.setItems(TimingDAO.getInstance().listTimingLocations());
+        lapExitLocationComboBox.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends TimingLocation> observableValue, TimingLocation o, TimingLocation n) -> {
+            logger.debug("lapExitLocationComboBox event");
+            if (selectedRace != null && n != null) {
+                if (! n.equals(selectedRace.getLapExitLocation())){
+                    selectedRace.setLapExitLocation(n);
+                    raceDAO.updateRace(selectedRace);
+                }
+            }
+        });
+        
+        minLapTimeTextField.setPromptText("HH:MM:SS");
+        minLapTimeTextField.setTextFormatter(TextFieldFormatters.getPositiveDurationFormatter());
+     
+        minLapTimeTextField.focusedProperty().addListener((ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue) -> {
+            if (!newPropertyValue) {
+                logger.debug("minLapTimeTextField out focus");
+
+                if ( ! minLapTimeTextField.getText().equals(selectedRace.minLapTimeDurationStringProperty().getValueSafe()) ) {
+                    if (DurationParser.parsable(minLapTimeTextField.getText()) || minLapTimeTextField.getText().isEmpty() ) {
+                        if (minLapTimeTextField.getText().isEmpty()) {
+                            selectedRace.setLapMinTime(0L);
+                        } else { 
+                            selectedRace.setLapMinTime(DurationParser.parse(minLapTimeTextField.getText()).toNanos());
+                        }
+                        minLapTimeTextField.setText(selectedRace.minLapTimeDurationStringProperty().getValueSafe());
+                        raceDAO.updateRace(selectedRace);
+                    } else {
+                        logger.debug("minLapTimeTextField out focus with bad time, reverting to " + selectedRace.minLapTimeDurationStringProperty().getValueSafe());
+                        minLapTimeTextField.setText(selectedRace.minLapTimeDurationStringProperty().getValueSafe());
+                    }
+                } else {
+                    logger.debug("Unchaged lap min time, not saving: \"" + selectedRace.minLapTimeDurationStringProperty().getValueSafe() + "\" vs " + minLapTimeTextField.getText() );
+                }
+            } else {
+                
+            }
+        });
+        
+        
         // Split table stuff
         //splitNameTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         splitNameTableColumn.setCellValueFactory((c) -> {return c.getValue().splitNameProperty();});
@@ -414,8 +469,10 @@ public class FXMLRaceDetailsController {
         // Segment table stuff
         raceSegmentsTableView.setPlaceholder(new Label("No race segments have been defined yet"));
                 
-        segmentNameTableColumn.setCellValueFactory((c) -> {return c.getValue().segmentNameProperty();});
-        segmentDistanceTableColumn.setCellValueFactory((c) -> {return c.getValue().distanceStringProperty();});
+        segmentNameTableColumn.setCellValueFactory(s -> s.getValue().segmentNameProperty());
+        segmentDistanceTableColumn.setCellValueFactory(s -> s.getValue().distanceStringProperty());
+        segmentStartSplitTableColumn.setCellValueFactory(s -> s.getValue().startSplitStringProperty());
+        segmentEndSplitTableColumn.setCellValueFactory(s -> s.getValue().endSplitStringProperty());
         
         raceSegmentsTableView.setRowFactory(t -> {
             final TableRow<Segment> row = new TableRow<>();
@@ -435,12 +492,7 @@ public class FXMLRaceDetailsController {
         editSegmentButton.setOnAction(event -> editSegment());
         
     
-        lapOptionsVBox.visibleProperty().bind(lapRaceToggleSwitch.selectedProperty());
-        lapOptionsVBox.managedProperty().bind(lapRaceToggleSwitch.selectedProperty());
-        lapRaceToggleSwitch.selectedProperty().addListener((arg0,  oldVal,  newVal) -> {
-            logger.debug("Changing the lap race from {} to {}",oldVal,newVal);
         
-        });
         
         courseRecordSetupButton.setOnAction(r -> {
         
@@ -608,7 +660,10 @@ public class FXMLRaceDetailsController {
             
             updateRaceCutoffPace();
             
-            
+            // Lap race stuff
+            minLapTimeTextField.setText(selectedRace.minLapTimeDurationStringProperty().getValueSafe());
+            lapExitLocationComboBox.getSelectionModel().select(selectedRace.getLapExitLocation());
+            lapRaceToggleSwitch.selectedProperty().set(selectedRace.getLapRace());
             
             
             //Segments
@@ -624,14 +679,14 @@ public class FXMLRaceDetailsController {
                     Bindings.size(raceSegments).greaterThanOrEqualTo(1)
             ));
             
-            segmentStartSplitTableColumn.setCellFactory(ComboBoxTableCell.<Segment, Split>forTableColumn(selectedRace.splitsProperty()));
+            //segmentStartSplitTableColumn.setCellFactory(ComboBoxTableCell.<Segment, Split>forTableColumn(selectedRace.splitsProperty()));
 //            segmentStartSplitTableColumn.setOnEditCommit((CellEditEvent<Segment, Split> t) -> {
 //                Segment s = (Segment) t.getTableView().getItems().get(t.getTablePosition().getRow());
 //                s.setStartSplit(t.getNewValue());
 //                raceDAO.updateSegment(s);
 //            });
             
-            segmentEndSplitTableColumn.setCellFactory(ComboBoxTableCell.<Segment, Split>forTableColumn(selectedRace.splitsProperty()));
+            //segmentEndSplitTableColumn.setCellFactory(ComboBoxTableCell.<Segment, Split>forTableColumn(selectedRace.splitsProperty()));
 //            segmentEndSplitTableColumn.setOnEditCommit((CellEditEvent<Segment, Split> t) -> {
 //                Segment s = (Segment) t.getTableView().getItems().get(t.getTablePosition().getRow());
 //                s.setEndSplit(t.getNewValue());

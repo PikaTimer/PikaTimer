@@ -52,6 +52,9 @@ create table race (
     race_cutoff bigint,
     race_max_start bigint,
     race_relay boolean,
+    laprace boolean,
+    minlaptime bigint,
+    exit_timing_loc_id int,
     uuid varchar
 ); 
 

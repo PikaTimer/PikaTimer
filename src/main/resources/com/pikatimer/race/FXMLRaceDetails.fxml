@@ -119,7 +119,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                               <Font size="16.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="minLapTextField" prefHeight="26.0" prefWidth="125.0" promptText="HH:MM:SS" />
+                        <TextField fx:id="minLapTimeTextField" prefHeight="26.0" prefWidth="125.0" promptText="HH:MM:SS" />
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_RIGHT" fillHeight="false" spacing="5.0">
