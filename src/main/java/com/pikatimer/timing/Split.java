@@ -141,6 +141,7 @@ public class Split {
     }
     public void setTimingLocationID(Integer id) {
         setTimingLocation(TimingDAO.getInstance().getTimingLocationByID(id));
+        if (splitLocation == null) logger.error("Unable to find TimingLocation id {}",id);
     }
     @Transient
     public TimingLocation getTimingLocation() {
@@ -154,7 +155,8 @@ public class Split {
             splitLocationString.bind(l.LocationNameProperty()); 
             logger.debug("Split.setTimingLocation: " + splitLocationString.getValueSafe()); 
         } else {
-            logger.debug("Split.setTimingLocation: null"); 
+            logger.debug("Split.setTimingLocation: null!!!"); 
+            
         }
     }
     public StringProperty timingLocationProperty() {
