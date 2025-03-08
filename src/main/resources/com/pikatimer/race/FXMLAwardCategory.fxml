@@ -18,7 +18,7 @@
 <?import org.controlsfx.control.PrefixSelectionComboBox?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardCategoryController">
+<GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pikatimer.race.FXMLAwardCategoryController">
    <columnConstraints>
       <ColumnConstraints hgrow="NEVER" />
       <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
@@ -164,6 +164,8 @@
                   </TableView>
                   <HBox alignment="TOP_RIGHT" spacing="5.0">
                      <children>
+                        <Button fx:id="filterEditButton" mnemonicParsing="false" text="Edit" />
+                        <Pane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                         <Button fx:id="filterAddButton" mnemonicParsing="false" text="Add" />
                         <Button fx:id="filterDeleteButton" mnemonicParsing="false" text="Delete" />
                      </children>

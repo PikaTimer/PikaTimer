@@ -19,13 +19,17 @@ package com.pikatimer.race;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.participant.Status;
 import com.pikatimer.results.ResultsDAO;
+import com.pikatimer.timing.Split;
 import com.pikatimer.util.IntegerEditingCell;
+import com.pikatimer.util.TextFieldFormatters;
 import java.io.IOException;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.UnaryOperator;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -37,13 +41,20 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.HPos;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
@@ -68,6 +79,7 @@ public class FXMLAwardDetailsController {
     @FXML TableColumn<SexCode,String> sexLabelTableColumn;
     @FXML Button sexCodeAdd;
     @FXML Button sexCodeDelete;
+    @FXML Button sexCodeEdit;
     
     @FXML ChoiceBox<Integer> agIncrementChoiceBox;
     @FXML TextField agStartTextField;
@@ -75,12 +87,14 @@ public class FXMLAwardDetailsController {
     @FXML ToggleSwitch customAGNamesToggleSwitch;
     @FXML GridPane agGridPane;
     @FXML VBox agCustomVBox;
+    
     @FXML TableView<AgeGroupIncrement> customAGTableView;
     @FXML TableColumn<AgeGroupIncrement,Integer> startAGTableColumn;
     @FXML TableColumn<AgeGroupIncrement,String> endAGTableColumn;
     @FXML TableColumn<AgeGroupIncrement,String> nameAGTableColumn;
-    @FXML Button agCustomAdd;
-    @FXML Button agCustomDelete;
+    @FXML Button agCustomAddButton;
+    @FXML Button agCustomDeleteButton;
+    @FXML Button agCustomEditButton;
     
     @FXML VBox awardsVBox;
     private final Map<String,VBox> raceAwardUIMap = new HashMap();
@@ -191,12 +205,12 @@ public class FXMLAwardDetailsController {
         
         
         sexCodeTableColumn.setCellValueFactory(value -> value.getValue().codeProperty());
-        sexCodeTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-        sexCodeTableColumn.setOnEditCommit(e -> {
-            e.getRowValue().codeProperty().setValue(e.getNewValue().toUpperCase());
-            Race r = activeRace; 
-            raceDAO.updateRace(r);
-        });
+//        sexCodeTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+//        sexCodeTableColumn.setOnEditCommit(e -> {
+//            e.getRowValue().codeProperty().setValue(e.getNewValue().toUpperCase());
+//            Race r = activeRace; 
+//            raceDAO.updateRace(r);
+//        });
 //        TextFormatter<String> sexCodeformatter = new TextFormatter<>( code -> {
 //            code.setText(code.getText().toUpperCase());
 //            return code; 
@@ -204,13 +218,70 @@ public class FXMLAwardDetailsController {
         
         
         sexLabelTableColumn.setCellValueFactory(value -> value.getValue().labelProperty());
-        sexLabelTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-        sexLabelTableColumn.setOnEditCommit(e -> {
-            e.getRowValue().labelProperty().setValue(e.getNewValue());
-            Race r = activeRace; 
-            raceDAO.updateRace(r);
+//        sexLabelTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+//        sexLabelTableColumn.setOnEditCommit(e -> {
+//            e.getRowValue().labelProperty().setValue(e.getNewValue());
+//            Race r = activeRace; 
+//            raceDAO.updateRace(r);
+//        });
+        
+        sexCodeAdd.setOnAction(a -> {
+            if (activeRace != null){
+                SexCode newSX = new SexCode();
+                newSX.setCode("A");
+                newSX.setLabel("New Sex Code");
+                activeRace.getSexGroups().addSexCode(newSX);
+                raceDAO.updateRace(activeRace);
+            }
+        
         });
         
+        sexCodeDelete.setOnAction(d -> {
+            SexCode tbd = sexCodeMapTableView.getSelectionModel().selectedItemProperty().get();
+            
+            // make sure there is nobody using it who is registered
+            BooleanProperty inUse = new SimpleBooleanProperty(false);
+            ParticipantDAO.getInstance().listParticipants().forEach(p -> {
+                p.getWaveIDs().forEach(w -> {
+                    if (p.getSex().equals(tbd.getCode()) && activeRace.getID().equals(raceDAO.getWaveByID(w).getRace().getID())) {
+                        // we have a conflict
+                        inUse.setValue(true);
+                    }
+                
+                });
+            
+            });
+            if (inUse.get()){
+                // Warning Dialog
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Error");
+                alert.setHeaderText("Error removing label.");
+                alert.setContentText("There are active participants with a sex label of " + tbd.getCode() + ".");
+
+                alert.showAndWait();
+            } else {
+                // delete it
+                activeRace.getSexGroups().removeSexCode(tbd);
+                raceDAO.updateRace(activeRace);
+            }
+        
+        });
+        
+        sexCodeDelete.disableProperty().bind(sexCodeMapTableView.getSelectionModel().selectedItemProperty().isNull());
+        
+        sexCodeEdit.setOnAction(e -> {editSexCode(sexCodeMapTableView.getSelectionModel().selectedItemProperty().get());});
+        sexCodeEdit.disableProperty().bind(sexCodeMapTableView.getSelectionModel().selectedItemProperty().isNull());
+        
+        // Double Click to fire off the edit dialog
+        sexCodeMapTableView.setRowFactory(t -> {
+            final TableRow<SexCode> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                    editSexCode(sexCodeMapTableView.getSelectionModel().selectedItemProperty().get());
+                }
+            });
+            return row;
+        } );
     }
     
     private void initializeRaceSettings(){
@@ -314,28 +385,28 @@ public class FXMLAwardDetailsController {
         endAGTableColumn.setCellValueFactory(value -> value.getValue().endAgeProperty());
         
         startAGTableColumn.setCellValueFactory(value -> value.getValue().startAgeProperty().asObject());
-        startAGTableColumn.setCellFactory(col -> new IntegerEditingCell());
-        startAGTableColumn.setOnEditCommit(e -> {
-            try {
-                e.getRowValue().startAgeProperty().setValue(e.getNewValue());
-                activeRace.getAgeGroups().recalcCustomAGs();
-            } catch (Exception ex) {
-                logger.debug("startAGTableColumn.setOnEditCommit Oops....");
-                e.getRowValue().startAgeProperty().setValue(e.getOldValue());
-            }
-            Race r = activeRace; 
-            raceDAO.updateRace(r);
-        });
+//        startAGTableColumn.setCellFactory(col -> new IntegerEditingCell());
+//        startAGTableColumn.setOnEditCommit(e -> {
+//            try {
+//                e.getRowValue().startAgeProperty().setValue(e.getNewValue());
+//                activeRace.getAgeGroups().recalcCustomAGs();
+//            } catch (Exception ex) {
+//                logger.debug("startAGTableColumn.setOnEditCommit Oops....");
+//                e.getRowValue().startAgeProperty().setValue(e.getOldValue());
+//            }
+//            Race r = activeRace; 
+//            raceDAO.updateRace(r);
+//        });
         
         nameAGTableColumn.setCellValueFactory(value -> value.getValue().nameProperty());
-        nameAGTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-        nameAGTableColumn.setOnEditCommit(e -> {
-            e.getRowValue().nameProperty().setValue(e.getNewValue());
-            Race r = activeRace; 
-            raceDAO.updateRace(r);
-        });
+//        nameAGTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+//        nameAGTableColumn.setOnEditCommit(e -> {
+//            e.getRowValue().nameProperty().setValue(e.getNewValue());
+//            Race r = activeRace; 
+//            raceDAO.updateRace(r);
+//        });
         
-        agCustomAdd.setOnAction(action -> {
+        agCustomAddButton.setOnAction(action -> {
             Race r = activeRace;
             AgeGroupIncrement agi = new AgeGroupIncrement();
             if (r.getAgeGroups().ageGroupIncrementProperty().isEmpty()) 
@@ -352,13 +423,26 @@ public class FXMLAwardDetailsController {
             activeRace.getAgeGroups().recalcCustomAGs();
         
         });
-        agCustomDelete.disableProperty().bind(customAGTableView.getSelectionModel().selectedItemProperty().isNull());
-        agCustomDelete.setOnAction(action -> {
+        agCustomDeleteButton.disableProperty().bind(customAGTableView.getSelectionModel().selectedItemProperty().isNull());
+        agCustomDeleteButton.setOnAction(action -> {
             Race r = activeRace;
             r.getAgeGroups().removeCustomIncrement(customAGTableView.getSelectionModel().getSelectedItem());
             raceDAO.updateRace(r);
             activeRace.getAgeGroups().recalcCustomAGs();
         });
+        
+        agCustomEditButton.disableProperty().bind(customAGTableView.getSelectionModel().selectedItemProperty().isNull());
+        agCustomEditButton.setOnAction((action -> {editAGI(customAGTableView.getSelectionModel().selectedItemProperty().get());}));
+        
+        customAGTableView.setRowFactory(t -> {
+            final TableRow<AgeGroupIncrement> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                    editAGI(customAGTableView.getSelectionModel().selectedItemProperty().get());
+                }
+            });
+            return row;
+        } );
     }
     
     private void populateSexHandlingSettings(Race r){
@@ -466,6 +550,146 @@ public class FXMLAwardDetailsController {
 
     }
     
+    private void editAGI(AgeGroupIncrement agi){
+        Dialog<ButtonType> dialog = new Dialog();
+        // We have a start, End, and (optionally) Name
+        // The end is automatically computed
+        // The Name is only displayed if the customAGNamesToggleSwitch is set
+        
+        GridPane dialogGrid = new GridPane();
+        dialogGrid.setVgap(5);
+        dialogGrid.setHgap(5);
+        dialogGrid.setPadding(new Insets(5));
+        int row = 0;
+        
+        // Split name
+
+        Label startAgeLabel = new Label("Start Age");
+        TextField startAgeTextField = new TextField();
+        startAgeTextField.setTextFormatter(TextFieldFormatters.integerFormatter());
+        startAgeTextField.textProperty().setValue(agi.getStartAge().toString());
+        
+        dialogGrid.add(startAgeLabel, 0, row);
+        dialogGrid.add(startAgeTextField, 1, row);
+        GridPane.setHalignment(startAgeLabel, HPos.LEFT);
+        GridPane.setHalignment(startAgeTextField, HPos.LEFT);
+        
+        row++;
+        
+        Label endAgeLabel = new Label("End Age");
+        Label endAgeNoteLabel = new Label("The end is automatically computed");
+        
+        
+        dialogGrid.add(endAgeLabel, 0, row);
+        dialogGrid.add(endAgeNoteLabel, 1, row);
+        GridPane.setHalignment(endAgeLabel, HPos.LEFT);
+        GridPane.setHalignment(endAgeNoteLabel, HPos.LEFT);
+        
+        row++;
+        
+        Label nameLabel = new Label("Display Name");
+        TextField nameTextField = new TextField(agi.getName());
+        
+        if (customAGNamesToggleSwitch.isSelected()) {
+            dialogGrid.add(nameLabel, 0, row);
+            dialogGrid.add(nameTextField, 1, row);
+            GridPane.setHalignment(nameLabel, HPos.LEFT);
+            GridPane.setHalignment(nameTextField, HPos.LEFT);
+        }
+        
+        dialog.getDialogPane().setContent(dialogGrid);
+        
+        // Set the button types.
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Validators
+        dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(startAgeTextField.textProperty().isEmpty());
+        
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        
+        if (result.get() == saveButtonType ) {
+            Integer orgStartAge = agi.getStartAge();
+            try {
+                agi.setStartAge(Integer.valueOf(startAgeTextField.getText()));
+                activeRace.getAgeGroups().recalcCustomAGs();
+                if (customAGNamesToggleSwitch.isSelected()) agi.setName(nameTextField.getText());
+                raceDAO.updateRace(activeRace);
+            } catch (Exception ex) {
+                logger.debug("seditAGI Oops....");
+                agi.setStartAge(orgStartAge);
+            }
+        }
+    }
+    
+    private void editSexCode(SexCode sc){
+        // Setup the dialog
+        Dialog<ButtonType> dialog = new Dialog();
+        
+//        UnaryOperator<TextFormatter.Change> upperCaseFilter = c -> {
+//            if (!c.isContentChange()) return c;
+//            
+//            
+//            if (newText.isEmpty() || c.getText().isEmpty()) { // always allow deleting characters
+//                return c ;
+//            } 
+//            c.setText(newText.toUpperCase());
+//            c.setRange(0, newText.length()-1);
+//            return c;
+//        };
+        
+        GridPane dialogGrid = new GridPane();
+        dialogGrid.setVgap(5);
+        dialogGrid.setHgap(5);
+        dialogGrid.setPadding(new Insets(5));
+        int row = 0;
+        
+        // Split name
+
+        Label codeLabel = new Label("Code");
+        TextField codeTextField = new TextField(sc.getCode());
+        
+        codeTextField.setTextFormatter(new TextFormatter<>((change) -> {
+            change.setText(change.getText().toUpperCase());
+            return change;
+        }));
+        
+        dialogGrid.add(codeLabel, 0, row);
+        dialogGrid.add(codeTextField, 1, row);
+        GridPane.setHalignment(codeLabel, HPos.LEFT);
+        GridPane.setHalignment(codeTextField, HPos.LEFT);
+        
+        row++;
+        
+        // Display Name
+
+        Label nameLabel = new Label("Display Name");
+        TextField nameTextField = new TextField(sc.getLabel());
+        
+        dialogGrid.add(nameLabel, 0, row);
+        dialogGrid.add(nameTextField, 1, row);
+        GridPane.setHalignment(nameLabel, HPos.LEFT);
+        GridPane.setHalignment(nameTextField, HPos.LEFT);
+        
+        dialog.getDialogPane().setContent(dialogGrid);
+        
+        // Set the button types.
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Validators
+        dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(codeTextField.textProperty().isEmpty());
+        
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        
+        if (result.get() == saveButtonType ) {
+            sc.setCode(codeTextField.getText());
+            sc.setLabel(nameTextField.getText());
+            raceDAO.updateRace(activeRace);
+        }
+    }
     
     
 }

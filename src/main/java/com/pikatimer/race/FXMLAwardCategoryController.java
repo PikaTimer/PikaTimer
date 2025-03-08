@@ -21,9 +21,11 @@ import com.pikatimer.participant.Participant;
 import com.pikatimer.participant.ParticipantDAO;
 import com.pikatimer.util.Formatters;
 import com.pikatimer.util.IntegerEditingCell;
+import com.pikatimer.util.TextFieldFormatters;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
@@ -36,11 +38,17 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.HPos;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
@@ -111,6 +119,7 @@ public class FXMLAwardCategoryController {
     @FXML TableColumn<AwardFilter,String> filterReferenceValueTableColumn;
     @FXML Button filterAddButton;
     @FXML Button filterDeleteButton;
+    @FXML Button filterEditButton;
     
     // Groupings
     @FXML ToggleSwitch subdivideToggleSwitch;
@@ -355,8 +364,22 @@ public class FXMLAwardCategoryController {
             filterDelete();
         });
         filterDeleteButton.disableProperty().bind(filterTableView.getSelectionModel().selectedItemProperty().isNull());
+        
         filterAddButton.setOnAction(action -> {
             filterAdd();
+        });
+        
+        filterEditButton.setOnAction(action -> {filterEdit();});
+        filterEditButton.disableProperty().bind(filterTableView.getSelectionModel().selectedItemProperty().isNull());
+        
+        filterTableView.setRowFactory(t -> {
+            final TableRow<AwardFilter> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                   filterEdit();
+                }
+            });
+            return row; 
         });
         
         rebuildAttributeLists();
@@ -368,34 +391,39 @@ public class FXMLAwardCategoryController {
         filterAttributeTableColumn.setCellValueFactory(value -> {
             String key = value.getValue().attributeProperty().getValue();
             for(Pair<String,String> k: customAttributesList) {
-                if (k.getKey().equals(key)) return new SimpleStringProperty(k.getValue());
-            };
-            return new SimpleStringProperty(key);
+                if (k.getKey().equals(key)) {
+                    value.getValue().attributeDisplayProperty().setValue(k.getValue());
+                }
+            }
+            return value.getValue().attributeDisplayProperty();
         });
-        filterAttributeTableColumn.setCellFactory(ComboBoxTableCell.forTableColumn(customAttributesDisplayList));
-        filterAttributeTableColumn.setOnEditCommit(e -> {
-            String value = e.getNewValue();
-            String key = e.getOldValue();
-            for(Pair<String,String> k: customAttributesList) {
-                if (k.getValue().equals(value)) key = k.getKey() ;
-            };
-            e.getRowValue().attributeProperty().setValue(key);
-            raceDAO.updateAwardCategory(awardCategory);
-        });
+//        filterAttributeTableColumn.setCellFactory(ComboBoxTableCell.forTableColumn(customAttributesDisplayList));
+//        filterAttributeTableColumn.setOnEditCommit(e -> {
+//            String value = e.getNewValue();
+//            String key = e.getOldValue();
+//            for(Pair<String,String> k: customAttributesList) {
+//                if (k.getValue().equals(value)) key = k.getKey() ;
+//            };
+//            e.getRowValue().attributeProperty().setValue(key);
+//            raceDAO.updateAwardCategory(awardCategory);
+//        });
         
         filterTypeTableColumn.setCellValueFactory(value -> value.getValue().comparisonTypeProperty());
-        filterTypeTableColumn.setCellFactory(ComboBoxTableCell.forTableColumn("=",">","<",">=","<=","!=","=~"));
-        filterTypeTableColumn.setOnEditCommit(e -> {
-            e.getRowValue().comparisonTypeProperty().setValue(e.getNewValue());
-            raceDAO.updateAwardCategory(awardCategory);
-        });
+//        filterTypeTableColumn.setCellFactory(ComboBoxTableCell.forTableColumn("=",">","<",">=","<=","!=","=~"));
+//        filterTypeTableColumn.setOnEditCommit(e -> {
+//            e.getRowValue().comparisonTypeProperty().setValue(e.getNewValue());
+//            raceDAO.updateAwardCategory(awardCategory);
+//        });
+
         filterReferenceValueTableColumn.setCellValueFactory(value -> value.getValue().referenceValueProperty());
-        filterReferenceValueTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-        filterReferenceValueTableColumn.setOnEditCommit(e -> {
-            e.getRowValue().referenceValueProperty().setValue(e.getNewValue());
-            raceDAO.updateAwardCategory(awardCategory);
-        });
+//        filterReferenceValueTableColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+//        filterReferenceValueTableColumn.setOnEditCommit(e -> {
+//            e.getRowValue().referenceValueProperty().setValue(e.getNewValue());
+//            raceDAO.updateAwardCategory(awardCategory);
+//        });
         
+        
+
         filterTableView.setItems(awardCategory.filtersProperty());
         filterTableView.setPlaceholder(new Label("No filters defined yet..."));
         
@@ -539,8 +567,99 @@ public class FXMLAwardCategoryController {
     }
     
     public void filterAdd(){
-        awardCategory.addFilter(new AwardFilter("","=",""));
+        AwardFilter newAF = new AwardFilter("","=","");
+        awardCategory.addFilter(newAF);
         raceDAO.updateAwardCategory(awardCategory);
+        filterTableView.getSelectionModel().select(newAF);
+        filterEdit();
+    }
+    
+    public void filterEdit(){
+        AwardFilter af = filterTableView.getSelectionModel().getSelectedItem();
+        
+        Dialog<ButtonType> dialog = new Dialog();
+        // We have a start, End, and (optionally) Name
+        // The end is automatically computed
+        // The Name is only displayed if the customAGNamesToggleSwitch is set
+        
+        GridPane dialogGrid = new GridPane();
+        dialogGrid.setVgap(5);
+        dialogGrid.setHgap(5);
+        dialogGrid.setPadding(new Insets(5));
+        int row = 0;
+        
+        // Attribute
+        Label attributeLabel = new Label("Attribute");
+        ComboBox<String> attributeComboBox = new ComboBox(customAttributesDisplayList);
+        String key = af.attributeProperty().getValue();
+        Boolean notFound = true;
+        for(Pair<String,String> k: customAttributesList) {
+            if (k.getKey().equals(key)) {
+                attributeComboBox.getSelectionModel().select(k.getValue());
+                notFound = false;
+            }
+        }
+        if (notFound) attributeComboBox.getSelectionModel().select(key);
+
+        dialogGrid.add(attributeLabel, 0, row);
+        dialogGrid.add(attributeComboBox, 1, row);
+        GridPane.setHalignment(attributeLabel, HPos.LEFT);
+        GridPane.setHalignment(attributeComboBox, HPos.LEFT);
+        
+        row++;
+        
+        // Type
+        Label comparisonOperatorLabel = new Label("Comparison Operator");
+        ComboBox<String> operatorComboBox = new ComboBox(FXCollections.observableArrayList("=",">","<",">=","<=","!=","=~"));
+        operatorComboBox.getSelectionModel().select(af.comparisonTypeProperty().getValue());
+
+        dialogGrid.add(comparisonOperatorLabel, 0, row);
+        dialogGrid.add(operatorComboBox, 1, row);
+        GridPane.setHalignment(comparisonOperatorLabel, HPos.LEFT);
+        GridPane.setHalignment(operatorComboBox, HPos.LEFT);
+        
+        row++;
+        
+        // Value
+        Label valueLabel = new Label("Value");
+        TextField valueTextField = new TextField(af.getReferenceValue());
+        
+        dialogGrid.add(valueLabel, 0, row);
+        dialogGrid.add(valueTextField, 1, row);
+        GridPane.setHalignment(valueLabel, HPos.LEFT);
+        GridPane.setHalignment(valueTextField, HPos.LEFT);
+        
+        
+        
+        
+        dialog.getDialogPane().setContent(dialogGrid);
+        
+        // Set the button types.
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Validators
+        dialog.getDialogPane().lookupButton(saveButtonType).disableProperty().bind(valueTextField.textProperty().isEmpty());
+        
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        
+        if (result.get() == saveButtonType ) {
+            
+            // Set Attribute, Type and Value
+            String value = attributeComboBox.getSelectionModel().getSelectedItem();
+            af.attributeDisplayProperty().setValue(value);
+            for(Pair<String,String> k: customAttributesList) {
+                if (k.getValue().equals(value)) af.attributeProperty().setValue(k.getKey());
+            }
+                        
+            af.comparisonTypeProperty().setValue(operatorComboBox.getSelectionModel().getSelectedItem());
+            af.setReferenceValue(valueTextField.textProperty().getValue());
+            
+            // Save it
+            raceDAO.updateAwardCategory(awardCategory);
+        }
+        
     }
     
     public void filterDelete(){

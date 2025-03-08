@@ -184,7 +184,7 @@ public class AgeGroups {
         return customNamesProperty;
     }
     
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
           name="race_age_group_increments",
           joinColumns=@JoinColumn(name="ag_id")
@@ -194,9 +194,10 @@ public class AgeGroups {
     }
     protected void setCustomIncrementsList(List<AgeGroupIncrement> i){
         customIncrementList = i;
+        logger.trace("AgeGroups::setCustomIncrementList  Added {} custom increments",customIncrementList.size());
     }
     
-    public ObservableList<AgeGroupIncrement> ageGroupIncrementProperty(){
+    public synchronized ObservableList<AgeGroupIncrement> ageGroupIncrementProperty(){
         if (customIncrementObservableList.isEmpty() && customIncrementList != null && ! customIncrementList.isEmpty() ) {
             customIncrementObservableList.addAll(customIncrementList);
             recalcCustomAGs();
@@ -217,10 +218,12 @@ public class AgeGroups {
     
     public void recalcCustomAGs(){
         customIncrementObservableList.sort((i1, i2) -> i1.getStartAge().compareTo(i2.getStartAge()));
+        
         for (int i=0; i < customIncrementObservableList.size(); i++) {
             if (i == customIncrementObservableList.size() -1) customIncrementObservableList.get(i).endAgeProperty().setValue("∞");
             else customIncrementObservableList.get(i).endAgeProperty().setValue(Integer.toString(customIncrementObservableList.get(i+1).getStartAge() - 1));
         }
+        customIncrementList = customIncrementObservableList;
     }
 
     // Identical to the ageToAGString method but it uses 

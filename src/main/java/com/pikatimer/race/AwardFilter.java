@@ -38,6 +38,7 @@ public class AwardFilter {
     private static final Logger logger = LoggerFactory.getLogger(AwardFilter.class);
     
     private final StringProperty attributeProperty = new SimpleStringProperty(); 
+    private final StringProperty attributeDisplayProperty = new SimpleStringProperty();
     private final StringProperty comparisonTypeProperty = new SimpleStringProperty(); 
     private final StringProperty referenceValueProperty = new SimpleStringProperty(); 
     
@@ -73,6 +74,9 @@ public class AwardFilter {
     }
     public StringProperty attributeProperty() {
         return attributeProperty;
+    }
+    public StringProperty attributeDisplayProperty(){
+        return attributeDisplayProperty;
     }
 
     @Column(name="comparison_type")
