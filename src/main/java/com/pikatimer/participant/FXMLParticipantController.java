@@ -16,6 +16,7 @@
  */
 package com.pikatimer.participant;
 import com.pikatimer.event.Event;
+import com.pikatimer.participant.rsu.RunSignUpDAO;
 import com.pikatimer.race.Race;
 import com.pikatimer.race.RaceDAO;
 import com.pikatimer.race.Wave;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -82,6 +84,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
@@ -138,7 +141,7 @@ public class FXMLParticipantController  {
     @FXML private TextField sexTextField;
     @FXML private TextField cityTextField; 
     @FXML private TextField stateTextField;
-    @FXML private TextField zipTextField;
+    //@FXML private TextField zipTextField;
     @FXML private TextField countryTextField;
     @FXML private DatePicker birthdayDatePicker;    
 
@@ -163,6 +166,10 @@ public class FXMLParticipantController  {
     @FXML private VBox customAttributesVBox;
     
     @FXML private Button bulkBibAssignmentButton;
+    @FXML private Button clearButton;
+    
+    @FXML private Button importButton;
+    @FXML private Button exportButton;
     
     private final List<TableColumn> customAttributesColumns = new ArrayList();
     private final Map<Integer,TextField> customAttributesTextFields = new HashMap();
@@ -174,6 +181,12 @@ public class FXMLParticipantController  {
     private ParticipantDAO participantDAO;
     private Participant editedParticipant; 
     FilteredList<Participant> filteredParticipantsList ;
+    
+    @FXML private Button rsuSyncSetupButton;
+    @FXML private Button rsuSyncButton;
+    @FXML private ProgressBar rsuSyncProgressBar;
+    @FXML private Label rsuSyncLabel;
+    RunSignUpDAO rsuDAO = RunSignUpDAO.getInstance();
     
     
     
@@ -629,12 +642,29 @@ public class FXMLParticipantController  {
         // Custom attribute setup
         displayCustomAttributes();
         
+        // RSU sync stuff
+        rsuSyncSetupButton.setOnAction(event -> rsuDAO.showSetupWizard());
+        rsuSyncButton.setOnAction(event -> rsuDAO.syncFromRSU(rsuSyncProgressBar, rsuSyncLabel));
+        rsuSyncButton.visibleProperty().bind(rsuDAO.isSetup());
+        rsuSyncProgressBar.visibleProperty().bind(rsuDAO.isSetup());
+        
         logger.debug("Done Initializing ParticipantController");
+        
+        // Button setup
+        bulkBibAssignmentButton.setOnAction(event -> bulkBibAssignment());
+        clearButton.setOnAction(event -> clearParticipants());
+        customAtrtributesButton.setOnAction(event -> setupCustomAttributes());
+        importButton.setOnAction(event -> importParticipants());
+        exportButton.setOnAction(event -> exportParticipants());
+        deleteParticipantsButton.setOnAction(event -> deleteParticipants());
+        formAddButton.setOnAction(event -> addPerson());
+        formResetButton.setOnAction(event -> resetForm());
+        formUpdateButton.setOnAction(event -> updateParticipant() );
 
     }
     
     @FXML
-    protected void addPerson(ActionEvent fxevent) {
+    protected void addPerson() {
         // Make sure they actually entered something first
         logger.debug("addPerson fired");
         if (!(firstNameField.getText().isEmpty() && lastNameField.getText().isEmpty())) {
@@ -656,7 +686,7 @@ public class FXMLParticipantController  {
             p.setSex(sexTextField.getText());
             p.setState(stateTextField.getText());
             p.setCity(cityTextField.getText());
-            p.setZip(zipTextField.getText());
+            //p.setZip(zipTextField.getText());
             p.setCountry(countryTextField.getText());
             
             // If there is only one wave, assign it
@@ -743,7 +773,7 @@ public class FXMLParticipantController  {
         //emailField.setText(p.getEmail());   
         cityTextField.setText(p.getCity()); 
         stateTextField.setText(p.getState());
-        zipTextField.setText(p.getZip());
+        //zipTextField.setText(p.getZip());
         countryTextField.setText(p.getCountry());
         birthdayDatePicker.setValue(p.birthdayProperty().getValue());
         
@@ -805,7 +835,7 @@ public class FXMLParticipantController  {
         bibTextField.requestFocus();
     }
     
-    public void updateParticipant(ActionEvent fxevent){
+    public void updateParticipant(){
         
         if (!(firstNameField.getText().isEmpty() && lastNameField.getText().isEmpty())) {
             
@@ -830,7 +860,7 @@ public class FXMLParticipantController  {
             editedParticipant.setSex(sexTextField.getText());
             editedParticipant.setCity(cityTextField.getText());
             editedParticipant.setState(stateTextField.getText());
-            editedParticipant.setZip(zipTextField.getText());
+            //editedParticipant.setZip(zipTextField.getText());
             editedParticipant.setCountry(countryTextField.getText());
             
             editedParticipant.setStatus(statusPrefixSelectionChoiceBox.getSelectionModel().getSelectedItem());
@@ -906,7 +936,7 @@ public class FXMLParticipantController  {
         
         cityTextField.setText("");
         stateTextField.setText("");
-        zipTextField.setText("");
+        //zipTextField.setText("");
         countryTextField.setText("");
         
         noteTextField.setText("");
@@ -944,11 +974,9 @@ public class FXMLParticipantController  {
         //formAddButton.setDefaultButton(true);
         bibTextField.requestFocus();
     }
-    public void resetForm(ActionEvent fxevent){
-        resetForm();
-    }
     
-    public void deleteParticipants(ActionEvent fxevent){
+    
+    public void deleteParticipants(){
         //TODO: if over X number, prompt
         
         if (editedParticipant!= null && participantTableView.getSelectionModel().getSelectedItems().contains(editedParticipant)) resetForm();
@@ -956,24 +984,28 @@ public class FXMLParticipantController  {
         participantTableView.getSelectionModel().clearSelection();
     }
     
-    public void importParticipants(ActionEvent fxevent) throws FlowException{
-        // todo
-        Stage importStage = new Stage();
-                
-        Flow flow  = new Flow(ImportWizardController.class);
-        
-        FlowHandler flowHandler = flow.createHandler();
-
-        StackPane pane = flowHandler.start(new DefaultFlowContainer());
-        
-        importStage.setScene(new Scene(pane));
-        importStage.initModality(Modality.APPLICATION_MODAL);
-        importStage.setTitle("Import Participants...");
-        importStage.show(); 
+    public void importParticipants(){
+        try {
+            // todo
+            Stage importStage = new Stage();
+            
+            Flow flow  = new Flow(ImportWizardController.class);
+            
+            FlowHandler flowHandler = flow.createHandler();
+            
+            StackPane pane = flowHandler.start(new DefaultFlowContainer());
+            
+            importStage.setScene(new Scene(pane));
+            importStage.initModality(Modality.APPLICATION_MODAL);
+            importStage.setTitle("Import Participants..."); 
+            importStage.show();
+        } catch (FlowException ex) {
+            logger.error("importParticipants FlowException!",ex);
+        }
        
     }
     
-    public void exportParticipants(ActionEvent fxevent){
+    public void exportParticipants(){
         // todo
         // Open a dialog box to select the fields to export
         // Then the name of the file
@@ -1251,7 +1283,7 @@ public class FXMLParticipantController  {
         }
     }
     
-    public void clearParticipants(ActionEvent fxevent){
+    public void clearParticipants(){
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Confirm Participant Removal");
         alert.setHeaderText("This will remove all Participants from the event.");
@@ -1267,7 +1299,7 @@ public class FXMLParticipantController  {
         
     }
     
-    public void bulkBibAssignment(ActionEvent fxevent){
+    public void bulkBibAssignment(){
         RaceDAO raceDAO = RaceDAO.getInstance();
         
         PrefixSelectionChoiceBox<Race> raceComboBox = new PrefixSelectionChoiceBox();
@@ -1583,7 +1615,7 @@ public class FXMLParticipantController  {
     }
     
     
-    public void setupCustomAttributes(ActionEvent fxevent){
+    public void setupCustomAttributes(){
         // Do something.... 
         List<CustomAttribute> customAttributes = new ArrayList(participantDAO.getCustomAttributes());
         List<CustomAttribute> deletedCustomAttributes = new ArrayList();

@@ -20,6 +20,7 @@ import com.pikatimer.Pikatimer;
 import com.pikatimer.event.EventOptions;
 import com.pikatimer.participant.CustomAttribute;
 import com.pikatimer.participant.Participant;
+import com.pikatimer.participant.rsu.RSUConfig;
 import com.pikatimer.race.AgeGroupIncrement;
 import com.pikatimer.race.AgeGroups;
 import com.pikatimer.race.AwardCategory;
@@ -115,6 +116,7 @@ public class HibernateUtil {
         cfg.addAnnotatedClass(CourseRecord.class);
         cfg.addAnnotatedClass(SexGroups.class);
         cfg.addAnnotatedClass(SexCode.class);
+        cfg.addAnnotatedClass(RSUConfig.class);
         
         cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
         cfg.setProperty("hibernate.connection.url",Pikatimer.getJDBCUrl());

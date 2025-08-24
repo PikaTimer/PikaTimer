@@ -112,6 +112,10 @@ public class Participant {
     private final ObservableMap<Integer,StringProperty> customAttributeObservableMap = FXCollections.observableHashMap();
     private Map<Integer,String> customAttributeMap = new HashMap();
     
+    private Integer regUserID;
+    private Boolean regSyncNeeded = false;
+    private Map<Integer,Integer> regEventIDMap = new HashMap();
+    
     public Participant() {
         fullNameProperty.bind(new StringBinding(){
             {super.bind(firstNameProperty,middleNameProperty, lastNameProperty);}
@@ -638,6 +642,34 @@ public class Participant {
     
     public static Callback<Participant, Observable[]> extractor() {
         return (Participant p) -> new Observable[]{p.firstNameProperty,p.middleNameProperty,p.lastNameProperty,p.bibProperty,p.ageProperty,p.sexProperty,p.cityProperty,p.stateProperty,p.countryProperty,p.wavesProperty,p.wavesChangedCounterProperty,p.statusProperty};
+    }
+    
+    @Column(name="reguserid", nullable=true)
+    public Integer  getRegUserID() {
+        return regUserID;
+    }
+    public void setRegUserID(Integer userID) {
+        regUserID = userID;
+    }
+            
+    @Column(name="reg_sync_needed")
+    public Boolean  getRegSyncNeeded() {
+        return regSyncNeeded;
+    }
+    public void setRegSyncNeeded(Boolean syncNeeded) {
+        regSyncNeeded = syncNeeded;
+    }
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name="regID")
+    @Column(name="raceID")
+    @CollectionTable(name="participant_regeventmap", joinColumns=@JoinColumn(name="partID"))
+    public Map<Integer,Integer> getRegID2RaceIDDMap(){
+        return regEventIDMap;
+    }
+    
+    public void setRegID2RaceIDDMap(Map<Integer,Integer> eventMap) {
+        regEventIDMap = eventMap;
     }
 
     @Override

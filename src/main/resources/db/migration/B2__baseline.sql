@@ -148,7 +148,8 @@ create table participant (
     email varchar,
     status varchar,
     note varchar,
-    reg_id varchar
+    reg_sync_needed boolean,
+    reguserid int
 );
 
 
@@ -360,6 +361,27 @@ create table race_sex_group_code_map (
     race_id int,
     code varchar,
     display varchar
+);
+
+create table participant_regeventmap (
+    partID  int,
+    raceID int,
+    regID int
+);
+
+create table rsuconfig (
+    id int primary key, 
+    rsuUsername varchar, 
+    rsuPassword varchar,
+    rsuLoginType varchar,
+    rsulastsync bigint,
+    rsuRaceID int
+);
+
+create table rsuconfig_eventmap (
+    configID  int,
+    raceID int,
+    rsuEventID int
 );
 
 commit;

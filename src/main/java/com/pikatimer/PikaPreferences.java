@@ -17,6 +17,7 @@
 package com.pikatimer;
 
 import java.io.File;
+import java.util.HexFormat;
 import java.util.prefs.Preferences;
 
 /**
@@ -72,6 +73,26 @@ public class PikaPreferences {
     
     public Boolean getDBLoaded(){
         return dbLoaded;
+    }
+    
+    // Uber simple obfuscation. 
+    // Don't rely on this to actually protect your password.
+    public void setObfuscated(String key, String secret){
+        prefs.put(key, HexFormat.of().formatHex(secret.getBytes()));
+    }
+    
+    public String getObfuscated(String key){
+        if (!"".equals(prefs.get(key,""))){
+            return new String(HexFormat.of().parseHex(prefs.get(key,"")));
+        } else return "";
+    }
+    
+    public String get(String key, String def){
+        return prefs.get(key, def);
+    }
+    
+    public void set (String key, String value){
+        prefs.put(key, value);
     }
     
 }
